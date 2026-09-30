@@ -194,7 +194,7 @@ body.role-staff .staff-only-block { display: block !important; }
 .modal-body { padding: 32px; flex: 1; overflow-y: auto; }
 .modal-foot { display: flex; align-items: center; padding: 20px 32px; border-top: 1px solid var(--line); background: #fafafa; position: sticky; bottom: 0; z-index: 10; border-radius: 0 0 28px 28px; }
 
-/* FORM MƯỢT MÀ VÀ TIỀN TỆ (.000 đ) */
+/* FORM */
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 .full { grid-column: 1 / -1; }
 .form-group { display: grid; gap: 8px; }
@@ -205,17 +205,19 @@ body.role-staff .staff-only-block { display: block !important; }
 .form-group textarea { min-height: 100px; resize: vertical; line-height: 1.5; }
 .form-group input[readonly], .form-group textarea[readonly], .form-group select[disabled] { background: #fafafa; color: #a1a1aa; cursor: not-allowed; opacity: 0.8; }
 
-/* Bọc tiền tệ đ thông minh mới */
+/* Tiền tệ đ thông minh */
 .currency-wrap { position: relative; width: 100%; display: flex; align-items: center; }
 .currency-wrap input { width: 100%; padding-right: 68px !important; text-align: right; }
 .currency-wrap::after { content: '.000 đ'; position: absolute; right: 14px; color: #94a3b8; font-weight: 800; font-size: 14.5px; pointer-events: none; }
 
-.step2-item, .step3-item { animation: fadeSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-@keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
 /* AUTOCOMPLETE GOOGLE MAPS (NOMINATIM FREE) */
+.autocomplete-wrapper { position: relative; display: flex; flex: 1; align-items: center; }
+.autocomplete-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1000; max-height: 250px; overflow-y: auto; display: none; margin-top: 4px; padding: 6px; }
 .suggest-item { padding: 12px 16px; font-size: 13.5px; font-weight: 500; cursor: pointer; border-radius: 8px; color: var(--text); display: flex; gap: 8px; align-items: center; transition: all 0.2s; }
 .suggest-item:hover { background: #f4f4f5; color: var(--primary); font-weight: 700; }
+
+.step2-item, .step3-item { animation: fadeSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
 .toast { position: fixed; right: 24px; bottom: 24px; background: #09090b; color: #fff; padding: 14px 24px; border-radius: 99px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-size: 14.5px; font-weight: 600; letter-spacing: 0.3px; z-index: 9999; opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
 .toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
@@ -230,7 +232,6 @@ body.role-staff .staff-only-block { display: block !important; }
 
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.96); } }
 
-/* Mobile Reponsive */
 @media(max-width: 900px){ .layout { grid-template-columns: 1fr; } }
 @media(max-width: 768px){
   .app { grid-template-columns: 1fr; padding-bottom: 80px; } 
@@ -318,15 +319,15 @@ body.role-staff .staff-only-block { display: block !important; }
         </div>
         
         <div class="filters" id="mainFilters">
-          <label for="searchInput" style="display:none">Tìm kiếm</label>
+          <label for="searchInput" style="display:none;">Tìm kiếm</label>
           <input class="field" id="searchInput" placeholder="Tìm tên lịch..." style="flex: 1; min-width: 200px;">
           
-          <label for="staffFilter" style="display:none">Lọc nhân sự</label>
+          <label for="staffFilter" style="display:none;">Bộ lọc nhân sự</label>
           <select class="field admin-only" id="staffFilter">
               <option value="">Tất cả nhân sự</option>
           </select>
           
-          <label for="statusFilter" style="display:none">Lọc trạng thái</label>
+          <label for="statusFilter" style="display:none;">Trạng thái</label>
           <select class="field" id="statusFilter">
               <option value="">Tất cả trạng thái</option>
               <option value="pending">Chờ xác nhận</option>
@@ -343,8 +344,8 @@ body.role-staff .staff-only-block { display: block !important; }
       </div>
 
       <aside class="side-panel">
-        <!-- Lịch sắp tới: Ẩn với admin, CHỈ HIỆN VỚI THỢ -->
-        <div class="panel side-card staff-only-block" id="upcomingListPanel">
+        <!-- LỊCH SẮP TỚI CHỈ HIỆN VỚI THỢ ĐÃ ĐƯỢC JS ÉP BLOCK BÊN DƯỚI -->
+        <div class="panel side-card staff-only-block" id="upcomingListPanel" style="display:none;">
           <h3>Lịch sắp tới của bạn</h3>
           <div class="mini-list" id="upcomingList"></div>
         </div>
@@ -430,7 +431,7 @@ body.role-staff .staff-only-block { display: block !important; }
               <button type="button" class="btn ghost" style="padding:12px 20px; font-size:13.5px;" onclick="document.getElementById('freelanceForm').style.display='none'">Hủy</button>
             </div>
 
-            <div id="staffFiltersContainer" class="admin-only" style="display:flex; gap:16px; margin-bottom:16px; align-items:center; font-size:13.5px; font-weight:600; padding:16px 20px; background:#f4f4f5; border-radius:14px; flex-wrap:wrap">
+            <div id="staffFiltersContainer" style="display:flex; gap:16px; margin-bottom:16px; align-items:center; font-size:13.5px; font-weight:600; padding:16px 20px; background:#f4f4f5; border-radius:14px; flex-wrap:wrap">
               <span style="color:var(--muted)">Lọc bộ phận:</span>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_chup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">📷 Chụp</label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_quay" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">🎥 Quay</label>
@@ -443,9 +444,9 @@ body.role-staff .staff-only-block { display: block !important; }
           
           <div class="form-group step2-item" style="display:none">
             <label for="eventLocation">Địa điểm</label>
-            <div style="position:relative;">
-                <input id="eventLocation" placeholder="VD: Cần Thơ / studio... Gõ để tìm kiếm map" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()" autocomplete="off">
-                <div id="locationSuggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; z-index:1000; border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow-lg); max-height:220px; overflow-y:auto; margin-top:4px;"></div>
+            <div id="locationInputGroup" style="position:relative; width: 100%;">
+                <input id="eventLocation" placeholder="VD: Cần Thơ (Gõ để tìm kiếm Bản đồ)..." autocomplete="off" style="width:100%;">
+                <div id="locationSuggestions" style="display:none;"></div>
             </div>
           </div>
           <div class="form-group step2-item" style="display:none"><label for="eventPhone">Số điện thoại khách</label><input id="eventPhone" placeholder="090..."></div>
@@ -719,33 +720,23 @@ function sanitizeData(d) {
     return d;
 }
 
-// CÀI ĐẶT THÁNG MẶC ĐỊNH CHUẨN XÁC KHI LOAD BẰNG JAVASCRIPT THỰC SỰ
+// CÀI ĐẶT THÁNG MẶC ĐỊNH CHUẨN XÁC KHI LOAD 100%
 function setupDefaultFilters() {
     const mm = String(current.getMonth() + 1);
     const yy = String(current.getFullYear());
     
-    const els = ['staffMonthM', 'summaryMonthM'];
-    els.forEach(id => {
+    ['staffMonthM', 'summaryMonthM'].forEach(id => {
         const el = document.getElementById(id);
-        if(el) {
-            Array.from(el.options).forEach(opt => {
-                if(opt.value === mm) opt.selected = true;
-            });
-        }
+        if(el) el.value = mm;
     });
     
-    const yels = ['staffMonthY', 'summaryMonthY'];
-    yels.forEach(id => {
+    ['staffMonthY', 'summaryMonthY'].forEach(id => {
         const el = document.getElementById(id);
-        if(el) {
-            Array.from(el.options).forEach(opt => {
-                if(opt.value === yy) opt.selected = true;
-            });
-        }
+        if(el) el.value = yy;
     });
 }
 
-// TÌM KIẾM ĐỊA ĐIỂM GOOGLE MAPS BẰNG OPENSTREETMAP NATIVE
+// TÌM KIẾM ĐỊA ĐIỂM OPENSTREETMAP (PHOTON API) SIÊU NHANH
 window.setupLocationAutocomplete = function() {
     const input = document.getElementById('eventLocation');
     const suggestBox = document.getElementById('locationSuggestions');
@@ -763,25 +754,26 @@ window.setupLocationAutocomplete = function() {
         }
         
         timeoutId = setTimeout(() => {
-            fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&countrycodes=vn&limit=5`)
+            fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lat=10.0452&lon=105.7469`)
             .then(res => res.json())
             .then(resData => {
-                if(resData && resData.length > 0) {
-                    suggestBox.innerHTML = resData.map(item => `
-                        <div class="suggest-item" onclick="window.selectLocation('${escapeHtml(item.display_name)}')">
-                            📍 ${escapeHtml(item.display_name)}
-                        </div>
-                    `).join('');
+                if(resData.features && resData.features.length > 0) {
+                    suggestBox.innerHTML = resData.features.map(f => {
+                        const p = f.properties;
+                        const parts = [p.name, p.street, p.district, p.city, p.state, p.country].filter(Boolean);
+                        const uniqueStr = [...new Set(parts)].join(', ');
+                        return `<div class="suggest-item" onclick="window.selectLocation('${escapeHtml(uniqueStr)}')">📍 ${escapeHtml(uniqueStr)}</div>`;
+                    }).join('');
                     suggestBox.style.display = 'block';
                 } else {
                     suggestBox.style.display = 'none';
                 }
             }).catch(()=> suggestBox.style.display = 'none');
-        }, 500); 
+        }, 400); 
     });
 
     document.addEventListener('click', (e) => {
-        if(e.target.id !== 'eventLocation') suggestBox.style.display = 'none';
+        if(e.target !== input) suggestBox.style.display = 'none';
     });
 }
 
@@ -827,6 +819,8 @@ function initApp() {
                 if (val) {
                     data = sanitizeData(val);
                     localStorage.setItem(STORE_KEY, JSON.stringify(data)); 
+                    // Gọi lại SetupDefaultFilters mỗi khi Firebase tải lại để chống mất dữ liệu
+                    setupDefaultFilters();
                     try { render(); } catch(e) {}
                 }
                 hideLoading();
@@ -1208,17 +1202,19 @@ window.savePayroll = function() {
   showToast('Đã cập nhật lương');
 }
 
-// LỊCH SẮP TỚI CHI TIẾT (DÀNH CHO THỢ)
+// LỊCH SẮP TỚI CHI TIẾT (DÀNH CHO THỢ) BẰNG JS ÉP BLOCK
 function renderUpcoming(){
   const panel = document.getElementById('upcomingListPanel');
   if (currentUserRole !== 'staff') {
       if(panel) panel.style.display = 'none';
       return;
   }
+  // Mở khóa Panel Lịch Sắp Tới dành cho Thợ
+  if(panel) panel.style.display = 'block';
   
   const today=new Date();today.setHours(0,0,0,0);
   let list = getFilteredEvents().filter(e=>parseDate(e.date)>=today&&e.status!=='cancelled')
-    .sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||''))).slice(0,7);
+    .sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||'')));
     
   const el=document.getElementById('upcomingList');
   if(!el) return;
@@ -1243,13 +1239,13 @@ function renderUpcoming(){
         </div>
         
         <div style="font-size: 13.5px; color: var(--text); line-height: 1.8; width: 100%;">
-            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
-            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">⏰ Giờ bắt đầu:</b> <span style="font-weight:700;">${escapeHtml(e.start || 'Chưa định')}</span></div>
-            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">👥 Nhân sự:</b> <span>${escapeHtml(staffNames || 'Chưa xếp')}</span></div>
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">⏰ Bắt đầu:</b> <span style="font-weight:700;">${escapeHtml(e.start || 'Chưa định')}</span></div>
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">👥 Nhân sự:</b> <span>${escapeHtml(staffNames || 'Chưa xếp')}</span></div>
             
-            ${e.location ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">📍 Địa điểm:</b> <a href="${gmapLink}" target="_blank" style="color:var(--blue); font-weight:600; text-decoration:none;">${escapeHtml(e.location)}</a></div>` : ''}
+            ${e.location ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">📍 Địa điểm:</b> <a href="${gmapLink}" target="_blank" style="color:var(--blue); font-weight:600; text-decoration:none;">${escapeHtml(e.location)}</a></div>` : ''}
             
-            ${e.phone ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">📞 SĐT:</b> <a href="tel:${escapeHtml(e.phone)}" style="color:var(--text); font-weight:600; text-decoration:none;">${escapeHtml(e.phone)}</a></div>` : ''}
+            ${e.phone ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">📞 SĐT:</b> <a href="tel:${escapeHtml(e.phone)}" style="color:var(--text); font-weight:600; text-decoration:none;">${escapeHtml(e.phone)}</a></div>` : ''}
             
             ${e.note ? `<div style="margin-top: 12px; padding: 12px; background: #fefce8; border: 1px dashed #fef08a; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
         </div>
@@ -1262,12 +1258,9 @@ function renderStaffMonthList(){
   const smM = document.getElementById('staffMonthM');
   const smY = document.getElementById('staffMonthY');
   
+  // Logic Fallback Tự Động Load Ngay
   let m = smM?.value ? Number(smM.value) : current.getMonth() + 1;
   let y = smY?.value ? Number(smY.value) : current.getFullYear();
-  
-  // FIX: Gán lại DOM UI nếu nó đang bị trống
-  if (smM && !smM.value) smM.value = String(m);
-  if (smY && !smY.value) smY.value = String(y);
   
   const staffDays = {};
   const staffToRender = data.staff.filter(s => s.role !== 'Freelance'); 
@@ -1305,11 +1298,9 @@ function renderMonthSummary(){
   const sM = document.getElementById('summaryMonthM');
   const sY = document.getElementById('summaryMonthY');
   
+  // Logic Fallback Tự Động Load Ngay
   let m = sM?.value ? Number(sM.value) - 1 : current.getMonth();
   let y = sY?.value ? Number(sY.value) : current.getFullYear();
-  
-  if (sM && !sM.value) sM.value = String(m + 1);
-  if (sY && !sY.value) sY.value = String(y);
   
   const ev = data.events.filter(e => {
       const ed = parseDate(e.date);
@@ -1425,7 +1416,7 @@ window.updateDepositLabel = function() {
 }
 
 // ----------------------------------------------------
-// UI TỪNG BƯỚC FORM LỊCH & THỜI GIAN THỰC
+// UI TỪNG BƯỚC FORM LỊCH & THỜI GIAN THỰC (TỰ MỞ LINK)
 // ----------------------------------------------------
 window.updateModalVisibility = function() {
     const nameVal = document.getElementById('eventName')?.value.trim() || '';
@@ -1439,6 +1430,7 @@ window.updateModalVisibility = function() {
         el.style.display = (nameVal && locVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
     });
     
+    // Check thời gian kết thúc tự động mở Link Source
     const evDate = document.getElementById('eventDate')?.value;
     const evEnd = document.getElementById('eventEnd')?.value;
     let isEnded = false;
@@ -1465,6 +1457,7 @@ window.saveStaffLinkLocally = function(sId, sName) {
     const urlInput = document.getElementById('link-input-'+sId)?.value.trim();
     if(!urlInput) { showToast('Vui lòng dán link'); return; }
     
+    // Lưu thẳng vào Firebase nếu là Staff (Bảo mật quyền ghi)
     const evId = document.getElementById('eventId')?.value;
     if(evId) {
         const idx = data.events.findIndex(e => e.id === evId);
@@ -1501,7 +1494,10 @@ window.addProductRow = function(name='', url='', isReadonly=false) {
     div.className = 'product-row';
     div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#fafafa; padding:16px; border-radius:16px; border:1px solid var(--line)';
     
-    if (isReadonly) return;
+    if (isReadonly) {
+        // Thợ và Khách không thấy Sản phẩm. Khu vực này ẩn hoàn toàn.
+        return;
+    }
 
     const isSaved = url !== '';
     div.innerHTML = `
@@ -1562,6 +1558,7 @@ window.renderEventStaffList = function() {
     if(!evStaffEl) return;
 
     if (!isAdmin) {
+        // GÓC NHÌN CỦA THỢ: Ẩn tiền thợ khác, cho phép điền link của mình nếu hết giờ
         evStaffEl.innerHTML = currentEventAssignments.map(a => {
             const s = data.staff.find(x => x.id === a.id);
             if(!s) return '';
@@ -1572,6 +1569,7 @@ window.renderEventStaffList = function() {
             let myLinkHtml = '';
 
             if (isMe) {
+                // Thợ chỉ thấy tiền công của mình
                 const costVal = a.cost ? money(a.cost) + ' đ' : '0 đ';
                 myCostHtml = `<span style="font-weight:800; color:var(--green); float:right; background: var(--bg-green); padding: 6px 12px; border-radius: 99px;">${costVal}</span>`;
                 
@@ -1608,6 +1606,7 @@ window.renderEventStaffList = function() {
         return;
     }
 
+    // ADMIN VIEW: FULL QUYỀN VÀ THẤY TẤT CẢ LINK 
     evStaffEl.innerHTML = data.staff.length
       ? data.staff.map(s => {
           const a = currentEventAssignments.find(x => x.id === s.id);
@@ -1623,7 +1622,7 @@ window.renderEventStaffList = function() {
                 </label>
                 
                 <div style="display:${isChecked ? 'flex' : 'none'}; gap:12px; align-items:center; flex:1.5; justify-content:flex-end; min-width:300px;">
-                  <select id="task-${s.id}" style="flex:1; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); min-width:180px;">
+                  <select id="task-${s.id}" style="flex:1; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); min-width:160px;">
                     <option value="Chụp truyền thống" ${a?.task==='Chụp truyền thống'?'selected':''}>Chụp truyền thống</option>
                     <option value="Chụp phóng sự" ${a?.task==='Chụp phóng sự'?'selected':''}>Chụp phóng sự</option>
                     <option value="Chụp Concept" ${a?.task==='Chụp Concept'?'selected':''}>Chụp Concept</option>
@@ -1677,10 +1676,9 @@ window.saveFreelanceQuick = function() {
 
     setSafeValue('newFreeName', '');
     const ff = document.getElementById('freelanceForm');
-    // Gỡ bỏ style ép buộc hiển thị (Xóa lỗi tự động mở form)
     if(ff) {
         ff.style.display = 'none';
-        ff.classList.remove('admin-only');
+        ff.classList.remove('admin-only'); // Xóa lớp bắt buộc hiện
     }
 
     window.renderEventStaffList();
@@ -1703,12 +1701,16 @@ window.openEventModal = function(prefill={}){
   setSafeValue('eventStatus', e?.status||'pending');
   setSafeValue('eventLocation', e?.location||'');
   setSafeValue('eventPhone', e?.phone||'');
-  setSafeValue('eventPrice', e?.price ? money(e.price/1000) : '');
-  setSafeValue('eventDeposit', e?.deposit ? money(e.deposit/1000) : '');
+  
+  const pE = document.getElementById('eventPrice');
+  if(pE) pE.value = e?.price ? money(e.price/1000) : '';
+  const dE = document.getElementById('eventDeposit');
+  if(dE) dE.value = e?.deposit ? money(e.deposit/1000) : '';
+  
   setSafeValue('eventNote', e?.note||'');
   
   const ff = document.getElementById('freelanceForm');
-  if(ff) ff.style.display='none'; // Chặn mở tự động
+  if(ff) ff.style.display='none';
   
   ['f_chup','f_quay','f_makeup','f_khac'].forEach(id=>{
       const cb = document.getElementById(id);
@@ -1933,6 +1935,7 @@ document.getElementById('searchInput')?.addEventListener('input', () => {
     searchTimeout = setTimeout(render, 150);
 });
 
+// Gắn sự kiện an toàn
 document.getElementById('prevBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()-1);render()});
 document.getElementById('nextBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()+1);render()});
 document.getElementById('addBtn')?.addEventListener('click', ()=>window.openEventModal({}));
