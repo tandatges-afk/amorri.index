@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f172a">
 <title>Studio Planner — Lịch Quay & Chụp</title>
@@ -155,7 +155,6 @@ input[type=number] { -moz-appearance: textfield; }
 .fab { position: fixed; bottom: 90px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: white; display: none; place-items: center; font-size: 28px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.4); z-index: 90; transition: transform 0.2s; }
 .fab:active { transform: scale(0.9); }
 
-/* Màn hình Loading Overlay để không bị treo App */
 #loadingOverlay { position: fixed; inset: 0; background: #f8fafc; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .loading-logo { width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(135deg, #6366f1, #4f46e5); display: grid; place-items: center; font-weight: 900; font-size: 20px; color: #fff; margin-bottom: 20px; animation: pulse 1.5s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.95); } }
@@ -200,7 +199,7 @@ input[type=number] { -moz-appearance: textfield; }
 <!-- Màn hình tải -->
 <div id="loadingOverlay">
     <div class="loading-logo">SP</div>
-    <div style="font-weight:600; color:var(--muted); font-size: 15px;">Đang đồng bộ dữ liệu...</div>
+    <div style="font-weight:600; color:var(--muted); font-size: 15px;">Đang kết nối dữ liệu...</div>
 </div>
 
 <div class="app">
@@ -246,7 +245,13 @@ input[type=number] { -moz-appearance: textfield; }
         <div class="filters">
           <input class="field" id="searchInput" placeholder="Tìm khách, tên lịch..." style="flex: 1; min-width: 200px;">
           <select class="field" id="staffFilter"><option value="">Tất cả nhân sự</option></select>
-          <select class="field" id="statusFilter"><option value="">Tất cả trạng thái</option><option value="confirmed">Đã chốt</option><option value="pending">Chờ xác nhận</option><option value="done">Hoàn thành</option><option value="cancelled">Đã hủy</option></select>
+          <select class="field" id="statusFilter">
+              <option value="">Tất cả trạng thái</option>
+              <option value="pending">Chờ xác nhận</option>
+              <option value="confirmed">Đã chốt</option>
+              <option value="done">Hoàn thành</option>
+              <option value="cancelled">Đã hủy</option>
+          </select>
         </div>
         <div class="calendar-wrap">
           <div class="calendar" id="calendar"></div>
@@ -276,8 +281,18 @@ input[type=number] { -moz-appearance: textfield; }
         </div>
         
         <div class="panel side-card">
-          <h3>Tổng quan tháng</h3>
-          <div id="monthSummary" style="margin-top:16px"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <h3 style="margin:0;font-size:16px;font-weight:850;">Tổng quan</h3>
+            <div style="display:flex;gap:6px">
+              <select id="summaryMonthM" class="field" style="padding:4px 8px;font-size:11px;min-height:0">
+                <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option><option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option><option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option><option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+              </select>
+              <select id="summaryMonthY" class="field" style="padding:4px 8px;font-size:11px;min-height:0">
+                <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option>
+              </select>
+            </div>
+          </div>
+          <div id="monthSummary"></div>
         </div>
       </aside>
     </section>
@@ -294,13 +309,23 @@ input[type=number] { -moz-appearance: textfield; }
       <form id="eventForm">
         <input type="hidden" id="eventId">
         <div class="form-grid">
-          <div class="form-group full"><label>Tên lịch / tên khách hàng</label><input id="eventName" required placeholder="VD: Đám cưới Minh & Linh"></div>
+          <!-- Nhóm 1: Luôn hiển thị -->
+          <div class="form-group full"><label>Tên lịch / tên khách hàng</label><input id="eventName" required placeholder="VD: Đám cưới Minh & Linh" onkeyup="updateModalVisibility()" onchange="updateModalVisibility()"></div>
           <div class="form-group"><label>Ngày</label><input id="eventDate" type="date" required></div>
-          <div class="form-group"><label>Trạng thái</label><select id="eventStatus"><option value="confirmed">Đã chốt</option><option value="pending">Chờ xác nhận</option><option value="done">Hoàn thành</option><option value="cancelled">Đã hủy</option></select></div>
+          <div class="form-group">
+              <label>Trạng thái</label>
+              <select id="eventStatus">
+                  <option value="pending">Chờ xác nhận</option>
+                  <option value="confirmed">Đã chốt</option>
+                  <option value="done">Hoàn thành</option>
+                  <option value="cancelled">Đã hủy</option>
+              </select>
+          </div>
           <div class="form-group"><label>Giờ bắt đầu</label><input id="eventStart" type="time" required></div>
           <div class="form-group"><label>Giờ kết thúc</label><input id="eventEnd" type="time" required></div>
           
-          <div class="form-group full">
+          <!-- Nhóm 2: Hiện sau khi có tên lịch -->
+          <div class="form-group full step2-item" style="display:none">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px">
               <label>Nhân sự phụ trách & Nhiệm vụ</label>
               <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12px; border:1px dashed var(--primary); color: var(--primary)" onclick="document.getElementById('freelanceForm').style.display='flex'">+ Thêm Freelance</button>
@@ -328,20 +353,22 @@ input[type=number] { -moz-appearance: textfield; }
             <div id="eventStaff" class="staff-picker"></div>
           </div>
           
-          <div class="form-group"><label>Địa điểm</label><input id="eventLocation" placeholder="VD: Cần Thơ / studio / ngoại cảnh"></div>
-          <div class="form-group"><label>Số điện thoại khách</label><input id="eventPhone" placeholder="090..."></div>
-          <div class="form-group">
+          <div class="form-group step2-item" style="display:none"><label>Địa điểm</label><input id="eventLocation" placeholder="VD: Cần Thơ / studio / ngoại cảnh" onkeyup="updateModalVisibility()" onchange="updateModalVisibility()"></div>
+          <div class="form-group step2-item" style="display:none"><label>Số điện thoại khách</label><input id="eventPhone" placeholder="090..."></div>
+          
+          <!-- Nhóm 3: Hiện sau khi có địa điểm -->
+          <div class="form-group step3-item" style="display:none">
             <label>Giá trị booking (VNĐ)</label>
             <input id="eventPrice" type="number" oninput="this.value = this.value.replace(/^0+(?=\d)/, ''); updateDepositLabel()" placeholder="0">
           </div>
-          <div class="form-group">
+          <div class="form-group step3-item" style="display:none">
             <label id="depositLabel">Đã cọc (VNĐ)</label>
             <input id="eventDeposit" type="number" oninput="this.value = this.value.replace(/^0+(?=\d)/, ''); updateDepositLabel()" placeholder="0">
           </div>
           
-          <div class="form-group full"><label>Ghi chú / shotlist</label><textarea id="eventNote" placeholder="Trang phục, concept, thiết bị, thời gian di chuyển, yêu cầu khách..."></textarea></div>
+          <div class="form-group full step3-item" style="display:none"><label>Ghi chú / shotlist</label><textarea id="eventNote" placeholder="Trang phục, concept, thiết bị, thời gian di chuyển, yêu cầu khách..."></textarea></div>
 
-          <div class="form-group full" style="margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 20px;">
+          <div class="form-group full step3-item" style="display:none; margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                 <label>📦 Sản Phẩm / Bàn Giao File</label>
                 <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12px; border:1px dashed var(--blue); color: var(--blue)" onclick="addProductRow()">+ Thêm Sản Phẩm</button>
@@ -421,10 +448,7 @@ input[type=number] { -moz-appearance: textfield; }
     <div class="modal-body">
       <p style="font-size:14px; color:var(--muted); line-height:1.6; margin-top:0">Hệ thống đang hoạt động với cơ chế Offline-First. Dữ liệu sẽ tự động lưu và đồng bộ lên Firebase an toàn.</p>
       <div style="display:grid;gap:12px; margin-top: 24px">
-        <button class="btn primary" id="settingsExport" style="justify-content:center">📥 Xuất dữ liệu (JSON)</button>
-        <button class="btn primary" id="settingsImportBtn" style="justify-content:center">📤 Nhập dữ liệu (JSON)</button>
-        <input id="fileInput" type="file" accept="application/json" hidden>
-        <button class="btn danger" id="clearAll" style="justify-content:center; margin-top: 10px;">⚠️ Xóa toàn bộ dữ liệu</button>
+        <button class="btn danger" id="clearAll" style="justify-content:center; margin-top: 10px;">⚠️ Xóa toàn bộ dữ liệu (Cloud & Local)</button>
       </div>
     </div>
   </div>
@@ -455,7 +479,6 @@ const firebaseConfig = {
 
 const DAY_NAMES = ['T2','T3','T4','T5','T6','T7','CN']; 
 const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
-const STATUS_LABEL = {confirmed:'Đã chốt',pending:'Chờ xác nhận',done:'Hoàn thành',cancelled:'Đã hủy'};
 
 // Biến lưu trạng thái App
 let data = { staff: [], events: [], payroll: {} };
@@ -466,6 +489,8 @@ let isFirstLoad = true;
 
 document.getElementById('staffMonthM').value = current.getMonth() + 1;
 document.getElementById('staffMonthY').value = current.getFullYear();
+document.getElementById('summaryMonthM').value = current.getMonth() + 1;
+document.getElementById('summaryMonthY').value = current.getFullYear();
 
 // HÀM TIỆN ÍCH
 function pad(n){return String(n).padStart(2,'0')}
@@ -511,7 +536,7 @@ function defaultData(){
   }
 }
 
-// LÀM SẠCH DỮ LIỆU CŨ (Khắc phục nguyên nhân treo App)
+// LÀM SẠCH DỮ LIỆU CŨ 
 function sanitizeData(d) {
     if(!d) d = defaultData();
     if(!d.staff) d.staff = [];
@@ -523,9 +548,7 @@ function sanitizeData(d) {
             if(e.staffIds) {
                 e.assignments = e.staffIds.map(id => ({id: id, task: '', cost: 0, link: ''}));
                 delete e.staffIds;
-            } else {
-                e.assignments = [];
-            }
+            } else { e.assignments = []; }
         }
         if(!e.products) e.products = [];
         if(!e.date) e.date = isoDate(new Date());
@@ -537,7 +560,6 @@ function sanitizeData(d) {
 
 // KHỞI TẠO ỨNG DỤNG
 function initApp() {
-    // 1. Tải từ Local ngay lập tức
     try {
         const raw = localStorage.getItem(STORE_KEY);
         if (raw) data = sanitizeData(JSON.parse(raw));
@@ -546,7 +568,6 @@ function initApp() {
     
     try { render(); } catch(e) { console.error("Render Lỗi:", e); }
 
-    // 2. Chống treo (Timeout 3s)
     setTimeout(() => {
         const overlay = document.getElementById('loadingOverlay');
         if (overlay && overlay.style.display !== 'none') {
@@ -556,7 +577,6 @@ function initApp() {
         }
     }, 3000);
 
-    // 3. Kết nối Firebase
     try {
         if (typeof firebase !== 'undefined' && !firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
@@ -598,6 +618,35 @@ window.save = function() {
             showToast("Đã lưu Offline (Sẽ đồng bộ khi có mạng)");
         });
     }
+}
+
+// ----------------------------------------------------
+// TÍNH TOÁN NỢ CŨ
+// ----------------------------------------------------
+function getOldDebt(staffId, targetY, targetM) {
+    let debt = 0;
+    // Tổng tiền công các lịch trước tháng mục tiêu
+    data.events.forEach(e => {
+        if(e.status === 'cancelled') return;
+        const d = parseDate(e.date);
+        // targetM là index từ 0..11
+        if(d.getFullYear() < targetY || (d.getFullYear() === targetY && d.getMonth() < targetM)) {
+            const a = e.assignments.find(x => x.id === staffId);
+            if(a) debt += Number(a.cost || 0);
+        }
+    });
+
+    // Trừ đi tổng tiền đã thanh toán & đã ứng trước tháng mục tiêu
+    for (const [mKey, staffRecords] of Object.entries(data.payroll)) {
+        const [py, pm] = mKey.split('-').map(Number); // pm là 1..12
+        if(py < targetY || (py === targetY && (pm - 1) < targetM)) {
+            if(staffRecords[staffId]) {
+                debt -= Number(staffRecords[staffId].advance || 0);
+                debt -= Number(staffRecords[staffId].paid || 0);
+            }
+        }
+    }
+    return debt;
 }
 
 // ----------------------------------------------------
@@ -744,6 +793,8 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
   let html = '';
   let renderedCount = 0;
   
+  const [targetY, targetM] = monthKey.split('-').map(Number); // targetM is 1..12
+  
   staffArray.forEach(s => {
       let totalCost = 0;
       let tasksHtml = '';
@@ -779,9 +830,13 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
       const p = (data.payroll[monthKey] && data.payroll[monthKey][s.id]) || {advance:0, paid:0};
       const advance = p.advance;
       const paid = p.paid;
-      const remain = totalCost - advance - paid;
       
-      if (isFreelance && sEvents.length === 0 && advance === 0 && paid === 0 && totalCost === 0) {
+      // Tính Nợ Cũ
+      const oldDebt = getOldDebt(s.id, targetY, targetM - 1);
+      const remain = oldDebt + totalCost - advance - paid;
+      
+      // LOGIC ẨN FREELANCE: Nếu không có nợ cũ, không có ca làm, không ứng, không trả -> Ẩn
+      if (isFreelance && sEvents.length === 0 && advance === 0 && paid === 0 && totalCost === 0 && oldDebt <= 0) {
           return; 
       }
       
@@ -800,8 +855,13 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
             </div>
             
             <div style="display:flex;gap:24px;text-align:right;flex-wrap:wrap;align-items:center">
+              ${oldDebt !== 0 ? `
               <div>
-                <div style="font-size:11.5px;color:var(--muted);text-transform:uppercase;font-weight:750">Tổng phí</div>
+                <div style="font-size:11.5px;color:var(--muted);text-transform:uppercase;font-weight:750">Nợ cũ</div>
+                <div style="font-weight:850;color:var(--red);font-size:16px;margin-top:2px">${money(oldDebt)}đ</div>
+              </div>` : ''}
+              <div>
+                <div style="font-size:11.5px;color:var(--muted);text-transform:uppercase;font-weight:750">Tháng này</div>
                 <div style="font-weight:850;color:var(--text);font-size:16px;margin-top:2px">${money(totalCost)}đ</div>
               </div>
               <div>
@@ -893,7 +953,11 @@ function renderUpcoming(){
     .sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||''))).slice(0,7);
   const el=document.getElementById('upcomingList');
   el.innerHTML=list.length?list.map(e=>{
-    const pillColor = e.status==='confirmed'?'green':e.status==='pending'?'orange':e.status==='done'?'blue':'red';
+    let pillColor = 'orange';
+    if(e.status==='confirmed') pillColor = 'green';
+    else if(e.status==='done') pillColor = 'blue';
+    else if(e.status==='cancelled') pillColor = 'red';
+    
     return `<div class="mini-item" data-id="${e.id}">
     <div class="mini-main"><div class="mini-title">${escapeHtml(e.name)}</div><div class="mini-sub">${formatDate(e.date)} · ${e.start||''}</div></div>
     <span class="pill ${pillColor}">${STATUS_LABEL[e.status]}</span></div>`}).join(''):'<div class="empty" style="padding:20px;background:#f8fafc;border-radius:12px">Chưa có lịch sắp tới</div>';
@@ -904,7 +968,7 @@ function renderStaffMonthList(){
   const y = Number(document.getElementById('staffMonthY').value);
   
   const staffDays = {};
-  const staffToRender = data.staff.filter(s => s.role !== 'Freelance');
+  const staffToRender = data.staff.filter(s => s.role !== 'Freelance'); // Ẩn Freelance
   
   staffToRender.forEach(s => staffDays[s.id] = new Set());
   
@@ -934,7 +998,15 @@ function renderStaffMonthList(){
 }
 
 function renderMonthSummary(){
-  const ev = monthEvents().filter(e=>e.status!=='cancelled');
+  const m = Number(document.getElementById('summaryMonthM').value) - 1;
+  const y = Number(document.getElementById('summaryMonthY').value);
+  
+  // Lọc lịch theo tháng/năm đã chọn ở panel
+  const ev = data.events.filter(e => {
+      const ed = parseDate(e.date);
+      return ed.getFullYear() === y && ed.getMonth() === m && eventMatches(e) && e.status !== 'cancelled';
+  });
+  
   const total = ev.length;
   let revenue = 0, paidFull = 0, depositOnly = 0, staffCost = 0;
   
@@ -951,7 +1023,7 @@ function renderMonthSummary(){
   });
   const missing = revenue - paidFull - depositOnly;
 
-  const monthKey = `${current.getFullYear()}-${pad(current.getMonth()+1)}`;
+  const monthKey = `${y}-${pad(m+1)}`;
   let totalAdvance = 0, totalPaid = 0;
   data.staff.forEach(s => {
       const p = (data.payroll[monthKey] && data.payroll[monthKey][s.id]) || {advance:0, paid:0};
@@ -1024,6 +1096,24 @@ window.updateDepositLabel = function() {
       label.textContent = 'Đã cọc (VNĐ)';
       label.style.color = 'inherit';
   }
+}
+
+// ----------------------------------------------------
+// TÍNH NĂNG ẨN/HIỆN TỪNG PHẦN KHI THÊM LỊCH (Progressive UI)
+// ----------------------------------------------------
+window.updateModalVisibility = function() {
+    const nameVal = document.getElementById('eventName').value.trim();
+    const locVal = document.getElementById('eventLocation').value.trim();
+    
+    // Nếu có tên lịch -> Mở nhóm 2 (Nhân sự, Địa điểm, SĐT)
+    document.querySelectorAll('.step2-item').forEach(el => {
+        el.style.display = nameVal ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
+    });
+    
+    // Nếu có tên lịch + Địa điểm -> Mở nhóm 3 (Giá, Cọc, Ghi chú, Sản phẩm)
+    document.querySelectorAll('.step3-item').forEach(el => {
+        el.style.display = (nameVal && locVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
+    });
 }
 
 document.getElementById('fullPaidBtn').onclick = () => {
@@ -1139,7 +1229,6 @@ function renderEventStaffList() {
                   </div>
               </div>
 
-              <!-- Khu vực dán link Source -->
               <div style="display:flex; gap: 8px; align-items:center; background:#e0e7ff; padding:10px 12px; border-radius:10px; border: 1px dashed #a5b4fc;">
                  <div id="link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
                      <a id="link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:13px; font-weight:750; color:var(--primary); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:120px;">
@@ -1217,6 +1306,7 @@ window.openEventModal = function(prefill={}){
   }
 
   updateDepositLabel();
+  setTimeout(updateModalVisibility, 10);
 }
 window.closeEventModal = function(){document.getElementById('eventModal').style.display='none'}
 
@@ -1293,7 +1383,7 @@ window.saveEvent = function(){
   
   save();
   closeEventModal();
-  // render() sẽ được Firebase tự động gọi
+  // Firebase sẽ tự sync và render lại
 }
 
 window.deleteEvent = function(){
@@ -1331,6 +1421,7 @@ document.addEventListener('click',e=>{
 
 document.getElementById('prevBtn').onclick=()=>{current.setMonth(current.getMonth()-1);render()};
 document.getElementById('nextBtn').onclick=()=>{current.setMonth(current.getMonth()+1);render()};
+document.getElementById('todayBtn').onclick=()=>{current=new Date();current.setHours(0,0,0,0);render()};
 document.getElementById('addBtn').onclick=()=>openEventModal({});
 document.getElementById('sideAdd').onclick=()=>openEventModal({});
 document.getElementById('fabAdd').onclick=()=>openEventModal({});
@@ -1352,6 +1443,8 @@ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.data
 document.getElementById('eventDate').addEventListener('change',checkConflict);
 document.getElementById('staffMonthM').addEventListener('change', renderStaffMonthList);
 document.getElementById('staffMonthY').addEventListener('change', renderStaffMonthList);
+document.getElementById('summaryMonthM').addEventListener('change', renderMonthSummary);
+document.getElementById('summaryMonthY').addEventListener('change', renderMonthSummary);
 
 // Bắt đầu chạy App
 initApp();
