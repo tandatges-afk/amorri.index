@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f172a">
 <title>Studio Planner — Lịch Quay & Chụp</title>
@@ -419,9 +419,12 @@ input[type=number] { -moz-appearance: textfield; }
   <div class="modal" style="width:min(500px,100%)">
     <div class="modal-head"><div class="modal-title">Cài đặt</div><button class="icon-btn" id="closeSettings" style="border:0;background:#f1f5f9;border-radius:50%">✕</button></div>
     <div class="modal-body">
-      <p style="font-size:14px; color:var(--muted); line-height:1.6; margin-top:0">Dữ liệu được lưu an toàn trên Cloud. Nếu mất mạng, bạn vẫn có thể dùng Offline bình thường.</p>
+      <p style="font-size:14px; color:var(--muted); line-height:1.6; margin-top:0">Hệ thống đang hoạt động với cơ chế Offline-First. Dữ liệu sẽ tự động lưu và đồng bộ lên Firebase an toàn.</p>
       <div style="display:grid;gap:12px; margin-top: 24px">
-        <button class="btn danger" id="clearAll" style="justify-content:center; margin-top: 10px;">⚠️ Xóa toàn bộ dữ liệu (Trên Cloud & Máy này)</button>
+        <button class="btn primary" id="settingsExport" style="justify-content:center">📥 Xuất dữ liệu (JSON)</button>
+        <button class="btn primary" id="settingsImportBtn" style="justify-content:center">📤 Nhập dữ liệu (JSON)</button>
+        <input id="fileInput" type="file" accept="application/json" hidden>
+        <button class="btn danger" id="clearAll" style="justify-content:center; margin-top: 10px;">⚠️ Xóa toàn bộ dữ liệu</button>
       </div>
     </div>
   </div>
@@ -430,7 +433,15 @@ input[type=number] { -moz-appearance: textfield; }
 <div class="toast" id="toast"></div>
 
 <script>
-// --- CẤU HÌNH & KHỞI TẠO FIREBASE ---
+// --- CHỐNG TREO APP TOÀN CỤC ---
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.style.display = 'none';
+    console.error("Lỗi JS:", msg, error);
+    return false;
+};
+
+// --- CẤU HÌNH FIREBASE ---
 const STORE_KEY = 'studioPlanner_v1';
 const firebaseConfig = {
   apiKey: "AIzaSyA3rwXOsYAYSBYuYC5DIrPbKi0m5ViLs7E",
@@ -446,6 +457,7 @@ const DAY_NAMES = ['T2','T3','T4','T5','T6','T7','CN'];
 const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
 const STATUS_LABEL = {confirmed:'Đã chốt',pending:'Chờ xác nhận',done:'Hoàn thành',cancelled:'Đã hủy'};
 
+// Biến lưu trạng thái App
 let data = { staff: [], events: [], payroll: {} };
 let current = new Date();
 current.setHours(0,0,0,0);
@@ -455,9 +467,14 @@ let isFirstLoad = true;
 document.getElementById('staffMonthM').value = current.getMonth() + 1;
 document.getElementById('staffMonthY').value = current.getFullYear();
 
+// HÀM TIỆN ÍCH
 function pad(n){return String(n).padStart(2,'0')}
 function isoDate(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
-function parseDate(s){const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d)}
+function parseDate(s){
+    if(!s) return new Date(); 
+    const [y,m,d] = String(s).split('-').map(Number); 
+    return new Date(y,m-1,d);
+}
 function formatDate(s){return parseDate(s).toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'})}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function initials(name){return name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase()}
@@ -494,49 +511,63 @@ function defaultData(){
   }
 }
 
-// KHỞI TẠO FIREBASE KẾT HỢP OFFLINE-FIRST
+// LÀM SẠCH DỮ LIỆU CŨ (Khắc phục nguyên nhân treo App)
+function sanitizeData(d) {
+    if(!d) d = defaultData();
+    if(!d.staff) d.staff = [];
+    if(!d.events) d.events = [];
+    if(!d.payroll) d.payroll = {};
+    
+    d.events.forEach(e => {
+        if(!e.assignments) {
+            if(e.staffIds) {
+                e.assignments = e.staffIds.map(id => ({id: id, task: '', cost: 0, link: ''}));
+                delete e.staffIds;
+            } else {
+                e.assignments = [];
+            }
+        }
+        if(!e.products) e.products = [];
+        if(!e.date) e.date = isoDate(new Date());
+        if(!e.start) e.start = '08:00';
+        if(!e.end) e.end = '12:00';
+    });
+    return d;
+}
+
+// KHỞI TẠO ỨNG DỤNG
 function initApp() {
+    // 1. Tải từ Local ngay lập tức
     try {
         const raw = localStorage.getItem(STORE_KEY);
-        if (raw) {
-            const parsed = JSON.parse(raw);
-            if(parsed && Array.isArray(parsed.events)) data = parsed;
-        } else {
-            data = defaultData();
-        }
-        if(!data.staff) data.staff = [];
-        if(!data.events) data.events = [];
-        if(!data.payroll) data.payroll = {};
+        if (raw) data = sanitizeData(JSON.parse(raw));
+        else data = defaultData();
     } catch(e) { data = defaultData(); }
     
-    render(); 
+    try { render(); } catch(e) { console.error("Render Lỗi:", e); }
 
-    // Phao cứu sinh: Tránh kẹt màn hình loading quá 3 giây
+    // 2. Chống treo (Timeout 3s)
     setTimeout(() => {
         const overlay = document.getElementById('loadingOverlay');
         if (overlay && overlay.style.display !== 'none') {
             overlay.style.display = 'none';
             isFirstLoad = false;
-            showToast("Kết nối mạng chậm: Đang chạy chế độ Offline");
+            showToast("Mạng chậm: Đang chạy chế độ Offline");
         }
     }, 3000);
 
+    // 3. Kết nối Firebase
     try {
         if (typeof firebase !== 'undefined' && !firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
             window.dbRef = firebase.database().ref('studioPlanner_v1');
+            
             window.dbRef.on('value', (snapshot) => {
                 const val = snapshot.val();
                 if (val) {
-                    data.staff = val.staff || [];
-                    data.events = val.events || [];
-                    data.payroll = val.payroll || {};
-                    data.events.forEach(e => {
-                        if(!e.assignments) e.assignments = [];
-                        if(!e.products) e.products = [];
-                    });
+                    data = sanitizeData(val);
                     localStorage.setItem(STORE_KEY, JSON.stringify(data)); 
-                    render(); 
+                    try { render(); } catch(e) { console.error(e); }
                 }
                 
                 if (isFirstLoad) {
@@ -558,9 +589,9 @@ function initApp() {
     }
 }
 
-// Hàm Save: Cập nhật UI ngay -> Đẩy Firebase ngầm
+// Hàm lưu: Cập nhật local ngay + Đẩy Firebase ngầm
 window.save = function() {
-    localStorage.setItem(STORE_KEY, JSON.stringify(data)); 
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
     if(window.dbRef) {
         window.dbRef.set(data).catch(err => {
             console.error("Firebase Write Error:", err);
@@ -569,6 +600,9 @@ window.save = function() {
     }
 }
 
+// ----------------------------------------------------
+// CÁC HÀM XỬ LÝ GIAO DIỆN & LOGIC NGHIỆP VỤ
+// ----------------------------------------------------
 function eventMatches(e){
   const q=document.getElementById('searchInput').value.trim().toLowerCase();
   const sf=document.getElementById('staffFilter').value;
@@ -578,9 +612,10 @@ function eventMatches(e){
   if(st && e.status!==st) return false;
   return true;
 }
+
 function monthEvents(){
   return data.events.filter(e=>sameMonth(parseDate(e.date),current) && eventMatches(e))
-    .sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start))
+    .sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||'')))
 }
 
 function renderFilters(){
@@ -588,6 +623,7 @@ function renderFilters(){
   sf.innerHTML='<option value="">Tất cả nhân sự</option>'+data.staff.map(s=>`<option value="${s.id}">${escapeHtml(s.name)} — ${escapeHtml(s.role)}</option>`).join('');
   sf.value=data.staff.some(s=>s.id===old)?old:'';
 }
+
 function renderStats(){
   const ev=monthEvents();
   document.getElementById('statTotal').textContent=ev.length;
@@ -612,13 +648,16 @@ function getOutageWarnings(ds) {
 
     dayEvents.forEach(e => {
       e.assignments.forEach(a => {
-        if (staffIntervals[a.id]) staffIntervals[a.id].push({ start: e.start, end: e.end });
+        if (staffIntervals[a.id]) staffIntervals[a.id].push({ start: e.start||'', end: e.end||'' });
       });
     });
 
     let timepoints = new Set();
     for (let sid in staffIntervals) {
-      staffIntervals[sid].forEach(iv => { timepoints.add(iv.start); timepoints.add(iv.end); });
+      staffIntervals[sid].forEach(iv => { 
+          if(iv.start) timepoints.add(iv.start); 
+          if(iv.end) timepoints.add(iv.end); 
+      });
     }
     timepoints = Array.from(timepoints).sort();
 
@@ -656,7 +695,7 @@ function chip(e){
   return `<div class="event-chip ${status}" data-id="${e.id}" title="${escapeHtml(e.name)}${staffNames ? ` (${escapeHtml(staffNames)})` : ''}">
     <span class="status-dot"></span>
     <div style="min-width:0; overflow:hidden">
-      <div><span class="time">${escapeHtml(e.start)}</span> <span class="name">${escapeHtml(e.name)}</span></div>
+      <div><span class="time">${escapeHtml(e.start||'')}</span> <span class="name">${escapeHtml(e.name)}</span></div>
       ${staffNames ? `<div style="font-size:10.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:650">👤 ${escapeHtml(staffNames)}</div>` : ''}
     </div>
   </div>`;
@@ -677,7 +716,7 @@ function renderMonth(){
   for(let i=0;i<42;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const ds=isoDate(d); 
-    const all=data.events.filter(e=>e.date===ds&&eventMatches(e)).sort((a,b)=>a.start.localeCompare(b.start));
+    const all=data.events.filter(e=>e.date===ds&&eventMatches(e)).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
     
     let warningsHtml = '';
     const warnings = getOutageWarnings(ds);
@@ -709,7 +748,7 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
       let totalCost = 0;
       let tasksHtml = '';
       
-      const sEvents = evs.filter(e => e.assignments.some(x => x.id === s.id)).sort((a,b)=>a.date.localeCompare(b.date));
+      const sEvents = evs.filter(e => e.assignments.some(x => x.id === s.id)).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
       
       sEvents.forEach(e => {
         const a = e.assignments.find(x => x.id === s.id);
@@ -851,12 +890,12 @@ window.savePayroll = function() {
 function renderUpcoming(){
   const today=new Date();today.setHours(0,0,0,0);
   const list=data.events.filter(e=>parseDate(e.date)>=today&&e.status!=='cancelled')
-    .sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).slice(0,7);
+    .sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||''))).slice(0,7);
   const el=document.getElementById('upcomingList');
   el.innerHTML=list.length?list.map(e=>{
     const pillColor = e.status==='confirmed'?'green':e.status==='pending'?'orange':e.status==='done'?'blue':'red';
     return `<div class="mini-item" data-id="${e.id}">
-    <div class="mini-main"><div class="mini-title">${escapeHtml(e.name)}</div><div class="mini-sub">${formatDate(e.date)} · ${e.start}</div></div>
+    <div class="mini-main"><div class="mini-title">${escapeHtml(e.name)}</div><div class="mini-sub">${formatDate(e.date)} · ${e.start||''}</div></div>
     <span class="pill ${pillColor}">${STATUS_LABEL[e.status]}</span></div>`}).join(''):'<div class="empty" style="padding:20px;background:#f8fafc;border-radius:12px">Chưa có lịch sắp tới</div>';
 }
 
@@ -1179,7 +1218,6 @@ window.openEventModal = function(prefill={}){
 
   updateDepositLabel();
 }
-
 window.closeEventModal = function(){document.getElementById('eventModal').style.display='none'}
 
 window.checkConflict = function(){
@@ -1196,7 +1234,7 @@ window.checkConflict = function(){
      if(sEvents.length === 0) {
          infoSpan.innerHTML = '';
      } else {
-         let intervals = sEvents.map(e => ({s: e.start, e: e.end}));
+         let intervals = sEvents.map(e => ({s: e.start||'', e: e.end||''}));
          let text = intervals.map(iv => `${iv.s}-${iv.e}`).join(', ');
          
          let overlap = false;
@@ -1255,9 +1293,9 @@ window.saveEvent = function(){
   
   save();
   closeEventModal();
-  render();
-  showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
+  // render() sẽ được Firebase tự động gọi
 }
+
 window.deleteEvent = function(){
   const id=document.getElementById('eventId').value;if(!id)return;
   const e=data.events.find(x=>x.id===id); if(!e)return;
@@ -1265,8 +1303,6 @@ window.deleteEvent = function(){
   data.events=data.events.filter(x=>x.id!==id);
   save();
   closeEventModal();
-  render();
-  showToast('Đã xóa lịch');
 }
 
 window.openSettings = function(){ document.getElementById('settingsModal').style.display='flex'; }
@@ -1295,7 +1331,6 @@ document.addEventListener('click',e=>{
 
 document.getElementById('prevBtn').onclick=()=>{current.setMonth(current.getMonth()-1);render()};
 document.getElementById('nextBtn').onclick=()=>{current.setMonth(current.getMonth()+1);render()};
-document.getElementById('todayBtn').onclick=()=>{current=new Date();current.setHours(0,0,0,0);render()};
 document.getElementById('addBtn').onclick=()=>openEventModal({});
 document.getElementById('sideAdd').onclick=()=>openEventModal({});
 document.getElementById('fabAdd').onclick=()=>openEventModal({});
@@ -1308,6 +1343,7 @@ document.getElementById('closeStaff').onclick=()=>document.getElementById('staff
 document.getElementById('addStaffBtn').onclick=addStaff;
 document.getElementById('settingsBtn').onclick=openSettings;
 document.getElementById('closeSettings').onclick=()=>document.getElementById('settingsModal').style.display='none';
+
 document.getElementById('clearAll').onclick=()=>{if(confirm('Xóa toàn bộ dữ liệu thật chứ? Bạn không thể phục hồi đâu!')){data={staff:[],events:[],payroll:{}};save();render();document.getElementById('settingsModal').style.display='none';showToast('Đã dọn sạch dữ liệu')}};
 
 ['searchInput','staffFilter','statusFilter'].forEach(id=>document.getElementById(id).addEventListener('input',render));
