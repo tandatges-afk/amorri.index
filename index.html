@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ffffff">
 
@@ -15,7 +16,6 @@
 
 <title>Amorri Studio — Lịch Quay & Chụp</title>
 
-<!-- Đã nâng cấp Firebase SDK chống lỗi bảo mật -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
 
@@ -53,11 +53,12 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 input[type=number] { -moz-appearance: textfield; }
 
 /* ẨN HIỆN QUYỀN */
-.admin-only, .staff-only { display: none !important; }
+.admin-only, .staff-only, .staff-only-block { display: none !important; }
 body.role-admin .admin-only { display: flex !important; }
 body.role-admin .admin-only-block { display: block !important; }
 body.role-admin .admin-only-grid { display: grid !important; }
 body.role-staff .staff-only { display: flex !important; }
+body.role-staff .staff-only-block { display: block !important; }
 
 /* BỐ CỤC CHÍNH */
 .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
@@ -123,7 +124,7 @@ body.role-staff .staff-only { display: flex !important; }
 .day.sun-bg { background-color: #f1f5f9; } 
 
 .day.other .daynum { color: #a1a1aa; font-weight: 600; } 
-.day.other { background-color: #fff; opacity: 0.8; }
+.day.other { background-color: #fff; opacity: 0.85; }
 .day.other.sat-bg { background-color: #fafafb; }
 .day.other.sun-bg { background-color: #f1f5f9; }
 
@@ -133,7 +134,7 @@ body.role-staff .staff-only { display: flex !important; }
 .daynum { font-size: 13.5px; font-weight: 700; min-width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; border-radius: 8px; margin-bottom: 8px; color: var(--muted); transition: all 0.2s; }
 .day.today .daynum { background: var(--primary); color: #fff; font-weight: 800; }
 
-/* EVENT CHIPS - RÕ RÀNG HƠN BAO GIỜ HẾT */
+/* EVENT CHIPS */
 .event-chip { padding: 8px 10px; border-radius: 8px; margin: 5px 0; display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; line-height: 1.3; border-left: 4px solid var(--primary); background: #f4f4f5; transition: all 0.2s; }
 .event-chip:hover { transform: scale(1.02); box-shadow: var(--shadow-sm); z-index: 1; position: relative; }
 .event-chip .time { font-weight: 800; color: var(--text); font-size: 12px; }
@@ -164,7 +165,7 @@ body.role-staff .staff-only { display: flex !important; }
 .mini-list { display: grid; gap: 10px; margin-top: 16px; }
 .mini-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); background: #fff; box-shadow: var(--shadow-sm); }
 .mini-item:hover { border-color: #d4d4d8; box-shadow: var(--shadow-md); transform: translateY(-2px); }
-.mini-main { min-width: 0; }
+.mini-main { min-width: 0; width: 100%; }
 .mini-title { font-size: 14.5px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini-sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; font-weight: 600; }
 
@@ -218,10 +219,7 @@ body.role-staff .staff-only { display: flex !important; }
 .kpi-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; margin: 14px 0; color: #52525b; }
 .staff-picker { border-radius: 14px; max-height: 400px; overflow-y: auto; }
 
-/* MOBILE FAB NÂNG CẤP - Đảm bảo dâu + nằm giữa */
-.fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; display: none; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 10px 25px rgba(24, 24, 27, 0.3); z-index: 90; transition: transform 0.2s; padding: 0; line-height: 1; }
-.fab:active { transform: scale(0.9); }
-
+/* Màn hình Loading Logo */
 #loadingOverlay { position: fixed; inset: 0; background: rgba(244, 244, 245, 0.95); backdrop-filter: blur(10px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s; }
 #loadingOverlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 .loading-logo { width: 80px; height: 80px; border-radius: 20px; background: #fff; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; box-shadow: var(--shadow-md); overflow: hidden; border: 1px solid var(--line); }
@@ -249,8 +247,6 @@ body.role-staff .staff-only { display: flex !important; }
   .stat-num { font-size: 24px; }
   .filters .field { flex: 1; min-width: 140px; }
   
-  /* Hiện nút FAB mượt mà trên mobile */
-  body.role-admin .fab { display: flex !important; }
   .actions .primary { display: none; } 
 
   .modal-backdrop { align-items: flex-end; padding: 0; }
@@ -268,7 +264,7 @@ body.role-staff .staff-only { display: flex !important; }
 
 <div id="loadingOverlay">
     <div class="loading-logo"><img src="logo.png" alt="Amorri" onerror="this.style.display='none'"></div>
-    <div style="font-weight:700; color:var(--text); font-size: 15px; letter-spacing: 0.5px;">Đang kết nối dữ liệu...</div>
+    <div style="font-weight:700; color:var(--text); font-size: 15px; letter-spacing: 0.5px;">Đang đồng bộ dữ liệu...</div>
 </div>
 
 <div class="app">
@@ -339,8 +335,9 @@ body.role-staff .staff-only { display: flex !important; }
       </div>
 
       <aside class="side-panel">
-        <div class="panel side-card">
-          <h3>Lịch sắp tới</h3>
+        <!-- Lịch sắp tới (Chỉ dành cho Thợ) -->
+        <div class="panel side-card staff-only-block" id="upcomingListPanel">
+          <h3>Lịch sắp tới của tôi</h3>
           <div class="mini-list" id="upcomingList"></div>
         </div>
         
@@ -348,9 +345,11 @@ body.role-staff .staff-only { display: flex !important; }
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
             <h3 style="margin:0;font-size:16px;">Lịch thợ</h3>
             <div style="display:flex;gap:6px">
+              <label for="staffMonthM" style="display:none;">Chọn Tháng</label>
               <select id="staffMonthM" class="field" style="padding:6px 10px;font-size:12.5px;min-height:0">
                 <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option><option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option><option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option><option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
               </select>
+              <label for="staffMonthY" style="display:none;">Chọn Năm</label>
               <select id="staffMonthY" class="field" style="padding:6px 10px;font-size:12.5px;min-height:0">
                 <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option>
               </select>
@@ -363,9 +362,11 @@ body.role-staff .staff-only { display: flex !important; }
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
             <h3 style="margin:0;font-size:16px;">Tổng quan</h3>
             <div style="display:flex;gap:6px">
+              <label for="summaryMonthM" style="display:none;">Chọn Tháng</label>
               <select id="summaryMonthM" class="field" style="padding:6px 10px;font-size:12.5px;min-height:0">
                 <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option><option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option><option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option><option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
               </select>
+              <label for="summaryMonthY" style="display:none;">Chọn Năm</label>
               <select id="summaryMonthY" class="field" style="padding:6px 10px;font-size:12.5px;min-height:0">
                 <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option>
               </select>
@@ -376,8 +377,6 @@ body.role-staff .staff-only { display: flex !important; }
       </aside>
     </section>
   </main>
-  
-  <button class="fab admin-only" id="fabAdd">＋</button>
 </div>
 
 <!-- Modal Thêm/Sửa Sự Kiện -->
@@ -388,11 +387,10 @@ body.role-staff .staff-only { display: flex !important; }
       <form id="eventForm">
         <input type="hidden" id="eventId">
         <div class="form-grid">
-          <!-- Nhóm 1: Cơ bản -->
-          <div class="form-group full"><label>Tên lịch / Khách hàng</label><input id="eventName" required placeholder="VD: Đám cưới Minh & Linh" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()"></div>
-          <div class="form-group"><label>Ngày</label><input id="eventDate" type="date" required onchange="window.updateModalVisibility(); window.checkConflict();"></div>
+          <div class="form-group full"><label for="eventName">Tên lịch / Khách hàng</label><input id="eventName" required placeholder="VD: Đám cưới Minh & Linh" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()"></div>
+          <div class="form-group"><label for="eventDate">Ngày</label><input id="eventDate" type="date" required onchange="window.updateModalVisibility(); window.checkConflict();"></div>
           <div class="form-group">
-              <label>Trạng thái</label>
+              <label for="eventStatus">Trạng thái</label>
               <select id="eventStatus" onchange="window.updateModalVisibility()">
                   <option value="pending">Chờ xác nhận</option>
                   <option value="confirmed">Đã chốt</option>
@@ -400,10 +398,9 @@ body.role-staff .staff-only { display: flex !important; }
                   <option value="cancelled">Đã hủy</option>
               </select>
           </div>
-          <div class="form-group"><label>Giờ bắt đầu</label><input id="eventStart" type="time" required onchange="window.checkConflict();"></div>
-          <div class="form-group"><label>Giờ kết thúc</label><input id="eventEnd" type="time" required onchange="window.updateModalVisibility(); window.checkConflict();"></div>
+          <div class="form-group"><label for="eventStart">Giờ bắt đầu</label><input id="eventStart" type="time" required onchange="window.checkConflict();"></div>
+          <div class="form-group"><label for="eventEnd">Giờ kết thúc</label><input id="eventEnd" type="time" required onchange="window.updateModalVisibility(); window.checkConflict();"></div>
           
-          <!-- Nhóm 2: Nhân sự -->
           <div class="form-group full step2-item" style="display:none">
             <div class="admin-only" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:10px" id="adminStaffLabel">
               <label>Phân công nhân sự</label>
@@ -411,8 +408,10 @@ body.role-staff .staff-only { display: flex !important; }
             </div>
             <label id="guestStaffLabel" style="margin-bottom:8px; font-size:13.5px; font-weight:700; color:#52525b; display:none;">Nhân sự tham gia</label>
             
-            <div id="freelanceForm" style="display:none; gap:10px; margin-bottom:14px; padding:18px; background:#fafafa; border-radius:16px; align-items:center; font-size:13px; border: 1px solid var(--line); flex-wrap:wrap">
+            <div id="freelanceForm" class="admin-only" style="display:none; gap:10px; margin-bottom:14px; padding:18px; background:#fafafa; border-radius:16px; align-items:center; font-size:13px; border: 1px solid var(--line); flex-wrap:wrap">
+              <label for="newFreeName" style="display:none;">Tên Freelance</label>
               <input type="text" id="newFreeName" placeholder="Tên thợ Freelance" style="flex:1; min-width: 140px; padding:12px 16px; background:#fff; border:1px solid var(--line); border-radius:10px; outline:0;">
+              <label for="newFreeRole" style="display:none;">Bộ phận</label>
               <select id="newFreeRole" style="padding:12px 16px; background:#fff; border:1px solid var(--line); border-radius:10px; outline:0; min-width: 120px;">
                   <option value="Chụp">Chụp</option>
                   <option value="Quay">Quay</option>
@@ -434,26 +433,32 @@ body.role-staff .staff-only { display: flex !important; }
             <div id="eventStaff" class="staff-picker" style="padding:0; border:none; background:transparent;"></div>
           </div>
           
-          <div class="form-group step2-item" style="display:none"><label>Địa điểm</label><input id="eventLocation" placeholder="VD: Cần Thơ / studio..." onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()"></div>
-          <div class="form-group step2-item" style="display:none"><label>Số điện thoại khách</label><input id="eventPhone" placeholder="090..."></div>
+          <div class="form-group step2-item" style="display:none">
+            <label for="eventLocation">Địa điểm</label>
+            <div style="display:flex; gap:8px;">
+                <input id="eventLocation" placeholder="VD: Cần Thơ / studio..." onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()" style="flex:1;">
+                <button type="button" class="btn ghost admin-only admin-only-flex" style="padding:0 14px; font-size:13px; border:1px solid #d4d4d8;" onclick="window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(document.getElementById('eventLocation').value), '_blank')">📍 Maps</button>
+            </div>
+          </div>
+          <div class="form-group step2-item" style="display:none"><label for="eventPhone">Số điện thoại khách</label><input id="eventPhone" placeholder="090..."></div>
           
-          <!-- Nhóm 3: Tiền Bạc & Ghi chú -->
+          <!-- Nhóm 3: Cấu hình Tiền Bạc sử dụng .000 đ -->
           <div class="form-group step3-item" style="display:none" id="priceGroup">
-            <label>Giá trị booking</label>
+            <label for="eventPrice">Giá trị booking</label>
             <div class="currency-wrap">
               <input id="eventPrice" type="text" inputmode="numeric" oninput="window.formatMoneyInput(this); window.updateDepositLabel()" placeholder="1.200">
             </div>
           </div>
           <div class="form-group step3-item" style="display:none" id="depositGroup">
-            <label id="depositLabel">Đã cọc</label>
+            <label for="eventDeposit" id="depositLabel">Đã cọc</label>
             <div class="currency-wrap">
               <input id="eventDeposit" type="text" inputmode="numeric" oninput="window.formatMoneyInput(this); window.updateDepositLabel()" placeholder="300">
             </div>
           </div>
           
-          <div class="form-group full step3-item" style="display:none"><label>Ghi chú / Yêu cầu</label><textarea id="eventNote" placeholder="Trang phục, concept, thiết bị, thời gian di chuyển..."></textarea></div>
+          <div class="form-group full step3-item" style="display:none"><label for="eventNote">Ghi chú / Yêu cầu</label><textarea id="eventNote" placeholder="Trang phục, concept, thiết bị, thời gian di chuyển..."></textarea></div>
 
-          <div class="form-group full step3-item" style="display:none; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 24px;" id="productsSection">
+          <div class="form-group full step3-item admin-only admin-only-block" id="productsSection" style="display:none; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 24px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <label>📦 Sản Phẩm / Bàn Giao File</label>
                 <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:8px 16px; font-size:13px; border:1px solid var(--line);" onclick="window.addProductRow()">+ Thêm Link</button>
@@ -465,11 +470,11 @@ body.role-staff .staff-only { display: flex !important; }
       </form>
     </div>
     <div class="modal-foot">
-      <button type="button" class="btn" id="fullPaidBtn" style="color:#065f46;background:var(--bg-green);border-color:#a7f3d0;display:none;">💰 Đã thanh toán đủ</button>
-      <button type="button" class="btn danger" id="deleteEvent" style="display:none;margin-left:12px">Xóa lịch</button>
+      <button type="button" class="btn admin-only admin-only-block" id="fullPaidBtn" style="color:#065f46;background:var(--bg-green);border-color:#a7f3d0;display:none;">💰 Đã thanh toán đủ</button>
+      <button type="button" class="btn danger admin-only admin-only-flex" id="deleteEvent" style="display:none;margin-left:12px">Xóa lịch</button>
       <div style="margin-left:auto;display:flex;gap:12px">
         <button type="button" class="btn ghost" onclick="window.smoothClose('eventModal')" id="cancelEvent">Hủy</button>
-        <button type="button" class="btn primary" id="saveEvent" style="display:none;">Lưu lịch</button>
+        <button type="button" class="btn primary admin-only admin-only-block" id="saveEvent" style="display:none;">Lưu lịch</button>
       </div>
     </div>
   </div>
@@ -484,13 +489,13 @@ body.role-staff .staff-only { display: flex !important; }
       <input type="hidden" id="payrollMonth">
       <div class="form-grid" style="grid-template-columns:1fr; gap:20px;">
         <div class="form-group">
-          <label>Đã ứng trong tháng</label>
+          <label for="payrollAdvance">Đã ứng trong tháng</label>
           <div class="currency-wrap">
             <input type="text" inputmode="numeric" id="payrollAdvance" placeholder="0" oninput="window.formatMoneyInput(this)">
           </div>
         </div>
         <div class="form-group">
-          <label>Đã thanh toán cuối tháng</label>
+          <label for="payrollPaid">Đã thanh toán cuối tháng</label>
           <div class="currency-wrap">
             <input type="text" inputmode="numeric" id="payrollPaid" placeholder="0" oninput="window.formatMoneyInput(this)">
           </div>
@@ -510,8 +515,8 @@ body.role-staff .staff-only { display: flex !important; }
     <div class="modal-head"><div class="modal-title">Đội ngũ & Truy cập</div><button type="button" class="icon-btn" onclick="window.smoothClose('staffModal')" style="border:0;background:#f4f4f5;border-radius:50%">✕</button></div>
     <div class="modal-body">
       <div class="form-grid" style="margin-bottom:32px; padding-bottom: 32px; border-bottom: 1px solid var(--line)">
-        <div class="form-group"><label>Tên thợ</label><input id="staffName" placeholder="VD: Bii"></div>
-        <div class="form-group"><label>Vai trò chính</label>
+        <div class="form-group"><label for="staffName">Tên thợ</label><input id="staffName" placeholder="VD: Bii"></div>
+        <div class="form-group"><label for="staffRole">Vai trò chính</label>
           <select id="staffRole">
             <option value="Photographer">Photographer (Chụp)</option>
             <option value="Videographer">Videographer (Quay)</option>
@@ -567,7 +572,7 @@ function setSafeValue(id, val) {
     }
 }
 
-// FORMAT TIỀN TỆ THÔNG MINH - CHỈ HIỂN THỊ KHI CÓ GIÁ TRỊ, TỰ ĐỘNG HIỂU HÀNG NGHÌN
+// FORMAT TIỀN TỆ THÔNG MINH
 window.formatMoneyInput = function(el) {
     let raw = el.value.replace(/[^0-9]/g, '');
     if(raw === '') {
@@ -706,37 +711,27 @@ function sanitizeData(d) {
     return d;
 }
 
-// CÀI ĐẶT THÁNG MẶC ĐỊNH CHUẨN XÁC KHI LOAD
+// CÀI ĐẶT THÁNG MẶC ĐỊNH CHUẨN XÁC KHI LOAD 100%
 function setupDefaultFilters() {
     const mm = String(current.getMonth() + 1);
     const yy = String(current.getFullYear());
     
-    // Gán cẩn thận bằng DOM thao tác trực tiếp nếu setSafeValue chưa kịp chạy
     const els = ['staffMonthM', 'summaryMonthM'];
     els.forEach(id => {
         const el = document.getElementById(id);
-        if(el) {
-            Array.from(el.options).forEach(opt => {
-                if(opt.value === mm) opt.selected = true;
-            });
-        }
+        if(el) el.value = mm;
     });
     
     const yels = ['staffMonthY', 'summaryMonthY'];
     yels.forEach(id => {
         const el = document.getElementById(id);
-        if(el) {
-            Array.from(el.options).forEach(opt => {
-                if(opt.value === yy) opt.selected = true;
-            });
-        }
+        if(el) el.value = yy;
     });
 }
 
 // KHỞI TẠO APP
 function initApp() {
     applyRoleUI();
-    setupDefaultFilters(); // Gọi hàm gán cứng mặc định
     
     try {
         const raw = localStorage.getItem(STORE_KEY);
@@ -744,6 +739,7 @@ function initApp() {
         else data = defaultData();
     } catch(e) { data = defaultData(); }
     
+    setupDefaultFilters();
     try { render(); } catch(e) {}
 
     const hideLoading = () => {
@@ -1125,12 +1121,8 @@ window.openPayrollModal = function(staffId, staffName, monthStr) {
   document.getElementById('payrollMonth').value = monthStr;
   
   const p = (data.payroll[monthStr] && data.payroll[monthStr][staffId]) || {advance:0, paid:0};
-  
-  const advEl = document.getElementById('payrollAdvance');
-  if(advEl) { advEl.value = p.advance ? money(p.advance) : ''; }
-  
-  const paidEl = document.getElementById('payrollPaid');
-  if(paidEl) { paidEl.value = p.paid ? money(p.paid) : ''; }
+  setSafeValue('payrollAdvance', p.advance ? money(p.advance / 1000) : '');
+  setSafeValue('payrollPaid', p.paid ? money(p.paid / 1000) : '');
 }
 
 window.savePayroll = function() {
@@ -1138,7 +1130,6 @@ window.savePayroll = function() {
   const staffId = document.getElementById('payrollStaffId').value;
   const monthStr = document.getElementById('payrollMonth').value;
   
-  // Tự động thêm 3 số 0 ẩn
   const advance = parseMoney(document.getElementById('payrollAdvance').value) * 1000;
   const paid = parseMoney(document.getElementById('payrollPaid').value) * 1000;
 
@@ -1151,7 +1142,10 @@ window.savePayroll = function() {
   showToast('Đã cập nhật lương');
 }
 
+// LỊCH SẮP TỚI DÀNH RIÊNG CHO THỢ
 function renderUpcoming(){
+  if (currentUserRole === 'admin') return; // Admin ẩn Lịch sắp tới
+  
   const today=new Date();today.setHours(0,0,0,0);
   let list = getFilteredEvents().filter(e=>parseDate(e.date)>=today&&e.status!=='cancelled')
     .sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||''))).slice(0,7);
@@ -1163,10 +1157,27 @@ function renderUpcoming(){
     if(e.status==='confirmed') pillColor = 'green';
     else if(e.status==='done') pillColor = 'blue';
     else if(e.status==='cancelled') pillColor = 'red';
+
+    const staffNames = e.assignments.map(a => {
+        const s = data.staff.find(x => x.id === a.id);
+        return s ? `${s.name} (${a.task})` : '';
+    }).filter(Boolean).join(', ');
+
+    const gmapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}`;
     
-    return `<div class="mini-item" data-id="${e.id}">
-    <div class="mini-main"><div class="mini-title">${escapeHtml(e.name)}</div><div class="mini-sub">${formatDate(e.date)} · ${e.start||''}</div></div>
-    <span class="pill ${pillColor}">${STATUS_LABEL[e.status]}</span></div>`}).join(''):'<div class="empty" style="padding:24px;background:#fafafa;border-radius:16px">Trống lịch sắp tới</div>';
+    return `<div class="mini-item" data-id="${e.id}" style="flex-direction:column; align-items:flex-start; gap:12px;">
+    <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start;">
+        <div class="mini-title" style="font-size:15px; font-weight:800; white-space:normal;">${escapeHtml(e.name)}</div>
+        <span class="pill ${pillColor}">${STATUS_LABEL[e.status]}</span>
+    </div>
+    <div style="font-size:13.5px; color:var(--text); line-height:1.6; width:100%;">
+        <div><b style="color:var(--muted);">📅 Ngày:</b> <span style="font-weight:600;">${formatDate(e.date)} - ${e.start||''}</span></div>
+        ${e.location ? `<div><b style="color:var(--muted);">📍 Địa điểm:</b> <a href="${gmapLink}" target="_blank" style="color:var(--blue); font-weight:600; text-decoration:none;">${escapeHtml(e.location)}</a></div>` : ''}
+        ${e.phone ? `<div><b style="color:var(--muted);">📞 SĐT:</b> <a href="tel:${escapeHtml(e.phone)}" style="color:var(--text); font-weight:600; text-decoration:none;">${escapeHtml(e.phone)}</a></div>` : ''}
+        ${staffNames ? `<div style="margin-top:4px;"><b style="color:var(--muted);">👥 Nhân sự tham gia:</b> ${escapeHtml(staffNames)}</div>` : ''}
+        ${e.note ? `<div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); color:var(--muted);"><i>📝 Note: ${escapeHtml(e.note)}</i></div>` : ''}
+    </div>
+    </div>`}).join('') : '<div class="empty" style="padding:24px;background:#fafafa;border-radius:16px">Trống lịch sắp tới</div>';
 }
 
 function renderStaffMonthList(){
@@ -1174,7 +1185,7 @@ function renderStaffMonthList(){
   const smM = document.getElementById('staffMonthM');
   const smY = document.getElementById('staffMonthY');
   
-  // Luôn đảm bảo có giá trị fallback an toàn nhất
+  // Logic Fallback Tự Động Load Ngay
   let m = smM?.value ? Number(smM.value) : current.getMonth() + 1;
   let y = smY?.value ? Number(smY.value) : current.getFullYear();
   
@@ -1214,6 +1225,7 @@ function renderMonthSummary(){
   const sM = document.getElementById('summaryMonthM');
   const sY = document.getElementById('summaryMonthY');
   
+  // Logic Fallback Tự Động Load Ngay
   let m = sM?.value ? Number(sM.value) - 1 : current.getMonth();
   let y = sY?.value ? Number(sY.value) : current.getFullYear();
   
@@ -1345,12 +1357,11 @@ window.updateModalVisibility = function() {
         el.style.display = (nameVal && locVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
     });
     
-    // Check thời gian kết thúc tự động mở Link Source
+    // Check thời gian kết thúc tự động mở Link Source không phụ thuộc trạng thái
     const evDate = document.getElementById('eventDate')?.value;
     const evEnd = document.getElementById('eventEnd')?.value;
     let isEnded = false;
     if(evDate && evEnd) {
-        // So sánh Date + Giờ kết thúc với Date.now()
         isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
     }
 
@@ -1411,8 +1422,7 @@ window.addProductRow = function(name='', url='', isReadonly=false) {
     div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#fafafa; padding:16px; border-radius:16px; border:1px solid var(--line)';
     
     if (isReadonly) {
-        div.innerHTML = `<a href="${escapeHtml(url)}" target="_blank" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none;">🔗 ${escapeHtml(name || 'Link Bàn Giao')}</a>`;
-        container.appendChild(div);
+        // Thợ và Khách không thấy Sản phẩm. Khu vực này ẩn.
         return;
     }
 
@@ -1423,7 +1433,7 @@ window.addProductRow = function(name='', url='', isReadonly=false) {
               🔗 <span class="prod-view-name">${escapeHtml(name || 'Link Bàn Giao')}</span>
            </a>
            <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px;" onclick="copyText(this.parentElement.parentElement.querySelector('.prod-url').value)">📋 Copy</button>
-           <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px;" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'">✏️️ Sửa</button>
+           <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px;" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'">✏️ Sửa</button>
        </div>
        
        <div class="prod-edit admin-only-flex" style="display:${isSaved ? 'none' : 'flex'}; gap: 10px; flex-wrap:wrap; align-items:center">
@@ -1480,7 +1490,7 @@ window.renderEventStaffList = function() {
             const s = data.staff.find(x => x.id === a.id);
             if(!s) return '';
             const taskText = a.task ? ` - ${escapeHtml(a.task)}` : '';
-            const isMe = (s.id === staffViewId); // Đúng người đang login bằng link
+            const isMe = (s.id === staffViewId); 
             
             let myCostHtml = '';
             let myLinkHtml = '';
@@ -1539,7 +1549,7 @@ window.renderEventStaffList = function() {
                 </label>
                 
                 <div style="display:${isChecked ? 'flex' : 'none'}; gap:12px; align-items:center; flex:1.5; justify-content:flex-end; min-width:300px;">
-                  <select id="task-${s.id}" style="flex:1; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); min-width:160px;">
+                  <select id="task-${s.id}" style="flex:1; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); min-width:180px;">
                     <option value="Chụp truyền thống" ${a?.task==='Chụp truyền thống'?'selected':''}>Chụp truyền thống</option>
                     <option value="Chụp phóng sự" ${a?.task==='Chụp phóng sự'?'selected':''}>Chụp phóng sự</option>
                     <option value="Chụp Concept" ${a?.task==='Chụp Concept'?'selected':''}>Chụp Concept</option>
@@ -1615,12 +1625,8 @@ window.openEventModal = function(prefill={}){
   setSafeValue('eventStatus', e?.status||'pending');
   setSafeValue('eventLocation', e?.location||'');
   setSafeValue('eventPhone', e?.phone||'');
-  
-  const pE = document.getElementById('eventPrice');
-  if(pE) pE.value = e?.price ? money(e.price/1000) : '';
-  const dE = document.getElementById('eventDeposit');
-  if(dE) dE.value = e?.deposit ? money(e.deposit/1000) : '';
-  
+  setSafeValue('eventPrice', e?.price ? money(e.price/1000) : '');
+  setSafeValue('eventDeposit', e?.deposit ? money(e.deposit/1000) : '');
   setSafeValue('eventNote', e?.note||'');
   
   const ff = document.getElementById('freelanceForm');
