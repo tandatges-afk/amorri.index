@@ -6,7 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f172a">
-<title>Studio Planner — Lịch Quay & Chụp</title>
+
+<!-- Favicon Logo Amorri Studio -->
+<link rel="icon" href="https://drive.google.com/uc?id=18Y7_Kh4JuyGBCQ8fvADGQXa-J2vE0C3G" type="image/png">
+
+<title>Amorri Studio — Lịch Quay & Chụp</title>
 
 <!-- Nhúng thư viện Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
@@ -38,7 +42,11 @@ input[type=number] { -moz-appearance: textfield; }
 .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
 .sidebar { background: #0b1120; color: #fff; padding: 24px 16px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0; height: 100vh; z-index: 40; }
 .brand { display: flex; align-items: center; gap: 14px; padding: 10px; }
-.brand-mark { width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #6366f1, #4f46e5); display: grid; place-items: center; font-weight: 900; font-size: 16px; box-shadow: 0 8px 16px rgba(79,70,229,0.3); }
+
+/* Thay thế CSS Logo */
+.brand-mark { width: 44px; height: 44px; border-radius: 14px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; }
+.brand-mark img { width: 100%; height: 100%; object-fit: cover; }
+
 .brand h1 { font-size: 18px; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
 .brand small { color: #94a3b8; font-size: 12px; }
 .side-nav { display: grid; gap: 8px; }
@@ -118,7 +126,6 @@ input[type=number] { -moz-appearance: textfield; }
 .mini-main { min-width: 0; }
 .mini-title { font-size: 13.5px; font-weight: 750; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini-sub { font-size: 12px; color: var(--muted); margin-top: 5px; font-weight: 500; }
-
 .pill { font-size: 11px; padding: 5px 10px; border-radius: 8px; background: #f1f5f9; color: #475569; font-weight: 750; white-space: nowrap; }
 .pill.green { background: #d1fae5; color: #047857; }
 .pill.orange { background: #fef3c7; color: #b45309; }
@@ -156,9 +163,11 @@ input[type=number] { -moz-appearance: textfield; }
 .fab { position: fixed; bottom: 90px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: white; display: none; place-items: center; font-size: 28px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.4); z-index: 90; transition: transform 0.2s; }
 .fab:active { transform: scale(0.9); }
 
-/* Màn hình Loading Overlay để không bị treo App */
+/* Màn hình Loading Logo */
 #loadingOverlay { position: fixed; inset: 0; background: #f8fafc; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.loading-logo { width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(135deg, #6366f1, #4f46e5); display: grid; place-items: center; font-weight: 900; font-size: 20px; color: #fff; margin-bottom: 20px; animation: pulse 1.5s infinite; }
+.loading-logo { width: 80px; height: 80px; border-radius: 20px; background: #fff; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; animation: pulse 1.5s infinite; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; }
+.loading-logo img { width: 100%; height: 100%; object-fit: cover; }
+
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.95); } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -200,13 +209,16 @@ input[type=number] { -moz-appearance: textfield; }
 
 <!-- Màn hình tải -->
 <div id="loadingOverlay">
-    <div class="loading-logo">SP</div>
+    <div class="loading-logo"><img src="https://drive.google.com/uc?id=18Y7_Kh4JuyGBCQ8fvADGQXa-J2vE0C3G" alt="Amorri"></div>
     <div style="font-weight:600; color:var(--muted); font-size: 15px;">Đang kết nối dữ liệu...</div>
 </div>
 
 <div class="app">
   <aside class="sidebar">
-    <div class="brand"><div class="brand-mark">SP</div><div><h1>Studio Planner</h1><small>Lịch quay & chụp</small></div></div>
+    <div class="brand">
+        <div class="brand-mark"><img src="https://drive.google.com/uc?id=18Y7_Kh4JuyGBCQ8fvADGQXa-J2vE0C3G" alt="Amorri"></div>
+        <div><h1>Amorri Studio</h1><small>Lịch quay & chụp</small></div>
+    </div>
     <nav class="side-nav">
       <button class="nav-btn active" data-view="month"><b>▦</b><span>Lịch tháng</span></button>
       <button class="nav-btn" data-view="agenda"><b>💰</b><span>Lương thợ</span></button>
@@ -312,11 +324,11 @@ input[type=number] { -moz-appearance: textfield; }
         <input type="hidden" id="eventId">
         <div class="form-grid">
           <!-- Nhóm 1: Luôn hiển thị -->
-          <div class="form-group full"><label>Tên lịch / tên khách hàng</label><input id="eventName" required placeholder="VD: Đám cưới Minh & Linh" onkeyup="updateModalVisibility()" onchange="updateModalVisibility()"></div>
+          <div class="form-group full"><label>Tên lịch / tên khách hàng</label><input id="eventName" required placeholder="VD: Đám cưới Minh & Linh" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()"></div>
           <div class="form-group"><label>Ngày</label><input id="eventDate" type="date" required></div>
           <div class="form-group">
               <label>Trạng thái</label>
-              <select id="eventStatus">
+              <select id="eventStatus" onchange="window.updateModalVisibility()">
                   <option value="pending">Chờ xác nhận</option>
                   <option value="confirmed">Đã chốt</option>
                   <option value="done">Hoàn thành</option>
@@ -341,31 +353,31 @@ input[type=number] { -moz-appearance: textfield; }
                   <option value="Makeup">Makeup</option>
                   <option value="Khác">Khác</option>
               </select>
-              <button type="button" class="btn primary" style="padding:8px 16px; font-size:12px" onclick="saveFreelanceQuick()">Thêm ngay</button>
+              <button type="button" class="btn primary" style="padding:8px 16px; font-size:12px" onclick="window.saveFreelanceQuick()">Thêm ngay</button>
               <button type="button" class="btn ghost" style="padding:8px 12px; font-size:12px; background:#fff" onclick="document.getElementById('freelanceForm').style.display='none'">Hủy</button>
             </div>
 
             <div style="display:flex; gap:14px; margin-bottom:12px; align-items:center; font-size:13px; font-weight:650; padding:12px 16px; background:#f8fafc; border-radius:12px; border:1px solid var(--line); flex-wrap:wrap">
               <span style="color:var(--muted)">Lọc thợ:</span>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_chup" onchange="filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">📷 Chụp</label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_quay" onchange="filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">🎥 Quay</label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_makeup" onchange="filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">💄 Makeup</label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_khac" onchange="filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">⚙️ Khác / Freelance</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_chup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">📷 Chụp</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_quay" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">🎥 Quay</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_makeup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">💄 Makeup</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_khac" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">⚙️ Khác / Freelance</label>
             </div>
             <div id="eventStaff" class="staff-picker"></div>
           </div>
           
-          <div class="form-group step2-item" style="display:none"><label>Địa điểm</label><input id="eventLocation" placeholder="VD: Cần Thơ / studio / ngoại cảnh" onkeyup="updateModalVisibility()" onchange="updateModalVisibility()"></div>
+          <div class="form-group step2-item" style="display:none"><label>Địa điểm</label><input id="eventLocation" placeholder="VD: Cần Thơ / studio / ngoại cảnh" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()"></div>
           <div class="form-group step2-item" style="display:none"><label>Số điện thoại khách</label><input id="eventPhone" placeholder="090..."></div>
           
           <!-- Nhóm 3: Hiện sau khi có địa điểm -->
           <div class="form-group step3-item" style="display:none">
             <label>Giá trị booking (VNĐ)</label>
-            <input id="eventPrice" type="number" oninput="this.value = this.value.replace(/^0+(?=\d)/, ''); updateDepositLabel()" placeholder="0">
+            <input id="eventPrice" type="number" oninput="this.value = this.value.replace(/^0+(?=\d)/, ''); window.updateDepositLabel()" placeholder="0">
           </div>
           <div class="form-group step3-item" style="display:none">
             <label id="depositLabel">Đã cọc (VNĐ)</label>
-            <input id="eventDeposit" type="number" oninput="this.value = this.value.replace(/^0+(?=\d)/, ''); updateDepositLabel()" placeholder="0">
+            <input id="eventDeposit" type="number" oninput="this.value = this.value.replace(/^0+(?=\d)/, ''); window.updateDepositLabel()" placeholder="0">
           </div>
           
           <div class="form-group full step3-item" style="display:none"><label>Ghi chú / shotlist</label><textarea id="eventNote" placeholder="Trang phục, concept, thiết bị, thời gian di chuyển, yêu cầu khách..."></textarea></div>
@@ -373,7 +385,7 @@ input[type=number] { -moz-appearance: textfield; }
           <div class="form-group full step3-item" style="display:none; margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                 <label>📦 Sản Phẩm / Bàn Giao File</label>
-                <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12px; border:1px dashed var(--blue); color: var(--blue)" onclick="addProductRow()">+ Thêm Sản Phẩm</button>
+                <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12px; border:1px dashed var(--blue); color: var(--blue)" onclick="window.addProductRow()">+ Thêm Sản Phẩm</button>
             </div>
             <div id="eventProductsList" style="display:flex; flex-direction:column; gap:12px;"></div>
           </div>
@@ -1106,6 +1118,7 @@ window.updateDepositLabel = function() {
 window.updateModalVisibility = function() {
     const nameVal = document.getElementById('eventName').value.trim();
     const locVal = document.getElementById('eventLocation').value.trim();
+    const statusVal = document.getElementById('eventStatus').value;
     
     // Nếu có tên lịch -> Mở nhóm 2 (Nhân sự, Địa điểm, SĐT)
     document.querySelectorAll('.step2-item').forEach(el => {
@@ -1115,6 +1128,11 @@ window.updateModalVisibility = function() {
     // Nếu có tên lịch + Địa điểm -> Mở nhóm 3 (Giá, Cọc, Ghi chú, Sản phẩm)
     document.querySelectorAll('.step3-item').forEach(el => {
         el.style.display = (nameVal && locVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
+    });
+    
+    // Ẩn/Hiện Ô Link Source Thợ (Chỉ hiện khi trạng thái là "Hoàn thành")
+    document.querySelectorAll('.staff-link-container').forEach(el => {
+        el.style.display = (statusVal === 'done') ? 'flex' : 'none';
     });
 }
 
@@ -1191,49 +1209,50 @@ function renderEventStaffList() {
         });
     }
     
+    const statusVal = document.getElementById('eventStatus').value;
+    const showLink = (statusVal === 'done');
+
     document.getElementById('eventStaff').innerHTML = data.staff.length
       ? data.staff.map(s => {
           const a = currentEventAssignments.find(x => x.id === s.id);
           const isChecked = !!a;
           const savedLink = a?.link || '';
 
-          return `<div class="staff-modal-item" data-role="${s.role}" style="border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:12px; background:#fff; box-shadow:var(--shadow-sm)">
-            <label style="display:flex;align-items:center;gap:12px;font-size:14px;font-weight:750;cursor:pointer;color:#0f172a">
-              <input type="checkbox" class="staff-check" value="${s.id}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.nextElementSibling.style.display=this.checked?'flex':'none'" style="accent-color:var(--primary);width:20px;height:20px">
+          return `<div class="staff-modal-item" data-role="${s.role}" style="border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px; background:#fff; box-shadow:var(--shadow-sm)">
+            <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:750;cursor:pointer;color:#0f172a">
+              <input type="checkbox" class="staff-check" value="${s.id}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.nextElementSibling.style.display=this.checked?'flex':'none'" style="accent-color:var(--primary);width:18px;height:18px">
               ${escapeHtml(s.name)} <span style="color:var(--muted);font-weight:500;font-size:12px">— ${escapeHtml(s.role)}</span>
               <span id="busy-info-${s.id}"></span>
             </label>
-            <div style="display:${isChecked ? 'flex' : 'none'}; flex-direction:column; gap:16px; margin-top:16px; border-top:1px dashed var(--line); padding-top:16px">
-              <div style="display:flex; gap:16px; flex-wrap:wrap">
-                  <div style="flex:1; min-width:150px">
-                    <div style="font-size:12px;font-weight:750;color:var(--muted);margin-bottom:8px">Nhiệm vụ</div>
-                    <select id="task-${s.id}" style="width:100%;border:1px solid var(--line);padding:10px 12px;border-radius:10px;outline:0;font-size:13px;background:#f8fafc;font-weight:600">
-                      <option value="Chụp truyền thống" ${a?.task==='Chụp truyền thống'?'selected':''}>Chụp truyền thống</option>
-                      <option value="Chụp phóng sự" ${a?.task==='Chụp phóng sự'?'selected':''}>Chụp phóng sự</option>
-                      <option value="Chụp Concept" ${a?.task==='Chụp Concept'?'selected':''}>Chụp Concept</option>
-                      <option value="Quay truyền thống" ${a?.task==='Quay truyền thống'?'selected':''}>Quay truyền thống</option>
-                      <option value="Quay phóng sự" ${a?.task==='Quay phóng sự'?'selected':''}>Quay phóng sự</option>
-                      <option value="Makeup" ${a?.task==='Makeup'?'selected':''}>Makeup</option>
-                      <option value="Khác" ${a?.task==='Khác'?'selected':''}>Khác</option>
-                    </select>
-                  </div>
-                  <div style="flex:1; min-width:150px">
-                    <div style="font-size:12px;font-weight:750;color:var(--muted);margin-bottom:8px">Chi phí (VNĐ)</div>
-                    <input type="number" id="cost-${s.id}" placeholder="0" value="${a?.cost || ''}" oninput="this.value = this.value.replace(/^0+(?=\\d)/, '')" style="width:100%;border:1px solid var(--line);padding:10px 12px;border-radius:10px;outline:0;font-size:13px;background:#f8fafc;font-weight:600">
-                  </div>
+            
+            <div style="display:${isChecked ? 'flex' : 'none'}; flex-direction:column; gap:10px; margin-top:10px; border-top:1px dashed var(--line); padding-top:10px">
+              
+              <!-- Dòng Nhập Nhiệm vụ & Chi phí siêu gọn -->
+              <div style="display:flex; gap:10px; align-items:center;">
+                  <select id="task-${s.id}" style="flex:1; border:1px solid var(--line);padding:8px;border-radius:8px;outline:0;font-size:13px;background:#f8fafc;font-weight:600">
+                    <option value="Chụp truyền thống" ${a?.task==='Chụp truyền thống'?'selected':''}>Chụp truyền thống</option>
+                    <option value="Chụp phóng sự" ${a?.task==='Chụp phóng sự'?'selected':''}>Chụp phóng sự</option>
+                    <option value="Chụp Concept" ${a?.task==='Chụp Concept'?'selected':''}>Chụp Concept</option>
+                    <option value="Quay truyền thống" ${a?.task==='Quay truyền thống'?'selected':''}>Quay truyền thống</option>
+                    <option value="Quay phóng sự" ${a?.task==='Quay phóng sự'?'selected':''}>Quay phóng sự</option>
+                    <option value="Makeup" ${a?.task==='Makeup'?'selected':''}>Makeup</option>
+                    <option value="Khác" ${a?.task==='Khác'?'selected':''}>Khác</option>
+                  </select>
+                  <input type="number" id="cost-${s.id}" placeholder="Chi phí (đ)" value="${a?.cost || ''}" oninput="this.value = this.value.replace(/^0+(?!\\d)/, '')" style="width:110px;border:1px solid var(--line);padding:8px;border-radius:8px;outline:0;font-size:13px;background:#f8fafc;font-weight:600">
               </div>
 
-              <div style="display:flex; gap: 8px; align-items:center; background:#e0e7ff; padding:10px 12px; border-radius:10px; border: 1px dashed #a5b4fc;">
-                 <div id="link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
-                     <a id="link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:13px; font-weight:750; color:var(--primary); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:120px;">
+              <!-- Khu vực dán link Source (Chỉ hiện khi trạng thái là Hoàn thành) -->
+              <div class="staff-link-container" style="display:${showLink ? 'flex' : 'none'}; gap: 8px; align-items:center; background:#e0e7ff; padding:8px 10px; border-radius:8px; border: 1px dashed #a5b4fc;">
+                 <div id="link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 8px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
+                     <a id="link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:12px; font-weight:750; color:var(--primary); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
                         🔗 ${escapeHtml(s.name)} - ${escapeHtml(a?.task || 'Source')}
                      </a>
-                     <button type="button" class="btn ghost" style="padding:6px 10px; font-size:12px; background:#fff" onclick="copyText(document.getElementById('link-input-${s.id}').value)" title="Copy">📋 Copy</button>
-                     <button type="button" class="btn ghost" style="padding:6px 10px; font-size:12px; background:#fff" onclick="window.toggleEditLink('${s.id}')" title="Sửa">✏️ Sửa</button>
+                     <button type="button" class="btn ghost" style="padding:4px 8px; font-size:11px; background:#fff" onclick="copyText(document.getElementById('link-input-${s.id}').value)" title="Copy">📋 Copy</button>
+                     <button type="button" class="btn ghost" style="padding:4px 8px; font-size:11px; background:#fff" onclick="window.toggleEditLink('${s.id}')" title="Sửa">✏️️ Sửa</button>
                  </div>
                  <div id="link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 8px; flex:1; align-items:center; flex-wrap:wrap;">
-                     <input type="url" id="link-input-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link Source thợ..." style="flex:1; border:1px solid #c7d2fe; padding:8px 12px; border-radius:8px; outline:0; font-size:13px; background:#fff; min-width:150px;">
-                     <button type="button" class="btn primary" style="padding:8px 16px; font-size:13px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu link</button>
+                     <input type="url" id="link-input-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Link Source..." style="flex:1; border:1px solid #c7d2fe; padding:6px 10px; border-radius:6px; outline:0; font-size:12px; background:#fff; min-width:120px;">
+                     <button type="button" class="btn primary" style="padding:6px 12px; font-size:12px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu</button>
                  </div>
               </div>
 
@@ -1300,8 +1319,9 @@ window.openEventModal = function(prefill={}){
   }
 
   updateDepositLabel();
-  setTimeout(updateModalVisibility, 10);
+  setTimeout(window.updateModalVisibility, 10);
 }
+
 window.closeEventModal = function(){document.getElementById('eventModal').style.display='none'}
 
 window.checkConflict = function(){
@@ -1327,7 +1347,7 @@ window.checkConflict = function(){
          }
          
          if(overlap) {
-             infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️️ Trùng: ${text})</span>`;
+             infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
          } else {
              infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
          }
@@ -1377,7 +1397,8 @@ window.saveEvent = function(){
   
   save();
   closeEventModal();
-  // Firebase sẽ tự sync và render lại
+  render(); // Cập nhật local lập tức
+  showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
 }
 
 window.deleteEvent = function(){
@@ -1387,10 +1408,13 @@ window.deleteEvent = function(){
   data.events=data.events.filter(x=>x.id!==id);
   save();
   closeEventModal();
+  render();
+  showToast('Đã xóa lịch');
 }
 
 window.openSettings = function(){ document.getElementById('settingsModal').style.display='flex'; }
 window.openStaff = function(){document.getElementById('staffModal').style.display='flex';renderStaffManage()}
+
 function renderStaffManage(){
   document.getElementById('staffManageList').innerHTML=data.staff.map(s=>`<div class="mini-item">
     <div class="staff-left"><div class="avatar">${initials(s.name)}</div><div class="staff-info"><div class="mini-title">${escapeHtml(s.name)}</div><div class="mini-sub">${escapeHtml(s.role)}</div></div></div>
@@ -1403,6 +1427,7 @@ function renderStaffManage(){
     save();renderStaffManage();
   }));
 }
+
 window.addStaff = function(){
   const name=document.getElementById('staffName').value.trim(); const role=document.getElementById('staffRole').value;
   if(!name){showToast('Nhập tên nhân sự');return}
@@ -1413,7 +1438,7 @@ document.addEventListener('click',e=>{
   const chip=e.target.closest('[data-id]'); if(chip && (chip.classList.contains('event-chip')||chip.classList.contains('mini-item')||chip.classList.contains('agenda-event'))) openEventModal({id:chip.dataset.id});
 });
 
-// Chống lỗi khi không tìm thấy phần tử DOM (Dùng Optional Chaining ?.)
+// Gắn sự kiện an toàn (Optional Chaining)
 document.getElementById('prevBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()-1);render()});
 document.getElementById('nextBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()+1);render()});
 document.getElementById('addBtn')?.addEventListener('click', ()=>openEventModal({}));
