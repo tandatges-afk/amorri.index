@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-<!-- Cập nhật chuẩn Meta mới nhất chống cảnh báo vàng -->
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -12,7 +11,6 @@
 <link rel="icon" href="logo.png" type="image/png">
 <title>Amorri Studio — Lịch Quay & Chụp</title>
 
-<!-- Nhúng thư viện Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-database-compat.js"></script>
 
@@ -38,6 +36,14 @@ button { cursor: pointer; border: none; outline: none; }
 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; }
 
+/* Hệ thống Ẩn/Hiện theo Quyền */
+.admin-only { display: none !important; }
+.staff-only { display: none !important; }
+body.role-admin .admin-only { display: flex !important; }
+body.role-admin .admin-only-block { display: block !important; }
+body.role-admin .admin-only-grid { display: grid !important; }
+body.role-staff .staff-only { display: flex !important; }
+
 /* Layout Chính */
 .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
 .sidebar { background: #0b1120; color: #fff; padding: 24px 16px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0; height: 100vh; z-index: 40; }
@@ -61,7 +67,7 @@ input[type=number] { -moz-appearance: textfield; }
 .subtitle { font-size: 14px; color: var(--muted); margin-top: 4px; font-weight: 500; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 
-.btn { border: 1px solid var(--line); background: #fff; color: var(--text); padding: 10px 16px; border-radius: 12px; font-weight: 650; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: var(--shadow-sm); }
+.btn { border: 1px solid var(--line); background: #fff; color: var(--text); padding: 10px 16px; border-radius: 12px; font-weight: 650; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: var(--shadow-sm); justify-content: center; }
 .btn:hover { background: #f8fafc; box-shadow: 0 4px 6px rgba(0,0,0,0.04); transform: translateY(-1px); }
 .btn:active { transform: translateY(1px); }
 .btn.primary { border-color: transparent; background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(79,70,229,0.25); }
@@ -95,11 +101,11 @@ input[type=number] { -moz-appearance: textfield; }
 .weekdays, .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
 .weekday { padding: 14px 10px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; font-weight: 750; text-transform: uppercase; text-align: center; background: #fafcff; }
 
-/* Màu sắc Thứ 7 và Chủ Nhật */
+/* T7 CN Colors */
 .day { min-height: 150px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px; background: #fff; transition: background 0.2s; }
 .day.sat-bg { background-color: #f8fafc; }
 .day.sun-bg { background-color: #f1f5f9; }
-.day.other { opacity: 0.7; }
+.day.other { opacity: 0.6; }
 .day.other.sat-bg { background-color: #f1f5f9; }
 .day.other.sun-bg { background-color: #e2e8f0; }
 
@@ -162,6 +168,7 @@ input[type=number] { -moz-appearance: textfield; }
 .form-group input, .form-group select, .form-group textarea { width: 100%; border: 1px solid #cbd5e1; padding: 12px 16px; border-radius: 12px; outline: none; font-size: 14px; transition: all 0.2s; font-weight: 500; color: #0f172a; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); background: #fff; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(79,70,229,0.15); }
 .form-group textarea { min-height: 100px; resize: vertical; line-height: 1.5; }
+.form-group input[readonly], .form-group textarea[readonly], .form-group select[disabled] { background: #f8fafc; color: #64748b; border-color: transparent; box-shadow: none; cursor: not-allowed; }
 
 .toast { position: fixed; right: 24px; bottom: 24px; background: #0f172a; color: #fff; padding: 14px 24px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: none; z-index: 200; font-size: 14px; font-weight: 650; }
 .kpi-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin: 12px 0; color: #334155; }
@@ -170,7 +177,6 @@ input[type=number] { -moz-appearance: textfield; }
 .fab { position: fixed; bottom: 90px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: white; display: none; place-items: center; font-size: 28px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.4); z-index: 90; transition: transform 0.2s; }
 .fab:active { transform: scale(0.9); }
 
-/* Màn hình Loading Logo */
 #loadingOverlay { position: fixed; inset: 0; background: #f8fafc; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .loading-logo { width: 80px; height: 80px; border-radius: 20px; background: #fff; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; animation: pulse 1.5s infinite; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; }
 .loading-logo img { width: 100%; height: 100%; object-fit: cover; }
@@ -179,7 +185,6 @@ input[type=number] { -moz-appearance: textfield; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* Mobile Reponsive */
 @media(max-width: 900px){ .layout { grid-template-columns: 1fr; } }
 @media(max-width: 768px){
   .app { grid-template-columns: 1fr; padding-bottom: 70px; } 
@@ -212,7 +217,7 @@ input[type=number] { -moz-appearance: textfield; }
 }
 </style>
 </head>
-<body>
+<body class="role-guest"> <!-- Default Role -->
 
 <!-- Màn hình tải -->
 <div id="loadingOverlay">
@@ -228,12 +233,15 @@ input[type=number] { -moz-appearance: textfield; }
     </div>
     <nav class="side-nav">
       <button class="nav-btn active" data-view="month"><b>▦</b><span>Lịch tháng</span></button>
-      <button class="nav-btn" data-view="agenda"><b>💰</b><span>Lương thợ</span></button>
-      <button class="nav-btn" id="openStaffBtn"><b>✦</b><span>Đội ngũ</span></button>
-      <button class="nav-btn" id="settingsBtn"><b>⚙</b><span>Cài đặt</span></button>
+      <button class="nav-btn admin-only" data-view="agenda"><b>💰</b><span>Lương thợ</span></button>
+      <button class="nav-btn staff-only" data-view="agenda"><b>💰</b><span>Lương của tôi</span></button>
+      <button class="nav-btn admin-only" id="openStaffBtn"><b>✦</b><span>Đội ngũ</span></button>
+      <button class="nav-btn admin-only" id="settingsBtn"><b>⚙</b><span>Cài đặt</span></button>
     </nav>
     <div class="sidebar-bottom">
-      <button class="btn primary" id="sideAdd" style="justify-content:center; padding:14px; font-size:14px; box-shadow: 0 4px 15px rgba(79,70,229,0.4)">＋ Thêm lịch mới</button>
+      <button class="btn primary admin-only admin-only-flex" id="sideAdd" style="justify-content:center; padding:14px; font-size:14px; box-shadow: 0 4px 15px rgba(79,70,229,0.4)">＋ Thêm lịch mới</button>
+      <button class="btn" id="loginBtn" style="margin-top:10px; width:100%; justify-content:center;" onclick="window.loginAdmin()">Đăng nhập Admin</button>
+      <button class="btn danger admin-only" id="logoutBtn" style="margin-top:10px; width:100%; justify-content:center;" onclick="window.logoutAdmin()">Đăng xuất</button>
     </div>
   </aside>
 
@@ -242,12 +250,12 @@ input[type=number] { -moz-appearance: textfield; }
       <div class="topbar-left">
         <div><h2 class="title">Bảng điều khiển</h2><div class="subtitle" id="todayText"></div></div>
       </div>
-      <div class="actions">
+      <div class="actions admin-only">
         <button class="btn primary" id="addBtn">＋ Thêm lịch</button>
       </div>
     </div>
 
-    <section class="grid-stats">
+    <section class="grid-stats admin-only admin-only-grid">
       <div class="stat"><div class="stat-label">Lịch trong tháng</div><div class="stat-num" id="statTotal">0</div><div class="stat-meta">theo bộ lọc hiện tại</div></div>
       <div class="stat"><div class="stat-label">Đã xác nhận</div><div class="stat-num" id="statConfirmed">0</div><div class="stat-meta" style="color:var(--green)">booking đã chốt</div></div>
       <div class="stat"><div class="stat-label">Chờ xác nhận</div><div class="stat-num" id="statPending">0</div><div class="stat-meta" style="color:var(--orange)">cần theo dõi</div></div>
@@ -263,9 +271,9 @@ input[type=number] { -moz-appearance: textfield; }
             <div class="month-title" id="calendarTitle"></div>
           </div>
         </div>
-        <!-- Ẩn bộ lọc này đi khi vào tab Lương thợ -->
+        
         <div class="filters" id="mainFilters">
-          <input class="field" id="searchInput" placeholder="Tìm khách, tên lịch..." style="flex: 1; min-width: 200px;">
+          <input class="field" id="searchInput" placeholder="Tìm tên lịch..." style="flex: 1; min-width: 200px;">
           <select class="field" id="staffFilter"><option value="">Tất cả nhân sự</option></select>
           <select class="field" id="statusFilter">
               <option value="">Tất cả trạng thái</option>
@@ -275,6 +283,7 @@ input[type=number] { -moz-appearance: textfield; }
               <option value="cancelled">Đã hủy</option>
           </select>
         </div>
+        
         <div class="calendar-wrap">
           <div class="calendar" id="calendar"></div>
           <div class="agenda" id="agenda"></div>
@@ -287,14 +296,14 @@ input[type=number] { -moz-appearance: textfield; }
           <div class="mini-list" id="upcomingList"></div>
         </div>
         
-        <div class="panel side-card">
+        <div class="panel side-card admin-only admin-only-block">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-            <h3>Lịch thợ</h3>
+            <h3 style="margin:0;font-size:16px;font-weight:850;">Lịch thợ</h3>
             <div style="display:flex;gap:6px">
-              <select id="staffMonthM" class="field" style="padding:6px 10px;font-size:12px;min-height:0">
+              <select id="staffMonthM" class="field" style="padding:4px 8px;font-size:11px;min-height:0">
                 <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option><option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option><option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option><option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
               </select>
-              <select id="staffMonthY" class="field" style="padding:6px 10px;font-size:12px;min-height:0">
+              <select id="staffMonthY" class="field" style="padding:4px 8px;font-size:11px;min-height:0">
                 <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option>
               </select>
             </div>
@@ -302,7 +311,7 @@ input[type=number] { -moz-appearance: textfield; }
           <div class="staff-list" id="staffMonthList"></div>
         </div>
         
-        <div class="panel side-card">
+        <div class="panel side-card admin-only admin-only-block">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
             <h3 style="margin:0;font-size:16px;font-weight:850;">Tổng quan</h3>
             <div style="display:flex;gap:6px">
@@ -320,7 +329,7 @@ input[type=number] { -moz-appearance: textfield; }
     </section>
   </main>
   
-  <button class="fab" id="fabAdd">＋</button>
+  <button class="fab admin-only admin-only-flex" id="fabAdd">＋</button>
 </div>
 
 <!-- Modal Thêm/Sửa Sự Kiện -->
@@ -348,12 +357,13 @@ input[type=number] { -moz-appearance: textfield; }
           
           <!-- Nhóm 2: Hiện sau khi có tên lịch -->
           <div class="form-group full step2-item" style="display:none">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px">
+            <div class="admin-only" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px">
               <label>Nhân sự phụ trách & Nhiệm vụ</label>
-              <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12px; border:1px dashed var(--primary); color: var(--primary)" onclick="document.getElementById('freelanceForm').style.display='flex'">+ Thêm Freelance</button>
+              <button type="button" id="btnShowFreelance" class="btn ghost" style="padding:6px 12px; font-size:12px; border:1px dashed var(--primary); color: var(--primary)" onclick="document.getElementById('freelanceForm').style.display='flex'">+ Thêm Freelance</button>
             </div>
+            <label class="staff-only guest-only" style="margin-bottom:6px; font-size:13px; font-weight:750; color:#334155;">Nhân sự tham gia</label>
             
-            <div id="freelanceForm" style="display:none; gap:10px; margin-bottom:12px; padding:14px; background:#eef2ff; border-radius:12px; align-items:center; font-size:13px; border: 1px solid #c7d2fe; flex-wrap:wrap">
+            <div id="freelanceForm" class="admin-only" style="display:none; gap:10px; margin-bottom:12px; padding:14px; background:#eef2ff; border-radius:12px; align-items:center; font-size:13px; border: 1px solid #c7d2fe; flex-wrap:wrap">
               <input type="text" id="newFreeName" placeholder="Tên thợ Freelance" style="flex:1; min-width: 140px; padding:8px 12px; border:1px solid #a5b4fc; border-radius:8px; outline:0;">
               <select id="newFreeRole" style="padding:8px; border:1px solid #a5b4fc; border-radius:8px; outline:0; min-width: 100px;">
                   <option value="Chụp">Chụp</option>
@@ -361,29 +371,30 @@ input[type=number] { -moz-appearance: textfield; }
                   <option value="Makeup">Makeup</option>
                   <option value="Khác">Khác</option>
               </select>
-              <button type="button" class="btn primary" style="padding:8px 16px; font-size:12px" onclick="window.saveFreelanceQuick()">Thêm ngay</button>
+              <button type="button" class="btn primary" style="padding:8px 16px; font-size:12px" onclick="window.saveFreelanceQuick()">Thêm</button>
               <button type="button" class="btn ghost" style="padding:8px 12px; font-size:12px; background:#fff" onclick="document.getElementById('freelanceForm').style.display='none'">Hủy</button>
             </div>
 
-            <div style="display:flex; gap:14px; margin-bottom:12px; align-items:center; font-size:13px; font-weight:650; padding:12px 16px; background:#f8fafc; border-radius:12px; border:1px solid var(--line); flex-wrap:wrap">
+            <div class="admin-only" style="display:flex; gap:14px; margin-bottom:12px; align-items:center; font-size:13px; font-weight:650; padding:12px 16px; background:#f8fafc; border-radius:12px; border:1px solid var(--line); flex-wrap:wrap">
               <span style="color:var(--muted)">Lọc thợ:</span>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_chup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">📷 Chụp</label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_quay" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">🎥 Quay</label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_makeup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">💄 Makeup</label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_khac" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">⚙️ Khác / Freelance</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_khac" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">⚙️ Khác/Free</label>
             </div>
+            
             <div id="eventStaff" class="staff-picker" style="padding:0; border:none; background:transparent;"></div>
           </div>
           
           <div class="form-group step2-item" style="display:none"><label>Địa điểm</label><input id="eventLocation" placeholder="VD: Cần Thơ / studio / ngoại cảnh" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()"></div>
           <div class="form-group step2-item" style="display:none"><label>Số điện thoại khách</label><input id="eventPhone" placeholder="090..."></div>
           
-          <!-- Nhóm 3: Hiện sau khi có địa điểm -->
-          <div class="form-group step3-item" style="display:none">
+          <!-- Nhóm 3: Hiện sau khi có địa điểm (Giá, Cọc, Ghi chú chỉ cho admin/ẩn tuỳ chỉnh) -->
+          <div class="form-group step3-item admin-only admin-only-block" style="display:none">
             <label>Giá trị booking (VNĐ)</label>
             <input id="eventPrice" type="number" oninput="this.value = this.value.replace(/^0+(?=\d)/, ''); window.updateDepositLabel()" placeholder="0">
           </div>
-          <div class="form-group step3-item" style="display:none">
+          <div class="form-group step3-item admin-only admin-only-block" style="display:none">
             <label id="depositLabel">Đã cọc (VNĐ)</label>
             <input id="eventDeposit" type="number" oninput="this.value = this.value.replace(/^0+(?=\d)/, ''); window.updateDepositLabel()" placeholder="0">
           </div>
@@ -393,7 +404,7 @@ input[type=number] { -moz-appearance: textfield; }
           <div class="form-group full step3-item" style="display:none; margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                 <label>📦 Sản Phẩm / Bàn Giao File</label>
-                <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12px; border:1px dashed var(--blue); color: var(--blue)" onclick="window.addProductRow()">+ Thêm Sản Phẩm</button>
+                <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:6px 12px; font-size:12px; border:1px dashed var(--blue); color: var(--blue)" onclick="window.addProductRow()">+ Thêm Sản Phẩm</button>
             </div>
             <div id="eventProductsList" style="display:flex; flex-direction:column; gap:12px;"></div>
           </div>
@@ -402,11 +413,11 @@ input[type=number] { -moz-appearance: textfield; }
       </form>
     </div>
     <div class="modal-foot">
-      <button type="button" class="btn" id="fullPaidBtn" style="color:#047857;background:#d1fae5;border-color:#34d399;font-weight:750">💰 Đã thanh toán đủ</button>
-      <button class="btn danger" id="deleteEvent" style="display:none;margin-left:10px">Xóa lịch</button>
+      <button type="button" class="btn admin-only admin-only-block" id="fullPaidBtn" style="color:#047857;background:#d1fae5;border-color:#34d399;font-weight:750">💰 Đã thanh toán đủ</button>
+      <button class="btn danger admin-only admin-only-flex" id="deleteEvent" style="display:none;margin-left:10px">Xóa lịch</button>
       <div style="margin-left:auto;display:flex;gap:10px">
         <button class="btn ghost" id="cancelEvent">Hủy</button>
-        <button class="btn primary" id="saveEvent">Lưu lịch</button>
+        <button class="btn primary admin-only admin-only-block" id="saveEvent">Lưu lịch</button>
       </div>
     </div>
   </div>
@@ -440,7 +451,7 @@ input[type=number] { -moz-appearance: textfield; }
 <!-- Modal Đội Ngũ -->
 <div class="modal-backdrop" id="staffModal">
   <div class="modal" style="width:min(620px,100%)">
-    <div class="modal-head"><div class="modal-title">Đội ngũ</div><button class="icon-btn" id="closeStaff" style="border:0;background:#f1f5f9;border-radius:50%">✕</button></div>
+    <div class="modal-head"><div class="modal-title">Đội ngũ & Link Truy Cập</div><button class="icon-btn" id="closeStaff" style="border:0;background:#f1f5f9;border-radius:50%">✕</button></div>
     <div class="modal-body">
       <div class="form-grid" style="margin-bottom:24px; padding-bottom: 24px; border-bottom: 1px solid var(--line)">
         <div class="form-group"><label>Tên thợ</label><input id="staffName" placeholder="VD: Bii"></div>
@@ -494,7 +505,7 @@ function setSafeValue(id, val) {
 }
 
 // --- CẤU HÌNH FIREBASE ---
-const STORE_KEY = 'studioPlanner_v1';
+const STORE_KEY = 'amorriPlanner_v2';
 const firebaseConfig = {
   apiKey: "AIzaSyA3rwXOsYAYSBYuYC5DIrPbKi0m5ViLs7E",
   authDomain: "ammori-c4905.firebaseapp.com",
@@ -508,14 +519,48 @@ const firebaseConfig = {
 const DAY_NAMES = ['T2','T3','T4','T5','T6','T7','CN']; 
 const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
 
-// Biến lưu trạng thái App
+// --- BIẾN TOÀN CỤC & PHÂN QUYỀN ---
 let data = { staff: [], events: [], payroll: {} };
 let current = new Date();
 current.setHours(0,0,0,0);
 let currentView = 'month';
 let isFirstLoad = true;
 
-// Khởi tạo an toàn
+// XÁC ĐỊNH QUYỀN TRUY CẬP
+const urlParams = new URLSearchParams(window.location.search);
+const staffViewId = urlParams.get('staff');
+const isAdminLogged = localStorage.getItem('amorri_admin') === 'true';
+
+let currentUserRole = 'guest'; // Mặc định là Khách
+if (isAdminLogged) currentUserRole = 'admin';
+else if (staffViewId) currentUserRole = 'staff';
+
+// Cập nhật giao diện theo quyền
+function applyRoleUI() {
+    document.body.className = `role-${currentUserRole}`;
+    
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    if(loginBtn) loginBtn.style.display = (currentUserRole === 'admin') ? 'none' : 'flex';
+    if(logoutBtn) logoutBtn.style.display = (currentUserRole === 'admin') ? 'flex' : 'none';
+}
+
+window.loginAdmin = function() {
+    const pass = prompt("Nhập mật khẩu Admin:");
+    // Mật khẩu cứng bảo vệ UI
+    if (pass === 'amorri2026') {
+        localStorage.setItem('amorri_admin', 'true');
+        window.location.href = window.location.origin + window.location.pathname; // Xóa param ?staff nếu có
+    } else if (pass !== null) {
+        showToast("Sai mật khẩu!");
+    }
+}
+window.logoutAdmin = function() {
+    localStorage.removeItem('amorri_admin');
+    window.location.reload();
+}
+
+// Khởi tạo ngày tháng dropdown
 setSafeValue('staffMonthM', current.getMonth() + 1);
 setSafeValue('staffMonthY', current.getFullYear());
 setSafeValue('summaryMonthM', current.getMonth() + 1);
@@ -557,13 +602,7 @@ window.copyText = function(txt) {
 }
 
 function defaultData(){
-  const today = new Date(); const y=today.getFullYear(), m=today.getMonth();
-  const s1=new Date(y,m,today.getDate(),9);
-  return {
-    staff: [{id:uid(),name:'Thợ Mẫu',role:'Photographer'}],
-    payroll: {},
-    events: []
-  }
+  return { staff: [], payroll: {}, events: [] }
 }
 
 // LÀM SẠCH DỮ LIỆU CŨ 
@@ -572,14 +611,8 @@ function sanitizeData(d) {
     if(!d.staff) d.staff = [];
     if(!d.events) d.events = [];
     if(!d.payroll) d.payroll = {};
-    
     d.events.forEach(e => {
-        if(!e.assignments) {
-            if(e.staffIds) {
-                e.assignments = e.staffIds.map(id => ({id: id, task: '', cost: 0, link: ''}));
-                delete e.staffIds;
-            } else { e.assignments = []; }
-        }
+        if(!e.assignments) e.assignments = [];
         if(!e.products) e.products = [];
         if(!e.date) e.date = isoDate(new Date());
         if(!e.start) e.start = '08:00';
@@ -590,6 +623,7 @@ function sanitizeData(d) {
 
 // KHỞI TẠO ỨNG DỤNG
 function initApp() {
+    applyRoleUI();
     try {
         const raw = localStorage.getItem(STORE_KEY);
         if (raw) data = sanitizeData(JSON.parse(raw));
@@ -603,7 +637,7 @@ function initApp() {
         if (overlay && overlay.style.display !== 'none') {
             overlay.style.display = 'none';
             isFirstLoad = false;
-            showToast("Mạng chậm: Đang chạy chế độ Offline");
+            if(currentUserRole === 'admin') showToast("Mạng chậm: Chạy Offline");
         }
     }, 3000);
 
@@ -639,8 +673,9 @@ function initApp() {
     }
 }
 
-// Hàm lưu: Cập nhật local ngay + Đẩy Firebase ngầm
+// Hàm lưu (Admin only)
 window.save = function() {
+    if (currentUserRole !== 'admin') return;
     localStorage.setItem(STORE_KEY, JSON.stringify(data));
     if(window.dbRef) {
         window.dbRef.set(data).catch(err => {
@@ -687,12 +722,22 @@ function eventMatches(e){
   return true;
 }
 
+// Lọc lịch theo role
+function getFilteredEvents() {
+    let evs = data.events.filter(eventMatches);
+    if (currentUserRole === 'staff') {
+        evs = evs.filter(e => e.assignments.some(a => a.id === staffViewId));
+    }
+    return evs;
+}
+
 function monthEvents(){
-  return data.events.filter(e=>sameMonth(parseDate(e.date),current) && eventMatches(e))
-    .sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||'')))
+  return getFilteredEvents().filter(e=>sameMonth(parseDate(e.date),current))
+    .sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||'')));
 }
 
 function renderFilters(){
+  if (currentUserRole !== 'admin') return;
   const sf = document.getElementById('staffFilter');
   if(!sf) return;
   const old = sf.value;
@@ -701,6 +746,7 @@ function renderFilters(){
 }
 
 function renderStats(){
+  if (currentUserRole !== 'admin') return;
   const ev=monthEvents();
   const elTotal = document.getElementById('statTotal');
   if(elTotal) elTotal.textContent=ev.length;
@@ -717,6 +763,7 @@ function renderStats(){
 }
 
 function getOutageWarnings(ds) {
+  if (currentUserRole !== 'admin') return [];
   const dayEvents = data.events.filter(e => e.date === ds && e.status !== 'cancelled');
   if(!dayEvents.length) return [];
   
@@ -799,11 +846,15 @@ function renderMonth(){
   let offset = firstDay === 0 ? 6 : firstDay - 1; 
   const start = new Date(first); start.setDate(1 - offset);
 
+  // Filter events logically
+  const allEventsForView = getFilteredEvents();
+
   let html='<div class="weekdays">'+DAY_NAMES.map(x=>`<div class="weekday">${x}</div>`).join('')+'</div><div class="month-grid">';
   for(let i=0;i<42;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const ds=isoDate(d); 
-    const all=data.events.filter(e=>e.date===ds&&eventMatches(e)).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+    
+    const all = allEventsForView.filter(e=>e.date===ds).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
     
     let warningsHtml = '';
     const warnings = getOutageWarnings(ds);
@@ -835,10 +886,9 @@ function renderMonth(){
   }
 }
 
-function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
+function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isReadonly = false) {
   let html = '';
   let renderedCount = 0;
-  
   const [targetY, targetM] = monthKey.split('-').map(Number);
   
   staffArray.forEach(s => {
@@ -880,7 +930,7 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
       const oldDebt = getOldDebt(s.id, targetY, targetM - 1);
       const remain = oldDebt + totalCost - advance - paid;
       
-      // LOGIC ẨN FREELANCE: Không nợ cũ, không làm ca nào tháng này -> Ẩn
+      // LOGIC ẨN FREELANCE: Không nợ cũ, không làm ca nào -> Ẩn
       if (isFreelance && sEvents.length === 0 && advance === 0 && paid === 0 && totalCost === 0 && oldDebt <= 0) {
           return; 
       }
@@ -918,10 +968,10 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
                 <div style="font-weight:850;color:var(--blue);font-size:16px;margin-top:2px">${money(paid)}đ</div>
               </div>
               <div style="margin-right:10px">
-                <div style="font-size:11.5px;color:var(--muted);text-transform:uppercase;font-weight:750">Còn nợ</div>
+                <div style="font-size:11.5px;color:var(--muted);text-transform:uppercase;font-weight:750">Còn lại</div>
                 <div style="font-weight:900;font-size:18px;margin-top:2px;color:${remain > 0 ? 'var(--red)' : 'var(--green)'}">${money(remain)}đ</div>
               </div>
-              <button class="btn ghost" style="padding:8px 12px;font-size:13px;border:1px solid var(--line)" onclick="window.openPayrollModal('${s.id}','${escapeHtml(s.name)}','${monthKey}')">✎ Cập nhật</button>
+              ${!isReadonly ? `<button class="btn ghost" style="padding:8px 12px;font-size:13px;border:1px solid var(--line)" onclick="window.openPayrollModal('${s.id}','${escapeHtml(s.name)}','${monthKey}')">✎ Cập nhật</button>` : ''}
             </div>
           </div>
           <div>
@@ -945,31 +995,40 @@ function renderPayroll(){
   
   const y=current.getFullYear(), m=current.getMonth();
   const monthKey = `${y}-${pad(m+1)}`;
-  
   const ct = document.getElementById('calendarTitle');
-  if(ct) ct.textContent='Thanh toán thợ - ' + `${MONTH_NAMES[m]} ${y}`;
-  const evs = data.events.filter(e => sameMonth(parseDate(e.date), current) && e.status !== 'cancelled' && eventMatches(e));
-  let html = `<div>`;
+  if(ct) ct.textContent='Bảng lương - ' + `${MONTH_NAMES[m]} ${y}`;
   
+  const evs = data.events.filter(e => sameMonth(parseDate(e.date), current) && e.status !== 'cancelled' && eventMatches(e));
+  
+  // STAFF VIEW (Chỉ thấy lương của mình)
+  if (currentUserRole === 'staff') {
+      const staffObj = data.staff.filter(s => s.id === staffViewId);
+      let html = generatePayrollHTML(staffObj, evs, monthKey, false, true); // true = Readonly
+      if(agEl) agEl.innerHTML = html || '<div class="empty">Không có dữ liệu lương</div>';
+      return;
+  }
+
+  // ADMIN VIEW
+  let html = `<div>`;
   const mainStaff = data.staff.filter(s => s.role !== 'Freelance');
   const freeStaff = data.staff.filter(s => s.role === 'Freelance');
 
   if (mainStaff.length) {
-      html += generatePayrollHTML(mainStaff, evs, monthKey, false);
+      html += generatePayrollHTML(mainStaff, evs, monthKey, false, false);
   } else if (freeStaff.length === 0) {
       html += `<div class="empty" style="background:#fff;border-radius:16px;border:1px dashed var(--line)">Chưa có nhân sự. Hãy vào mục "Đội ngũ" để thêm.</div>`;
   }
   
   if (freeStaff.length) {
       html += `<h3 style="margin:32px 0 20px;font-size:18px;color:var(--text);border-bottom:2px solid var(--line);padding-bottom:12px;font-weight:850">Cộng tác viên (Freelance)</h3>`;
-      html += generatePayrollHTML(freeStaff, evs, monthKey, true);
+      html += generatePayrollHTML(freeStaff, evs, monthKey, true, false);
   }
-
   html += `</div>`;
   if(agEl) agEl.innerHTML = html;
 }
 
 window.openPayrollModal = function(staffId, staffName, monthStr) {
+  if (currentUserRole !== 'admin') return;
   const m = document.getElementById('payrollModal');
   if(!m) return;
   m.style.display = 'flex';
@@ -983,6 +1042,7 @@ window.openPayrollModal = function(staffId, staffName, monthStr) {
 }
 
 window.savePayroll = function() {
+  if (currentUserRole !== 'admin') return;
   const staffId = document.getElementById('payrollStaffId').value;
   const monthStr = document.getElementById('payrollMonth').value;
   const advance = Number(document.getElementById('payrollAdvance').value || 0);
@@ -1000,8 +1060,9 @@ window.savePayroll = function() {
 
 function renderUpcoming(){
   const today=new Date();today.setHours(0,0,0,0);
-  const list=data.events.filter(e=>parseDate(e.date)>=today&&e.status!=='cancelled')
+  let list = getFilteredEvents().filter(e=>parseDate(e.date)>=today&&e.status!=='cancelled')
     .sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||''))).slice(0,7);
+    
   const el=document.getElementById('upcomingList');
   if(!el) return;
   el.innerHTML=list.length?list.map(e=>{
@@ -1016,6 +1077,7 @@ function renderUpcoming(){
 }
 
 function renderStaffMonthList(){
+  if (currentUserRole !== 'admin') return;
   const smM = document.getElementById('staffMonthM');
   const smY = document.getElementById('staffMonthY');
   if(!smM || !smY) return;
@@ -1055,6 +1117,7 @@ function renderStaffMonthList(){
 }
 
 function renderMonthSummary(){
+  if (currentUserRole !== 'admin') return;
   const sM = document.getElementById('summaryMonthM');
   const sY = document.getElementById('summaryMonthY');
   if(!sM || !sY) return;
@@ -1112,9 +1175,20 @@ function renderMonthSummary(){
 }
 
 function render(){
-  renderFilters();renderStats();
-  if(currentView==='month')renderMonth(); else renderPayroll();
-  renderUpcoming();renderStaffMonthList();renderMonthSummary();
+  renderFilters();
+  renderStats();
+  
+  if(currentView === 'month') {
+      renderMonth(); 
+      document.getElementById('mainFilters').style.display = 'flex';
+  } else {
+      renderPayroll();
+      document.getElementById('mainFilters').style.display = 'none'; // Ẩn tìm kiếm khi ở tab Lương
+  }
+  
+  renderUpcoming();
+  renderStaffMonthList();
+  renderMonthSummary();
   
   const options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
   const tt = document.getElementById('todayText');
@@ -1124,11 +1198,6 @@ function render(){
 function setView(v){
   currentView=v;
   document.querySelectorAll('[data-view],[data-switch]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
-  
-  // Ẩn/hiện bộ lọc
-  const mf = document.getElementById('mainFilters');
-  if(mf) mf.style.display = (v === 'month') ? 'flex' : 'none';
-  
   render();
 }
 
@@ -1168,21 +1237,24 @@ window.updateDepositLabel = function() {
 }
 
 // ----------------------------------------------------
-// HIỂN THỊ THEO TỪNG BƯỚC VÀ ẨN/HIỆN LINK (Progressive UI)
+// HIỂN THỊ THEO TỪNG BƯỚC VÀ ẨN/HIỆN LINK
 // ----------------------------------------------------
 window.updateModalVisibility = function() {
     const nameVal = document.getElementById('eventName')?.value.trim() || '';
     const locVal = document.getElementById('eventLocation')?.value.trim() || '';
     const statusVal = document.getElementById('eventStatus')?.value || '';
     
+    // Nếu có tên lịch -> Mở nhóm 2
     document.querySelectorAll('.step2-item').forEach(el => {
         el.style.display = nameVal ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
     });
     
+    // Nếu có tên lịch + Địa điểm -> Mở nhóm 3
     document.querySelectorAll('.step3-item').forEach(el => {
         el.style.display = (nameVal && locVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
     });
     
+    // Ẩn/Hiện Ô Link Source Thợ (Chỉ hiện khi trạng thái là "Hoàn thành")
     document.querySelectorAll('.staff-modal-item').forEach(el => {
         const isChecked = el.querySelector('.staff-check')?.checked;
         const linkCont = el.querySelector('.staff-link-container');
@@ -1214,25 +1286,30 @@ window.toggleEditLink = function(sId) {
     document.getElementById('link-edit-'+sId).style.display = 'flex';
 }
 
-window.addProductRow = function(name='', url='') {
+window.addProductRow = function(name='', url='', isReadonly=false) {
     const container = document.getElementById('eventProductsList');
     if(!container) return;
     const div = document.createElement('div');
     div.className = 'product-row';
     div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#f0f9ff; padding:12px; border-radius:12px; border:1px solid #bae6fd';
     
+    if (isReadonly) {
+        div.innerHTML = `<a href="${escapeHtml(url)}" target="_blank" style="font-size:13px; font-weight:750; color:var(--blue); text-decoration:none;">🔗 ${escapeHtml(name || 'Link SP')}</a>`;
+        container.appendChild(div);
+        return;
+    }
+
     const isSaved = url !== '';
-    
     div.innerHTML = `
        <div class="prod-view" style="display:${isSaved ? 'flex' : 'none'}; gap: 10px; align-items:center; flex-wrap:wrap">
            <a href="${escapeHtml(url)}" target="_blank" class="prod-view-link" style="font-size:13px; font-weight:750; color:var(--blue); text-decoration:none; flex:1; min-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
               🔗 <span class="prod-view-name">${escapeHtml(name || 'Link SP')}</span>
            </a>
-           <button type="button" class="btn ghost" style="padding:6px 10px; font-size:12px; background:#fff" onclick="copyText(this.parentElement.parentElement.querySelector('.prod-url').value)" title="Copy">📋 Copy</button>
-           <button type="button" class="btn ghost" style="padding:6px 10px; font-size:12px; background:#fff" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'" title="Sửa">✏️ Sửa</button>
+           <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; background:#fff" onclick="copyText(this.parentElement.parentElement.querySelector('.prod-url').value)" title="Copy">📋 Copy</button>
+           <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; background:#fff" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'" title="Sửa">✏️ Sửa</button>
        </div>
        
-       <div class="prod-edit" style="display:${isSaved ? 'none' : 'flex'}; gap: 8px; flex-wrap:wrap; align-items:center">
+       <div class="prod-edit admin-only-flex" style="display:${isSaved ? 'none' : 'flex'}; gap: 8px; flex-wrap:wrap; align-items:center">
            <input type="text" class="prod-name field" value="${escapeHtml(name)}" placeholder="Tên SP (VD: Ảnh gốc...)" style="flex:1; min-width:120px; padding:8px 12px; font-size:13px; border-color:#bae6fd">
            <input type="url" class="prod-url field" value="${escapeHtml(url)}" placeholder="🔗 Dán link URL..." style="flex:2; min-width:150px; padding:8px 12px; font-size:13px; border-color:#bae6fd">
            <button type="button" class="btn primary" style="padding:8px 16px; font-size:13px;" onclick="window.saveProductRow(this)">Lưu link</button>
@@ -1271,10 +1348,25 @@ window.renderEventStaffList = function() {
     
     const statusVal = document.getElementById('eventStatus')?.value;
     const showLink = (statusVal === 'done');
+    const isAdmin = currentUserRole === 'admin';
 
     const evStaffEl = document.getElementById('eventStaff');
     if(!evStaffEl) return;
 
+    // HIỂN THỊ DÀNH CHO KHÁCH & THỢ (Read-Only, Tối giản, Không thấy lương)
+    if (!isAdmin) {
+        evStaffEl.innerHTML = currentEventAssignments.map(a => {
+            const s = data.staff.find(x => x.id === a.id);
+            if(!s) return '';
+            const taskText = a.task ? ` - Nhiệm vụ: ${escapeHtml(a.task)}` : '';
+            return `<div style="padding:10px; background:#f8fafc; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; font-size:13px;">
+                <b style="color:var(--text)">${escapeHtml(s.name)}</b> <span style="color:var(--muted)">(${escapeHtml(s.role)})</span>${taskText}
+            </div>`;
+        }).join('') || '<div style="font-size:13px;color:var(--muted);">Chưa xếp nhân sự</div>';
+        return;
+    }
+
+    // HIỂN THỊ DÀNH CHO ADMIN (Full quyền)
     evStaffEl.innerHTML = data.staff.length
       ? data.staff.map(s => {
           const a = currentEventAssignments.find(x => x.id === s.id);
@@ -1303,6 +1395,7 @@ window.renderEventStaffList = function() {
                 </div>
             </div>
 
+            <!-- Khu vực dán link Source (Chỉ hiện khi Hoàn thành) -->
             <div class="staff-link-container" style="display:${showLink && isChecked ? 'flex' : 'none'}; gap: 8px; align-items:center; background:#e0e7ff; padding:8px 10px; border-radius:8px; border: 1px dashed #a5b4fc; margin-top: 10px;">
                  <div id="link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 8px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
                      <a id="link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:12px; font-weight:750; color:var(--primary); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
@@ -1325,6 +1418,7 @@ window.renderEventStaffList = function() {
 }
 
 window.saveFreelanceQuick = function() {
+    if (currentUserRole !== 'admin') return;
     const name = document.getElementById('newFreeName')?.value.trim();
     const skillLabel = document.getElementById('newFreeRole')?.value;
     if (!name) { showToast('Vui lòng nhập tên Freelance'); return; }
@@ -1351,9 +1445,9 @@ window.openEventModal = function(prefill={}){
   if(em) em.style.display='flex';
   const e=prefill.id?data.events.find(x=>x.id===prefill.id):null;
   const et = document.getElementById('eventModalTitle');
-  if(et) et.textContent=e?'Chỉnh sửa lịch':'Thêm lịch';
-  const de = document.getElementById('deleteEvent');
-  if(de) de.style.display=e?'inline-flex':'none';
+  
+  const isAdmin = currentUserRole === 'admin';
+  if(et) et.textContent= e ? (isAdmin ? 'Chỉnh sửa lịch' : 'Chi tiết lịch') : 'Thêm lịch';
   
   setSafeValue('eventId', e?.id||'');
   setSafeValue('eventName', e?.name||'');
@@ -1384,11 +1478,34 @@ window.openEventModal = function(prefill={}){
   window.renderEventStaffList();
   
   if (e && e.products && e.products.length > 0) {
-      e.products.forEach(p => window.addProductRow(p.name, p.url));
+      e.products.forEach(p => window.addProductRow(p.name, p.url, !isAdmin)); // Phân quyền xem SP
   }
 
   window.updateDepositLabel();
-  setTimeout(window.updateModalVisibility, 10);
+  
+  // Xử lý Read-Only Form cho Non-Admin
+  document.querySelectorAll('#eventForm input, #eventForm select, #eventForm textarea').forEach(el => {
+      if (!isAdmin) {
+          el.setAttribute('readonly', 'true');
+          if(el.tagName === 'SELECT' || el.type === 'checkbox') el.disabled = true;
+      } else {
+          el.removeAttribute('readonly');
+          el.disabled = false;
+      }
+  });
+
+  // Ghi đè giao diện nút bấm
+  const btnCancel = document.getElementById('cancelEvent');
+  if(btnCancel) btnCancel.textContent = isAdmin ? 'Hủy' : 'Đóng';
+  
+  setTimeout(() => {
+      if(isAdmin) {
+          window.updateModalVisibility();
+      } else {
+          // Non-admin hiện mọi thứ đang có data, không có step-by-step
+          document.querySelectorAll('.step2-item, .step3-item').forEach(el => el.style.display = el.classList.contains('full') ? 'block' : 'grid');
+      }
+  }, 10);
 }
 
 window.closeEventModal = function(){
@@ -1397,6 +1514,7 @@ window.closeEventModal = function(){
 }
 
 window.checkConflict = function(){
+  if (currentUserRole !== 'admin') return;
   const date=document.getElementById('eventDate')?.value;
   const start=document.getElementById('eventStart')?.value;
   const end=document.getElementById('eventEnd')?.value;
@@ -1428,6 +1546,7 @@ window.checkConflict = function(){
 }
 
 window.saveEvent = function(){
+  if (currentUserRole !== 'admin') return;
   const id=document.getElementById('eventId')?.value;
   const obj={
     id:id||uid(),
@@ -1474,6 +1593,7 @@ window.saveEvent = function(){
 }
 
 window.deleteEvent = function(){
+  if (currentUserRole !== 'admin') return;
   const id=document.getElementById('eventId')?.value;if(!id)return;
   const e=data.events.find(x=>x.id===id); if(!e)return;
   if(!confirm(`Xóa lịch "${e.name}"?`))return;
@@ -1495,12 +1615,22 @@ window.openStaff = function(){
     renderStaffManage();
 }
 
+window.copyStaffLink = function(id) {
+    const url = window.location.origin + window.location.pathname + '?staff=' + id;
+    window.copyText(url);
+}
+
 function renderStaffManage(){
   const sl = document.getElementById('staffManageList');
   if(!sl) return;
   sl.innerHTML=data.staff.map(s=>`<div class="mini-item">
     <div class="staff-left"><div class="avatar">${initials(s.name)}</div><div class="staff-info"><div class="mini-title">${escapeHtml(s.name)}</div><div class="mini-sub">${escapeHtml(s.role)}</div></div></div>
-    <button class="btn danger" style="padding:8px 12px;font-size:12px" data-delstaff="${s.id}">Xóa</button></div>`).join('');
+    <div style="display:flex; gap:8px;">
+        <button class="btn ghost" style="padding:8px 12px;font-size:12px; border:1px solid var(--line)" onclick="window.copyStaffLink('${s.id}')">🔗 Link</button>
+        <button class="btn danger" style="padding:8px 12px;font-size:12px" data-delstaff="${s.id}">Xóa</button>
+    </div>
+    </div>`).join('');
+    
   document.querySelectorAll('[data-delstaff]').forEach(b=>b.addEventListener('click', ()=>{
     const id=b.dataset.delstaff;
     if(data.events.some(e=>e.assignments.some(a=>a.id===id))&&!confirm('Nhân sự này đang được gắn vào lịch. Xóa nhân sự sẽ bỏ gán khỏi các lịch. Tiếp tục?'))return;
@@ -1511,6 +1641,7 @@ function renderStaffManage(){
 }
 
 window.addStaff = function(){
+  if (currentUserRole !== 'admin') return;
   const name=document.getElementById('staffName')?.value.trim(); const role=document.getElementById('staffRole')?.value;
   if(!name){showToast('Nhập tên nhân sự');return}
   data.staff.push({id:uid(),name,role});save();
@@ -1558,6 +1689,7 @@ document.getElementById('cancelPayroll')?.addEventListener('click', ()=>{
 document.getElementById('savePayrollBtn')?.addEventListener('click', window.savePayroll);
 
 document.getElementById('fullPaidBtn')?.addEventListener('click', () => {
+   if(currentUserRole !== 'admin') return;
    const price = document.getElementById('eventPrice')?.value;
    if(price && Number(price) > 0) {
       setSafeValue('eventDeposit', price);
