@@ -182,7 +182,7 @@ body.role-staff .staff-only-block { display: block !important; }
 .staff-name { font-size: 14.5px; font-weight: 700; color: var(--text); }
 .staff-role { font-size: 12.5px; color: var(--muted); margin-top: 2px; font-weight: 600; }
 
-/* MODALS - MƯỢT MÀ */
+/* MODALS */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(9, 9, 11, 0.4); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; backdrop-filter: blur(8px); opacity: 0; transition: opacity 0.3s ease; }
 .modal-backdrop.show { display: flex; opacity: 1; }
 .modal-backdrop.closing { opacity: 0; pointer-events: none; }
@@ -205,7 +205,6 @@ body.role-staff .staff-only-block { display: block !important; }
 .form-group textarea { min-height: 100px; resize: vertical; line-height: 1.5; }
 .form-group input[readonly], .form-group textarea[readonly], .form-group select[disabled] { background: #fafafa; color: #a1a1aa; cursor: not-allowed; opacity: 0.8; }
 
-/* Bọc tiền tệ đ thông minh mới - Tự cộng .000 đ */
 .currency-wrap { position: relative; width: 100%; display: flex; align-items: center; }
 .currency-wrap input { width: 100%; padding-right: 68px !important; text-align: right; }
 .currency-wrap::after { content: '.000 đ'; position: absolute; right: 14px; color: #94a3b8; font-weight: 800; font-size: 14.5px; pointer-events: none; }
@@ -219,7 +218,12 @@ body.role-staff .staff-only-block { display: block !important; }
 .kpi-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; margin: 14px 0; color: #52525b; }
 .staff-picker { border-radius: 14px; max-height: 400px; overflow-y: auto; }
 
-/* Màn hình Loading Logo */
+/* AUTOCOMPLETE GOOGLE MAP (NOMINATIM FREE) */
+.autocomplete-wrapper { position: relative; display: flex; flex: 1; align-items: center; }
+.autocomplete-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1000; max-height: 250px; overflow-y: auto; display: none; margin-top: 4px; padding: 6px; }
+.autocomplete-item { padding: 12px 16px; font-size: 13.5px; font-weight: 500; cursor: pointer; border-radius: 8px; color: var(--text); display: flex; gap: 8px; align-items: center; }
+.autocomplete-item:hover { background: #f4f4f5; color: var(--primary); font-weight: 600; }
+
 #loadingOverlay { position: fixed; inset: 0; background: rgba(244, 244, 245, 0.95); backdrop-filter: blur(10px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s; }
 #loadingOverlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 .loading-logo { width: 80px; height: 80px; border-radius: 20px; background: #fff; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; box-shadow: var(--shadow-md); overflow: hidden; border: 1px solid var(--line); }
@@ -227,7 +231,6 @@ body.role-staff .staff-only-block { display: block !important; }
 
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.96); } }
 
-/* Mobile Reponsive */
 @media(max-width: 900px){ .layout { grid-template-columns: 1fr; } }
 @media(max-width: 768px){
   .app { grid-template-columns: 1fr; padding-bottom: 80px; } 
@@ -335,9 +338,9 @@ body.role-staff .staff-only-block { display: block !important; }
       </div>
 
       <aside class="side-panel">
-        <!-- Lịch sắp tới (Chỉ dành cho Thợ) -->
+        <!-- Lịch sắp tới: Ẩn với admin, CHỈ HIỆN VỚI THỢ -->
         <div class="panel side-card staff-only-block" id="upcomingListPanel">
-          <h3>Lịch sắp tới của tôi</h3>
+          <h3>Lịch sắp tới của bạn</h3>
           <div class="mini-list" id="upcomingList"></div>
         </div>
         
@@ -408,7 +411,7 @@ body.role-staff .staff-only-block { display: block !important; }
             </div>
             <label id="guestStaffLabel" style="margin-bottom:8px; font-size:13.5px; font-weight:700; color:#52525b; display:none;">Nhân sự tham gia</label>
             
-            <div id="freelanceForm" class="admin-only" style="display:none; gap:10px; margin-bottom:14px; padding:18px; background:#fafafa; border-radius:16px; align-items:center; font-size:13px; border: 1px solid var(--line); flex-wrap:wrap">
+            <div id="freelanceForm" style="display:none; gap:10px; margin-bottom:14px; padding:18px; background:#fafafa; border-radius:16px; align-items:center; font-size:13px; border: 1px solid var(--line); flex-wrap:wrap">
               <label for="newFreeName" style="display:none;">Tên Freelance</label>
               <input type="text" id="newFreeName" placeholder="Tên thợ Freelance" style="flex:1; min-width: 140px; padding:12px 16px; background:#fff; border:1px solid var(--line); border-radius:10px; outline:0;">
               <label for="newFreeRole" style="display:none;">Bộ phận</label>
@@ -422,7 +425,7 @@ body.role-staff .staff-only-block { display: block !important; }
               <button type="button" class="btn ghost" style="padding:12px 20px; font-size:13.5px;" onclick="document.getElementById('freelanceForm').style.display='none'">Hủy</button>
             </div>
 
-            <div id="staffFiltersContainer" style="display:flex; gap:16px; margin-bottom:16px; align-items:center; font-size:13.5px; font-weight:600; padding:16px 20px; background:#f4f4f5; border-radius:14px; flex-wrap:wrap">
+            <div id="staffFiltersContainer" class="admin-only" style="display:flex; gap:16px; margin-bottom:16px; align-items:center; font-size:13.5px; font-weight:600; padding:16px 20px; background:#f4f4f5; border-radius:14px; flex-wrap:wrap">
               <span style="color:var(--muted)">Lọc bộ phận:</span>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_chup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">📷 Chụp</label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_quay" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">🎥 Quay</label>
@@ -435,9 +438,10 @@ body.role-staff .staff-only-block { display: block !important; }
           
           <div class="form-group step2-item" style="display:none">
             <label for="eventLocation">Địa điểm</label>
-            <div style="display:flex; gap:8px;">
+            <div style="display:flex; gap:8px;" id="locationInputGroup">
+                <!-- Vùng nhập liệu được Autocomplete chèn vào đây -->
                 <input id="eventLocation" placeholder="VD: Cần Thơ / studio..." onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()" style="flex:1;">
-                <button type="button" class="btn ghost admin-only admin-only-flex" style="padding:0 14px; font-size:13px; border:1px solid #d4d4d8;" onclick="window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(document.getElementById('eventLocation').value), '_blank')">📍 Maps</button>
+                <button type="button" id="btnMaps" class="btn ghost admin-only admin-only-flex" style="padding:0 14px; font-size:13px; border:1px solid #d4d4d8;" onclick="window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(document.getElementById('eventLocation').value), '_blank')">📍 Mở Maps</button>
             </div>
           </div>
           <div class="form-group step2-item" style="display:none"><label for="eventPhone">Số điện thoại khách</label><input id="eventPhone" placeholder="090..."></div>
@@ -572,7 +576,7 @@ function setSafeValue(id, val) {
     }
 }
 
-// FORMAT TIỀN TỆ THÔNG MINH
+// FORMAT TIỀN TỆ THÔNG MINH KẾT HỢP .000 đ
 window.formatMoneyInput = function(el) {
     let raw = el.value.replace(/[^0-9]/g, '');
     if(raw === '') {
@@ -729,6 +733,65 @@ function setupDefaultFilters() {
     });
 }
 
+// TÌM KIẾM ĐỊA ĐIỂM GOOGLE MAPS BẰNG OPENSTREETMAP (NOMINATIM FREE)
+window.setupLocationAutocomplete = function() {
+    const input = document.getElementById('eventLocation');
+    if(!input) return;
+    
+    const wrapper = document.createElement('div');
+    wrapper.className = 'autocomplete-wrapper';
+    wrapper.style.cssText = "position: relative; display: flex; flex: 1; align-items: center;";
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    const suggestBox = document.createElement('div');
+    suggestBox.className = 'autocomplete-suggestions';
+    suggestBox.style.cssText = "position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1000; max-height: 250px; overflow-y: auto; display: none; margin-top: 4px; padding: 6px;";
+    wrapper.appendChild(suggestBox);
+
+    let timeoutId;
+    input.addEventListener('input', function() {
+        window.updateModalVisibility();
+        
+        const query = this.value;
+        clearTimeout(timeoutId);
+        if (query.length < 3) {
+            suggestBox.style.display = 'none';
+            return;
+        }
+        
+        timeoutId = setTimeout(() => {
+            fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&countrycodes=vn&limit=5`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.length > 0) {
+                    suggestBox.innerHTML = '';
+                    data.forEach(item => {
+                        const div = document.createElement('div');
+                        div.style.cssText = "padding: 12px 16px; font-size: 13.5px; font-weight: 500; cursor: pointer; border-radius: 8px; color: var(--text); display: flex; gap: 8px; align-items: center;";
+                        div.innerHTML = `<span>📍</span> <span>${escapeHtml(item.display_name)}</span>`;
+                        div.onmouseenter = () => { div.style.background = '#f4f4f5'; div.style.color = 'var(--primary)'; div.style.fontWeight = '600'; };
+                        div.onmouseleave = () => { div.style.background = 'transparent'; div.style.color = 'var(--text)'; div.style.fontWeight = '500'; };
+                        div.onclick = () => {
+                            input.value = item.display_name;
+                            suggestBox.style.display = 'none';
+                            window.updateModalVisibility();
+                        };
+                        suggestBox.appendChild(div);
+                    });
+                    suggestBox.style.display = 'block';
+                } else {
+                    suggestBox.style.display = 'none';
+                }
+            }).catch(()=> suggestBox.style.display = 'none');
+        }, 400);
+    });
+
+    document.addEventListener('click', (e) => {
+        if(!wrapper.contains(e.target)) suggestBox.style.display = 'none';
+    });
+}
+
 // KHỞI TẠO APP
 function initApp() {
     applyRoleUI();
@@ -741,6 +804,8 @@ function initApp() {
     
     setupDefaultFilters();
     try { render(); } catch(e) {}
+    
+    window.setupLocationAutocomplete();
 
     const hideLoading = () => {
         if (!isFirstLoad) return;
@@ -1142,9 +1207,14 @@ window.savePayroll = function() {
   showToast('Đã cập nhật lương');
 }
 
-// LỊCH SẮP TỚI DÀNH RIÊNG CHO THỢ
+// LỊCH SẮP TỚI CHI TIẾT (DÀNH CHO THỢ)
 function renderUpcoming(){
-  if (currentUserRole === 'admin') return; // Admin ẩn Lịch sắp tới
+  const panel = document.getElementById('upcomingListPanel');
+  if (currentUserRole !== 'staff') {
+      if(panel) panel.style.display = 'none';
+      return;
+  }
+  if(panel) panel.style.display = 'block';
   
   const today=new Date();today.setHours(0,0,0,0);
   let list = getFilteredEvents().filter(e=>parseDate(e.date)>=today&&e.status!=='cancelled')
@@ -1165,19 +1235,26 @@ function renderUpcoming(){
 
     const gmapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}`;
     
-    return `<div class="mini-item" data-id="${e.id}" style="flex-direction:column; align-items:flex-start; gap:12px;">
-    <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start;">
-        <div class="mini-title" style="font-size:15px; font-weight:800; white-space:normal;">${escapeHtml(e.name)}</div>
-        <span class="pill ${pillColor}">${STATUS_LABEL[e.status]}</span>
-    </div>
-    <div style="font-size:13.5px; color:var(--text); line-height:1.6; width:100%;">
-        <div><b style="color:var(--muted);">📅 Ngày:</b> <span style="font-weight:600;">${formatDate(e.date)} - ${e.start||''}</span></div>
-        ${e.location ? `<div><b style="color:var(--muted);">📍 Địa điểm:</b> <a href="${gmapLink}" target="_blank" style="color:var(--blue); font-weight:600; text-decoration:none;">${escapeHtml(e.location)}</a></div>` : ''}
-        ${e.phone ? `<div><b style="color:var(--muted);">📞 SĐT:</b> <a href="tel:${escapeHtml(e.phone)}" style="color:var(--text); font-weight:600; text-decoration:none;">${escapeHtml(e.phone)}</a></div>` : ''}
-        ${staffNames ? `<div style="margin-top:4px;"><b style="color:var(--muted);">👥 Nhân sự tham gia:</b> ${escapeHtml(staffNames)}</div>` : ''}
-        ${e.note ? `<div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); color:var(--muted);"><i>📝 Note: ${escapeHtml(e.note)}</i></div>` : ''}
-    </div>
-    </div>`}).join('') : '<div class="empty" style="padding:24px;background:#fafafa;border-radius:16px">Trống lịch sắp tới</div>';
+    return `
+    <div class="mini-item" data-id="${e.id}" style="flex-direction:column; align-items:flex-start; gap:12px; padding: 20px;">
+        <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start;">
+            <div style="font-size: 16px; font-weight: 800; color: var(--primary); white-space:normal;">${escapeHtml(e.name)}</div>
+            <span class="pill ${pillColor}">${STATUS_LABEL[e.status]}</span>
+        </div>
+        
+        <div style="font-size: 13.5px; color: var(--text); line-height: 1.8; width: 100%;">
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">⏰ Giờ bắt đầu:</b> <span style="font-weight:700;">${escapeHtml(e.start || 'Chưa định')}</span></div>
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">👥 Nhân sự:</b> <span>${escapeHtml(staffNames || 'Chưa xếp')}</span></div>
+            
+            ${e.location ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">📍 Địa điểm:</b> <a href="${gmapLink}" target="_blank" style="color:var(--blue); font-weight:600; text-decoration:none;">${escapeHtml(e.location)}</a></div>` : ''}
+            
+            ${e.phone ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">📞 SĐT:</b> <a href="tel:${escapeHtml(e.phone)}" style="color:var(--text); font-weight:600; text-decoration:none;">${escapeHtml(e.phone)}</a></div>` : ''}
+            
+            ${e.note ? `<div style="margin-top: 12px; padding: 12px; background: #fefce8; border: 1px dashed #fef08a; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
+        </div>
+    </div>`;
+  }).join('') : '<div class="empty" style="padding:24px;background:#fafafa;border-radius:16px">Bạn chưa có lịch sắp tới.</div>';
 }
 
 function renderStaffMonthList(){
@@ -1185,7 +1262,6 @@ function renderStaffMonthList(){
   const smM = document.getElementById('staffMonthM');
   const smY = document.getElementById('staffMonthY');
   
-  // Logic Fallback Tự Động Load Ngay
   let m = smM?.value ? Number(smM.value) : current.getMonth() + 1;
   let y = smY?.value ? Number(smY.value) : current.getFullYear();
   
@@ -1225,7 +1301,6 @@ function renderMonthSummary(){
   const sM = document.getElementById('summaryMonthM');
   const sY = document.getElementById('summaryMonthY');
   
-  // Logic Fallback Tự Động Load Ngay
   let m = sM?.value ? Number(sM.value) - 1 : current.getMonth();
   let y = sY?.value ? Number(sY.value) : current.getFullYear();
   
@@ -1343,7 +1418,7 @@ window.updateDepositLabel = function() {
 }
 
 // ----------------------------------------------------
-// UI TỪNG BƯỚC FORM LỊCH & THỜI GIAN THỰC (TỰ MỞ LINK)
+// UI TỪNG BƯỚC FORM LỊCH & THỜI GIAN THỰC
 // ----------------------------------------------------
 window.updateModalVisibility = function() {
     const nameVal = document.getElementById('eventName')?.value.trim() || '';
@@ -1357,7 +1432,7 @@ window.updateModalVisibility = function() {
         el.style.display = (nameVal && locVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
     });
     
-    // Check thời gian kết thúc tự động mở Link Source không phụ thuộc trạng thái
+    // Check thời gian kết thúc (Tự hiện Link Source cho thợ làm xong)
     const evDate = document.getElementById('eventDate')?.value;
     const evEnd = document.getElementById('eventEnd')?.value;
     let isEnded = false;
@@ -1384,7 +1459,6 @@ window.saveStaffLinkLocally = function(sId, sName) {
     const urlInput = document.getElementById('link-input-'+sId)?.value.trim();
     if(!urlInput) { showToast('Vui lòng dán link'); return; }
     
-    // Lưu thẳng vào Firebase nếu là Staff (Bảo mật quyền ghi)
     const evId = document.getElementById('eventId')?.value;
     if(evId) {
         const idx = data.events.findIndex(e => e.id === evId);
@@ -1404,14 +1478,18 @@ window.saveStaffLinkLocally = function(sId, sName) {
         tag.innerHTML = `🔗 Bấm xem Source`;
     }
     
-    document.getElementById('link-edit-'+sId).style.display = 'none';
-    document.getElementById('link-view-'+sId).style.display = 'flex';
+    const linkEdit = document.getElementById('link-edit-'+sId);
+    const linkView = document.getElementById('link-view-'+sId);
+    if(linkEdit) linkEdit.style.display = 'none';
+    if(linkView) linkView.style.display = 'flex';
     showToast('Đã nộp Source thành công!');
 }
 
 window.toggleEditLink = function(sId) {
-    document.getElementById('link-view-'+sId).style.display = 'none';
-    document.getElementById('link-edit-'+sId).style.display = 'flex';
+    const linkEdit = document.getElementById('link-edit-'+sId);
+    const linkView = document.getElementById('link-view-'+sId);
+    if(linkView) linkView.style.display = 'none';
+    if(linkEdit) linkEdit.style.display = 'flex';
 }
 
 window.addProductRow = function(name='', url='', isReadonly=false) {
@@ -1422,8 +1500,7 @@ window.addProductRow = function(name='', url='', isReadonly=false) {
     div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#fafafa; padding:16px; border-radius:16px; border:1px solid var(--line)';
     
     if (isReadonly) {
-        // Thợ và Khách không thấy Sản phẩm. Khu vực này ẩn.
-        return;
+        return; // Thợ không thấy Sản Phẩm Bàn Giao
     }
 
     const isSaved = url !== '';
@@ -1433,7 +1510,7 @@ window.addProductRow = function(name='', url='', isReadonly=false) {
               🔗 <span class="prod-view-name">${escapeHtml(name || 'Link Bàn Giao')}</span>
            </a>
            <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px;" onclick="copyText(this.parentElement.parentElement.querySelector('.prod-url').value)">📋 Copy</button>
-           <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px;" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'">✏️ Sửa</button>
+           <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px;" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'">✏ Sửa</button>
        </div>
        
        <div class="prod-edit admin-only-flex" style="display:${isSaved ? 'none' : 'flex'}; gap: 10px; flex-wrap:wrap; align-items:center">
@@ -1485,7 +1562,7 @@ window.renderEventStaffList = function() {
     if(!evStaffEl) return;
 
     if (!isAdmin) {
-        // GÓC NHÌN CỦA THỢ: Ẩn tiền thợ khác, cho phép điền link của mình nếu hết giờ
+        // GÓC NHÌN CỦA THỢ: Ẩn tiền thợ khác, ẩn Link thợ khác
         evStaffEl.innerHTML = currentEventAssignments.map(a => {
             const s = data.staff.find(x => x.id === a.id);
             if(!s) return '';
@@ -1496,7 +1573,6 @@ window.renderEventStaffList = function() {
             let myLinkHtml = '';
 
             if (isMe) {
-                // Thợ chỉ thấy tiền công của mình
                 const costVal = a.cost ? money(a.cost) + ' đ' : '0 đ';
                 myCostHtml = `<span style="font-weight:800; color:var(--green); float:right; background: var(--bg-green); padding: 6px 12px; border-radius: 99px;">${costVal}</span>`;
                 
@@ -1510,11 +1586,11 @@ window.renderEventStaffList = function() {
                         <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa Link</button>
                     </div>
                     <div id="link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
-                        <input type="url" id="link-input-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link tải Source (Drive/Fshare...)" style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
+                        <input type="url" id="link-input-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link tải Source..." style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
                         <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Nộp Source</button>
                     </div>
                 </div>
-                <div class="wait-link-msg" style="display:${!isEnded ? 'block' : 'none'}; font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic; padding:12px; background:#f4f4f5; border-radius:8px; text-align:center;">⏳ Ô nộp Source sẽ tự mở sau khi kết thúc giờ chụp.</div>
+                <div class="wait-link-msg" style="display:${!isEnded ? 'block' : 'none'}; font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic; padding:12px; background:#f4f4f5; border-radius:8px; text-align:center;">⏳ Hệ thống nộp Source sẽ tự mở sau khi kết thúc giờ chụp.</div>
                 `;
             }
 
@@ -1533,7 +1609,7 @@ window.renderEventStaffList = function() {
         return;
     }
 
-    // ADMIN VIEW: FULL QUYỀN VÀ THẤY TẤT CẢ LINK 
+    // ADMIN VIEW: FULL QUYỀN
     evStaffEl.innerHTML = data.staff.length
       ? data.staff.map(s => {
           const a = currentEventAssignments.find(x => x.id === s.id);
@@ -1573,7 +1649,7 @@ window.renderEventStaffList = function() {
                      <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa</button>
                  </div>
                  <div id="link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
-                     <input type="url" id="link-input-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link Google Drive/Fshare..." style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
+                     <input type="url" id="link-input-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link Source..." style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
                      <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu</button>
                  </div>
             </div>
@@ -1651,7 +1727,6 @@ window.openEventModal = function(prefill={}){
 
   window.updateDepositLabel();
   
-  // Xử lý Giao diện theo Quyền bằng JS
   const de = document.getElementById('deleteEvent');
   if (de) de.style.display = (isAdmin && e) ? 'inline-flex' : 'none';
   
@@ -1683,7 +1758,7 @@ window.openEventModal = function(prefill={}){
   if (prodSec) prodSec.style.display = isAdmin ? 'block' : 'none';
 
   document.querySelectorAll('#eventForm input, #eventForm select, #eventForm textarea').forEach(el => {
-      if (el.id.includes('link-input')) return; // Bỏ chặn ô nộp Link Source
+      if (el.id.includes('link-input')) return; 
 
       if (!isAdmin) {
           el.setAttribute('readonly', 'true');
