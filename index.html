@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f172a">
 
-<!-- Favicon Logo Amorri Studio -->
-<link rel="icon" href="https://drive.google.com/uc?id=18Y7_Kh4JuyGBCQ8fvADGQXa-J2vE0C3G" type="image/png">
+<!-- Favicon Logo Amorri Studio (Gọi trực tiếp file ảnh trong cùng thư mục) -->
+<link rel="icon" href="logo.png" type="image/png">
 
 <title>Amorri Studio — Lịch Quay & Chụp</title>
 
@@ -43,7 +43,7 @@ input[type=number] { -moz-appearance: textfield; }
 .sidebar { background: #0b1120; color: #fff; padding: 24px 16px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0; height: 100vh; z-index: 40; }
 .brand { display: flex; align-items: center; gap: 14px; padding: 10px; }
 
-/* Thay thế CSS Logo */
+/* Chỉnh viền logo cho đẹp */
 .brand-mark { width: 44px; height: 44px; border-radius: 14px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; }
 .brand-mark img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -126,6 +126,7 @@ input[type=number] { -moz-appearance: textfield; }
 .mini-main { min-width: 0; }
 .mini-title { font-size: 13.5px; font-weight: 750; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini-sub { font-size: 12px; color: var(--muted); margin-top: 5px; font-weight: 500; }
+
 .pill { font-size: 11px; padding: 5px 10px; border-radius: 8px; background: #f1f5f9; color: #475569; font-weight: 750; white-space: nowrap; }
 .pill.green { background: #d1fae5; color: #047857; }
 .pill.orange { background: #fef3c7; color: #b45309; }
@@ -209,14 +210,16 @@ input[type=number] { -moz-appearance: textfield; }
 
 <!-- Màn hình tải -->
 <div id="loadingOverlay">
-    <div class="loading-logo"><img src="https://drive.google.com/uc?id=18Y7_Kh4JuyGBCQ8fvADGQXa-J2vE0C3G" alt="Amorri"></div>
+    <!-- Gọi logo nội bộ -->
+    <div class="loading-logo"><img src="logo.png" alt="Amorri" onerror="this.style.display='none'"></div>
     <div style="font-weight:600; color:var(--muted); font-size: 15px;">Đang kết nối dữ liệu...</div>
 </div>
 
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-        <div class="brand-mark"><img src="https://drive.google.com/uc?id=18Y7_Kh4JuyGBCQ8fvADGQXa-J2vE0C3G" alt="Amorri"></div>
+        <!-- Gọi logo nội bộ -->
+        <div class="brand-mark"><img src="logo.png" alt="Amorri" onerror="this.style.display='none'"></div>
         <div><h1>Amorri Studio</h1><small>Lịch quay & chụp</small></div>
     </div>
     <nav class="side-nav">
@@ -639,20 +642,17 @@ window.save = function() {
 // ----------------------------------------------------
 function getOldDebt(staffId, targetY, targetM) {
     let debt = 0;
-    // Tổng tiền công các lịch trước tháng mục tiêu
     data.events.forEach(e => {
         if(e.status === 'cancelled') return;
         const d = parseDate(e.date);
-        // targetM là index từ 0..11
         if(d.getFullYear() < targetY || (d.getFullYear() === targetY && d.getMonth() < targetM)) {
             const a = e.assignments.find(x => x.id === staffId);
             if(a) debt += Number(a.cost || 0);
         }
     });
 
-    // Trừ đi tổng tiền đã thanh toán & đã ứng trước tháng mục tiêu
     for (const [mKey, staffRecords] of Object.entries(data.payroll)) {
-        const [py, pm] = mKey.split('-').map(Number); // pm là 1..12
+        const [py, pm] = mKey.split('-').map(Number); 
         if(py < targetY || (py === targetY && (pm - 1) < targetM)) {
             if(staffRecords[staffId]) {
                 debt -= Number(staffRecords[staffId].advance || 0);
@@ -807,7 +807,7 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
   let html = '';
   let renderedCount = 0;
   
-  const [targetY, targetM] = monthKey.split('-').map(Number); // targetM is 1..12
+  const [targetY, targetM] = monthKey.split('-').map(Number);
   
   staffArray.forEach(s => {
       let totalCost = 0;
@@ -845,11 +845,9 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
       const advance = p.advance;
       const paid = p.paid;
       
-      // Tính Nợ Cũ
       const oldDebt = getOldDebt(s.id, targetY, targetM - 1);
       const remain = oldDebt + totalCost - advance - paid;
       
-      // LOGIC ẨN FREELANCE: Nếu không có nợ cũ, không có ca làm, không ứng, không trả -> Ẩn
       if (isFreelance && sEvents.length === 0 && advance === 0 && paid === 0 && totalCost === 0 && oldDebt <= 0) {
           return; 
       }
@@ -982,7 +980,7 @@ function renderStaffMonthList(){
   const y = Number(document.getElementById('staffMonthY').value);
   
   const staffDays = {};
-  const staffToRender = data.staff.filter(s => s.role !== 'Freelance'); // Ẩn Freelance
+  const staffToRender = data.staff.filter(s => s.role !== 'Freelance'); 
   
   staffToRender.forEach(s => staffDays[s.id] = new Set());
   
@@ -1015,7 +1013,6 @@ function renderMonthSummary(){
   const m = Number(document.getElementById('summaryMonthM').value) - 1;
   const y = Number(document.getElementById('summaryMonthY').value);
   
-  // Lọc lịch theo tháng/năm đã chọn ở panel
   const ev = data.events.filter(e => {
       const ed = parseDate(e.date);
       return ed.getFullYear() === y && ed.getMonth() === m && eventMatches(e) && e.status !== 'cancelled';
@@ -1113,24 +1110,21 @@ window.updateDepositLabel = function() {
 }
 
 // ----------------------------------------------------
-// TÍNH NĂNG ẨN/HIỆN TỪNG PHẦN KHI THÊM LỊCH (Progressive UI)
+// HIỂN THỊ THEO TỪNG BƯỚC VÀ ẨN/HIỆN LINK (Progressive UI)
 // ----------------------------------------------------
 window.updateModalVisibility = function() {
     const nameVal = document.getElementById('eventName').value.trim();
     const locVal = document.getElementById('eventLocation').value.trim();
     const statusVal = document.getElementById('eventStatus').value;
     
-    // Nếu có tên lịch -> Mở nhóm 2 (Nhân sự, Địa điểm, SĐT)
     document.querySelectorAll('.step2-item').forEach(el => {
         el.style.display = nameVal ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
     });
     
-    // Nếu có tên lịch + Địa điểm -> Mở nhóm 3 (Giá, Cọc, Ghi chú, Sản phẩm)
     document.querySelectorAll('.step3-item').forEach(el => {
         el.style.display = (nameVal && locVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
     });
     
-    // Ẩn/Hiện Ô Link Source Thợ (Chỉ hiện khi trạng thái là "Hoàn thành")
     document.querySelectorAll('.staff-link-container').forEach(el => {
         el.style.display = (statusVal === 'done') ? 'flex' : 'none';
     });
@@ -1138,22 +1132,7 @@ window.updateModalVisibility = function() {
 
 let currentEventAssignments = [];
 
-window.saveStaffLinkLocally = function(sId, sName) {
-    const urlInput = document.getElementById('link-input-'+sId).value.trim();
-    const taskInput = document.getElementById('task-'+sId).value;
-    if(!urlInput) { showToast('Vui lòng dán link URL'); return; }
-    
-    document.getElementById('link-tag-'+sId).href = urlInput;
-    document.getElementById('link-tag-'+sId).innerHTML = `🔗 ${escapeHtml(sName)} - ${escapeHtml(taskInput || 'Source')}`;
-    
-    document.getElementById('link-edit-'+sId).style.display = 'none';
-    document.getElementById('link-view-'+sId).style.display = 'flex';
-}
-
-window.toggleEditLink = function(sId) {
-    document.getElementById('link-view-'+sId).style.display = 'none';
-    document.getElementById('link-edit-'+sId).style.display = 'flex';
-}
+// Các hàm liên kết thợ... (Được tích hợp đầy đủ vào renderEventStaffList)
 
 window.addProductRow = function(name='', url='') {
     const container = document.getElementById('eventProductsList');
@@ -1195,7 +1174,7 @@ window.saveProductRow = function(btn) {
     row.querySelector('.prod-view').style.display = 'flex';
 }
 
-function renderEventStaffList() {
+window.renderEventStaffList = function() {
     const existingChecks = document.querySelectorAll('#eventStaff .staff-check');
     if (existingChecks.length > 0) {
         currentEventAssignments = [...existingChecks].filter(cb => cb.checked).map(cb => {
@@ -1227,7 +1206,6 @@ function renderEventStaffList() {
             
             <div style="display:${isChecked ? 'flex' : 'none'}; flex-direction:column; gap:10px; margin-top:10px; border-top:1px dashed var(--line); padding-top:10px">
               
-              <!-- Dòng Nhập Nhiệm vụ & Chi phí siêu gọn -->
               <div style="display:flex; gap:10px; align-items:center;">
                   <select id="task-${s.id}" style="flex:1; border:1px solid var(--line);padding:8px;border-radius:8px;outline:0;font-size:13px;background:#f8fafc;font-weight:600">
                     <option value="Chụp truyền thống" ${a?.task==='Chụp truyền thống'?'selected':''}>Chụp truyền thống</option>
@@ -1241,18 +1219,17 @@ function renderEventStaffList() {
                   <input type="number" id="cost-${s.id}" placeholder="Chi phí (đ)" value="${a?.cost || ''}" oninput="this.value = this.value.replace(/^0+(?!\\d)/, '')" style="width:110px;border:1px solid var(--line);padding:8px;border-radius:8px;outline:0;font-size:13px;background:#f8fafc;font-weight:600">
               </div>
 
-              <!-- Khu vực dán link Source (Chỉ hiện khi trạng thái là Hoàn thành) -->
               <div class="staff-link-container" style="display:${showLink ? 'flex' : 'none'}; gap: 8px; align-items:center; background:#e0e7ff; padding:8px 10px; border-radius:8px; border: 1px dashed #a5b4fc;">
                  <div id="link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 8px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
                      <a id="link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:12px; font-weight:750; color:var(--primary); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
                         🔗 ${escapeHtml(s.name)} - ${escapeHtml(a?.task || 'Source')}
                      </a>
                      <button type="button" class="btn ghost" style="padding:4px 8px; font-size:11px; background:#fff" onclick="copyText(document.getElementById('link-input-${s.id}').value)" title="Copy">📋 Copy</button>
-                     <button type="button" class="btn ghost" style="padding:4px 8px; font-size:11px; background:#fff" onclick="window.toggleEditLink('${s.id}')" title="Sửa">✏️️ Sửa</button>
+                     <button type="button" class="btn ghost" style="padding:4px 8px; font-size:11px; background:#fff" onclick="document.getElementById('link-view-${s.id}').style.display='none'; document.getElementById('link-edit-${s.id}').style.display='flex'" title="Sửa">✏️ Sửa</button>
                  </div>
                  <div id="link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 8px; flex:1; align-items:center; flex-wrap:wrap;">
                      <input type="url" id="link-input-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Link Source..." style="flex:1; border:1px solid #c7d2fe; padding:6px 10px; border-radius:6px; outline:0; font-size:12px; background:#fff; min-width:120px;">
-                     <button type="button" class="btn primary" style="padding:6px 12px; font-size:12px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu</button>
+                     <button type="button" class="btn primary" style="padding:6px 12px; font-size:12px;" onclick="document.getElementById('link-tag-${s.id}').href=document.getElementById('link-input-${s.id}').value; document.getElementById('link-edit-${s.id}').style.display='none'; document.getElementById('link-view-${s.id}').style.display='flex'">Lưu</button>
                  </div>
               </div>
 
@@ -1261,8 +1238,8 @@ function renderEventStaffList() {
         }).join('')
       : '<div style="font-size:13px;color:var(--muted);padding:10px;background:#f8fafc;border-radius:12px">Chưa có nhân sự. Vào “Đội ngũ” để thêm.</div>';
 
-    filterStaffModal();
-    checkConflict();
+    window.filterStaffModal();
+    window.checkConflict();
 }
 
 window.saveFreelanceQuick = function() {
@@ -1281,7 +1258,7 @@ window.saveFreelanceQuick = function() {
     document.getElementById('newFreeName').value = '';
     document.getElementById('freelanceForm').style.display = 'none';
 
-    renderEventStaffList();
+    window.renderEventStaffList();
     showToast('Đã thêm Freelance: ' + displayName);
 };
 
@@ -1312,13 +1289,13 @@ window.openEventModal = function(prefill={}){
   document.getElementById('eventProductsList').innerHTML = '';
   
   currentEventAssignments = e?.assignments ? JSON.parse(JSON.stringify(e.assignments)) : [];
-  renderEventStaffList();
+  window.renderEventStaffList();
   
   if (e && e.products && e.products.length > 0) {
-      e.products.forEach(p => addProductRow(p.name, p.url));
+      e.products.forEach(p => window.addProductRow(p.name, p.url));
   }
 
-  updateDepositLabel();
+  window.updateDepositLabel();
   setTimeout(window.updateModalVisibility, 10);
 }
 
@@ -1396,8 +1373,8 @@ window.saveEvent = function(){
   if(idx>=0)data.events[idx]=obj; else data.events.push(obj);
   
   save();
-  closeEventModal();
-  render(); // Cập nhật local lập tức
+  window.closeEventModal();
+  render();
   showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
 }
 
@@ -1407,14 +1384,13 @@ window.deleteEvent = function(){
   if(!confirm(`Xóa lịch "${e.name}"?`))return;
   data.events=data.events.filter(x=>x.id!==id);
   save();
-  closeEventModal();
+  window.closeEventModal();
   render();
   showToast('Đã xóa lịch');
 }
 
 window.openSettings = function(){ document.getElementById('settingsModal').style.display='flex'; }
 window.openStaff = function(){document.getElementById('staffModal').style.display='flex';renderStaffManage()}
-
 function renderStaffManage(){
   document.getElementById('staffManageList').innerHTML=data.staff.map(s=>`<div class="mini-item">
     <div class="staff-left"><div class="avatar">${initials(s.name)}</div><div class="staff-info"><div class="mini-title">${escapeHtml(s.name)}</div><div class="mini-sub">${escapeHtml(s.role)}</div></div></div>
@@ -1427,7 +1403,6 @@ function renderStaffManage(){
     save();renderStaffManage();
   }));
 }
-
 window.addStaff = function(){
   const name=document.getElementById('staffName').value.trim(); const role=document.getElementById('staffRole').value;
   if(!name){showToast('Nhập tên nhân sự');return}
@@ -1435,34 +1410,34 @@ window.addStaff = function(){
 }
 
 document.addEventListener('click',e=>{
-  const chip=e.target.closest('[data-id]'); if(chip && (chip.classList.contains('event-chip')||chip.classList.contains('mini-item')||chip.classList.contains('agenda-event'))) openEventModal({id:chip.dataset.id});
+  const chip=e.target.closest('[data-id]'); if(chip && (chip.classList.contains('event-chip')||chip.classList.contains('mini-item')||chip.classList.contains('agenda-event'))) window.openEventModal({id:chip.dataset.id});
 });
 
-// Gắn sự kiện an toàn (Optional Chaining)
+// Gắn sự kiện an toàn
 document.getElementById('prevBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()-1);render()});
 document.getElementById('nextBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()+1);render()});
-document.getElementById('addBtn')?.addEventListener('click', ()=>openEventModal({}));
-document.getElementById('sideAdd')?.addEventListener('click', ()=>openEventModal({}));
-document.getElementById('fabAdd')?.addEventListener('click', ()=>openEventModal({}));
-document.getElementById('closeEvent')?.addEventListener('click', closeEventModal);
-document.getElementById('cancelEvent')?.addEventListener('click', closeEventModal);
-document.getElementById('saveEvent')?.addEventListener('click', saveEvent);
-document.getElementById('deleteEvent')?.addEventListener('click', deleteEvent);
-document.getElementById('openStaffBtn')?.addEventListener('click', openStaff);
+document.getElementById('addBtn')?.addEventListener('click', ()=>window.openEventModal({}));
+document.getElementById('sideAdd')?.addEventListener('click', ()=>window.openEventModal({}));
+document.getElementById('fabAdd')?.addEventListener('click', ()=>window.openEventModal({}));
+document.getElementById('closeEvent')?.addEventListener('click', window.closeEventModal);
+document.getElementById('cancelEvent')?.addEventListener('click', window.closeEventModal);
+document.getElementById('saveEvent')?.addEventListener('click', window.saveEvent);
+document.getElementById('deleteEvent')?.addEventListener('click', window.deleteEvent);
+document.getElementById('openStaffBtn')?.addEventListener('click', window.openStaff);
 document.getElementById('closeStaff')?.addEventListener('click', ()=>document.getElementById('staffModal').style.display='none');
-document.getElementById('addStaffBtn')?.addEventListener('click', addStaff);
-document.getElementById('settingsBtn')?.addEventListener('click', openSettings);
+document.getElementById('addStaffBtn')?.addEventListener('click', window.addStaff);
+document.getElementById('settingsBtn')?.addEventListener('click', window.openSettings);
 document.getElementById('closeSettings')?.addEventListener('click', ()=>document.getElementById('settingsModal').style.display='none');
 
 document.getElementById('closePayroll')?.addEventListener('click', ()=>document.getElementById('payrollModal').style.display='none');
 document.getElementById('cancelPayroll')?.addEventListener('click', ()=>document.getElementById('payrollModal').style.display='none');
-document.getElementById('savePayrollBtn')?.addEventListener('click', savePayroll);
+document.getElementById('savePayrollBtn')?.addEventListener('click', window.savePayroll);
 
 document.getElementById('fullPaidBtn')?.addEventListener('click', () => {
    const price = document.getElementById('eventPrice').value;
    if(price && Number(price) > 0) {
       document.getElementById('eventDeposit').value = price;
-      updateDepositLabel();
+      window.updateDepositLabel();
    }
 });
 
@@ -1478,8 +1453,8 @@ document.getElementById('clearAll')?.addEventListener('click', ()=>{
 
 ['searchInput','staffFilter','statusFilter'].forEach(id=>document.getElementById(id)?.addEventListener('input',render));
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click', ()=>setView(b.dataset.view)));
-['eventDate','eventStart','eventEnd'].forEach(id=>document.getElementById(id)?.addEventListener('input',checkConflict));
-document.getElementById('eventDate')?.addEventListener('change',checkConflict);
+['eventDate','eventStart','eventEnd'].forEach(id=>document.getElementById(id)?.addEventListener('input',window.checkConflict));
+document.getElementById('eventDate')?.addEventListener('change',window.checkConflict);
 document.getElementById('staffMonthM')?.addEventListener('change', renderStaffMonthList);
 document.getElementById('staffMonthY')?.addEventListener('change', renderStaffMonthList);
 document.getElementById('summaryMonthM')?.addEventListener('change', renderMonthSummary);
