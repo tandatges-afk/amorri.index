@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f172a">
 <title>Studio Planner — Lịch Quay & Chụp</title>
 <style>
 :root {
@@ -19,7 +22,6 @@ body { margin: 0; font-family: 'Inter', ui-sans-serif, system-ui, -apple-system,
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; border: none; outline: none; }
 
-/* Scrollbar Customization */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -27,7 +29,6 @@ button { cursor: pointer; border: none; outline: none; }
 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; }
 
-/* Layout Chính */
 .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
 .sidebar { background: #0b1120; color: #fff; padding: 24px 16px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0; height: 100vh; z-index: 40; }
 .brand { display: flex; align-items: center; gap: 14px; padding: 10px; }
@@ -47,7 +48,6 @@ input[type=number] { -moz-appearance: textfield; }
 .subtitle { font-size: 14px; color: var(--muted); margin-top: 4px; font-weight: 500; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 
-/* Buttons */
 .btn { border: 1px solid var(--line); background: #fff; color: var(--text); padding: 10px 16px; border-radius: 12px; font-weight: 650; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: var(--shadow-sm); }
 .btn:hover { background: #f8fafc; box-shadow: 0 4px 6px rgba(0,0,0,0.04); transform: translateY(-1px); }
 .btn:active { transform: translateY(1px); }
@@ -58,7 +58,6 @@ input[type=number] { -moz-appearance: textfield; }
 .btn.ghost { background: transparent; border-color: transparent; box-shadow: none; }
 .btn.ghost:hover { background: #f1f5f9; }
 
-/* Stats & Layout */
 .grid-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin-bottom: 24px; }
 .stat { background: var(--panel); border: 1px solid var(--line); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow-md); transition: transform 0.2s; }
 .stat:hover { transform: translateY(-2px); }
@@ -69,7 +68,6 @@ input[type=number] { -moz-appearance: textfield; }
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 20px; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-md); overflow: hidden; }
 
-/* Calendar */
 .calendar-head { padding: 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; background: #fff; }
 .calendar-nav { display: flex; gap: 8px; align-items: center; }
 .icon-btn { width: 40px; height: 40px; border: 1px solid var(--line); background: #fff; border-radius: 12px; display: grid; place-items: center; transition: all 0.2s; font-size: 18px; color: var(--text); box-shadow: var(--shadow-sm); }
@@ -96,13 +94,13 @@ input[type=number] { -moz-appearance: textfield; }
 .event-chip .time { font-weight: 750; white-space: nowrap; color: #1e293b; }
 .event-chip .name { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #0f172a; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; margin-top: 4px; flex: none; }
+
 .status-confirmed{border-left-color:var(--green);background:#ecfdf5} .status-confirmed .status-dot{background:var(--green)}
 .status-pending{border-left-color:var(--orange);background:#fffbeb} .status-pending .status-dot{background:var(--orange)}
 .status-done{border-left-color:var(--done);background:#e0e7ff} .status-done .status-dot{background:var(--done)}
 .status-cancelled{border-left-color:var(--red);background:#fef2f2;opacity:0.7} .status-cancelled .status-dot{background:var(--red)}
 .status-cancelled .name, .status-cancelled .time {color:#991b1b; text-decoration:line-through;}
 
-/* Panels & Danh sách */
 .empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 14px; font-weight: 500; }
 .agenda { display: none; padding: 20px; }
 .side-panel { display: grid; gap: 20px; }
@@ -134,7 +132,7 @@ input[type=number] { -moz-appearance: textfield; }
 .modal-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 20px 28px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); z-index: 10; }
 .modal-title { font-size: 20px; font-weight: 850; letter-spacing: -0.5px; }
 .modal-body { padding: 28px; flex: 1; }
-.modal-foot { display: flex; align-items: center; padding: 20px 28px; border-top: 1px solid var(--line); background: #f8fafc; position: sticky; bottom: 0; z-index: 10; }
+.modal-foot { display: flex; align-items: center; padding: 20px 28px; border-top: 1px solid var(--line); background: #f8fafc; position: sticky; bottom: 0; z-index: 10; border-radius: 0 0 24px 24px; }
 
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .full { grid-column: 1 / -1; }
@@ -149,18 +147,12 @@ input[type=number] { -moz-appearance: textfield; }
 .kpi-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin: 12px 0; color: #334155; }
 .staff-picker { border: 1px solid var(--line); border-radius: 14px; padding: 16px; max-height: 400px; overflow-y: auto; background: #fff; }
 
-/* Floating Action Button */
 .fab { position: fixed; bottom: 90px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: white; display: none; place-items: center; font-size: 28px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.4); z-index: 90; transition: transform 0.2s; }
 .fab:active { transform: scale(0.9); }
 
-/* Màn hình chờ tải dữ liệu */
-#loadingOverlay { position: fixed; inset: 0; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.loading-logo { width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(135deg, #6366f1, #4f46e5); display: grid; place-items: center; font-weight: 900; font-size: 20px; color: #fff; margin-bottom: 20px; animation: pulse 1.5s infinite; }
-@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.95); } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* Mobile Reponsive (Dưới 768px -> Bottom Nav) */
 @media(max-width: 900px){ .layout { grid-template-columns: 1fr; } }
 @media(max-width: 768px){
   .app { grid-template-columns: 1fr; padding-bottom: 70px; } 
@@ -188,21 +180,14 @@ input[type=number] { -moz-appearance: textfield; }
   .modal-head::before { content: ''; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: #e2e8f0; border-radius: 10px; }
   .modal-body { padding: 20px; }
   .form-grid { grid-template-columns: 1fr; gap: 16px; }
-  .modal-foot { flex-wrap: wrap; padding: 16px 20px; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  .modal-foot { flex-wrap: wrap; padding: 16px 20px; padding-bottom: max(16px, env(safe-area-inset-bottom)); border-radius: 0; }
   .modal-foot > div { width: 100%; justify-content: flex-end; margin-top: 10px; }
 }
 </style>
-<!-- Nhúng thư viện Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-database-compat.js"></script>
 </head>
 <body>
-
-<!-- Màn hình tải dữ liệu (sẽ tự ẩn khi tải xong) -->
-<div id="loadingOverlay">
-    <div class="loading-logo">SP</div>
-    <div style="font-weight:600; color:var(--muted); font-size: 15px;">Đang đồng bộ dữ liệu...</div>
-</div>
 
 <div class="app">
   <aside class="sidebar">
@@ -354,8 +339,8 @@ input[type=number] { -moz-appearance: textfield; }
       </form>
     </div>
     <div class="modal-foot">
-      <button type="button" class="btn" id="fullPaidBtn" style="color:#047857;background:#d1fae5;border-color:#34d399;font-weight:750">💰 Đã thanh toán đủ</button>
-      <button class="btn danger" id="deleteEvent" style="display:none;margin-left:10px">Xóa lịch</button>
+      <button type="button" class="btn" id="fullPaidBtn" style="color:#047857;background:#d1fae5;border-color:#34d399;font-weight:750">💰 Đã TT đủ</button>
+      <button class="btn danger" id="deleteEvent" style="display:none;margin-left:10px">Xóa</button>
       <div style="margin-left:auto;display:flex;gap:10px">
         <button class="btn ghost" id="cancelEvent">Hủy</button>
         <button class="btn primary" id="saveEvent">Lưu lịch</button>
@@ -364,10 +349,10 @@ input[type=number] { -moz-appearance: textfield; }
   </div>
 </div>
 
-<!-- Modal Cập Nhật Lương/Thanh Toán -->
+<!-- Modal Cập Nhật Lương -->
 <div class="modal-backdrop" id="payrollModal">
   <div class="modal" style="width:min(450px,100%)">
-    <div class="modal-head"><div class="modal-title" id="payrollModalTitle">Thanh toán lương thợ</div><button class="icon-btn" onclick="document.getElementById('payrollModal').style.display='none'" style="border:0;background:#f1f5f9;border-radius:50%">✕</button></div>
+    <div class="modal-head"><div class="modal-title" id="payrollModalTitle">Thanh toán lương</div><button class="icon-btn" onclick="document.getElementById('payrollModal').style.display='none'" style="border:0;background:#f1f5f9;border-radius:50%">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="payrollStaffId">
       <input type="hidden" id="payrollMonth">
@@ -384,15 +369,15 @@ input[type=number] { -moz-appearance: textfield; }
     </div>
     <div class="modal-foot" style="justify-content:flex-end;">
       <button class="btn ghost" onclick="document.getElementById('payrollModal').style.display='none'">Hủy</button>
-      <button class="btn primary" onclick="savePayroll()" style="margin-left: 10px;">Lưu thanh toán</button>
+      <button class="btn primary" onclick="savePayroll()" style="margin-left: 10px;">Lưu</button>
     </div>
   </div>
 </div>
 
-<!-- Modal Quản Lý Đội Ngũ -->
+<!-- Modal Đội Ngũ -->
 <div class="modal-backdrop" id="staffModal">
   <div class="modal" style="width:min(620px,100%)">
-    <div class="modal-head"><div class="modal-title">Quản lý đội ngũ</div><button class="icon-btn" id="closeStaff" style="border:0;background:#f1f5f9;border-radius:50%">✕</button></div>
+    <div class="modal-head"><div class="modal-title">Đội ngũ</div><button class="icon-btn" id="closeStaff" style="border:0;background:#f1f5f9;border-radius:50%">✕</button></div>
     <div class="modal-body">
       <div class="form-grid" style="margin-bottom:24px; padding-bottom: 24px; border-bottom: 1px solid var(--line)">
         <div class="form-group"><label>Tên thợ</label><input id="staffName" placeholder="VD: Bii"></div>
@@ -415,14 +400,14 @@ input[type=number] { -moz-appearance: textfield; }
   </div>
 </div>
 
-<!-- Modal Dữ liệu & Cài đặt -->
+<!-- Modal Cài đặt -->
 <div class="modal-backdrop" id="settingsModal">
   <div class="modal" style="width:min(500px,100%)">
-    <div class="modal-head"><div class="modal-title">Cài đặt & Dữ liệu</div><button class="icon-btn" id="closeSettings" style="border:0;background:#f1f5f9;border-radius:50%">✕</button></div>
+    <div class="modal-head"><div class="modal-title">Cài đặt</div><button class="icon-btn" id="closeSettings" style="border:0;background:#f1f5f9;border-radius:50%">✕</button></div>
     <div class="modal-body">
-      <p style="font-size:14px; color:var(--muted); line-height:1.6; margin-top:0">Hệ thống đang được kết nối với Firebase. Mọi thay đổi sẽ được đồng bộ ngay lập tức cho tất cả mọi người.</p>
+      <p style="font-size:14px; color:var(--muted); line-height:1.6; margin-top:0">Dữ liệu được lưu an toàn. Nếu rớt mạng, bạn vẫn có thể dùng Offline bình thường.</p>
       <div style="display:grid;gap:12px; margin-top: 24px">
-        <button class="btn danger" id="clearAll" style="justify-content:center;">⚠️ Xóa toàn bộ dữ liệu (Trên tất cả thiết bị)</button>
+        <button class="btn danger" id="clearAll" style="justify-content:center; margin-top: 10px;">⚠️ Xóa toàn bộ dữ liệu (Cloud & Máy này)</button>
       </div>
     </div>
   </div>
@@ -431,7 +416,7 @@ input[type=number] { -moz-appearance: textfield; }
 <div class="toast" id="toast"></div>
 
 <script>
-// --- CHIA SẺ DỮ LIỆU ĐÁM MÂY (FIREBASE) ---
+const STORE_KEY = 'studioPlanner_v1';
 const firebaseConfig = {
   apiKey: "AIzaSyA3rwXOsYAYSBYuYC5DIrPbKi0m5ViLs7E",
   authDomain: "ammori-c4905.firebaseapp.com",
@@ -442,22 +427,15 @@ const firebaseConfig = {
   appId: "1:166591127725:web:419e7c78d91867f735e624"
 };
 
-// Khởi tạo Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const dbRef = db.ref('studioPlanner_v1');
-
 const DAY_NAMES = ['T2','T3','T4','T5','T6','T7','CN']; 
 const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
 const STATUS_LABEL = {confirmed:'Đã chốt',pending:'Chờ xác nhận',done:'Hoàn thành',cancelled:'Đã hủy'};
 
-// Biến chứa toàn bộ dữ liệu của App
+// Biến lưu trạng thái App
 let data = { staff: [], events: [], payroll: {} };
-
 let current = new Date();
 current.setHours(0,0,0,0);
 let currentView = 'month';
-let isFirstLoad = true;
 
 document.getElementById('staffMonthM').value = current.getMonth() + 1;
 document.getElementById('staffMonthY').value = current.getFullYear();
@@ -477,8 +455,8 @@ function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;
   t.style.display='block';
-  clearTimeout(showToast.t);
-  showToast.t=setTimeout(()=>t.style.display='none',2500)
+  clearTimeout(window.toastTimer);
+  window.toastTimer=setTimeout(()=>t.style.display='none',2500)
 }
 
 window.copyText = function(txt) {
@@ -486,64 +464,74 @@ window.copyText = function(txt) {
     if (!navigator.clipboard) {
         const el = document.createElement('textarea');
         el.value = txt; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
-        showToast('Đã copy link!'); return;
+        showToast('Đã copy!'); return;
     }
-    navigator.clipboard.writeText(txt).then(() => showToast('Đã copy link!')).catch(() => showToast('Lỗi copy!'));
+    navigator.clipboard.writeText(txt).then(() => showToast('Đã copy!')).catch(() => showToast('Lỗi copy!'));
 }
 
 function defaultData(){
   const today = new Date(); const y=today.getFullYear(), m=today.getMonth();
-  const s1=new Date(y,m,today.getDate(),9); const s2=new Date(y,m,today.getDate()+1,13);
-  const date=(d)=>isoDate(d);
-  const staff = [
-    {id:uid(),name:'Bii',role:'Photographer'},
-    {id:uid(),name:'Khoa',role:'Videographer'},
-    {id:uid(),name:'Nhi',role:'Makeup'}
-  ];
+  const s1=new Date(y,m,today.getDate(),9);
   return {
-    staff,
+    staff: [{id:uid(),name:'Thợ Mẫu',role:'Photographer'}],
     payroll: {},
-    events:[
-      {id:uid(),name:'Đám cưới Minh & Linh',date:date(s1),start:'09:00',end:'17:00',assignments:[{id:staff[0].id, task:'Chụp phóng sự', cost:1000000, link:''}],products:[],status:'confirmed',location:'Cần Thơ',phone:'',price:12000000,deposit:3000000,note:'Đón dâu + lễ + tiệc'},
-      {id:uid(),name:'Pre-wedding Huy & Vy',date:date(s2),start:'13:30',end:'18:00',assignments:[{id:staff[1].id, task:'Quay phóng sự', cost:1200000, link:''}],products:[],status:'pending',location:'Ngoại cảnh',phone:'',price:7000000,deposit:1000000,note:'Concept vintage'}
-    ]
+    events: []
   }
 }
 
-// Lắng nghe dữ liệu thay đổi từ Firebase (Real-time Sync)
-dbRef.on('value', (snapshot) => {
-    const val = snapshot.val();
-    if (val) {
-        // Đảm bảo dữ liệu không bị lỗi null nếu database rỗng một phần
-        data.staff = val.staff || [];
-        data.events = val.events || [];
-        data.payroll = val.payroll || {};
-        
-        data.events.forEach(e => {
-            if (!e.assignments) e.assignments = [];
-            if (!e.products) e.products = [];
-        });
-    } else {
-        // Database mới tinh -> đẩy dữ liệu mẫu lên
-        data = defaultData();
-        dbRef.set(data);
-    }
+// KHỞI TẠO FIREBASE KẾT HỢP OFFLINE-FIRST
+function initApp() {
+    // 1. Tải dữ liệu nội bộ (Local) lên màn hình TỨC THÌ (Tránh treo app)
+    try {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (raw) {
+            data = JSON.parse(raw);
+            if(!data.staff) data.staff = [];
+            if(!data.events) data.events = [];
+            if(!data.payroll) data.payroll = {};
+        } else {
+            data = defaultData();
+        }
+    } catch(e) { data = defaultData(); }
     
-    // Tắt màn hình chờ khi tải lần đầu xong
-    if (isFirstLoad) {
-        document.getElementById('loadingOverlay').style.display = 'none';
-        isFirstLoad = false;
-    }
-    
-    // Render lại giao diện bất cứ khi nào có thay đổi từ trên mạng
-    render();
-});
+    render(); // Hiển thị giao diện ngay lập tức
 
-// Hàm Save bây giờ sẽ đẩy lên Firebase thay vì LocalStorage
-function save(){
-    dbRef.set(data).catch(error => {
-        showToast("Lỗi mạng: Không thể lưu! " + error.message);
-    });
+    // 2. Ngầm kết nối Firebase (Nếu có mạng)
+    try {
+        if (typeof firebase !== 'undefined') {
+            firebase.initializeApp(firebaseConfig);
+            window.dbRef = firebase.database().ref('studioPlanner_v1');
+            window.dbRef.on('value', (snapshot) => {
+                const val = snapshot.val();
+                if (val) {
+                    data.staff = val.staff || [];
+                    data.events = val.events || [];
+                    data.payroll = val.payroll || {};
+                    data.events.forEach(e => {
+                        if(!e.assignments) e.assignments = [];
+                        if(!e.products) e.products = [];
+                    });
+                    localStorage.setItem(STORE_KEY, JSON.stringify(data)); // Sao lưu local
+                    render(); // Cập nhật lại UI nếu có dữ liệu mới
+                }
+            }, (error) => {
+                console.error("Firebase Read Error:", error);
+            });
+        }
+    } catch (err) {
+        console.error("Firebase không thể khởi tạo:", err);
+    }
+}
+
+// HÀM SAVE CHUẨN (Cập nhật UI ngay -> Đẩy Firebase ngầm)
+window.save = function() {
+    localStorage.setItem(STORE_KEY, JSON.stringify(data)); // Lưu local
+    if(window.dbRef) {
+        window.dbRef.set(data).catch(err => {
+            console.error("Firebase Write Error:", err);
+            showToast("Đã lưu Offline (Sẽ đồng bộ khi có mạng)");
+        });
+    }
 }
 
 function eventMatches(e){
@@ -799,7 +787,7 @@ function renderPayroll(){
   document.getElementById('agenda').innerHTML = html;
 }
 
-function openPayrollModal(staffId, staffName, monthStr) {
+window.openPayrollModal = function(staffId, staffName, monthStr) {
   document.getElementById('payrollModal').style.display = 'flex';
   document.getElementById('payrollModalTitle').textContent = `Thanh toán: ${staffName} (${monthStr})`;
   document.getElementById('payrollStaffId').value = staffId;
@@ -810,7 +798,7 @@ function openPayrollModal(staffId, staffName, monthStr) {
   document.getElementById('payrollPaid').value = p.paid || '';
 }
 
-function savePayroll() {
+window.savePayroll = function() {
   const staffId = document.getElementById('payrollStaffId').value;
   const monthStr = document.getElementById('payrollMonth').value;
   const advance = Number(document.getElementById('payrollAdvance').value || 0);
@@ -821,7 +809,8 @@ function savePayroll() {
   
   save();
   document.getElementById('payrollModal').style.display = 'none';
-  // render() is automatically called by Firebase on('value')!
+  render();
+  showToast('Đã lưu thanh toán thợ');
 }
 
 function renderUpcoming(){
@@ -928,7 +917,7 @@ function setView(v){
   render();
 }
 
-function filterStaffModal() {
+window.filterStaffModal = function() {
   const cChup = document.getElementById('f_chup').checked;
   const cQuay = document.getElementById('f_quay').checked;
   const cMakeup = document.getElementById('f_makeup').checked;
@@ -949,7 +938,7 @@ function filterStaffModal() {
   });
 }
 
-function updateDepositLabel() {
+window.updateDepositLabel = function() {
   const price = Number(document.getElementById('eventPrice').value || 0);
   const dep = Number(document.getElementById('eventDeposit').value || 0);
   const label = document.getElementById('depositLabel');
@@ -972,7 +961,6 @@ document.getElementById('fullPaidBtn').onclick = () => {
 
 let currentEventAssignments = [];
 
-// JS Quản lý Link Source Thợ
 window.saveStaffLinkLocally = function(sId, sName) {
     const urlInput = document.getElementById('link-input-'+sId).value.trim();
     const taskInput = document.getElementById('task-'+sId).value;
@@ -990,7 +978,6 @@ window.toggleEditLink = function(sId) {
     document.getElementById('link-edit-'+sId).style.display = 'flex';
 }
 
-// JS Quản lý Link Sản Phẩm Chung
 window.addProductRow = function(name='', url='') {
     const container = document.getElementById('eventProductsList');
     const div = document.createElement('div');
@@ -1077,7 +1064,6 @@ function renderEventStaffList() {
                   </div>
               </div>
 
-              <!-- Khu vực dán link Source -->
               <div style="display:flex; gap: 8px; align-items:center; background:#e0e7ff; padding:10px 12px; border-radius:10px; border: 1px dashed #a5b4fc;">
                  <div id="link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
                      <a id="link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:13px; font-weight:750; color:var(--primary); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:120px;">
@@ -1121,7 +1107,7 @@ window.saveFreelanceQuick = function() {
     showToast('Đã thêm Freelance: ' + displayName);
 };
 
-function openEventModal(prefill={}){
+window.openEventModal = function(prefill={}){
   document.getElementById('eventModal').style.display='flex';
   const e=prefill.id?data.events.find(x=>x.id===prefill.id):null;
   document.getElementById('eventModalTitle').textContent=e?'Chỉnh sửa lịch':'Thêm lịch';
@@ -1156,9 +1142,10 @@ function openEventModal(prefill={}){
 
   updateDepositLabel();
 }
-function closeEventModal(){document.getElementById('eventModal').style.display='none'}
 
-function checkConflict(){
+window.closeEventModal = function(){document.getElementById('eventModal').style.display='none'}
+
+window.checkConflict = function(){
   const date=document.getElementById('eventDate').value;
   const start=document.getElementById('eventStart').value;
   const end=document.getElementById('eventEnd').value;
@@ -1181,7 +1168,7 @@ function checkConflict(){
          }
          
          if(overlap) {
-             infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️️ Trùng: ${text})</span>`;
+             infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
          } else {
              infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
          }
@@ -1189,7 +1176,7 @@ function checkConflict(){
   });
 }
 
-function saveEvent(){
+window.saveEvent = function(){
   const id=document.getElementById('eventId').value;
   const obj={
     id:id||uid(),
@@ -1228,16 +1215,24 @@ function saveEvent(){
   if(isOverlap && !confirm('Lịch đang bị trùng giờ nhân sự. Vẫn lưu chứ?')) return;
   const idx=data.events.findIndex(e=>e.id===id);
   if(idx>=0)data.events[idx]=obj; else data.events.push(obj);
-  save();closeEventModal();
-  // Firebase onValue will handle re-rendering!
+  
+  save();
+  closeEventModal();
+  render();
+  showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
 }
 
-function deleteEvent(){
+window.deleteEvent = function(){
   const id=document.getElementById('eventId').value;if(!id)return;
   const e=data.events.find(x=>x.id===id); if(!e)return;
   if(!confirm(`Xóa lịch "${e.name}"?`))return;
-  data.events=data.events.filter(x=>x.id!==id);save();closeEventModal();
+  data.events=data.events.filter(x=>x.id!==id);
+  save();
+  closeEventModal();
+  render();
+  showToast('Đã xóa lịch');
 }
+
 function openSettings(){ document.getElementById('settingsModal').style.display='flex'; }
 function openStaff(){document.getElementById('staffModal').style.display='flex';renderStaffManage()}
 function renderStaffManage(){
@@ -1277,8 +1272,7 @@ document.getElementById('closeStaff').onclick=()=>document.getElementById('staff
 document.getElementById('addStaffBtn').onclick=addStaff;
 document.getElementById('settingsBtn').onclick=openSettings;
 document.getElementById('closeSettings').onclick=()=>document.getElementById('settingsModal').style.display='none';
-
-document.getElementById('clearAll').onclick=()=>{if(confirm('Xóa toàn bộ lịch và nhân sự? Hành động này không thể hoàn tác nếu chưa backup.')){data={staff:[],events:[],payroll:{}};save();document.getElementById('settingsModal').style.display='none';showToast('Đã xóa toàn bộ dữ liệu')}};
+document.getElementById('clearAll').onclick=()=>{if(confirm('Xóa toàn bộ lịch và nhân sự? Hành động này không thể hoàn tác nếu chưa backup.')){data={staff:[],events:[],payroll:{}};save();render();document.getElementById('settingsModal').style.display='none';showToast('Đã xóa toàn bộ dữ liệu')}};
 
 ['searchInput','staffFilter','statusFilter'].forEach(id=>document.getElementById(id).addEventListener('input',render));
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
@@ -1286,6 +1280,9 @@ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.data
 document.getElementById('eventDate').addEventListener('change',checkConflict);
 document.getElementById('staffMonthM').addEventListener('change', renderStaffMonthList);
 document.getElementById('staffMonthY').addEventListener('change', renderStaffMonthList);
+
+// Khởi chạy App
+initApp();
 
 </script>
 </body>
