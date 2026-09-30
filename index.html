@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
+<!-- Cập nhật chuẩn Meta mới nhất chống cảnh báo vàng -->
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f172a">
 
-<!-- Favicon Logo Amorri Studio (Gọi trực tiếp file ảnh trong cùng thư mục) -->
 <link rel="icon" href="logo.png" type="image/png">
-
 <title>Amorri Studio — Lịch Quay & Chụp</title>
 
 <!-- Nhúng thư viện Firebase -->
@@ -43,7 +43,6 @@ input[type=number] { -moz-appearance: textfield; }
 .sidebar { background: #0b1120; color: #fff; padding: 24px 16px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0; height: 100vh; z-index: 40; }
 .brand { display: flex; align-items: center; gap: 14px; padding: 10px; }
 
-/* Chỉnh viền logo cho đẹp */
 .brand-mark { width: 44px; height: 44px; border-radius: 14px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; }
 .brand-mark img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -290,6 +289,21 @@ input[type=number] { -moz-appearance: textfield; }
         
         <div class="panel side-card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <h3>Lịch thợ</h3>
+            <div style="display:flex;gap:6px">
+              <select id="staffMonthM" class="field" style="padding:6px 10px;font-size:12px;min-height:0">
+                <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option><option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option><option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option><option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+              </select>
+              <select id="staffMonthY" class="field" style="padding:6px 10px;font-size:12px;min-height:0">
+                <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option>
+              </select>
+            </div>
+          </div>
+          <div class="staff-list" id="staffMonthList"></div>
+        </div>
+        
+        <div class="panel side-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
             <h3 style="margin:0;font-size:16px;font-weight:850;">Tổng quan</h3>
             <div style="display:flex;gap:6px">
               <select id="summaryMonthM" class="field" style="padding:4px 8px;font-size:11px;min-height:0">
@@ -473,6 +487,12 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
     return false;
 };
 
+// HÀM TIỆN ÍCH CHỐNG LỖI DOM (Bulletproof)
+function setSafeValue(id, val) {
+    const el = document.getElementById(id);
+    if(el) el.value = val;
+}
+
 // --- CẤU HÌNH FIREBASE ---
 const STORE_KEY = 'studioPlanner_v1';
 const firebaseConfig = {
@@ -495,10 +515,11 @@ current.setHours(0,0,0,0);
 let currentView = 'month';
 let isFirstLoad = true;
 
-document.getElementById('staffMonthM').value = current.getMonth() + 1;
-document.getElementById('staffMonthY').value = current.getFullYear();
-document.getElementById('summaryMonthM').value = current.getMonth() + 1;
-document.getElementById('summaryMonthY').value = current.getFullYear();
+// Khởi tạo an toàn
+setSafeValue('staffMonthM', current.getMonth() + 1);
+setSafeValue('staffMonthY', current.getFullYear());
+setSafeValue('summaryMonthM', current.getMonth() + 1);
+setSafeValue('summaryMonthY', current.getFullYear());
 
 // HÀM TIỆN ÍCH
 function pad(n){return String(n).padStart(2,'0')}
@@ -518,6 +539,7 @@ function sameMonth(ds,d){return ds.getFullYear()===d.getFullYear() && ds.getMont
 
 function showToast(msg){
   const t=document.getElementById('toast');
+  if(!t) return;
   t.textContent=msg;
   t.style.display='block';
   clearTimeout(window.toastTimer);
@@ -656,9 +678,9 @@ function getOldDebt(staffId, targetY, targetM) {
 // CÁC HÀM XỬ LÝ GIAO DIỆN & LOGIC NGHIỆP VỤ
 // ----------------------------------------------------
 function eventMatches(e){
-  const q=document.getElementById('searchInput').value.trim().toLowerCase();
-  const sf=document.getElementById('staffFilter').value;
-  const st=document.getElementById('statusFilter').value;
+  const q = document.getElementById('searchInput')?.value.trim().toLowerCase() || '';
+  const sf = document.getElementById('staffFilter')?.value || '';
+  const st = document.getElementById('statusFilter')?.value || '';
   if(q && ![e.name,e.location,e.phone,e.note].join(' ').toLowerCase().includes(q)) return false;
   if(sf && !e.assignments.some(a=>a.id===sf)) return false;
   if(st && e.status!==st) return false;
@@ -671,18 +693,27 @@ function monthEvents(){
 }
 
 function renderFilters(){
-  const sf=document.getElementById('staffFilter'), old=sf.value;
+  const sf = document.getElementById('staffFilter');
+  if(!sf) return;
+  const old = sf.value;
   sf.innerHTML='<option value="">Tất cả nhân sự</option>'+data.staff.map(s=>`<option value="${s.id}">${escapeHtml(s.name)} — ${escapeHtml(s.role)}</option>`).join('');
   sf.value=data.staff.some(s=>s.id===old)?old:'';
 }
 
 function renderStats(){
   const ev=monthEvents();
-  document.getElementById('statTotal').textContent=ev.length;
-  document.getElementById('statConfirmed').textContent=ev.filter(e=>e.status==='confirmed').length;
-  document.getElementById('statPending').textContent=ev.filter(e=>e.status==='pending').length;
+  const elTotal = document.getElementById('statTotal');
+  if(elTotal) elTotal.textContent=ev.length;
+  
+  const elConf = document.getElementById('statConfirmed');
+  if(elConf) elConf.textContent=ev.filter(e=>e.status==='confirmed').length;
+  
+  const elPend = document.getElementById('statPending');
+  if(elPend) elPend.textContent=ev.filter(e=>e.status==='pending').length;
+  
   const unpaidCount = ev.filter(e => e.status !== 'cancelled' && (Number(e.price||0) > Number(e.deposit||0))).length;
-  document.getElementById('statUnpaid').textContent = unpaidCount;
+  const elUnpaid = document.getElementById('statUnpaid');
+  if(elUnpaid) elUnpaid.textContent = unpaidCount;
 }
 
 function getOutageWarnings(ds) {
@@ -754,10 +785,14 @@ function chip(e){
 }
 
 function renderMonth(){
-  document.getElementById('calendar').style.display='block';
-  document.getElementById('agenda').style.display='none';
+  const calEl = document.getElementById('calendar');
+  const agEl = document.getElementById('agenda');
+  if(calEl) calEl.style.display='block';
+  if(agEl) agEl.style.display='none';
+  
   const y=current.getFullYear(),m=current.getMonth();
-  document.getElementById('calendarTitle').textContent=`${MONTH_NAMES[m]} ${y}`;
+  const ct = document.getElementById('calendarTitle');
+  if(ct) ct.textContent=`${MONTH_NAMES[m]} ${y}`;
   
   const first=new Date(y,m,1);
   let firstDay = first.getDay(); 
@@ -794,8 +829,10 @@ function renderMonth(){
     </div>`;
   }
   html+='</div>';
-  document.getElementById('calendar').innerHTML=html;
-  document.querySelectorAll('.day').forEach(el=>el.addEventListener('dblclick',()=>window.openEventModal({date:el.dataset.date})));
+  if(calEl) {
+      calEl.innerHTML=html;
+      document.querySelectorAll('.day').forEach(el=>el.addEventListener('dblclick',()=>window.openEventModal({date:el.dataset.date})));
+  }
 }
 
 function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
@@ -901,13 +938,16 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
 }
 
 function renderPayroll(){
-  document.getElementById('calendar').style.display='none';
-  document.getElementById('agenda').style.display='block';
+  const calEl = document.getElementById('calendar');
+  const agEl = document.getElementById('agenda');
+  if(calEl) calEl.style.display='none';
+  if(agEl) agEl.style.display='block';
   
   const y=current.getFullYear(), m=current.getMonth();
   const monthKey = `${y}-${pad(m+1)}`;
   
-  document.getElementById('calendarTitle').textContent='Thanh toán thợ - ' + `${MONTH_NAMES[m]} ${y}`;
+  const ct = document.getElementById('calendarTitle');
+  if(ct) ct.textContent='Thanh toán thợ - ' + `${MONTH_NAMES[m]} ${y}`;
   const evs = data.events.filter(e => sameMonth(parseDate(e.date), current) && e.status !== 'cancelled' && eventMatches(e));
   let html = `<div>`;
   
@@ -926,11 +966,13 @@ function renderPayroll(){
   }
 
   html += `</div>`;
-  document.getElementById('agenda').innerHTML = html;
+  if(agEl) agEl.innerHTML = html;
 }
 
 window.openPayrollModal = function(staffId, staffName, monthStr) {
-  document.getElementById('payrollModal').style.display = 'flex';
+  const m = document.getElementById('payrollModal');
+  if(!m) return;
+  m.style.display = 'flex';
   document.getElementById('payrollModalTitle').textContent = `Thanh toán: ${staffName} (${monthStr})`;
   document.getElementById('payrollStaffId').value = staffId;
   document.getElementById('payrollMonth').value = monthStr;
@@ -950,7 +992,8 @@ window.savePayroll = function() {
   data.payroll[monthStr][staffId] = { advance, paid };
   
   save();
-  document.getElementById('payrollModal').style.display = 'none';
+  const m = document.getElementById('payrollModal');
+  if(m) m.style.display = 'none';
   render();
   showToast('Đã lưu thanh toán thợ');
 }
@@ -960,6 +1003,7 @@ function renderUpcoming(){
   const list=data.events.filter(e=>parseDate(e.date)>=today&&e.status!=='cancelled')
     .sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||''))).slice(0,7);
   const el=document.getElementById('upcomingList');
+  if(!el) return;
   el.innerHTML=list.length?list.map(e=>{
     let pillColor = 'orange';
     if(e.status==='confirmed') pillColor = 'green';
@@ -972,8 +1016,12 @@ function renderUpcoming(){
 }
 
 function renderStaffMonthList(){
-  const m = Number(document.getElementById('staffMonthM').value);
-  const y = Number(document.getElementById('staffMonthY').value);
+  const smM = document.getElementById('staffMonthM');
+  const smY = document.getElementById('staffMonthY');
+  if(!smM || !smY) return;
+  
+  const m = Number(smM.value);
+  const y = Number(smY.value);
   
   const staffDays = {};
   const staffToRender = data.staff.filter(s => s.role !== 'Freelance'); 
@@ -990,6 +1038,7 @@ function renderStaffMonthList(){
   });
   
   const el = document.getElementById('staffMonthList');
+  if(!el) return;
   el.innerHTML = staffToRender.map(s => {
     const daysArr = Array.from(staffDays[s.id]).sort((a,b)=>a-b);
     const daysStr = daysArr.join(', ');
@@ -1006,8 +1055,12 @@ function renderStaffMonthList(){
 }
 
 function renderMonthSummary(){
-  const m = Number(document.getElementById('summaryMonthM').value) - 1;
-  const y = Number(document.getElementById('summaryMonthY').value);
+  const sM = document.getElementById('summaryMonthM');
+  const sY = document.getElementById('summaryMonthY');
+  if(!sM || !sY) return;
+  
+  const m = Number(sM.value) - 1;
+  const y = Number(sY.value);
   
   const ev = data.events.filter(e => {
       const ed = parseDate(e.date);
@@ -1040,7 +1093,9 @@ function renderMonthSummary(){
   const sumStaffPaid = totalAdvance + totalPaid;
   const sumStaffUnpaid = staffCost - sumStaffPaid;
 
-  document.getElementById('monthSummary').innerHTML=`
+  const ms = document.getElementById('monthSummary');
+  if(!ms) return;
+  ms.innerHTML=`
     <div class="kpi-row"><span style="font-weight:600">Tổng lịch trong tháng</span><b style="color:var(--text);font-size:14px">${total}</b></div>
     <div style="height:1px;background:var(--line);margin:14px 0"></div>
     <div class="kpi-row"><span style="font-weight:600">Tổng booking</span><b style="color:var(--text);font-size:14px">${money(revenue)}đ</b></div>
@@ -1062,7 +1117,8 @@ function render(){
   renderUpcoming();renderStaffMonthList();renderMonthSummary();
   
   const options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
-  document.getElementById('todayText').textContent=`Hôm nay · ${new Date().toLocaleDateString('vi-VN', options)}`;
+  const tt = document.getElementById('todayText');
+  if(tt) tt.textContent=`Hôm nay · ${new Date().toLocaleDateString('vi-VN', options)}`;
 }
 
 function setView(v){
@@ -1070,16 +1126,17 @@ function setView(v){
   document.querySelectorAll('[data-view],[data-switch]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
   
   // Ẩn/hiện bộ lọc
-  document.getElementById('mainFilters').style.display = (v === 'month') ? 'flex' : 'none';
+  const mf = document.getElementById('mainFilters');
+  if(mf) mf.style.display = (v === 'month') ? 'flex' : 'none';
   
   render();
 }
 
 window.filterStaffModal = function() {
-  const cChup = document.getElementById('f_chup').checked;
-  const cQuay = document.getElementById('f_quay').checked;
-  const cMakeup = document.getElementById('f_makeup').checked;
-  const cKhac = document.getElementById('f_khac').checked;
+  const cChup = document.getElementById('f_chup')?.checked;
+  const cQuay = document.getElementById('f_quay')?.checked;
+  const cMakeup = document.getElementById('f_makeup')?.checked;
+  const cKhac = document.getElementById('f_khac')?.checked;
   
   document.querySelectorAll('.staff-modal-item').forEach(el => {
      const role = el.dataset.role;
@@ -1097,9 +1154,10 @@ window.filterStaffModal = function() {
 }
 
 window.updateDepositLabel = function() {
-  const price = Number(document.getElementById('eventPrice').value || 0);
-  const dep = Number(document.getElementById('eventDeposit').value || 0);
+  const price = Number(document.getElementById('eventPrice')?.value || 0);
+  const dep = Number(document.getElementById('eventDeposit')?.value || 0);
   const label = document.getElementById('depositLabel');
+  if(!label) return;
   if (price > 0 && dep >= price) {
       label.textContent = 'Đã thanh toán đủ (VNĐ)';
       label.style.color = 'var(--green)';
@@ -1113,9 +1171,9 @@ window.updateDepositLabel = function() {
 // HIỂN THỊ THEO TỪNG BƯỚC VÀ ẨN/HIỆN LINK (Progressive UI)
 // ----------------------------------------------------
 window.updateModalVisibility = function() {
-    const nameVal = document.getElementById('eventName').value.trim();
-    const locVal = document.getElementById('eventLocation').value.trim();
-    const statusVal = document.getElementById('eventStatus').value;
+    const nameVal = document.getElementById('eventName')?.value.trim() || '';
+    const locVal = document.getElementById('eventLocation')?.value.trim() || '';
+    const statusVal = document.getElementById('eventStatus')?.value || '';
     
     document.querySelectorAll('.step2-item').forEach(el => {
         el.style.display = nameVal ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
@@ -1126,7 +1184,7 @@ window.updateModalVisibility = function() {
     });
     
     document.querySelectorAll('.staff-modal-item').forEach(el => {
-        const isChecked = el.querySelector('.staff-check').checked;
+        const isChecked = el.querySelector('.staff-check')?.checked;
         const linkCont = el.querySelector('.staff-link-container');
         if(linkCont) {
             linkCont.style.display = (statusVal === 'done' && isChecked) ? 'flex' : 'none';
@@ -1137,12 +1195,15 @@ window.updateModalVisibility = function() {
 let currentEventAssignments = [];
 
 window.saveStaffLinkLocally = function(sId, sName) {
-    const urlInput = document.getElementById('link-input-'+sId).value.trim();
-    const taskInput = document.getElementById('task-'+sId).value;
+    const urlInput = document.getElementById('link-input-'+sId)?.value.trim();
+    const taskInput = document.getElementById('task-'+sId)?.value;
     if(!urlInput) { showToast('Vui lòng dán link URL'); return; }
     
-    document.getElementById('link-tag-'+sId).href = urlInput;
-    document.getElementById('link-tag-'+sId).innerHTML = `🔗 ${escapeHtml(sName)} - ${escapeHtml(taskInput || 'Source')}`;
+    const tag = document.getElementById('link-tag-'+sId);
+    if(tag) {
+        tag.href = urlInput;
+        tag.innerHTML = `🔗 ${escapeHtml(sName)} - ${escapeHtml(taskInput || 'Source')}`;
+    }
     
     document.getElementById('link-edit-'+sId).style.display = 'none';
     document.getElementById('link-view-'+sId).style.display = 'flex';
@@ -1155,6 +1216,7 @@ window.toggleEditLink = function(sId) {
 
 window.addProductRow = function(name='', url='') {
     const container = document.getElementById('eventProductsList');
+    if(!container) return;
     const div = document.createElement('div');
     div.className = 'product-row';
     div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#f0f9ff; padding:12px; border-radius:12px; border:1px solid #bae6fd';
@@ -1200,17 +1262,20 @@ window.renderEventStaffList = function() {
             const sId = cb.value;
             return { 
                 id: sId, 
-                task: document.getElementById('task-'+sId).value, 
-                cost: Number(document.getElementById('cost-'+sId).value||0),
+                task: document.getElementById('task-'+sId)?.value || '', 
+                cost: Number(document.getElementById('cost-'+sId)?.value||0),
                 link: document.getElementById('link-input-'+sId)?.value.trim() || ''
             };
         });
     }
     
-    const statusVal = document.getElementById('eventStatus').value;
+    const statusVal = document.getElementById('eventStatus')?.value;
     const showLink = (statusVal === 'done');
 
-    document.getElementById('eventStaff').innerHTML = data.staff.length
+    const evStaffEl = document.getElementById('eventStaff');
+    if(!evStaffEl) return;
+
+    evStaffEl.innerHTML = data.staff.length
       ? data.staff.map(s => {
           const a = currentEventAssignments.find(x => x.id === s.id);
           const isChecked = !!a;
@@ -1260,8 +1325,8 @@ window.renderEventStaffList = function() {
 }
 
 window.saveFreelanceQuick = function() {
-    const name = document.getElementById('newFreeName').value.trim();
-    const skillLabel = document.getElementById('newFreeRole').value;
+    const name = document.getElementById('newFreeName')?.value.trim();
+    const skillLabel = document.getElementById('newFreeRole')?.value;
     if (!name) { showToast('Vui lòng nhập tên Freelance'); return; }
 
     const displayName = `${name} (${skillLabel})`;
@@ -1269,41 +1334,51 @@ window.saveFreelanceQuick = function() {
     data.staff.push(newStaff);
     save();
 
-    document.getElementById('f_khac').checked = true;
+    const fk = document.getElementById('f_khac');
+    if(fk) fk.checked = true;
     currentEventAssignments.push({ id: newStaff.id, task: skillLabel, cost: 0, link: '' });
 
-    document.getElementById('newFreeName').value = '';
-    document.getElementById('freelanceForm').style.display = 'none';
+    setSafeValue('newFreeName', '');
+    const ff = document.getElementById('freelanceForm');
+    if(ff) ff.style.display = 'none';
 
     window.renderEventStaffList();
     showToast('Đã thêm Freelance: ' + displayName);
 };
 
 window.openEventModal = function(prefill={}){
-  document.getElementById('eventModal').style.display='flex';
+  const em = document.getElementById('eventModal');
+  if(em) em.style.display='flex';
   const e=prefill.id?data.events.find(x=>x.id===prefill.id):null;
-  document.getElementById('eventModalTitle').textContent=e?'Chỉnh sửa lịch':'Thêm lịch';
-  document.getElementById('deleteEvent').style.display=e?'inline-flex':'none';
-  document.getElementById('eventId').value=e?.id||'';
-  document.getElementById('eventName').value=e?.name||'';
-  document.getElementById('eventDate').value=e?.date||prefill.date||isoDate(current);
-  document.getElementById('eventStart').value=e?.start||'08:00';
-  document.getElementById('eventEnd').value=e?.end||'12:00';
-  document.getElementById('eventStatus').value=e?.status||'pending';
-  document.getElementById('eventLocation').value=e?.location||'';
-  document.getElementById('eventPhone').value=e?.phone||'';
-  document.getElementById('eventPrice').value=e?.price??'';
-  document.getElementById('eventDeposit').value=e?.deposit??'';
-  document.getElementById('eventNote').value=e?.note||'';
-  document.getElementById('freelanceForm').style.display='none';
+  const et = document.getElementById('eventModalTitle');
+  if(et) et.textContent=e?'Chỉnh sửa lịch':'Thêm lịch';
+  const de = document.getElementById('deleteEvent');
+  if(de) de.style.display=e?'inline-flex':'none';
   
-  document.getElementById('f_chup').checked = false;
-  document.getElementById('f_quay').checked = false;
-  document.getElementById('f_makeup').checked = false;
-  document.getElementById('f_khac').checked = false;
+  setSafeValue('eventId', e?.id||'');
+  setSafeValue('eventName', e?.name||'');
+  setSafeValue('eventDate', e?.date||prefill.date||isoDate(current));
+  setSafeValue('eventStart', e?.start||'08:00');
+  setSafeValue('eventEnd', e?.end||'12:00');
+  setSafeValue('eventStatus', e?.status||'pending');
+  setSafeValue('eventLocation', e?.location||'');
+  setSafeValue('eventPhone', e?.phone||'');
+  setSafeValue('eventPrice', e?.price??'');
+  setSafeValue('eventDeposit', e?.deposit??'');
+  setSafeValue('eventNote', e?.note||'');
+  
+  const ff = document.getElementById('freelanceForm');
+  if(ff) ff.style.display='none';
+  
+  ['f_chup','f_quay','f_makeup','f_khac'].forEach(id=>{
+      const cb = document.getElementById(id);
+      if(cb) cb.checked = false;
+  });
 
-  document.getElementById('eventStaff').innerHTML = '';
-  document.getElementById('eventProductsList').innerHTML = '';
+  const es = document.getElementById('eventStaff');
+  if(es) es.innerHTML = '';
+  const ep = document.getElementById('eventProductsList');
+  if(ep) ep.innerHTML = '';
   
   currentEventAssignments = e?.assignments ? JSON.parse(JSON.stringify(e.assignments)) : [];
   window.renderEventStaffList();
@@ -1316,13 +1391,16 @@ window.openEventModal = function(prefill={}){
   setTimeout(window.updateModalVisibility, 10);
 }
 
-window.closeEventModal = function(){document.getElementById('eventModal').style.display='none'}
+window.closeEventModal = function(){
+    const em = document.getElementById('eventModal');
+    if(em) em.style.display='none';
+}
 
 window.checkConflict = function(){
-  const date=document.getElementById('eventDate').value;
-  const start=document.getElementById('eventStart').value;
-  const end=document.getElementById('eventEnd').value;
-  const id=document.getElementById('eventId').value;
+  const date=document.getElementById('eventDate')?.value;
+  const start=document.getElementById('eventStart')?.value;
+  const end=document.getElementById('eventEnd')?.value;
+  const id=document.getElementById('eventId')?.value;
   
   data.staff.forEach(s => {
      const infoSpan = document.getElementById('busy-info-' + s.id);
@@ -1350,32 +1428,32 @@ window.checkConflict = function(){
 }
 
 window.saveEvent = function(){
-  const id=document.getElementById('eventId').value;
+  const id=document.getElementById('eventId')?.value;
   const obj={
     id:id||uid(),
-    name:document.getElementById('eventName').value.trim(),
-    date:document.getElementById('eventDate').value,
-    start:document.getElementById('eventStart').value,
-    end:document.getElementById('eventEnd').value,
+    name:document.getElementById('eventName')?.value.trim()||'',
+    date:document.getElementById('eventDate')?.value||'',
+    start:document.getElementById('eventStart')?.value||'',
+    end:document.getElementById('eventEnd')?.value||'',
     assignments:[...document.querySelectorAll('#eventStaff input[type="checkbox"]:checked')].map(cb=>{
        const sId = cb.value;
        return {
          id: sId,
-         task: document.getElementById('task-'+sId).value,
-         cost: Number(document.getElementById('cost-'+sId).value||0),
+         task: document.getElementById('task-'+sId)?.value||'',
+         cost: Number(document.getElementById('cost-'+sId)?.value||0),
          link: document.getElementById('link-input-'+sId)?.value.trim() || ''
        };
     }),
     products:[...document.querySelectorAll('.product-row')].map(row => ({
-       name: row.querySelector('.prod-name').value.trim(),
-       url: row.querySelector('.prod-url').value.trim()
+       name: row.querySelector('.prod-name')?.value.trim()||'',
+       url: row.querySelector('.prod-url')?.value.trim()||''
     })).filter(p => p.url),
-    status:document.getElementById('eventStatus').value,
-    location:document.getElementById('eventLocation').value.trim(),
-    phone:document.getElementById('eventPhone').value.trim(),
-    price:Number(document.getElementById('eventPrice').value||0),
-    deposit:Number(document.getElementById('eventDeposit').value||0),
-    note:document.getElementById('eventNote').value.trim()
+    status:document.getElementById('eventStatus')?.value||'pending',
+    location:document.getElementById('eventLocation')?.value.trim()||'',
+    phone:document.getElementById('eventPhone')?.value.trim()||'',
+    price:Number(document.getElementById('eventPrice')?.value||0),
+    deposit:Number(document.getElementById('eventDeposit')?.value||0),
+    note:document.getElementById('eventNote')?.value.trim()||''
   };
   if(!obj.name||!obj.date||!obj.start||!obj.end){showToast('Vui lòng điền đủ tên, ngày và giờ');return}
   if(obj.end<=obj.start){showToast('Giờ kết thúc phải sau giờ bắt đầu');return}
@@ -1396,7 +1474,7 @@ window.saveEvent = function(){
 }
 
 window.deleteEvent = function(){
-  const id=document.getElementById('eventId').value;if(!id)return;
+  const id=document.getElementById('eventId')?.value;if(!id)return;
   const e=data.events.find(x=>x.id===id); if(!e)return;
   if(!confirm(`Xóa lịch "${e.name}"?`))return;
   data.events=data.events.filter(x=>x.id!==id);
@@ -1406,11 +1484,21 @@ window.deleteEvent = function(){
   showToast('Đã xóa lịch');
 }
 
-window.openSettings = function(){ document.getElementById('settingsModal').style.display='flex'; }
-window.openStaff = function(){document.getElementById('staffModal').style.display='flex';renderStaffManage()}
+window.openSettings = function(){ 
+    const s = document.getElementById('settingsModal');
+    if(s) s.style.display='flex'; 
+}
+
+window.openStaff = function(){
+    const s = document.getElementById('staffModal');
+    if(s) s.style.display='flex';
+    renderStaffManage();
+}
 
 function renderStaffManage(){
-  document.getElementById('staffManageList').innerHTML=data.staff.map(s=>`<div class="mini-item">
+  const sl = document.getElementById('staffManageList');
+  if(!sl) return;
+  sl.innerHTML=data.staff.map(s=>`<div class="mini-item">
     <div class="staff-left"><div class="avatar">${initials(s.name)}</div><div class="staff-info"><div class="mini-title">${escapeHtml(s.name)}</div><div class="mini-sub">${escapeHtml(s.role)}</div></div></div>
     <button class="btn danger" style="padding:8px 12px;font-size:12px" data-delstaff="${s.id}">Xóa</button></div>`).join('');
   document.querySelectorAll('[data-delstaff]').forEach(b=>b.addEventListener('click', ()=>{
@@ -1423,13 +1511,18 @@ function renderStaffManage(){
 }
 
 window.addStaff = function(){
-  const name=document.getElementById('staffName').value.trim(); const role=document.getElementById('staffRole').value;
+  const name=document.getElementById('staffName')?.value.trim(); const role=document.getElementById('staffRole')?.value;
   if(!name){showToast('Nhập tên nhân sự');return}
-  data.staff.push({id:uid(),name,role});save();document.getElementById('staffName').value='';renderStaffManage();showToast('Đã thêm nhân sự');
+  data.staff.push({id:uid(),name,role});save();
+  setSafeValue('staffName','');
+  renderStaffManage();showToast('Đã thêm nhân sự');
 }
 
 document.addEventListener('click',e=>{
-  const chip=e.target.closest('[data-id]'); if(chip && (chip.classList.contains('event-chip')||chip.classList.contains('mini-item')||chip.classList.contains('agenda-event'))) window.openEventModal({id:chip.dataset.id});
+  const chip=e.target.closest('[data-id]'); 
+  if(chip && (chip.classList.contains('event-chip')||chip.classList.contains('mini-item')||chip.classList.contains('agenda-event'))) {
+      window.openEventModal({id:chip.dataset.id});
+  }
 });
 
 // Gắn sự kiện an toàn
@@ -1443,19 +1536,31 @@ document.getElementById('cancelEvent')?.addEventListener('click', window.closeEv
 document.getElementById('saveEvent')?.addEventListener('click', window.saveEvent);
 document.getElementById('deleteEvent')?.addEventListener('click', window.deleteEvent);
 document.getElementById('openStaffBtn')?.addEventListener('click', window.openStaff);
-document.getElementById('closeStaff')?.addEventListener('click', ()=>document.getElementById('staffModal').style.display='none');
+document.getElementById('closeStaff')?.addEventListener('click', ()=>{
+    const m = document.getElementById('staffModal');
+    if(m) m.style.display='none';
+});
 document.getElementById('addStaffBtn')?.addEventListener('click', window.addStaff);
 document.getElementById('settingsBtn')?.addEventListener('click', window.openSettings);
-document.getElementById('closeSettings')?.addEventListener('click', ()=>document.getElementById('settingsModal').style.display='none');
+document.getElementById('closeSettings')?.addEventListener('click', ()=>{
+    const m = document.getElementById('settingsModal');
+    if(m) m.style.display='none';
+});
 
-document.getElementById('closePayroll')?.addEventListener('click', ()=>document.getElementById('payrollModal').style.display='none');
-document.getElementById('cancelPayroll')?.addEventListener('click', ()=>document.getElementById('payrollModal').style.display='none');
+document.getElementById('closePayroll')?.addEventListener('click', ()=>{
+    const m = document.getElementById('payrollModal');
+    if(m) m.style.display='none';
+});
+document.getElementById('cancelPayroll')?.addEventListener('click', ()=>{
+    const m = document.getElementById('payrollModal');
+    if(m) m.style.display='none';
+});
 document.getElementById('savePayrollBtn')?.addEventListener('click', window.savePayroll);
 
 document.getElementById('fullPaidBtn')?.addEventListener('click', () => {
-   const price = document.getElementById('eventPrice').value;
+   const price = document.getElementById('eventPrice')?.value;
    if(price && Number(price) > 0) {
-      document.getElementById('eventDeposit').value = price;
+      setSafeValue('eventDeposit', price);
       window.updateDepositLabel();
    }
 });
@@ -1465,7 +1570,8 @@ document.getElementById('clearAll')?.addEventListener('click', ()=>{
         data={staff:[],events:[],payroll:{}};
         save();
         render();
-        document.getElementById('settingsModal').style.display='none';
+        const m = document.getElementById('settingsModal');
+        if(m) m.style.display='none';
         showToast('Đã dọn sạch dữ liệu');
     }
 });
