@@ -396,7 +396,7 @@ body.role-staff .staff-only-block { display: block !important; }
       <form id="eventForm">
         <input type="hidden" id="eventId">
         <div class="form-grid">
-          <div class="form-group full"><label for="eventName">Tên lịch / Khách hàng</label><input id="eventName" required placeholder="VD: Đám cưới Minh & Linh" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()"></div>
+          <div class="form-group full"><label for="eventName">Tên lịch / Khách hàng</label><input id="eventName" required placeholder="VD: Đám cưới Minh & Linh (Ngày 1)" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()"></div>
           <div class="form-group"><label for="eventDate">Ngày</label><input id="eventDate" type="date" required onchange="window.updateModalVisibility(); window.checkConflict();"></div>
           <div class="form-group">
               <label for="eventStatus">Trạng thái</label>
@@ -443,15 +443,14 @@ body.role-staff .staff-only-block { display: block !important; }
           </div>
           
           <div class="form-group step2-item" style="display:none">
-            <label for="eventLocation">Địa điểm</label>
+            <label for="eventLocation">Địa điểm (Lộ trình chung)</label>
             <div id="locationInputGroup" style="position:relative; width: 100%;">
-                <input id="eventLocation" placeholder="VD: Cần Thơ (Gõ để tìm kiếm Bản đồ)..." autocomplete="off" style="width:100%;">
+                <input id="eventLocation" placeholder="VD: Nhà Gái -> Nhà Trai..." autocomplete="off" style="width:100%;">
                 <div id="locationSuggestions" style="display:none;"></div>
             </div>
           </div>
           <div class="form-group step2-item" style="display:none"><label for="eventPhone">Số điện thoại khách</label><input id="eventPhone" placeholder="090..."></div>
           
-          <!-- Nhóm 3: Cấu hình Tiền Bạc sử dụng .000 đ -->
           <div class="form-group step3-item" style="display:none" id="priceGroup">
             <label for="eventPrice">Giá trị booking</label>
             <div class="currency-wrap">
@@ -465,7 +464,7 @@ body.role-staff .staff-only-block { display: block !important; }
             </div>
           </div>
           
-          <div class="form-group full step3-item" style="display:none"><label for="eventNote">Ghi chú / Yêu cầu</label><textarea id="eventNote" placeholder="Trang phục, concept, thiết bị, thời gian di chuyển..."></textarea></div>
+          <div class="form-group full step3-item" style="display:none"><label for="eventNote">Ghi chú chung / Yêu cầu</label><textarea id="eventNote" placeholder="Trang phục, concept, thiết bị, thời gian di chuyển..."></textarea></div>
 
           <div class="form-group full step3-item admin-only admin-only-block" id="productsSection" style="display:none; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 24px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
@@ -569,7 +568,6 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
     return false;
 };
 
-// HÀM TIỆN ÍCH AN TOÀN
 function setSafeValue(id, val) {
     const el = document.getElementById(id);
     if(el) {
@@ -581,7 +579,6 @@ function setSafeValue(id, val) {
     }
 }
 
-// FORMAT TIỀN TỆ THÔNG MINH KẾT HỢP .000 đ
 window.formatMoneyInput = function(el) {
     let raw = el.value.replace(/[^0-9]/g, '');
     if(raw === '') {
@@ -626,7 +623,6 @@ const firebaseConfig = {
 
 const DAY_NAMES = ['T2','T3','T4','T5','T6','T7','CN']; 
 const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
-
 const STATUS_LABEL = {
     'pending': 'Chờ xác nhận',
     'confirmed': 'Đã chốt',
@@ -723,11 +719,12 @@ function sanitizeData(d) {
         if(!e.date) e.date = isoDate(new Date());
         if(!e.start) e.start = '08:00';
         if(!e.end) e.end = '12:00';
+        // Sanitize new property for older events
+        e.assignments.forEach(a => { if(!a.note) a.note = ''; });
     });
     return d;
 }
 
-// CÀI ĐẶT THÁNG MẶC ĐỊNH CHUẨN XÁC KHI LOAD 100%
 function setupDefaultFilters() {
     const mm = String(current.getMonth() + 1);
     const yy = String(current.getFullYear());
@@ -743,7 +740,6 @@ function setupDefaultFilters() {
     });
 }
 
-// TÌM KIẾM ĐỊA ĐIỂM OPENSTREETMAP (PHOTON API) SIÊU NHANH
 window.setupLocationAutocomplete = function() {
     const input = document.getElementById('eventLocation');
     const suggestBox = document.getElementById('locationSuggestions');
@@ -791,17 +787,14 @@ window.selectLocation = function(name) {
     window.updateModalVisibility();
 };
 
-// KHỞI TẠO APP
 function initApp() {
     applyRoleUI();
-    
     try {
         const raw = localStorage.getItem(STORE_KEY);
         if (raw) data = sanitizeData(JSON.parse(raw));
         else data = defaultData();
     } catch(e) { data = defaultData(); }
     
-    // Ép form chạy mặc định
     setupDefaultFilters();
     try { render(); } catch(e) {}
     
@@ -813,27 +806,22 @@ function initApp() {
         if (overlay) overlay.classList.add('hidden');
         isFirstLoad = false;
     };
-
     setTimeout(hideLoading, 3000);
 
     try {
         if (typeof firebase !== 'undefined' && !firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
             window.dbRef = firebase.database().ref('studioPlanner_v1');
-            
             window.dbRef.on('value', (snapshot) => {
                 const val = snapshot.val();
                 if (val) {
                     data = sanitizeData(val);
                     localStorage.setItem(STORE_KEY, JSON.stringify(data)); 
-                    // Gọi lại SetupDefaultFilters mỗi khi Firebase tải lại để chống mất dữ liệu
                     setupDefaultFilters();
                     try { render(); } catch(e) {}
                 }
                 hideLoading();
-            }, (error) => {
-                hideLoading();
-            });
+            }, (error) => { hideLoading(); });
         }
     } catch (err) { hideLoading(); }
 }
@@ -858,7 +846,6 @@ function getOldDebt(staffId, targetY, targetM) {
             if(a) debt += Number(a.cost || 0);
         }
     });
-
     for (const [mKey, staffRecords] of Object.entries(data.payroll)) {
         const [py, pm] = mKey.split('-').map(Number); 
         if(py < targetY || (py === targetY && (pm - 1) < targetM)) {
@@ -929,16 +916,13 @@ function getOutageWarnings(ds) {
   const checkRole = (roleStr, label) => {
     const staffOfRole = data.staff.filter(s => s.role === roleStr);
     if (staffOfRole.length === 0) return;
-
     const staffIntervals = {};
     staffOfRole.forEach(s => staffIntervals[s.id] = []);
-
     dayEvents.forEach(e => {
       e.assignments.forEach(a => {
         if (staffIntervals[a.id]) staffIntervals[a.id].push({ start: e.start||'', end: e.end||'' });
       });
     });
-
     let timepoints = new Set();
     for (let sid in staffIntervals) {
       staffIntervals[sid].forEach(iv => { 
@@ -947,7 +931,6 @@ function getOutageWarnings(ds) {
       });
     }
     timepoints = Array.from(timepoints).sort();
-
     let busyPeriods = [];
     for (let i = 0; i < timepoints.length - 1; i++) {
       const t1 = timepoints[i], t2 = timepoints[i+1];
@@ -963,13 +946,11 @@ function getOutageWarnings(ds) {
         }
       }
     }
-
     if (busyPeriods.length > 0) {
       const timeStrs = busyPeriods.map(p => `${p.start}-${p.end}`).join(', ');
       warnings.push(`${label} (${timeStrs})`); 
     }
   };
-  
   checkRole('Photographer', 'Chụp');
   checkRole('Videographer', 'Quay');
   checkRole('Makeup', 'Makeup');
@@ -1009,17 +990,14 @@ function renderMonth(){
   for(let i=0;i<42;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const ds=isoDate(d); 
-    
     const all = allEventsForView.filter(e=>e.date===ds).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
-    
     let warningsHtml = '';
     const warnings = getOutageWarnings(ds);
     if(warnings.length) {
       warningsHtml = `<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
-        ${warnings.map(w => `<span style="background:#fecaca;color:#991b1b;font-size:10.5px;padding:4px 6px;border-radius:6px;font-weight:800;line-height:1.2;">⚠️️ ${w}</span>`).join('')}
+        ${warnings.map(w => `<span style="background:#fecaca;color:#991b1b;font-size:10.5px;padding:4px 6px;border-radius:6px;font-weight:800;line-height:1.2;">⚠️ ${w}</span>`).join('')}
       </div>`;
     }
-
     const isOtherMonth = d.getMonth() !== m;
     const displayDate = isOtherMonth ? `${d.getDate()}/${d.getMonth()+1}` : d.getDate();
 
@@ -1039,22 +1017,17 @@ function renderMonth(){
   if(calEl) {
       calEl.innerHTML=html;
       document.querySelectorAll('.day').forEach(el => el.addEventListener('dblclick', () => {
-          if (currentUserRole === 'admin') {
-              window.openEventModal({date: el.dataset.date});
-          }
+          if (currentUserRole === 'admin') window.openEventModal({date: el.dataset.date});
       }));
   }
 }
 
 function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isReadonly = false) {
-  let html = '';
-  let renderedCount = 0;
+  let html = ''; let renderedCount = 0;
   const [targetY, targetM] = monthKey.split('-').map(Number);
   
   staffArray.forEach(s => {
-      let totalCost = 0;
-      let tasksHtml = '';
-      
+      let totalCost = 0; let tasksHtml = '';
       const sEvents = evs.filter(e => e.assignments.some(x => x.id === s.id)).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
       
       sEvents.forEach(e => {
@@ -1062,18 +1035,14 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isR
         if(a) {
           const cost = Number(a.cost||0);
           totalCost += cost;
+          let taskLinkHtml = a.link ? `<a href="${escapeHtml(a.link)}" target="_blank" style="font-size:11.5px; color:var(--blue); text-decoration:none; background:var(--bg-blue); padding:4px 10px; border-radius:99px; margin-left:8px; display:inline-flex; align-items:center; font-weight:700;">🔗 Link Source</a>` : '';
           
-          let taskLinkHtml = '';
-          if(a.link) {
-              taskLinkHtml = `<a href="${escapeHtml(a.link)}" target="_blank" style="font-size:11.5px; color:var(--blue); text-decoration:none; background:var(--bg-blue); padding:4px 10px; border-radius:99px; margin-left:8px; display:inline-flex; align-items:center; font-weight:700;">🔗 Link Source</a>`;
-          }
-
           tasksHtml += `
             <div class="mini-item" data-id="${e.id}" style="border:0;border-bottom:1px solid var(--line);border-radius:0;padding:16px 24px;background:transparent;box-shadow:none">
               <div>
                 <b style="color:var(--text);font-size:14.5px">${formatDate(e.date)} · ${escapeHtml(e.name)}</b>
                 <div style="color:var(--muted);margin-top:6px;font-size:13.5px;font-weight:600">
-                    ${escapeHtml(a.task || 'Chưa xếp việc')} ${taskLinkHtml}
+                    ${escapeHtml(a.task || 'Chưa xếp việc')} ${a.note ? ` - ${escapeHtml(a.note)}` : ''} ${taskLinkHtml}
                 </div>
               </div>
               <div style="text-align:right">
@@ -1084,15 +1053,11 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isR
       });
 
       const p = (data.payroll[monthKey] && data.payroll[monthKey][s.id]) || {advance:0, paid:0};
-      const advance = p.advance;
-      const paid = p.paid;
-      
+      const advance = p.advance; const paid = p.paid;
       const oldDebt = getOldDebt(s.id, targetY, targetM - 1);
       const remain = oldDebt + totalCost - advance - paid;
       
-      if (isFreelance && sEvents.length === 0 && advance === 0 && paid === 0 && totalCost === 0 && oldDebt <= 0) {
-          return; 
-      }
+      if (isFreelance && sEvents.length === 0 && advance === 0 && paid === 0 && totalCost === 0 && oldDebt <= 0) return; 
       
       renderedCount++;
       const cardBg = remain > 0 ? '#fffef2' : '#ffffff'; 
@@ -1140,17 +1105,13 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isR
       `;
   });
   
-  if (isFreelance && renderedCount === 0) {
-      return '<div class="empty" style="padding:32px;border:1px dashed var(--line);border-radius:20px;font-weight:500;background:transparent">Tháng này không có Freelance nào làm việc.</div>';
-  }
+  if (isFreelance && renderedCount === 0) return '<div class="empty" style="padding:32px;border:1px dashed var(--line);border-radius:20px;font-weight:500;background:transparent">Tháng này không có Freelance nào làm việc.</div>';
   return html;
 }
 
 function renderPayroll(){
-  const calEl = document.getElementById('calendar');
-  const agEl = document.getElementById('agenda');
-  if(calEl) calEl.style.display='none';
-  if(agEl) agEl.style.display='block';
+  const calEl = document.getElementById('calendar'); const agEl = document.getElementById('agenda');
+  if(calEl) calEl.style.display='none'; if(agEl) agEl.style.display='block';
   
   const y=current.getFullYear(), m=current.getMonth();
   const monthKey = `${y}-${pad(m+1)}`;
@@ -1170,11 +1131,8 @@ function renderPayroll(){
   const mainStaff = data.staff.filter(s => s.role !== 'Freelance');
   const freeStaff = data.staff.filter(s => s.role === 'Freelance');
 
-  if (mainStaff.length) {
-      html += generatePayrollHTML(mainStaff, evs, monthKey, false, false);
-  } else if (freeStaff.length === 0) {
-      html += `<div class="empty" style="background:#fff;border-radius:20px;border:1px dashed var(--line)">Chưa có nhân sự. Hãy vào mục "Đội ngũ" để thêm.</div>`;
-  }
+  if (mainStaff.length) html += generatePayrollHTML(mainStaff, evs, monthKey, false, false);
+  else if (freeStaff.length === 0) html += `<div class="empty" style="background:#fff;border-radius:20px;border:1px dashed var(--line)">Chưa có nhân sự. Hãy vào mục "Đội ngũ" để thêm.</div>`;
   
   if (freeStaff.length) {
       html += `<h3 style="margin:40px 0 24px;font-size:22px;color:var(--text);border-bottom:1px solid var(--line);padding-bottom:16px;font-weight:800;letter-spacing:-0.5px">Cộng tác viên (Freelance)</h3>`;
@@ -1200,27 +1158,20 @@ window.savePayroll = function() {
   if (currentUserRole !== 'admin') return;
   const staffId = document.getElementById('payrollStaffId').value;
   const monthStr = document.getElementById('payrollMonth').value;
-  
   const advance = parseMoney(document.getElementById('payrollAdvance').value) * 1000;
   const paid = parseMoney(document.getElementById('payrollPaid').value) * 1000;
 
   if(!data.payroll[monthStr]) data.payroll[monthStr] = {};
   data.payroll[monthStr][staffId] = { advance, paid };
   
-  save();
-  window.smoothClose('payrollModal');
-  render();
-  showToast('Đã cập nhật lương');
+  save(); window.smoothClose('payrollModal'); render(); showToast('Đã cập nhật lương');
 }
 
-// LỊCH SẮP TỚI CHI TIẾT (DÀNH CHO THỢ) BẰNG JS ÉP BLOCK
 function renderUpcoming(){
   const panel = document.getElementById('upcomingListPanel');
   if (currentUserRole !== 'staff') {
-      if(panel) panel.style.display = 'none';
-      return;
+      if(panel) panel.style.display = 'none'; return;
   }
-  // Mở khóa Panel Lịch Sắp Tới dành cho Thợ
   if(panel) panel.style.display = 'block';
   
   const today=new Date();today.setHours(0,0,0,0);
@@ -1241,6 +1192,9 @@ function renderUpcoming(){
     }).filter(Boolean).join(', ');
 
     const gmapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}`;
+    const myAssignment = e.assignments.find(a => a.id === staffViewId);
+    // HIỂN THỊ GHI CHÚ ĐỊA ĐIỂM RIÊNG CỦA THỢ TRONG VIEW UPCOMING
+    const myNoteHtml = (myAssignment && myAssignment.note) ? `<div style="margin-top: 12px; padding: 10px 14px; background: #e0f2fe; border: 1px dashed #7dd3fc; border-radius: 8px; color: #0369a1; font-size: 13.5px;"><b>📍 Yêu cầu/Vị trí riêng của bạn:</b> ${escapeHtml(myAssignment.note)}</div>` : '';
     
     return `
     <div class="mini-item" data-id="${e.id}" style="flex-direction:column; align-items:flex-start; gap:12px; padding: 20px;">
@@ -1252,13 +1206,11 @@ function renderUpcoming(){
         <div style="font-size: 13.5px; color: var(--text); line-height: 1.8; width: 100%;">
             <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
             <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">⏰ Bắt đầu:</b> <span style="font-weight:700;">${escapeHtml(e.start || 'Chưa định')}</span></div>
-            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">👥 Nhân sự:</b> <span>${escapeHtml(staffNames || 'Chưa xếp')}</span></div>
-            
-            ${e.location ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">📍 Địa điểm:</b> <a href="${gmapLink}" target="_blank" style="color:var(--blue); font-weight:600; text-decoration:none;">${escapeHtml(e.location)}</a></div>` : ''}
-            
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">👥 Nhân sự chung:</b> <span>${escapeHtml(staffNames || 'Chưa xếp')}</span></div>
+            ${e.location ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">📍 Lộ trình:</b> <a href="${gmapLink}" target="_blank" style="color:var(--blue); font-weight:600; text-decoration:none;">${escapeHtml(e.location)}</a></div>` : ''}
             ${e.phone ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">📞 SĐT:</b> <a href="tel:${escapeHtml(e.phone)}" style="color:var(--text); font-weight:600; text-decoration:none;">${escapeHtml(e.phone)}</a></div>` : ''}
-            
-            ${e.note ? `<div style="margin-top: 12px; padding: 12px; background: #fefce8; border: 1px dashed #fef08a; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
+            ${myNoteHtml}
+            ${e.note ? `<div style="margin-top: 12px; padding: 12px; background: #fefce8; border: 1px dashed #fef08a; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú chung:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
         </div>
     </div>`;
   }).join('') : '<div class="empty" style="padding:24px;background:#fafafa;border-radius:16px">Bạn chưa có lịch sắp tới.</div>';
@@ -1266,24 +1218,17 @@ function renderUpcoming(){
 
 function renderStaffMonthList(){
   if (currentUserRole !== 'admin') return;
-  const smM = document.getElementById('staffMonthM');
-  const smY = document.getElementById('staffMonthY');
-  
-  // Logic Fallback Tự Động Load Ngay
+  const smM = document.getElementById('staffMonthM'); const smY = document.getElementById('staffMonthY');
   let m = smM?.value ? Number(smM.value) : current.getMonth() + 1;
   let y = smY?.value ? Number(smY.value) : current.getFullYear();
   
-  const staffDays = {};
-  const staffToRender = data.staff.filter(s => s.role !== 'Freelance'); 
-  
+  const staffDays = {}; const staffToRender = data.staff.filter(s => s.role !== 'Freelance'); 
   staffToRender.forEach(s => staffDays[s.id] = new Set());
   
   data.events.filter(e => e.status !== 'cancelled').forEach(e => {
     const ed = parseDate(e.date);
     if(ed.getFullYear() === y && ed.getMonth() === m - 1) {
-       e.assignments.forEach(a => {
-          if(staffDays[a.id]) staffDays[a.id].add(ed.getDate());
-       });
+       e.assignments.forEach(a => { if(staffDays[a.id]) staffDays[a.id].add(ed.getDate()); });
     }
   });
   
@@ -1306,10 +1251,7 @@ function renderStaffMonthList(){
 
 function renderMonthSummary(){
   if (currentUserRole !== 'admin') return;
-  const sM = document.getElementById('summaryMonthM');
-  const sY = document.getElementById('summaryMonthY');
-  
-  // Logic Fallback Tự Động Load Ngay
+  const sM = document.getElementById('summaryMonthM'); const sY = document.getElementById('summaryMonthY');
   let m = sM?.value ? Number(sM.value) - 1 : current.getMonth();
   let y = sY?.value ? Number(sY.value) : current.getFullYear();
   
@@ -1318,18 +1260,12 @@ function renderMonthSummary(){
       return ed.getFullYear() === y && ed.getMonth() === m && eventMatches(e) && e.status !== 'cancelled';
   });
   
-  const total = ev.length;
-  let revenue = 0, paidFull = 0, depositOnly = 0, staffCost = 0;
+  const total = ev.length; let revenue = 0, paidFull = 0, depositOnly = 0, staffCost = 0;
   
   ev.forEach(e => {
-      const p = Number(e.price||0);
-      const d = Number(e.deposit||0);
+      const p = Number(e.price||0); const d = Number(e.deposit||0);
       revenue += p;
-      if (p > 0 && d >= p) {
-          paidFull += p; 
-      } else {
-          depositOnly += d; 
-      }
+      if (p > 0 && d >= p) paidFull += p; else depositOnly += d; 
       staffCost += e.assignments.reduce((sum,a)=>sum+Number(a.cost||0),0);
   });
   const missing = revenue - paidFull - depositOnly;
@@ -1338,11 +1274,9 @@ function renderMonthSummary(){
   let totalAdvance = 0, totalPaid = 0;
   data.staff.forEach(s => {
       const p = (data.payroll[monthKey] && data.payroll[monthKey][s.id]) || {advance:0, paid:0};
-      totalAdvance += p.advance;
-      totalPaid += p.paid;
+      totalAdvance += p.advance; totalPaid += p.paid;
   });
-  const sumStaffPaid = totalAdvance + totalPaid;
-  const sumStaffUnpaid = staffCost - sumStaffPaid;
+  const sumStaffPaid = totalAdvance + totalPaid; const sumStaffUnpaid = staffCost - sumStaffPaid;
 
   const ms = document.getElementById('monthSummary');
   if(!ms) return;
@@ -1365,49 +1299,33 @@ function renderMonthSummary(){
 function render(){
   renderFilters();
   renderStats();
-  
   if(currentView === 'month') {
-      renderMonth(); 
-      const mf = document.getElementById('mainFilters');
-      if(mf) mf.style.display = 'flex';
+      renderMonth(); const mf = document.getElementById('mainFilters'); if(mf) mf.style.display = 'flex';
   } else {
-      renderPayroll();
-      const mf = document.getElementById('mainFilters');
-      if(mf) mf.style.display = 'none';
+      renderPayroll(); const mf = document.getElementById('mainFilters'); if(mf) mf.style.display = 'none';
   }
-  
   renderUpcoming();
   renderStaffMonthList();
   renderMonthSummary();
-  
   const options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
   const tt = document.getElementById('todayText');
   if(tt) tt.textContent=`Hôm nay · ${new Date().toLocaleDateString('vi-VN', options)}`;
 }
 
 function setView(v){
-  currentView=v;
-  document.querySelectorAll('[data-view],[data-switch]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
-  render();
+  currentView=v; document.querySelectorAll('[data-view],[data-switch]').forEach(x=>x.classList.toggle('active',x.dataset.view===v)); render();
 }
 
 window.filterStaffModal = function() {
-  const cChup = document.getElementById('f_chup')?.checked;
-  const cQuay = document.getElementById('f_quay')?.checked;
-  const cMakeup = document.getElementById('f_makeup')?.checked;
-  const cKhac = document.getElementById('f_khac')?.checked;
+  const cChup = document.getElementById('f_chup')?.checked; const cQuay = document.getElementById('f_quay')?.checked;
+  const cMakeup = document.getElementById('f_makeup')?.checked; const cKhac = document.getElementById('f_khac')?.checked;
   
   document.querySelectorAll('.staff-modal-item').forEach(el => {
-     const role = el.dataset.role;
-     let show = false;
-     if(role === 'Photographer' && cChup) show = true;
-     else if(role === 'Videographer' && cQuay) show = true;
-     else if(role === 'Makeup' && cMakeup) show = true;
-     else if(['Editor', 'Assistant', 'Khác', 'Freelance'].includes(role) && cKhac) show = true;
+     const role = el.dataset.role; let show = false;
+     if(role === 'Photographer' && cChup) show = true; else if(role === 'Videographer' && cQuay) show = true;
+     else if(role === 'Makeup' && cMakeup) show = true; else if(['Editor', 'Assistant', 'Khác', 'Freelance'].includes(role) && cKhac) show = true;
      
-     const cb = el.querySelector('.staff-check');
-     if(cb && cb.checked) show = true; 
-     
+     const cb = el.querySelector('.staff-check'); if(cb && cb.checked) show = true; 
      el.style.display = show ? 'block' : 'none';
   });
 }
@@ -1417,48 +1335,29 @@ window.updateDepositLabel = function() {
   const dep = parseMoney(document.getElementById('eventDeposit')?.value) * 1000;
   const label = document.getElementById('depositLabel');
   if(!label) return;
-  if (price > 0 && dep >= price) {
-      label.textContent = 'Đã thanh toán đủ';
-      label.style.color = 'var(--green)';
-  } else {
-      label.textContent = 'Đã cọc';
-      label.style.color = 'inherit';
-  }
+  if (price > 0 && dep >= price) { label.textContent = 'Đã thanh toán đủ'; label.style.color = 'var(--green)'; } 
+  else { label.textContent = 'Đã cọc'; label.style.color = 'inherit'; }
 }
 
 // ----------------------------------------------------
-// UI TỪNG BƯỚC FORM LỊCH & THỜI GIAN THỰC (TỰ MỞ LINK)
+// UI TỪNG BƯỚC FORM LỊCH & THỜI GIAN THỰC
 // ----------------------------------------------------
 window.updateModalVisibility = function() {
     const nameVal = document.getElementById('eventName')?.value.trim() || '';
     const locVal = document.getElementById('eventLocation')?.value.trim() || '';
     
-    document.querySelectorAll('.step2-item').forEach(el => {
-        el.style.display = nameVal ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
-    });
+    document.querySelectorAll('.step2-item').forEach(el => { el.style.display = nameVal ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; });
+    document.querySelectorAll('.step3-item').forEach(el => { el.style.display = (nameVal && locVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; });
     
-    document.querySelectorAll('.step3-item').forEach(el => {
-        el.style.display = (nameVal && locVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
-    });
-    
-    // Check thời gian kết thúc tự động mở Link Source
-    const evDate = document.getElementById('eventDate')?.value;
-    const evEnd = document.getElementById('eventEnd')?.value;
-    let isEnded = false;
-    if(evDate && evEnd) {
-        isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
-    }
+    const evDate = document.getElementById('eventDate')?.value; const evEnd = document.getElementById('eventEnd')?.value;
+    let isEnded = false; if(evDate && evEnd) isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
 
     document.querySelectorAll('.staff-modal-item, .staff-modal-staffonly').forEach(el => {
         const isChecked = el.querySelector('.staff-check')?.checked || (currentUserRole === 'staff');
         const linkCont = el.querySelector('.staff-link-container');
-        if(linkCont) {
-            linkCont.style.display = (isEnded && isChecked) ? 'flex' : 'none';
-        }
+        if(linkCont) linkCont.style.display = (isEnded && isChecked) ? 'flex' : 'none';
         const waitMsg = el.querySelector('.wait-link-msg');
-        if(waitMsg) {
-            waitMsg.style.display = (!isEnded && isChecked) ? 'block' : 'none';
-        }
+        if(waitMsg) waitMsg.style.display = (!isEnded && isChecked) ? 'block' : 'none';
     });
 }
 
@@ -1468,7 +1367,6 @@ window.saveStaffLinkLocally = function(sId, sName) {
     const urlInput = document.getElementById('link-input-'+sId)?.value.trim();
     if(!urlInput) { showToast('Vui lòng dán link'); return; }
     
-    // Lưu thẳng vào Firebase nếu là Staff (Bảo mật quyền ghi)
     const evId = document.getElementById('eventId')?.value;
     if(evId) {
         const idx = data.events.findIndex(e => e.id === evId);
@@ -1481,13 +1379,8 @@ window.saveStaffLinkLocally = function(sId, sName) {
             }
         }
     }
-
     const tag = document.getElementById('link-tag-'+sId);
-    if(tag) {
-        tag.href = urlInput;
-        tag.innerHTML = `🔗 Bấm xem Source`;
-    }
-    
+    if(tag) { tag.href = urlInput; tag.innerHTML = `🔗 Bấm xem Source`; }
     document.getElementById('link-edit-'+sId).style.display = 'none';
     document.getElementById('link-view-'+sId).style.display = 'flex';
     showToast('Đã nộp Source thành công!');
@@ -1499,17 +1392,11 @@ window.toggleEditLink = function(sId) {
 }
 
 window.addProductRow = function(name='', url='', isReadonly=false) {
-    const container = document.getElementById('eventProductsList');
-    if(!container) return;
+    const container = document.getElementById('eventProductsList'); if(!container) return;
     const div = document.createElement('div');
-    div.className = 'product-row';
-    div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#fafafa; padding:16px; border-radius:16px; border:1px solid var(--line)';
+    div.className = 'product-row'; div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#fafafa; padding:16px; border-radius:16px; border:1px solid var(--line)';
     
-    if (isReadonly) {
-        // Thợ và Khách không thấy Sản phẩm. Khu vực này ẩn hoàn toàn.
-        return;
-    }
-
+    if (isReadonly) return;
     const isSaved = url !== '';
     div.innerHTML = `
        <div class="prod-view" style="display:${isSaved ? 'flex' : 'none'}; gap: 10px; align-items:center; flex-wrap:wrap">
@@ -1519,7 +1406,6 @@ window.addProductRow = function(name='', url='', isReadonly=false) {
            <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px;" onclick="copyText(this.parentElement.parentElement.querySelector('.prod-url').value)">📋 Copy</button>
            <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px;" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'">✏️ Sửa</button>
        </div>
-       
        <div class="prod-edit admin-only-flex" style="display:${isSaved ? 'none' : 'flex'}; gap: 10px; flex-wrap:wrap; align-items:center">
            <input type="text" class="prod-name field" value="${escapeHtml(name)}" placeholder="Tên SP (Ảnh gốc...)" style="flex:1; min-width:120px;">
            <input type="url" class="prod-url field" value="${escapeHtml(url)}" placeholder="🔗 Dán link..." style="flex:2; min-width:150px;">
@@ -1538,7 +1424,6 @@ window.saveProductRow = function(btn) {
     
     row.querySelector('.prod-view-link').href = urlInput;
     row.querySelector('.prod-view-name').textContent = nameInput || 'Link sản phẩm';
-    
     row.querySelector('.prod-edit').style.display = 'none';
     row.querySelector('.prod-view').style.display = 'flex';
 }
@@ -1551,39 +1436,32 @@ window.renderEventStaffList = function() {
             return { 
                 id: sId, 
                 task: document.getElementById('task-'+sId)?.value || '', 
+                note: document.getElementById('staff-note-'+sId)?.value || '',
                 cost: parseMoney(document.getElementById('cost-'+sId)?.value) * 1000,
                 link: document.getElementById('link-input-'+sId)?.value.trim() || ''
             };
         });
     }
     
-    const evDate = document.getElementById('eventDate')?.value;
-    const evEnd = document.getElementById('eventEnd')?.value;
-    let isEnded = false;
-    if(evDate && evEnd) {
-        isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
-    }
+    const evDate = document.getElementById('eventDate')?.value; const evEnd = document.getElementById('eventEnd')?.value;
+    let isEnded = false; if(evDate && evEnd) isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
     
     const isAdmin = currentUserRole === 'admin';
-    const evStaffEl = document.getElementById('eventStaff');
-    if(!evStaffEl) return;
+    const evStaffEl = document.getElementById('eventStaff'); if(!evStaffEl) return;
 
     if (!isAdmin) {
-        // GÓC NHÌN CỦA THỢ: Ẩn tiền thợ khác, cho phép điền link của mình nếu hết giờ
+        // GÓC NHÌN THỢ
         evStaffEl.innerHTML = currentEventAssignments.map(a => {
-            const s = data.staff.find(x => x.id === a.id);
-            if(!s) return '';
+            const s = data.staff.find(x => x.id === a.id); if(!s) return '';
             const taskText = a.task ? ` - ${escapeHtml(a.task)}` : '';
             const isMe = (s.id === staffViewId); 
             
-            let myCostHtml = '';
-            let myLinkHtml = '';
+            let myCostHtml = ''; let myLinkHtml = ''; let myNoteHtml = '';
 
             if (isMe) {
-                // Thợ chỉ thấy tiền công của mình
                 const costVal = a.cost ? money(a.cost) + ' đ' : '0 đ';
                 myCostHtml = `<span style="font-weight:800; color:var(--green); float:right; background: var(--bg-green); padding: 6px 12px; border-radius: 99px;">${costVal}</span>`;
-                
+                if(a.note) myNoteHtml = `<div style="margin-top:8px; font-size:13px; color:#0369a1; background:#e0f2fe; padding:8px 12px; border-radius:8px;">📍 <b>Yêu cầu / Trạm đón:</b> ${escapeHtml(a.note)}</div>`;
                 const savedLink = a.link || '';
                 myLinkHtml = `
                 <div class="staff-link-container" style="display:${isEnded ? 'flex' : 'none'}; gap: 8px; align-items:center; background:#fafafa; padding:12px 16px; border-radius:12px; border: 1px solid var(--line); margin-top: 16px;">
@@ -1611,18 +1489,18 @@ window.renderEventStaffList = function() {
                     </div>
                     ${myCostHtml}
                 </div>
+                ${myNoteHtml}
                 ${myLinkHtml}
             </div>`;
         }).join('') || '<div style="font-size:13px;color:var(--muted); padding:10px;">Chưa xếp nhân sự</div>';
         return;
     }
 
-    // ADMIN VIEW: FULL QUYỀN VÀ THẤY TẤT CẢ LINK 
+    // ADMIN VIEW: FULL QUYỀN
     evStaffEl.innerHTML = data.staff.length
       ? data.staff.map(s => {
           const a = currentEventAssignments.find(x => x.id === s.id);
-          const isChecked = !!a;
-          const savedLink = a?.link || '';
+          const isChecked = !!a; const savedLink = a?.link || '';
 
           return `<div class="staff-modal-item" data-role="${s.role}" style="border:1px solid transparent; border-bottom-color:var(--line); padding:16px 0; background:transparent;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
@@ -1632,7 +1510,7 @@ window.renderEventStaffList = function() {
                   <span id="busy-info-${s.id}"></span>
                 </label>
                 
-                <div style="display:${isChecked ? 'flex' : 'none'}; gap:12px; align-items:center; flex:1.5; justify-content:flex-end; min-width:300px;">
+                <div style="display:${isChecked ? 'flex' : 'none'}; gap:10px; align-items:center; flex:1.5; justify-content:flex-end; min-width:300px; flex-wrap:wrap;">
                   <select id="task-${s.id}" style="flex:1; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); min-width:160px;">
                     <option value="Chụp truyền thống" ${a?.task==='Chụp truyền thống'?'selected':''}>Chụp truyền thống</option>
                     <option value="Chụp phóng sự" ${a?.task==='Chụp phóng sự'?'selected':''}>Chụp phóng sự</option>
@@ -1642,6 +1520,9 @@ window.renderEventStaffList = function() {
                     <option value="Makeup" ${a?.task==='Makeup'?'selected':''}>Makeup</option>
                     <option value="Khác" ${a?.task==='Khác'?'selected':''}>Khác</option>
                   </select>
+                  
+                  <input type="text" id="staff-note-${s.id}" value="${escapeHtml(a?.note||'')}" placeholder="📍 Trạm đón / Ghi chú riêng..." style="flex:1.5; min-width:180px; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text);">
+
                   <div class="currency-wrap" style="width:140px; min-width:140px;">
                      <input type="text" inputmode="numeric" id="cost-${s.id}" placeholder="0" value="${a?.cost ? money(a.cost/1000) : ''}" oninput="window.formatMoneyInput(this)" style="background:#f4f4f5;border:1px solid transparent;padding:10px 14px;border-radius:10px;outline:0;font-size:14px;font-weight:700;color:var(--text);">
                   </div>
@@ -1678,26 +1559,20 @@ window.saveFreelanceQuick = function() {
 
     const displayName = `${name} (${skillLabel})`;
     const newStaff = { id: uid(), name: displayName, role: 'Freelance' };
-    data.staff.push(newStaff);
-    save();
+    data.staff.push(newStaff); save();
 
-    const fk = document.getElementById('f_khac');
-    if(fk) fk.checked = true;
-    currentEventAssignments.push({ id: newStaff.id, task: skillLabel, cost: 0, link: '' });
+    const fk = document.getElementById('f_khac'); if(fk) fk.checked = true;
+    currentEventAssignments.push({ id: newStaff.id, task: skillLabel, note: '', cost: 0, link: '' });
 
     setSafeValue('newFreeName', '');
     const ff = document.getElementById('freelanceForm');
-    if(ff) {
-        ff.style.display = 'none';
-        ff.classList.remove('admin-only'); // Xóa lớp bắt buộc hiện
-    }
+    if(ff) { ff.style.display = 'none'; ff.classList.remove('admin-only'); }
 
     window.renderEventStaffList();
     showToast('Đã thêm Freelance: ' + displayName);
 };
 
 window.openEventModal = function(prefill={}){
-  // BẢO MẬT: Khóa không cho Thợ/Khách tự mở form tạo lịch trống nếu cố tình gọi hàm
   if (currentUserRole !== 'admin' && !prefill.id) return; 
 
   window.smoothOpen('eventModal');
@@ -1716,89 +1591,56 @@ window.openEventModal = function(prefill={}){
   setSafeValue('eventLocation', e?.location||'');
   setSafeValue('eventPhone', e?.phone||'');
   
-  const pE = document.getElementById('eventPrice');
-  if(pE) pE.value = e?.price ? money(e.price/1000) : '';
-  const dE = document.getElementById('eventDeposit');
-  if(dE) dE.value = e?.deposit ? money(e.deposit/1000) : '';
+  const pE = document.getElementById('eventPrice'); if(pE) pE.value = e?.price ? money(e.price/1000) : '';
+  const dE = document.getElementById('eventDeposit'); if(dE) dE.value = e?.deposit ? money(e.deposit/1000) : '';
   
   setSafeValue('eventNote', e?.note||'');
   
-  const ff = document.getElementById('freelanceForm');
-  if(ff) ff.style.display='none';
-  
-  ['f_chup','f_quay','f_makeup','f_khac'].forEach(id=>{
-      const cb = document.getElementById(id);
-      if(cb) cb.checked = false;
-  });
+  const ff = document.getElementById('freelanceForm'); if(ff) ff.style.display='none';
+  ['f_chup','f_quay','f_makeup','f_khac'].forEach(id=>{ const cb = document.getElementById(id); if(cb) cb.checked = false; });
 
-  const es = document.getElementById('eventStaff');
-  if(es) es.innerHTML = '';
-  const ep = document.getElementById('eventProductsList');
-  if(ep) ep.innerHTML = '';
+  const es = document.getElementById('eventStaff'); if(es) es.innerHTML = '';
+  const ep = document.getElementById('eventProductsList'); if(ep) ep.innerHTML = '';
   
   currentEventAssignments = e?.assignments ? JSON.parse(JSON.stringify(e.assignments)) : [];
   window.renderEventStaffList();
   
-  if (e && e.products && e.products.length > 0) {
-      e.products.forEach(p => window.addProductRow(p.name, p.url, !isAdmin)); 
-  }
+  if (e && e.products && e.products.length > 0) e.products.forEach(p => window.addProductRow(p.name, p.url, !isAdmin)); 
 
   window.updateDepositLabel();
   
-  // Xử lý Giao diện theo Quyền bằng JS
-  const de = document.getElementById('deleteEvent');
-  if (de) de.style.display = (isAdmin && e) ? 'inline-flex' : 'none';
+  const de = document.getElementById('deleteEvent'); if (de) de.style.display = (isAdmin && e) ? 'inline-flex' : 'none';
+  const fp = document.getElementById('fullPaidBtn'); if (fp) fp.style.display = isAdmin ? 'block' : 'none';
+  const se = document.getElementById('saveEvent'); if (se) se.style.display = isAdmin ? 'block' : 'none';
+  const bap = document.getElementById('btnAddProduct'); if (bap) bap.style.display = isAdmin ? 'inline-flex' : 'none';
+  const btnShowFree = document.getElementById('btnShowFreelance'); if (btnShowFree) btnShowFree.style.display = isAdmin ? 'block' : 'none';
   
-  const fp = document.getElementById('fullPaidBtn');
-  if (fp) fp.style.display = isAdmin ? 'block' : 'none';
-  
-  const se = document.getElementById('saveEvent');
-  if (se) se.style.display = isAdmin ? 'block' : 'none';
-  
-  const bap = document.getElementById('btnAddProduct');
-  if (bap) bap.style.display = isAdmin ? 'inline-flex' : 'none';
-  
-  const btnShowFree = document.getElementById('btnShowFreelance');
-  if (btnShowFree) btnShowFree.style.display = isAdmin ? 'block' : 'none';
-  
-  const guestLabel = document.getElementById('guestStaffLabel');
-  const adminLabel = document.getElementById('adminStaffLabel');
+  const guestLabel = document.getElementById('guestStaffLabel'); const adminLabel = document.getElementById('adminStaffLabel');
   if (guestLabel) guestLabel.style.display = isAdmin ? 'none' : 'block';
   if (adminLabel) adminLabel.style.display = isAdmin ? 'flex' : 'none';
 
-  const sFilters = document.getElementById('staffFiltersContainer');
-  if (sFilters) sFilters.style.display = isAdmin ? 'flex' : 'none';
+  const sFilters = document.getElementById('staffFiltersContainer'); if (sFilters) sFilters.style.display = isAdmin ? 'flex' : 'none';
 
-  const pGroup = document.getElementById('priceGroup');
-  const dGroup = document.getElementById('depositGroup');
-  const prodSec = document.getElementById('productsSection');
+  const pGroup = document.getElementById('priceGroup'); const dGroup = document.getElementById('depositGroup'); const prodSec = document.getElementById('productsSection');
   if (pGroup) pGroup.style.display = isAdmin ? 'block' : 'none';
   if (dGroup) dGroup.style.display = isAdmin ? 'block' : 'none';
   if (prodSec) prodSec.style.display = isAdmin ? 'block' : 'none';
 
   document.querySelectorAll('#eventForm input, #eventForm select, #eventForm textarea').forEach(el => {
       if (el.id.includes('link-input')) return; 
-
       if (!isAdmin) {
           el.setAttribute('readonly', 'true');
           if(el.tagName === 'SELECT' || el.type === 'checkbox') el.disabled = true;
-      } else {
-          el.removeAttribute('readonly');
-          el.disabled = false;
-      }
+      } else { el.removeAttribute('readonly'); el.disabled = false; }
   });
 
-  const btnCancel = document.getElementById('cancelEvent');
-  if(btnCancel) btnCancel.textContent = isAdmin ? 'Hủy' : 'Đóng';
+  const btnCancel = document.getElementById('cancelEvent'); if(btnCancel) btnCancel.textContent = isAdmin ? 'Hủy' : 'Đóng';
   
   setTimeout(() => {
-      if(isAdmin) {
-          window.updateModalVisibility();
-      } else {
+      if(isAdmin) window.updateModalVisibility();
+      else {
           document.querySelectorAll('.step2-item, .step3-item').forEach(el => {
-              if (el.id !== 'priceGroup' && el.id !== 'depositGroup' && el.id !== 'productsSection') {
-                  el.style.display = el.classList.contains('full') ? 'block' : 'grid';
-              }
+              if (el.id !== 'priceGroup' && el.id !== 'depositGroup' && el.id !== 'productsSection') el.style.display = el.classList.contains('full') ? 'block' : 'grid';
           });
           window.updateModalVisibility();
       }
@@ -1807,32 +1649,21 @@ window.openEventModal = function(prefill={}){
 
 window.checkConflict = function(){
   if (currentUserRole !== 'admin') return;
-  const date=document.getElementById('eventDate')?.value;
-  const start=document.getElementById('eventStart')?.value;
-  const end=document.getElementById('eventEnd')?.value;
-  const id=document.getElementById('eventId')?.value;
+  const date=document.getElementById('eventDate')?.value; const start=document.getElementById('eventStart')?.value;
+  const end=document.getElementById('eventEnd')?.value; const id=document.getElementById('eventId')?.value;
   
   data.staff.forEach(s => {
-     const infoSpan = document.getElementById('busy-info-' + s.id);
-     if(!infoSpan) return;
-     
+     const infoSpan = document.getElementById('busy-info-' + s.id); if(!infoSpan) return;
      const sEvents = data.events.filter(e => e.id !== id && e.status !== 'cancelled' && e.date === date && e.assignments.some(a => a.id === s.id));
-     if(sEvents.length === 0) {
-         infoSpan.innerHTML = '';
-     } else {
+     if(sEvents.length === 0) infoSpan.innerHTML = '';
+     else {
          let intervals = sEvents.map(e => ({s: e.start||'', e: e.end||''}));
          let text = intervals.map(iv => `${iv.s}-${iv.e}`).join(', ');
-         
          let overlap = false;
-         if(start && end && start < end) {
-             overlap = intervals.some(iv => (start < iv.e && end > iv.s));
-         }
+         if(start && end && start < end) overlap = intervals.some(iv => (start < iv.e && end > iv.s));
          
-         if(overlap) {
-             infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
-         } else {
-             infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
-         }
+         if(overlap) infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
+         else infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
      }
   });
 }
@@ -1851,6 +1682,7 @@ window.saveEvent = function(){
        return {
          id: sId,
          task: document.getElementById('task-'+sId)?.value||'',
+         note: document.getElementById('staff-note-'+sId)?.value.trim()||'', // LƯU GHI CHÚ RIÊNG MỚI
          cost: parseMoney(document.getElementById('cost-'+sId)?.value) * 1000,
          link: document.getElementById('link-input-'+sId)?.value.trim() || ''
        };
@@ -1867,7 +1699,12 @@ window.saveEvent = function(){
     note:document.getElementById('eventNote')?.value.trim()||''
   };
   if(!obj.name||!obj.date||!obj.start||!obj.end){showToast('Vui lòng điền đủ tên, ngày và giờ');return}
-  if(obj.end<=obj.start){showToast('Giờ kết thúc phải sau giờ bắt đầu');return}
+  
+  // Logic cũ chặn quá khắt khe: (obj.end <= obj.start)
+  // FIX MỚI: Nếu giờ kết thúc < giờ bắt đầu (Tức là làm đêm kéo sang ngày hôm sau), hệ thống chỉ cảnh báo hỏi lại chứ không chặn.
+  if(obj.end <= obj.start){
+      if(!confirm('Giờ kết thúc đang nhỏ hơn hoặc bằng giờ bắt đầu (Có thể do ca làm đêm qua ngày). Bạn có chắc chắn muốn lưu?')) return;
+  }
   
   const isOverlap = obj.assignments.some(x => {
       return data.events.some(e => e.id !== id && e.status !== 'cancelled' && e.date === obj.date && 
@@ -1878,10 +1715,7 @@ window.saveEvent = function(){
   const idx=data.events.findIndex(e=>e.id===id);
   if(idx>=0)data.events[idx]=obj; else data.events.push(obj);
   
-  save();
-  window.smoothClose('eventModal');
-  render(); 
-  showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
+  save(); window.smoothClose('eventModal'); render(); showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
 }
 
 window.deleteEvent = function(){
@@ -1890,26 +1724,18 @@ window.deleteEvent = function(){
   const e=data.events.find(x=>x.id===id); if(!e)return;
   if(!confirm(`Xóa lịch "${e.name}"?`))return;
   data.events=data.events.filter(x=>x.id!==id);
-  save();
-  window.smoothClose('eventModal');
-  render();
-  showToast('Đã xóa lịch');
+  save(); window.smoothClose('eventModal'); render(); showToast('Đã xóa lịch');
 }
 
 window.openSettings = function(){ window.smoothOpen('settingsModal'); }
-window.openStaff = function(){
-    window.smoothOpen('staffModal');
-    renderStaffManage();
-}
-
+window.openStaff = function(){ window.smoothOpen('staffModal'); renderStaffManage(); }
 window.copyStaffLink = function(id) {
     const url = window.location.origin + window.location.pathname + '?staff=' + id;
     window.copyText(url);
 }
 
 function renderStaffManage(){
-  const sl = document.getElementById('staffManageList');
-  if(!sl) return;
+  const sl = document.getElementById('staffManageList'); if(!sl) return;
   sl.innerHTML=data.staff.map(s=>`<div class="mini-item">
     <div class="staff-left"><div class="avatar">${initials(s.name)}</div><div class="staff-info"><div class="mini-title">${escapeHtml(s.name)}</div><div class="mini-sub">${escapeHtml(s.role)}</div></div></div>
     <div style="display:flex; gap:8px;">
@@ -1944,12 +1770,8 @@ document.addEventListener('click',e=>{
 });
 
 let searchTimeout;
-document.getElementById('searchInput')?.addEventListener('input', () => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(render, 150);
-});
+document.getElementById('searchInput')?.addEventListener('input', () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(render, 150); });
 
-// Gắn sự kiện an toàn
 document.getElementById('prevBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()-1);render()});
 document.getElementById('nextBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()+1);render()});
 document.getElementById('addBtn')?.addEventListener('click', ()=>window.openEventModal({}));
@@ -1965,29 +1787,20 @@ document.getElementById('savePayrollBtn')?.addEventListener('click', window.save
 
 document.getElementById('fullPaidBtn')?.addEventListener('click', () => {
    if(currentUserRole !== 'admin') return;
-   const priceEl = document.getElementById('eventPrice');
-   const price = parseMoney(priceEl?.value);
-   if(price && price > 0) {
-      setSafeValue('eventDeposit', money(price));
-      window.updateDepositLabel();
-   }
+   const priceEl = document.getElementById('eventPrice'); const price = parseMoney(priceEl?.value);
+   if(price && price > 0) { setSafeValue('eventDeposit', money(price)); window.updateDepositLabel(); }
 });
 
 document.getElementById('clearAll')?.addEventListener('click', ()=>{
     if(confirm('Xóa toàn bộ dữ liệu thật chứ? Cả trên mạng và máy đều biến mất!')){
-        data={staff:[],events:[],payroll:{}};
-        save();
-        render();
-        window.smoothClose('settingsModal');
-        showToast('Đã dọn sạch CSDL');
+        data={staff:[],events:[],payroll:{}}; save(); render(); window.smoothClose('settingsModal'); showToast('Đã dọn sạch CSDL');
     }
 });
 
 ['staffFilter','statusFilter'].forEach(id=>document.getElementById(id)?.addEventListener('input',render));
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click', ()=>setView(b.dataset.view)));
 ['eventDate','eventStart','eventEnd'].forEach(id=>document.getElementById(id)?.addEventListener('input', () => {
-    window.updateModalVisibility();
-    window.checkConflict();
+    window.updateModalVisibility(); window.checkConflict();
 }));
 
 document.getElementById('staffMonthM')?.addEventListener('change', renderStaffMonthList);
@@ -1995,7 +1808,6 @@ document.getElementById('staffMonthY')?.addEventListener('change', renderStaffMo
 document.getElementById('summaryMonthM')?.addEventListener('change', renderMonthSummary);
 document.getElementById('summaryMonthY')?.addEventListener('change', renderMonthSummary);
 
-// Bắt đầu chạy App
 initApp();
 
 </script>
