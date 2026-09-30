@@ -7,6 +7,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f172a">
 <title>Studio Planner — Lịch Quay & Chụp</title>
+
+<!-- Nhúng thư viện Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-database-compat.js"></script>
+
 <style>
 :root {
   --bg: #f3f6f9; --panel: #ffffff; --text: #0f172a; --muted: #64748b;
@@ -29,6 +34,7 @@ button { cursor: pointer; border: none; outline: none; }
 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; }
 
+/* Layout Chính */
 .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
 .sidebar { background: #0b1120; color: #fff; padding: 24px 16px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0; height: 100vh; z-index: 40; }
 .brand { display: flex; align-items: center; gap: 14px; padding: 10px; }
@@ -132,7 +138,7 @@ input[type=number] { -moz-appearance: textfield; }
 .modal-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 20px 28px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); z-index: 10; }
 .modal-title { font-size: 20px; font-weight: 850; letter-spacing: -0.5px; }
 .modal-body { padding: 28px; flex: 1; }
-.modal-foot { display: flex; align-items: center; padding: 20px 28px; border-top: 1px solid var(--line); background: #f8fafc; position: sticky; bottom: 0; z-index: 10; border-radius: 0 0 24px 24px; }
+.modal-foot { display: flex; align-items: center; padding: 20px 28px; border-top: 1px solid var(--line); background: #f8fafc; position: sticky; bottom: 0; z-index: 10; }
 
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .full { grid-column: 1 / -1; }
@@ -144,15 +150,21 @@ input[type=number] { -moz-appearance: textfield; }
 
 .alert { padding: 14px 16px; border-radius: 12px; background: #fef3c7; color: #92400e; font-size: 13px; font-weight: 650; border: 1px solid #fde68a; display: none; margin-bottom: 20px; }
 .toast { position: fixed; right: 24px; bottom: 24px; background: #0f172a; color: #fff; padding: 14px 24px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: none; z-index: 200; font-size: 14px; font-weight: 650; }
+
 .kpi-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin: 12px 0; color: #334155; }
 .staff-picker { border: 1px solid var(--line); border-radius: 14px; padding: 16px; max-height: 400px; overflow-y: auto; background: #fff; }
 
 .fab { position: fixed; bottom: 90px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: white; display: none; place-items: center; font-size: 28px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.4); z-index: 90; transition: transform 0.2s; }
 .fab:active { transform: scale(0.9); }
 
+/* Màn hình Loading Overlay để không bị treo App */
+#loadingOverlay { position: fixed; inset: 0; background: #f8fafc; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.loading-logo { width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(135deg, #6366f1, #4f46e5); display: grid; place-items: center; font-weight: 900; font-size: 20px; color: #fff; margin-bottom: 20px; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.95); } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+/* Mobile Reponsive */
 @media(max-width: 900px){ .layout { grid-template-columns: 1fr; } }
 @media(max-width: 768px){
   .app { grid-template-columns: 1fr; padding-bottom: 70px; } 
@@ -184,10 +196,14 @@ input[type=number] { -moz-appearance: textfield; }
   .modal-foot > div { width: 100%; justify-content: flex-end; margin-top: 10px; }
 }
 </style>
-<script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-database-compat.js"></script>
 </head>
 <body>
+
+<!-- Màn hình tải -->
+<div id="loadingOverlay">
+    <div class="loading-logo">SP</div>
+    <div style="font-weight:600; color:var(--muted); font-size: 15px;">Đang đồng bộ dữ liệu...</div>
+</div>
 
 <div class="app">
   <aside class="sidebar">
@@ -339,8 +355,8 @@ input[type=number] { -moz-appearance: textfield; }
       </form>
     </div>
     <div class="modal-foot">
-      <button type="button" class="btn" id="fullPaidBtn" style="color:#047857;background:#d1fae5;border-color:#34d399;font-weight:750">💰 Đã TT đủ</button>
-      <button class="btn danger" id="deleteEvent" style="display:none;margin-left:10px">Xóa</button>
+      <button type="button" class="btn" id="fullPaidBtn" style="color:#047857;background:#d1fae5;border-color:#34d399;font-weight:750">💰 Đã thanh toán đủ</button>
+      <button class="btn danger" id="deleteEvent" style="display:none;margin-left:10px">Xóa lịch</button>
       <div style="margin-left:auto;display:flex;gap:10px">
         <button class="btn ghost" id="cancelEvent">Hủy</button>
         <button class="btn primary" id="saveEvent">Lưu lịch</button>
@@ -405,7 +421,7 @@ input[type=number] { -moz-appearance: textfield; }
   <div class="modal" style="width:min(500px,100%)">
     <div class="modal-head"><div class="modal-title">Cài đặt</div><button class="icon-btn" id="closeSettings" style="border:0;background:#f1f5f9;border-radius:50%">✕</button></div>
     <div class="modal-body">
-      <p style="font-size:14px; color:var(--muted); line-height:1.6; margin-top:0">Dữ liệu được lưu an toàn. Nếu rớt mạng, bạn vẫn có thể dùng Offline bình thường.</p>
+      <p style="font-size:14px; color:var(--muted); line-height:1.6; margin-top:0">Hệ thống được thiết kế chạy song song. Dữ liệu sẽ lưu Offline vào máy và tự động đồng bộ lên Firebase khi có mạng.</p>
       <div style="display:grid;gap:12px; margin-top: 24px">
         <button class="btn danger" id="clearAll" style="justify-content:center; margin-top: 10px;">⚠️ Xóa toàn bộ dữ liệu (Cloud & Máy này)</button>
       </div>
@@ -416,6 +432,7 @@ input[type=number] { -moz-appearance: textfield; }
 <div class="toast" id="toast"></div>
 
 <script>
+// --- CẤU HÌNH & KHỞI TẠO FIREBASE ---
 const STORE_KEY = 'studioPlanner_v1';
 const firebaseConfig = {
   apiKey: "AIzaSyA3rwXOsYAYSBYuYC5DIrPbKi0m5ViLs7E",
@@ -431,11 +448,11 @@ const DAY_NAMES = ['T2','T3','T4','T5','T6','T7','CN'];
 const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
 const STATUS_LABEL = {confirmed:'Đã chốt',pending:'Chờ xác nhận',done:'Hoàn thành',cancelled:'Đã hủy'};
 
-// Biến lưu trạng thái App
 let data = { staff: [], events: [], payroll: {} };
 let current = new Date();
 current.setHours(0,0,0,0);
 let currentView = 'month';
+let isFirstLoad = true;
 
 document.getElementById('staffMonthM').value = current.getMonth() + 1;
 document.getElementById('staffMonthY').value = current.getFullYear();
@@ -471,36 +488,49 @@ window.copyText = function(txt) {
 
 function defaultData(){
   const today = new Date(); const y=today.getFullYear(), m=today.getMonth();
-  const s1=new Date(y,m,today.getDate(),9);
+  const s1=new Date(y,m,today.getDate(),9); const s2=new Date(y,m,today.getDate()+1,13);
+  const date=(d)=>isoDate(d);
+  const staff = [
+    {id:uid(),name:'Bii',role:'Photographer'},
+    {id:uid(),name:'Khoa',role:'Videographer'},
+    {id:uid(),name:'Nhi',role:'Makeup'}
+  ];
   return {
-    staff: [{id:uid(),name:'Thợ Mẫu',role:'Photographer'}],
+    staff,
     payroll: {},
-    events: []
+    events:[
+      {id:uid(),name:'Đám cưới Minh & Linh',date:date(s1),start:'09:00',end:'17:00',assignments:[{id:staff[0].id, task:'Chụp phóng sự', cost:1000000, link:''}],products:[],status:'confirmed',location:'Cần Thơ',phone:'',price:12000000,deposit:3000000,note:'Đón dâu + lễ + tiệc'}
+    ]
   }
 }
 
-// KHỞI TẠO FIREBASE KẾT HỢP OFFLINE-FIRST
+// ----------------------------------------------------
+// KHỞI TẠO ỨNG DỤNG & KẾT NỐI FIREBASE (OFFLINE FIRST)
+// ----------------------------------------------------
 function initApp() {
-    // 1. Tải dữ liệu nội bộ (Local) lên màn hình TỨC THÌ (Tránh treo app)
+    // 1. Tải dữ liệu Offline ngay lập tức để không bị treo màn hình
     try {
         const raw = localStorage.getItem(STORE_KEY);
         if (raw) {
-            data = JSON.parse(raw);
-            if(!data.staff) data.staff = [];
-            if(!data.events) data.events = [];
-            if(!data.payroll) data.payroll = {};
+            const parsed = JSON.parse(raw);
+            if(parsed && Array.isArray(parsed.events)) data = parsed;
         } else {
             data = defaultData();
         }
+        if(!data.staff) data.staff = [];
+        if(!data.events) data.events = [];
+        if(!data.payroll) data.payroll = {};
     } catch(e) { data = defaultData(); }
     
-    render(); // Hiển thị giao diện ngay lập tức
+    render(); // Cập nhật giao diện liền
 
-    // 2. Ngầm kết nối Firebase (Nếu có mạng)
+    // 2. Chạy ngầm kết nối Firebase
     try {
         if (typeof firebase !== 'undefined') {
             firebase.initializeApp(firebaseConfig);
             window.dbRef = firebase.database().ref('studioPlanner_v1');
+            
+            // Lắng nghe dữ liệu thay đổi
             window.dbRef.on('value', (snapshot) => {
                 const val = snapshot.val();
                 if (val) {
@@ -511,29 +541,54 @@ function initApp() {
                         if(!e.assignments) e.assignments = [];
                         if(!e.products) e.products = [];
                     });
-                    localStorage.setItem(STORE_KEY, JSON.stringify(data)); // Sao lưu local
-                    render(); // Cập nhật lại UI nếu có dữ liệu mới
+                    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+                    render(); // Vẽ lại giao diện khi có cục data mới
+                } else {
+                    // Nếu Firebase trống (Lần đầu tiên lên cloud), đẩy data mặc định lên
+                    window.dbRef.set(data);
+                }
+                
+                // Tắt màn hình chờ
+                if (isFirstLoad) {
+                    const overlay = document.getElementById('loadingOverlay');
+                    if(overlay) overlay.style.display = 'none';
+                    isFirstLoad = false;
                 }
             }, (error) => {
                 console.error("Firebase Read Error:", error);
+                showToast("Lỗi đồng bộ: Đang chạy chế độ Offline");
+                if (isFirstLoad) {
+                    const overlay = document.getElementById('loadingOverlay');
+                    if(overlay) overlay.style.display = 'none';
+                    isFirstLoad = false;
+                }
             });
+        } else {
+            showToast("Trình duyệt không hỗ trợ tải Firebase SDK");
         }
     } catch (err) {
-        console.error("Firebase không thể khởi tạo:", err);
+        console.error("Lỗi khởi tạo Firebase:", err);
+        if (isFirstLoad) {
+            const overlay = document.getElementById('loadingOverlay');
+            if(overlay) overlay.style.display = 'none';
+        }
     }
 }
 
-// HÀM SAVE CHUẨN (Cập nhật UI ngay -> Đẩy Firebase ngầm)
+// Hàm lưu: Cập nhật local ngay + Đẩy Firebase ngầm
 window.save = function() {
-    localStorage.setItem(STORE_KEY, JSON.stringify(data)); // Lưu local
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
     if(window.dbRef) {
         window.dbRef.set(data).catch(err => {
             console.error("Firebase Write Error:", err);
-            showToast("Đã lưu Offline (Sẽ đồng bộ khi có mạng)");
+            showToast("Đã lưu Offline (Chờ mạng đồng bộ)");
         });
     }
 }
 
+// ----------------------------------------------------
+// CÁC HÀM XỬ LÝ GIAO DIỆN & LOGIC NGHIỆP VỤ
+// ----------------------------------------------------
 function eventMatches(e){
   const q=document.getElementById('searchInput').value.trim().toLowerCase();
   const sf=document.getElementById('staffFilter').value;
@@ -543,6 +598,7 @@ function eventMatches(e){
   if(st && e.status!==st) return false;
   return true;
 }
+
 function monthEvents(){
   return data.events.filter(e=>sameMonth(parseDate(e.date),current) && eventMatches(e))
     .sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start))
@@ -553,6 +609,7 @@ function renderFilters(){
   sf.innerHTML='<option value="">Tất cả nhân sự</option>'+data.staff.map(s=>`<option value="${s.id}">${escapeHtml(s.name)} — ${escapeHtml(s.role)}</option>`).join('');
   sf.value=data.staff.some(s=>s.id===old)?old:'';
 }
+
 function renderStats(){
   const ev=monthEvents();
   document.getElementById('statTotal').textContent=ev.length;
@@ -911,6 +968,7 @@ function render(){
   const options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
   document.getElementById('todayText').textContent=`Hôm nay · ${new Date().toLocaleDateString('vi-VN', options)}`;
 }
+
 function setView(v){
   currentView=v;
   document.querySelectorAll('[data-view],[data-switch]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
@@ -1142,7 +1200,6 @@ window.openEventModal = function(prefill={}){
 
   updateDepositLabel();
 }
-
 window.closeEventModal = function(){document.getElementById('eventModal').style.display='none'}
 
 window.checkConflict = function(){
@@ -1168,7 +1225,7 @@ window.checkConflict = function(){
          }
          
          if(overlap) {
-             infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
+             infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️️ Trùng: ${text})</span>`;
          } else {
              infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
          }
@@ -1221,7 +1278,6 @@ window.saveEvent = function(){
   render();
   showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
 }
-
 window.deleteEvent = function(){
   const id=document.getElementById('eventId').value;if(!id)return;
   const e=data.events.find(x=>x.id===id); if(!e)return;
@@ -1233,8 +1289,8 @@ window.deleteEvent = function(){
   showToast('Đã xóa lịch');
 }
 
-function openSettings(){ document.getElementById('settingsModal').style.display='flex'; }
-function openStaff(){document.getElementById('staffModal').style.display='flex';renderStaffManage()}
+window.openSettings = function(){ document.getElementById('settingsModal').style.display='flex'; }
+window.openStaff = function(){document.getElementById('staffModal').style.display='flex';renderStaffManage()}
 function renderStaffManage(){
   document.getElementById('staffManageList').innerHTML=data.staff.map(s=>`<div class="mini-item">
     <div class="staff-left"><div class="avatar">${initials(s.name)}</div><div class="staff-info"><div class="mini-title">${escapeHtml(s.name)}</div><div class="mini-sub">${escapeHtml(s.role)}</div></div></div>
@@ -1247,7 +1303,7 @@ function renderStaffManage(){
     save();renderStaffManage();
   });
 }
-function addStaff(){
+window.addStaff = function(){
   const name=document.getElementById('staffName').value.trim(); const role=document.getElementById('staffRole').value;
   if(!name){showToast('Nhập tên nhân sự');return}
   data.staff.push({id:uid(),name,role});save();document.getElementById('staffName').value='';renderStaffManage();showToast('Đã thêm nhân sự');
@@ -1272,7 +1328,7 @@ document.getElementById('closeStaff').onclick=()=>document.getElementById('staff
 document.getElementById('addStaffBtn').onclick=addStaff;
 document.getElementById('settingsBtn').onclick=openSettings;
 document.getElementById('closeSettings').onclick=()=>document.getElementById('settingsModal').style.display='none';
-document.getElementById('clearAll').onclick=()=>{if(confirm('Xóa toàn bộ lịch và nhân sự? Hành động này không thể hoàn tác nếu chưa backup.')){data={staff:[],events:[],payroll:{}};save();render();document.getElementById('settingsModal').style.display='none';showToast('Đã xóa toàn bộ dữ liệu')}};
+document.getElementById('clearAll').onclick=()=>{if(confirm('Xóa toàn bộ dữ liệu thật chứ? Bạn không thể phục hồi đâu!')){data={staff:[],events:[],payroll:{}};save();render();document.getElementById('settingsModal').style.display='none';showToast('Đã dọn sạch dữ liệu')}};
 
 ['searchInput','staffFilter','statusFilter'].forEach(id=>document.getElementById(id).addEventListener('input',render));
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
@@ -1281,7 +1337,7 @@ document.getElementById('eventDate').addEventListener('change',checkConflict);
 document.getElementById('staffMonthM').addEventListener('change', renderStaffMonthList);
 document.getElementById('staffMonthY').addEventListener('change', renderStaffMonthList);
 
-// Khởi chạy App
+// Bắt đầu chạy App
 initApp();
 
 </script>
