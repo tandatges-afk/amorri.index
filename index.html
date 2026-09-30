@@ -95,10 +95,17 @@ input[type=number] { -moz-appearance: textfield; }
 .calendar { min-width: 900px; background: #fff; }
 .weekdays, .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
 .weekday { padding: 14px 10px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; font-weight: 750; text-transform: uppercase; text-align: center; background: #fafcff; }
+
+/* Màu sắc Thứ 7 và Chủ Nhật */
 .day { min-height: 150px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px; background: #fff; transition: background 0.2s; }
+.day.sat-bg { background-color: #f8fafc; }
+.day.sun-bg { background-color: #f1f5f9; }
+.day.other { opacity: 0.7; }
+.day.other.sat-bg { background-color: #f1f5f9; }
+.day.other.sun-bg { background-color: #e2e8f0; }
+
 .day:nth-child(7n) { border-right: 0; }
-.day.other { background: #f8fafc; }
-.day:hover { background: #fefeff; }
+.day:hover { filter: brightness(0.97); }
 .day.today { box-shadow: inset 0 4px 0 var(--primary); background: #fcfcff; }
 .daynum { font-size: 13px; font-weight: 750; min-width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; border-radius: 8px; margin-bottom: 8px; color: #475569; }
 .day.today .daynum { background: var(--primary); color: #fff; }
@@ -210,7 +217,6 @@ input[type=number] { -moz-appearance: textfield; }
 
 <!-- Màn hình tải -->
 <div id="loadingOverlay">
-    <!-- Gọi logo nội bộ -->
     <div class="loading-logo"><img src="logo.png" alt="Amorri" onerror="this.style.display='none'"></div>
     <div style="font-weight:600; color:var(--muted); font-size: 15px;">Đang kết nối dữ liệu...</div>
 </div>
@@ -218,7 +224,6 @@ input[type=number] { -moz-appearance: textfield; }
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-        <!-- Gọi logo nội bộ -->
         <div class="brand-mark"><img src="logo.png" alt="Amorri" onerror="this.style.display='none'"></div>
         <div><h1>Amorri Studio</h1><small>Lịch quay & chụp</small></div>
     </div>
@@ -259,7 +264,8 @@ input[type=number] { -moz-appearance: textfield; }
             <div class="month-title" id="calendarTitle"></div>
           </div>
         </div>
-        <div class="filters">
+        <!-- Ẩn bộ lọc này đi khi vào tab Lương thợ -->
+        <div class="filters" id="mainFilters">
           <input class="field" id="searchInput" placeholder="Tìm khách, tên lịch..." style="flex: 1; min-width: 200px;">
           <select class="field" id="staffFilter"><option value="">Tất cả nhân sự</option></select>
           <select class="field" id="statusFilter">
@@ -280,21 +286,6 @@ input[type=number] { -moz-appearance: textfield; }
         <div class="panel side-card">
           <h3>Lịch sắp tới</h3>
           <div class="mini-list" id="upcomingList"></div>
-        </div>
-        
-        <div class="panel side-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-            <h3>Lịch thợ</h3>
-            <div style="display:flex;gap:6px">
-              <select id="staffMonthM" class="field" style="padding:6px 10px;font-size:12px;min-height:0">
-                <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option><option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option><option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option><option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
-              </select>
-              <select id="staffMonthY" class="field" style="padding:6px 10px;font-size:12px;min-height:0">
-                <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option>
-              </select>
-            </div>
-          </div>
-          <div class="staff-list" id="staffMonthList"></div>
         </div>
         
         <div class="panel side-card">
@@ -367,7 +358,7 @@ input[type=number] { -moz-appearance: textfield; }
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_makeup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">💄 Makeup</label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_khac" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">⚙️ Khác / Freelance</label>
             </div>
-            <div id="eventStaff" class="staff-picker"></div>
+            <div id="eventStaff" class="staff-picker" style="padding:0; border:none; background:transparent;"></div>
           </div>
           
           <div class="form-group step2-item" style="display:none"><label>Địa điểm</label><input id="eventLocation" placeholder="VD: Cần Thơ / studio / ngoại cảnh" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()"></div>
@@ -637,9 +628,7 @@ window.save = function() {
     }
 }
 
-// ----------------------------------------------------
 // TÍNH TOÁN NỢ CŨ
-// ----------------------------------------------------
 function getOldDebt(staffId, targetY, targetM) {
     let debt = 0;
     data.events.forEach(e => {
@@ -789,11 +778,17 @@ function renderMonth(){
       </div>`;
     }
 
-    const dateNum = d.getDate();
-    const displayDate = dateNum === 1 ? `1/${d.getMonth()+1}` : dateNum;
+    const isOtherMonth = d.getMonth() !== m;
+    const displayDate = isOtherMonth ? `${d.getDate()}/${d.getMonth()+1}` : d.getDate();
+
+    let dayClass = 'day';
+    if (isOtherMonth) dayClass += ' other';
+    if (d.getDay() === 6) dayClass += ' sat-bg';
+    else if (d.getDay() === 0) dayClass += ' sun-bg';
+    if (isoDate(d) === isoDate(new Date())) dayClass += ' today';
     
-    html+=`<div class="day ${d.getMonth()!==m?'other':''} ${isoDate(d)===isoDate(new Date())?'today':''}" data-date="${ds}">
-      <div class="daynum" style="${dateNum===1?'width:auto;padding:0 10px':''}">${displayDate}</div>
+    html+=`<div class="${dayClass}" data-date="${ds}">
+      <div class="daynum" style="${isOtherMonth?'width:auto;padding:0 8px':''}">${displayDate}</div>
       ${warningsHtml}
       ${all.slice(0,5).map(chip).join('')}${all.length>5?`<div style="font-size:11px;color:var(--muted);padding:4px 6px;font-weight:700">+${all.length-5} lịch khác</div>`:''}
     </div>`;
@@ -848,6 +843,7 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
       const oldDebt = getOldDebt(s.id, targetY, targetM - 1);
       const remain = oldDebt + totalCost - advance - paid;
       
+      // LOGIC ẨN FREELANCE: Không nợ cũ, không làm ca nào tháng này -> Ẩn
       if (isFreelance && sEvents.length === 0 && advance === 0 && paid === 0 && totalCost === 0 && oldDebt <= 0) {
           return; 
       }
@@ -1072,6 +1068,10 @@ function render(){
 function setView(v){
   currentView=v;
   document.querySelectorAll('[data-view],[data-switch]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
+  
+  // Ẩn/hiện bộ lọc
+  document.getElementById('mainFilters').style.display = (v === 'month') ? 'flex' : 'none';
+  
   render();
 }
 
@@ -1125,14 +1125,33 @@ window.updateModalVisibility = function() {
         el.style.display = (nameVal && locVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none';
     });
     
-    document.querySelectorAll('.staff-link-container').forEach(el => {
-        el.style.display = (statusVal === 'done') ? 'flex' : 'none';
+    document.querySelectorAll('.staff-modal-item').forEach(el => {
+        const isChecked = el.querySelector('.staff-check').checked;
+        const linkCont = el.querySelector('.staff-link-container');
+        if(linkCont) {
+            linkCont.style.display = (statusVal === 'done' && isChecked) ? 'flex' : 'none';
+        }
     });
 }
 
 let currentEventAssignments = [];
 
-// Các hàm liên kết thợ... (Được tích hợp đầy đủ vào renderEventStaffList)
+window.saveStaffLinkLocally = function(sId, sName) {
+    const urlInput = document.getElementById('link-input-'+sId).value.trim();
+    const taskInput = document.getElementById('task-'+sId).value;
+    if(!urlInput) { showToast('Vui lòng dán link URL'); return; }
+    
+    document.getElementById('link-tag-'+sId).href = urlInput;
+    document.getElementById('link-tag-'+sId).innerHTML = `🔗 ${escapeHtml(sName)} - ${escapeHtml(taskInput || 'Source')}`;
+    
+    document.getElementById('link-edit-'+sId).style.display = 'none';
+    document.getElementById('link-view-'+sId).style.display = 'flex';
+}
+
+window.toggleEditLink = function(sId) {
+    document.getElementById('link-view-'+sId).style.display = 'none';
+    document.getElementById('link-edit-'+sId).style.display = 'flex';
+}
 
 window.addProductRow = function(name='', url='') {
     const container = document.getElementById('eventProductsList');
@@ -1198,16 +1217,15 @@ window.renderEventStaffList = function() {
           const savedLink = a?.link || '';
 
           return `<div class="staff-modal-item" data-role="${s.role}" style="border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px; background:#fff; box-shadow:var(--shadow-sm)">
-            <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:750;cursor:pointer;color:#0f172a">
-              <input type="checkbox" class="staff-check" value="${s.id}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.nextElementSibling.style.display=this.checked?'flex':'none'" style="accent-color:var(--primary);width:18px;height:18px">
-              ${escapeHtml(s.name)} <span style="color:var(--muted);font-weight:500;font-size:12px">— ${escapeHtml(s.role)}</span>
-              <span id="busy-info-${s.id}"></span>
-            </label>
-            
-            <div style="display:${isChecked ? 'flex' : 'none'}; flex-direction:column; gap:10px; margin-top:10px; border-top:1px dashed var(--line); padding-top:10px">
-              
-              <div style="display:flex; gap:10px; align-items:center;">
-                  <select id="task-${s.id}" style="flex:1; border:1px solid var(--line);padding:8px;border-radius:8px;outline:0;font-size:13px;background:#f8fafc;font-weight:600">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:750;cursor:pointer;color:#0f172a; flex:1; min-width:180px;">
+                  <input type="checkbox" class="staff-check" value="${s.id}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.nextElementSibling.style.display=this.checked?'flex':'none'; window.updateModalVisibility();" style="accent-color:var(--primary);width:18px;height:18px">
+                  ${escapeHtml(s.name)} <span style="color:var(--muted);font-weight:500;font-size:12px">— ${escapeHtml(s.role)}</span>
+                  <span id="busy-info-${s.id}"></span>
+                </label>
+                
+                <div style="display:${isChecked ? 'flex' : 'none'}; gap:10px; align-items:center; flex:1; justify-content:flex-end; min-width:240px;">
+                  <select id="task-${s.id}" style="width:140px; border:1px solid var(--line);padding:6px 10px;border-radius:8px;outline:0;font-size:13px;background:#f8fafc;font-weight:600">
                     <option value="Chụp truyền thống" ${a?.task==='Chụp truyền thống'?'selected':''}>Chụp truyền thống</option>
                     <option value="Chụp phóng sự" ${a?.task==='Chụp phóng sự'?'selected':''}>Chụp phóng sự</option>
                     <option value="Chụp Concept" ${a?.task==='Chụp Concept'?'selected':''}>Chụp Concept</option>
@@ -1216,23 +1234,22 @@ window.renderEventStaffList = function() {
                     <option value="Makeup" ${a?.task==='Makeup'?'selected':''}>Makeup</option>
                     <option value="Khác" ${a?.task==='Khác'?'selected':''}>Khác</option>
                   </select>
-                  <input type="number" id="cost-${s.id}" placeholder="Chi phí (đ)" value="${a?.cost || ''}" oninput="this.value = this.value.replace(/^0+(?!\\d)/, '')" style="width:110px;border:1px solid var(--line);padding:8px;border-radius:8px;outline:0;font-size:13px;background:#f8fafc;font-weight:600">
-              </div>
+                  <input type="number" id="cost-${s.id}" placeholder="Chi phí (đ)" value="${a?.cost || ''}" oninput="this.value = this.value.replace(/^0+(?!\\d)/, '')" style="width:100px;border:1px solid var(--line);padding:6px 10px;border-radius:8px;outline:0;font-size:13px;background:#f8fafc;font-weight:600; text-align:right;">
+                </div>
+            </div>
 
-              <div class="staff-link-container" style="display:${showLink ? 'flex' : 'none'}; gap: 8px; align-items:center; background:#e0e7ff; padding:8px 10px; border-radius:8px; border: 1px dashed #a5b4fc;">
+            <div class="staff-link-container" style="display:${showLink && isChecked ? 'flex' : 'none'}; gap: 8px; align-items:center; background:#e0e7ff; padding:8px 10px; border-radius:8px; border: 1px dashed #a5b4fc; margin-top: 10px;">
                  <div id="link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 8px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
                      <a id="link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:12px; font-weight:750; color:var(--primary); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
                         🔗 ${escapeHtml(s.name)} - ${escapeHtml(a?.task || 'Source')}
                      </a>
                      <button type="button" class="btn ghost" style="padding:4px 8px; font-size:11px; background:#fff" onclick="copyText(document.getElementById('link-input-${s.id}').value)" title="Copy">📋 Copy</button>
-                     <button type="button" class="btn ghost" style="padding:4px 8px; font-size:11px; background:#fff" onclick="document.getElementById('link-view-${s.id}').style.display='none'; document.getElementById('link-edit-${s.id}').style.display='flex'" title="Sửa">✏️ Sửa</button>
+                     <button type="button" class="btn ghost" style="padding:4px 8px; font-size:11px; background:#fff" onclick="window.toggleEditLink('${s.id}')" title="Sửa">✏️ Sửa</button>
                  </div>
                  <div id="link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 8px; flex:1; align-items:center; flex-wrap:wrap;">
                      <input type="url" id="link-input-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Link Source..." style="flex:1; border:1px solid #c7d2fe; padding:6px 10px; border-radius:6px; outline:0; font-size:12px; background:#fff; min-width:120px;">
-                     <button type="button" class="btn primary" style="padding:6px 12px; font-size:12px;" onclick="document.getElementById('link-tag-${s.id}').href=document.getElementById('link-input-${s.id}').value; document.getElementById('link-edit-${s.id}').style.display='none'; document.getElementById('link-view-${s.id}').style.display='flex'">Lưu</button>
+                     <button type="button" class="btn primary" style="padding:6px 12px; font-size:12px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu</button>
                  </div>
-              </div>
-
             </div>
           </div>`;
         }).join('')
@@ -1374,7 +1391,7 @@ window.saveEvent = function(){
   
   save();
   window.closeEventModal();
-  render();
+  render(); 
   showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
 }
 
@@ -1391,6 +1408,7 @@ window.deleteEvent = function(){
 
 window.openSettings = function(){ document.getElementById('settingsModal').style.display='flex'; }
 window.openStaff = function(){document.getElementById('staffModal').style.display='flex';renderStaffManage()}
+
 function renderStaffManage(){
   document.getElementById('staffManageList').innerHTML=data.staff.map(s=>`<div class="mini-item">
     <div class="staff-left"><div class="avatar">${initials(s.name)}</div><div class="staff-info"><div class="mini-title">${escapeHtml(s.name)}</div><div class="mini-sub">${escapeHtml(s.role)}</div></div></div>
@@ -1403,6 +1421,7 @@ function renderStaffManage(){
     save();renderStaffManage();
   }));
 }
+
 window.addStaff = function(){
   const name=document.getElementById('staffName').value.trim(); const role=document.getElementById('staffRole').value;
   if(!name){showToast('Nhập tên nhân sự');return}
