@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ffffff">
 
@@ -16,372 +15,9 @@
 
 <title>Amorri Studio — Lịch Quay & Chụp</title>
 
-<script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-database-compat.js"></script>
-
-<style>
-/* FONT & CƠ BẢN */
-:root {
-  --bg: #f4f4f5; 
-  --panel: #ffffff; 
-  --text: #09090b; 
-  --muted: #52525b; 
-  --line: #e4e4e7; 
-  --primary: #18181b; 
-  --primary-hover: #27272a; 
-  --green: #10b981; --bg-green: #ecfdf5;
-  --orange: #f59e0b; --bg-orange: #fffbeb;
-  --blue: #3b82f6; --bg-blue: #eff6ff;
-  --red: #ef4444; --bg-red: #fef2f2;
-  
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-  --radius: 24px;
-}
-
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text); background: var(--bg); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
-button, input, select, textarea { font: inherit; }
-button { cursor: pointer; border: none; outline: none; }
-
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
-input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-input[type=number] { -moz-appearance: textfield; }
-
-/* ẨN HIỆN QUYỀN */
-.admin-only, .staff-only { display: none !important; }
-body.role-admin .admin-only { display: flex !important; }
-body.role-admin .admin-only-block { display: block !important; }
-body.role-admin .admin-only-grid { display: grid !important; }
-body.role-admin .admin-only-flex { display: flex !important; }
-body.role-staff .staff-only { display: flex !important; }
-
-/* BỐ CỤC CHÍNH */
-.app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
-.sidebar { background: #09090b; color: #fafafa; padding: 32px 20px; display: flex; flex-direction: column; gap: 32px; position: sticky; top: 0; height: 100vh; z-index: 40; }
-.brand { display: flex; align-items: center; gap: 14px; padding: 0 8px; }
-.brand-mark { width: 44px; height: 44px; border-radius: 12px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-.brand-mark img { width: 100%; height: 100%; object-fit: cover; }
-.brand h1 { font-size: 17px; margin: 0; font-weight: 800; letter-spacing: -0.3px; }
-.brand small { color: #a1a1aa; font-size: 12px; font-weight: 500; }
-
-.side-nav { display: grid; gap: 6px; }
-.nav-btn { background: transparent; color: #a1a1aa; padding: 12px 16px; border-radius: 12px; text-align: left; display: flex; gap: 12px; align-items: center; font-weight: 600; font-size: 14.5px; transition: all 0.2s ease; }
-.nav-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
-.nav-btn.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 700; }
-.nav-btn b { font-size: 18px; font-weight: normal; opacity: 0.8; transition: transform 0.2s; }
-.nav-btn.active b { transform: scale(1.1); opacity: 1; }
-.sidebar-bottom { margin-top: auto; display: grid; gap: 10px; }
-
-.main { padding: 40px; min-width: 0; }
-.topbar { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 32px; flex-wrap: wrap; }
-.title { font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: var(--text); }
-.subtitle { font-size: 14px; color: var(--muted); margin-top: 6px; font-weight: 600; }
-
-.btn { background: #fff; border: 1px solid var(--line); color: var(--text); padding: 12px 20px; border-radius: 999px; font-weight: 700; font-size: 13.5px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm); }
-.btn:hover { background: #fafafa; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-.btn:active { transform: translateY(1px); box-shadow: none; }
-.btn.primary { border-color: transparent; background: var(--primary); color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
-.btn.primary:hover { background: var(--primary-hover); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
-.btn.danger { color: #b91c1c; border-color: transparent; background: #fef2f2; box-shadow: none; }
-.btn.danger:hover { background: #fee2e2; }
-.btn.ghost { background: transparent; border-color: transparent; box-shadow: none; }
-.btn.ghost:hover { background: #f4f4f5; }
-
-.grid-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin-bottom: 32px; }
-.stat { background: var(--panel); border: 1px solid var(--line); padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow-sm); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-.stat:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: #d4d4d8; }
-.stat-label { color: var(--muted); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-.stat-num { font-size: 34px; font-weight: 800; margin-top: 8px; color: var(--text); letter-spacing: -1px; }
-.stat-meta { font-size: 13px; color: var(--muted); margin-top: 4px; font-weight: 600; }
-
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 24px; }
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
-
-.calendar-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; background: #fff; }
-.calendar-nav { display: flex; gap: 8px; align-items: center; }
-.icon-btn { width: 38px; height: 38px; border: 1px solid var(--line); background: #fff; border-radius: 50%; display: grid; place-items: center; transition: all 0.2s; font-size: 16px; color: var(--text); box-shadow: var(--shadow-sm); cursor: pointer;}
-.icon-btn:hover { background: #f4f4f5; transform: scale(1.05); }
-.month-title { font-size: 18px; font-weight: 800; min-width: 140px; text-align: center; }
-
-.filters { padding: 16px 24px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; flex-wrap: wrap; background: #fafafa; }
-.field { border: 1px solid transparent; background: #f4f4f5; border-radius: 12px; padding: 10px 16px; outline: none; font-size: 13.5px; transition: all 0.2s; color: var(--text); font-weight: 600; font-family: inherit; }
-.field:focus { background: #fff; border-color: #a1a1aa; box-shadow: 0 0 0 4px rgba(24, 24, 27, 0.05); }
-.field:hover { background: #e4e4e7; }
-
-.calendar-wrap { overflow-x: auto; }
-.calendar { min-width: 900px; background: #fff; }
-.weekdays, .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
-.weekday { padding: 14px 10px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; background: #fafafa; }
-
-/* T7 CN Màu sắc sắc nét */
-.day { min-height: 140px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px; background: #fff; transition: background 0.2s; cursor: pointer; }
-.day.sat-bg { background-color: #fafafb; } 
-.day.sun-bg { background-color: #f1f5f9; } 
-
-.day.other .daynum { color: #a1a1aa; font-weight: 600; } 
-.day.other { background-color: #fff; opacity: 0.85; }
-.day.other.sat-bg { background-color: #fafafb; }
-.day.other.sun-bg { background-color: #f1f5f9; }
-
-.day:nth-child(7n) { border-right: 0; }
-.day:hover { filter: brightness(0.96); }
-.day.today { box-shadow: inset 0 4px 0 var(--primary); background: #fff; }
-.daynum { font-size: 13.5px; font-weight: 700; min-width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; border-radius: 8px; margin-bottom: 8px; color: var(--muted); transition: all 0.2s; }
-.day.today .daynum { background: var(--primary); color: #fff; font-weight: 800; }
-
-/* EVENT CHIPS */
-.event-chip { padding: 8px 10px; border-radius: 8px; margin: 5px 0; display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; line-height: 1.3; border-left: 4px solid var(--primary); background: #f4f4f5; transition: all 0.2s; }
-.event-chip:hover { transform: scale(1.02); box-shadow: var(--shadow-sm); z-index: 1; position: relative; }
-.event-chip .time { font-weight: 800; color: var(--text); font-size: 12px; }
-.event-chip .name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 13.5px;}
-.event-chip .staff-tag { font-size:11.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px; color: var(--muted); }
-
-.status-confirmed { background: var(--bg-green); border-left-color: var(--green); }
-.status-confirmed .time, .status-confirmed .name { color: #064e3b; }
-.status-confirmed .staff-tag { color: #065f46; }
-
-.status-pending { background: var(--bg-orange); border-left-color: var(--orange); }
-.status-pending .time, .status-pending .name { color: #78350f; }
-.status-pending .staff-tag { color: #92400e; }
-
-.status-done { background: var(--bg-blue); border-left-color: var(--blue); }
-.status-done .time, .status-done .name { color: #1e3a8a; }
-.status-done .staff-tag { color: #1e40af; }
-
-.status-cancelled { background: var(--bg-red); border-left-color: var(--red); }
-.status-cancelled .time, .status-cancelled .name { color: #7f1d1d; text-decoration:line-through; }
-.status-cancelled .staff-tag { color: #991b1b; }
-
-.empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 14.5px; font-weight: 600; }
-.agenda { display: none; padding: 24px; }
-.side-panel { display: grid; gap: 24px; align-content: start; }
-.side-card { padding: 24px; border-radius: var(--radius); }
-.side-card h3 { margin: 0; font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
-.mini-list { display: grid; gap: 10px; margin-top: 16px; }
-.mini-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); background: #fff; box-shadow: var(--shadow-sm); }
-.mini-item:hover { border-color: #d4d4d8; box-shadow: var(--shadow-md); transform: translateY(-2px); }
-.mini-main { min-width: 0; }
-.mini-title { font-size: 14.5px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mini-sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; font-weight: 600; }
-
-.pill { font-size: 11.5px; padding: 4px 10px; border-radius: 99px; font-weight: 700; white-space: nowrap; border: 1px solid transparent; }
-.pill.green { background: var(--bg-green); color: #047857; }
-.pill.orange { background: var(--bg-orange); color: #b45309; }
-.pill.blue { background: var(--bg-blue); color: #1d4ed8; }
-.pill.red { background: var(--bg-red); color: #b91c1c; }
-
-.staff-list { display: grid; gap: 12px; margin-top: 16px; }
-.staff { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: #fafafa; border-radius: 16px; border: 1px solid var(--line); }
-.avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: #e4e4e7; color: var(--text); font-weight: 800; font-size: 14px; letter-spacing: 0.5px; }
-.staff-left { display: flex; gap: 12px; align-items: center; min-width: 0; }
-.staff-name { font-size: 14.5px; font-weight: 700; color: var(--text); }
-.staff-role { font-size: 12.5px; color: var(--muted); margin-top: 2px; font-weight: 600; }
-
-/* MODALS - MƯỢT MÀ */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(9, 9, 11, 0.4); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; backdrop-filter: blur(8px); opacity: 0; transition: opacity 0.3s ease; }
-.modal-backdrop.show { display: flex; opacity: 1; }
-.modal-backdrop.closing { opacity: 0; pointer-events: none; }
-.modal { width: min(850px, 100%); max-height: 90vh; overflow-y: auto; background: #fff; border-radius: 28px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; transform: translateY(30px) scale(0.98); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-.modal-backdrop.show .modal { transform: translateY(0) scale(1); opacity: 1; }
-.modal-backdrop.closing .modal { transform: translateY(30px) scale(0.98); opacity: 0; }
-.modal-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 24px 32px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); z-index: 10; }
-.modal-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
-.modal-body { padding: 32px; flex: 1; }
-.modal-foot { display: flex; align-items: center; padding: 20px 32px; border-top: 1px solid var(--line); background: #fafafa; position: sticky; bottom: 0; z-index: 10; border-radius: 0 0 28px 28px; }
-
-/* FORM MƯỢT MÀ VÀ TIỀN TỆ (.000 đ) */
-.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
-.full { grid-column: 1 / -1; }
-.form-group { display: grid; gap: 8px; }
-.form-group label { font-size: 13.5px; font-weight: 700; color: #52525b; }
-.form-group input, .form-group select, .form-group textarea { width: 100%; background: #f4f4f5; border: 1px solid transparent; padding: 12px 16px; border-radius: 12px; outline: none; font-size: 14.5px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-weight: 600; color: var(--text); font-family: inherit; }
-.form-group input:hover, .form-group select:hover, .form-group textarea:hover { background: #e4e4e7; }
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus { background: #fff; border-color: #a1a1aa; box-shadow: 0 0 0 4px rgba(24,24,27,0.05); }
-.form-group textarea { min-height: 100px; resize: vertical; line-height: 1.5; }
-.form-group input[readonly], .form-group textarea[readonly], .form-group select[disabled] { background: #fafafa; color: #a1a1aa; cursor: not-allowed; opacity: 0.8; }
-
-/* Bọc tiền tệ đ thông minh mới - Tự cộng .000 */
-.currency-wrap { position: relative; width: 100%; display: flex; align-items: center; }
-.currency-wrap input { width: 100%; padding-right: 68px !important; text-align: right; }
-.currency-wrap::after { content: '.000 đ'; position: absolute; right: 14px; color: #94a3b8; font-weight: 800; font-size: 14.5px; pointer-events: none; }
-
-.step2-item, .step3-item { animation: fadeSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-@keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-.toast { position: fixed; right: 24px; bottom: 24px; background: #09090b; color: #fff; padding: 14px 24px; border-radius: 99px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-size: 14.5px; font-weight: 600; letter-spacing: 0.3px; z-index: 9999; opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
-.toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
-
-.kpi-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; margin: 14px 0; color: #52525b; }
-.staff-picker { border-radius: 14px; max-height: 400px; overflow-y: auto; }
-
-/* Cân chỉnh lại Nút + */
-.fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; display: none; align-items: center; justify-content: center; font-size: 32px; font-weight: 400; box-shadow: 0 10px 25px rgba(24, 24, 27, 0.3); z-index: 90; transition: transform 0.2s; line-height: 1; padding-bottom: 2px; }
-.fab:active { transform: scale(0.9); }
-
-#loadingOverlay { position: fixed; inset: 0; background: rgba(244, 244, 245, 0.95); backdrop-filter: blur(10px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s; }
-#loadingOverlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-.loading-logo { width: 80px; height: 80px; border-radius: 20px; background: #fff; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; box-shadow: var(--shadow-md); overflow: hidden; border: 1px solid var(--line); }
-.loading-logo img { width: 100%; height: 100%; object-fit: cover; }
-
-@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.96); } }
-
-/* Mobile Reponsive */
-@media(max-width: 900px){ .layout { grid-template-columns: 1fr; } }
-@media(max-width: 768px){
-  .app { grid-template-columns: 1fr; padding-bottom: 80px; } 
-  .sidebar { position: fixed; bottom: 0; left: 0; right: 0; top: auto; height: 75px; flex-direction: row; padding: 0; border-top: 1px solid var(--line); z-index: 99; background: #ffffff; box-shadow: 0 -10px 25px rgba(0,0,0,0.05); }
-  .brand, .sidebar-bottom { display: none; }
-  .side-nav { display: flex; width: 100%; justify-content: space-around; align-items: center; padding: 0 10px; gap: 0; }
-  .nav-btn { flex-direction: column; gap: 4px; padding: 10px 0; width: 70px; color: var(--muted); border-radius: 12px; justify-content: center; font-size: 11px; background: transparent !important; box-shadow: none !important; }
-  .nav-btn.active { color: var(--primary); font-weight: 700; background: transparent; }
-  .nav-btn.active b { transform: scale(1.15); opacity: 1; color: var(--primary); }
-  .nav-btn b { font-size: 22px; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-  
-  .main { padding: 24px 16px 40px; }
-  .topbar { flex-direction: column; align-items: flex-start; gap: 16px; margin-bottom: 24px; }
-  .actions { width: 100%; justify-content: flex-start; }
-  .grid-stats { grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
-  .stat { padding: 16px; }
-  .stat-num { font-size: 24px; }
-  .filters .field { flex: 1; min-width: 140px; }
-  
-  .actions .primary { display: none; } 
-
-  .modal-backdrop { align-items: flex-end; padding: 0; }
-  .modal { width: 100%; border-radius: 28px 28px 0 0; max-height: 92vh; margin: 0; }
-  .modal-head { padding: 20px 24px; border-radius: 28px 28px 0 0; }
-  .modal-head::before { content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: #d4d4d8; border-radius: 10px; }
-  .modal-body { padding: 24px; }
-  .form-grid { grid-template-columns: 1fr; gap: 20px; }
-  .modal-foot { flex-wrap: wrap; padding: 20px 24px; padding-bottom: max(20px, env(safe-area-inset-bottom)); border-radius: 0; }
-  .modal-foot > div { width: 100%; justify-content: flex-end; margin-top: 12px; }
-}
-</style>
-</head>
-<body class="role-guest"> <!-- Mặc định Khách -->
-
-<div id="loadingOverlay">
-    <div class="loading-logo"><img src="logo.png" alt="Amorri" onerror="this.style.display='none'"></div>
-    <div style="font-weight:700; color:var(--text); font-size: 15px; letter-spacing: 0.5px;">Đang đồng bộ dữ liệu...</div>
-</div>
-
-<div class="app">
-  <aside class="sidebar">
-    <div class="brand">
-        <div class="brand-mark"><img src="logo.png" alt="Amorri" onerror="this.style.display='none'"></div>
-        <div><h1>Amorri Studio</h1><small>Lịch quay & chụp</small></div>
-    </div>
-    <nav class="side-nav">
-      <button class="nav-btn active" data-view="month"><b>▦</b><span>Lịch tháng</span></button>
-      <button class="nav-btn admin-only" data-view="agenda"><b>💰</b><span>Lương thợ</span></button>
-      <button class="nav-btn staff-only" data-view="agenda"><b>💰</b><span>Lương của tôi</span></button>
-      <button class="nav-btn admin-only" id="openStaffBtn"><b>✦</b><span>Đội ngũ</span></button>
-      <button class="nav-btn admin-only" id="settingsBtn"><b>⚙</b><span>Cài đặt</span></button>
-    </nav>
-    <div class="sidebar-bottom">
-      <button class="btn primary admin-only admin-only-flex" id="sideAdd" style="justify-content:center; padding:16px; font-size:14.5px;">＋ Thêm lịch mới</button>
-      <button class="btn" id="loginBtn" style="margin-top:12px; width:100%; justify-content:center; display:none; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff;" onclick="window.loginAdmin()">Đăng nhập Admin</button>
-      <button class="btn danger admin-only" id="logoutBtn" style="margin-top:12px; width:100%; justify-content:center; background: #7f1d1d; color: #fecaca; border: none;" onclick="window.logoutAdmin()">Đăng xuất</button>
-    </div>
-  </aside>
-
-  <main class="main">
-    <div class="topbar">
-      <div class="topbar-left">
-        <div><h2 class="title">Bảng điều khiển</h2><div class="subtitle" id="todayText"></div></div>
-      </div>
-      <div class="actions admin-only">
-        <button class="btn primary" id="addBtn">＋ Thêm lịch</button>
-      </div>
-    </div>
-
-    <section class="grid-stats admin-only admin-only-grid">
-      <div class="stat"><div class="stat-label">Lịch trong tháng</div><div class="stat-num" id="statTotal">0</div><div class="stat-meta">theo bộ lọc</div></div>
-      <div class="stat"><div class="stat-label">Đã xác nhận</div><div class="stat-num" id="statConfirmed">0</div><div class="stat-meta" style="color:var(--green)">booking đã chốt</div></div>
-      <div class="stat"><div class="stat-label">Chờ xác nhận</div><div class="stat-num" id="statPending">0</div><div class="stat-meta" style="color:var(--orange)">cần theo dõi</div></div>
-      <div class="stat"><div class="stat-label">Khách nợ</div><div class="stat-num" id="statUnpaid" style="color:var(--red)">0</div><div class="stat-meta">chưa thanh toán đủ</div></div>
-    </section>
-
-    <section class="layout">
-      <div class="panel">
-        <div class="calendar-head">
-          <div class="calendar-nav">
-            <button class="icon-btn" id="prevBtn">‹</button>
-            <button class="icon-btn" id="nextBtn">›</button>
-            <div class="month-title" id="calendarTitle"></div>
-          </div>
-        </div>
-        
-        <div class="filters" id="mainFilters">
-          <input class="field" id="searchInput" placeholder="Tìm tên lịch..." style="flex: 1; min-width: 200px;">
-          <select class="field admin-only" id="staffFilter"><option value="">Tất cả nhân sự</option></select>
-          <select class="field" id="statusFilter">
-              <option value="">Tất cả trạng thái</option>
-              <option value="pending">Chờ xác nhận</option>
-              <option value="confirmed">Đã chốt</option>
-              <option value="done">Hoàn thành</option>
-              <option value="cancelled">Đã hủy</option>
-          </select>
-        </div>
-        
-        <div class="calendar-wrap">
-          <div class="calendar" id="calendar"></div>
-          <div class="agenda" id="agenda"></div>
-        </div>
-      </div>
-
-      <aside class="side-panel">
-        <div class="panel side-card">
-          <h3>Lịch sắp tới</h3>
-          <div class="mini-list" id="upcomingList"></div>
-        </div>
-        
-        <div class="panel side-card admin-only admin-only-block">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-            <h3 style="margin:0;font-size:16px;">Lịch thợ</h3>
-            <div style="display:flex;gap:6px">
-              <select id="staffMonthM" class="field" style="padding:6px 10px;font-size:12.5px;min-height:0">
-                <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option><option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6Chào bạn, mình đã phân tích kỹ lưỡng các vấn đề bạn gặp phải và **đã tìm ra nguyên nhân cốt lõi**:
-
-1. **Lỗi Tổng quan & Lịch thợ bị trống:** Khi trang vừa tải xong, hàm lấy dữ liệu chạy nhanh hơn cả tốc độ hệ thống gán số tháng vào ô thả xuống (Dropdown). Vì ô đó rỗng, nó tính nhầm ra "Tháng 0" nên không tìm thấy lịch. Mình đã viết lại một hàm bọc thép (Fallback Logic): Nếu ô thả xuống chưa sẵn sàng, nó sẽ tự quét thẳng vào đồng hồ hệ thống của bạn để lấy chính xác Tháng/Năm hiện tại. **Cam kết 100% mở lên là có dữ liệu.**
-2. **Nút "Cộng" (+) bị lệch:** Mình đã căn chỉnh lại tâm bằng thuộc tính `align-items: center; justify-content: center; line-height: 1;` cho nút nổi (FAB), đảm bảo nó hoàn toàn nằm ở chính giữa trên mọi thiết bị.
-3. **Hiển thị Link Source thông minh theo THỜI GIAN THỰC:** 
-   - Không cần quan tâm trạng thái là "Chờ xác nhận" hay "Đã chốt", hệ thống sẽ tự động so sánh **Ngày & Giờ kết thúc** của sự kiện với giờ hiện tại. 
-   - Ngay khi sự kiện kết thúc, ô điền Link sẽ **tự động xuất hiện** cho Admin và người thợ được phân công.
-4. **Bảo mật Quyền Riêng Tư (Privacy) cho Thợ:**
-   - Khi thợ mở link cá nhân, họ **chỉ thấy được tiền công của chính mình** (có dải nền màu xanh lá nổi bật). Tiền của các thợ khác đi chung ca sẽ bị ẩn đi hoàn toàn.
-   - Thợ **chỉ có thể điền link source của bản thân**, không thể xem hay sửa link của thợ khác.
-   - Mục **"Sản phẩm / Bàn giao file" (Sản phẩm cuối cùng) bị khóa kín hoàn toàn**, chỉ có Admin mới có quyền xem và thao tác.
-5. **Tiền tệ Thông minh (`.000 đ`):** Vấn đề bạn thấy `1000.000đ` trước kia là do thẻ `<input type="number">` tự động xóa đi dấu chấm (.) định dạng. Mình đã đổi sang cơ chế Text Format. Bạn gõ `1000` sẽ tự động thành `1.000` + `.000 đ` = **`1.000.000 đ`**. Giao diện giờ cực kỳ hoàn hảo.
-
-Dưới đây là phiên bản tối thượng. Bạn copy (Ctrl + A) và dán đè lên file `index.html` nhé:
-
-```html
-<!doctype html>
-<html lang="vi">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#ffffff">
-
-<link rel="icon" href="logo.png" type="image/png">
-<!-- Phông chữ cao cấp Plus Jakarta Sans -->
-<link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
-<link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
-<link href="[https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap](https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap)" rel="stylesheet">
-
-<title>Amorri Studio — Lịch Quay & Chụp</title>
-
-<script src="[https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js](https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js)"></script>
-<script src="[https://www.gstatic.com/firebasejs/10.10.0/firebase-database-compat.js](https://www.gstatic.com/firebasejs/10.10.0/firebase-database-compat.js)"></script>
+<!-- Đã nâng cấp Firebase SDK chống lỗi bảo mật -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
 
 <style>
 /* FONT & CƠ BẢN */
@@ -582,10 +218,9 @@ body.role-staff .staff-only { display: flex !important; }
 .kpi-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; margin: 14px 0; color: #52525b; }
 .staff-picker { border-radius: 14px; max-height: 400px; overflow-y: auto; }
 
-/* FAB FIX CÂN BẰNG TÂM */
-.fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; display: none; align-items: center; justify-content: center; font-size: 30px; line-height: 1; padding: 0; box-shadow: 0 10px 25px rgba(24, 24, 27, 0.3); z-index: 90; transition: transform 0.2s; }
+/* MOBILE FAB NÂNG CẤP - Đảm bảo dâu + nằm giữa */
+.fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; display: none; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 10px 25px rgba(24, 24, 27, 0.3); z-index: 90; transition: transform 0.2s; padding: 0; line-height: 1; }
 .fab:active { transform: scale(0.9); }
-body.role-admin .fab.admin-only { display: flex !important; }
 
 #loadingOverlay { position: fixed; inset: 0; background: rgba(244, 244, 245, 0.95); backdrop-filter: blur(10px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s; }
 #loadingOverlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -614,6 +249,8 @@ body.role-admin .fab.admin-only { display: flex !important; }
   .stat-num { font-size: 24px; }
   .filters .field { flex: 1; min-width: 140px; }
   
+  /* Hiện nút FAB mượt mà trên mobile */
+  body.role-admin .fab { display: flex !important; }
   .actions .primary { display: none; } 
 
   .modal-backdrop { align-items: flex-end; padding: 0; }
@@ -648,7 +285,7 @@ body.role-admin .fab.admin-only { display: flex !important; }
       <button class="nav-btn admin-only" id="settingsBtn"><b>⚙</b><span>Cài đặt</span></button>
     </nav>
     <div class="sidebar-bottom">
-      <button class="btn primary admin-only admin-only-block" id="sideAdd" style="padding:16px; font-size:14.5px;">＋ Thêm lịch mới</button>
+      <button class="btn primary admin-only admin-only-block" id="sideAdd" style="padding:16px; font-size:14.5px; width: 100%;">＋ Thêm lịch mới</button>
       <button class="btn" id="loginBtn" style="margin-top:12px; width:100%; justify-content:center; display:none; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff;" onclick="window.loginAdmin()">Đăng nhập Admin</button>
       <button class="btn danger admin-only" id="logoutBtn" style="margin-top:12px; width:100%; justify-content:center; background: #7f1d1d; color: #fecaca; border: none;" onclick="window.logoutAdmin()">Đăng xuất</button>
     </div>
@@ -683,7 +320,9 @@ body.role-admin .fab.admin-only { display: flex !important; }
         
         <div class="filters" id="mainFilters">
           <input class="field" id="searchInput" placeholder="Tìm tên lịch..." style="flex: 1; min-width: 200px;">
-          <select class="field admin-only" id="staffFilter"><option value="">Tất cả nhân sự</option></select>
+          <select class="field admin-only" id="staffFilter">
+              <option value="">Tất cả nhân sự</option>
+          </select>
           <select class="field" id="statusFilter">
               <option value="">Tất cả trạng thái</option>
               <option value="pending">Chờ xác nhận</option>
@@ -749,6 +388,7 @@ body.role-admin .fab.admin-only { display: flex !important; }
       <form id="eventForm">
         <input type="hidden" id="eventId">
         <div class="form-grid">
+          <!-- Nhóm 1: Cơ bản -->
           <div class="form-group full"><label>Tên lịch / Khách hàng</label><input id="eventName" required placeholder="VD: Đám cưới Minh & Linh" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()"></div>
           <div class="form-group"><label>Ngày</label><input id="eventDate" type="date" required onchange="window.updateModalVisibility(); window.checkConflict();"></div>
           <div class="form-group">
@@ -763,6 +403,7 @@ body.role-admin .fab.admin-only { display: flex !important; }
           <div class="form-group"><label>Giờ bắt đầu</label><input id="eventStart" type="time" required onchange="window.checkConflict();"></div>
           <div class="form-group"><label>Giờ kết thúc</label><input id="eventEnd" type="time" required onchange="window.updateModalVisibility(); window.checkConflict();"></div>
           
+          <!-- Nhóm 2: Nhân sự -->
           <div class="form-group full step2-item" style="display:none">
             <div class="admin-only" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:10px" id="adminStaffLabel">
               <label>Phân công nhân sự</label>
@@ -796,7 +437,7 @@ body.role-admin .fab.admin-only { display: flex !important; }
           <div class="form-group step2-item" style="display:none"><label>Địa điểm</label><input id="eventLocation" placeholder="VD: Cần Thơ / studio..." onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()"></div>
           <div class="form-group step2-item" style="display:none"><label>Số điện thoại khách</label><input id="eventPhone" placeholder="090..."></div>
           
-          <!-- Nhóm 3: Cấu hình Tiền Bạc sử dụng .000 đ -->
+          <!-- Nhóm 3: Tiền Bạc & Ghi chú -->
           <div class="form-group step3-item" style="display:none" id="priceGroup">
             <label>Giá trị booking</label>
             <div class="currency-wrap">
@@ -812,10 +453,10 @@ body.role-admin .fab.admin-only { display: flex !important; }
           
           <div class="form-group full step3-item" style="display:none"><label>Ghi chú / Yêu cầu</label><textarea id="eventNote" placeholder="Trang phục, concept, thiết bị, thời gian di chuyển..."></textarea></div>
 
-          <div class="form-group full step3-item admin-only admin-only-block" id="productsSection" style="display:none; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 24px;">
+          <div class="form-group full step3-item" style="display:none; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 24px;" id="productsSection">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <label>📦 Sản Phẩm / Bàn Giao File</label>
-                <button type="button" id="btnAddProduct" class="btn ghost" style="padding:8px 16px; font-size:13px; border:1px solid var(--line);" onclick="window.addProductRow()">+ Thêm Link</button>
+                <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:8px 16px; font-size:13px; border:1px solid var(--line);" onclick="window.addProductRow()">+ Thêm Link</button>
             </div>
             <div id="eventProductsList" style="display:flex; flex-direction:column; gap:12px;"></div>
           </div>
@@ -824,11 +465,11 @@ body.role-admin .fab.admin-only { display: flex !important; }
       </form>
     </div>
     <div class="modal-foot">
-      <button type="button" class="btn admin-only admin-only-block" id="fullPaidBtn" style="color:#065f46;background:var(--bg-green);border-color:#a7f3d0;">💰 Đã thanh toán đủ</button>
-      <button type="button" class="btn danger admin-only admin-only-flex" id="deleteEvent" style="display:none;margin-left:12px">Xóa lịch</button>
+      <button type="button" class="btn" id="fullPaidBtn" style="color:#065f46;background:var(--bg-green);border-color:#a7f3d0;display:none;">💰 Đã thanh toán đủ</button>
+      <button type="button" class="btn danger" id="deleteEvent" style="display:none;margin-left:12px">Xóa lịch</button>
       <div style="margin-left:auto;display:flex;gap:12px">
         <button type="button" class="btn ghost" onclick="window.smoothClose('eventModal')" id="cancelEvent">Hủy</button>
-        <button type="button" class="btn primary admin-only admin-only-block" id="saveEvent">Lưu lịch</button>
+        <button type="button" class="btn primary" id="saveEvent" style="display:none;">Lưu lịch</button>
       </div>
     </div>
   </div>
@@ -914,11 +555,11 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
     return false;
 };
 
+// HÀM TIỆN ÍCH AN TOÀN
 function setSafeValue(id, val) {
     const el = document.getElementById(id);
     if(el) {
         el.value = String(val);
-        // Force select cho Dropdown chắc chắn 100%
         if(el.tagName === 'SELECT') {
             const opt = el.querySelector(`option[value="${val}"]`);
             if(opt) opt.selected = true;
@@ -926,13 +567,13 @@ function setSafeValue(id, val) {
     }
 }
 
-// FORMAT TIỀN TỆ THÔNG MINH HIỆU ỨNG .000
+// FORMAT TIỀN TỆ THÔNG MINH - CHỈ HIỂN THỊ KHI CÓ GIÁ TRỊ, TỰ ĐỘNG HIỂU HÀNG NGHÌN
 window.formatMoneyInput = function(el) {
-    let val = el.value.replace(/[^0-9]/g, '');
-    if(val === '') {
+    let raw = el.value.replace(/[^0-9]/g, '');
+    if(raw === '') {
         el.value = '';
     } else {
-        el.value = new Intl.NumberFormat('vi-VN').format(parseInt(val, 10));
+        el.value = new Intl.NumberFormat('vi-VN').format(parseInt(raw, 10));
     }
 }
 function parseMoney(str) {
@@ -962,7 +603,7 @@ const STORE_KEY = 'amorriPlanner_v2';
 const firebaseConfig = {
   apiKey: "AIzaSyA3rwXOsYAYSBYuYC5DIrPbKi0m5ViLs7E",
   authDomain: "ammori-c4905.firebaseapp.com",
-  databaseURL: "[https://ammori-c4905-default-rtdb.europe-west1.firebasedatabase.app](https://ammori-c4905-default-rtdb.europe-west1.firebasedatabase.app)",
+  databaseURL: "https://ammori-c4905-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "ammori-c4905",
   storageBucket: "ammori-c4905.firebasestorage.app",
   messagingSenderId: "166591127725",
@@ -1065,18 +706,38 @@ function sanitizeData(d) {
     return d;
 }
 
+// CÀI ĐẶT THÁNG MẶC ĐỊNH CHUẨN XÁC KHI LOAD
+function setupDefaultFilters() {
+    const mm = String(current.getMonth() + 1);
+    const yy = String(current.getFullYear());
+    
+    // Gán cẩn thận bằng DOM thao tác trực tiếp nếu setSafeValue chưa kịp chạy
+    const els = ['staffMonthM', 'summaryMonthM'];
+    els.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) {
+            Array.from(el.options).forEach(opt => {
+                if(opt.value === mm) opt.selected = true;
+            });
+        }
+    });
+    
+    const yels = ['staffMonthY', 'summaryMonthY'];
+    yels.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) {
+            Array.from(el.options).forEach(opt => {
+                if(opt.value === yy) opt.selected = true;
+            });
+        }
+    });
+}
+
 // KHỞI TẠO APP
 function initApp() {
     applyRoleUI();
+    setupDefaultFilters(); // Gọi hàm gán cứng mặc định
     
-    // Gán ngay tháng/năm hiện tại để xử lý lỗi trống thông tin triệt để
-    const mm = String(current.getMonth() + 1);
-    const yy = String(current.getFullYear());
-    setSafeValue('staffMonthM', mm);
-    setSafeValue('staffMonthY', yy);
-    setSafeValue('summaryMonthM', mm);
-    setSafeValue('summaryMonthY', yy);
-
     try {
         const raw = localStorage.getItem(STORE_KEY);
         if (raw) data = sanitizeData(JSON.parse(raw));
@@ -1115,7 +776,7 @@ function initApp() {
 }
 
 window.save = function() {
-    if (currentUserRole !== 'admin') return;
+    if (currentUserRole === 'guest') return;
     localStorage.setItem(STORE_KEY, JSON.stringify(data));
     if(window.dbRef) {
         window.dbRef.set(data).catch(err => {
@@ -1464,8 +1125,12 @@ window.openPayrollModal = function(staffId, staffName, monthStr) {
   document.getElementById('payrollMonth').value = monthStr;
   
   const p = (data.payroll[monthStr] && data.payroll[monthStr][staffId]) || {advance:0, paid:0};
-  setSafeValue('payrollAdvance', p.advance ? money(p.advance / 1000) : '');
-  setSafeValue('payrollPaid', p.paid ? money(p.paid / 1000) : '');
+  
+  const advEl = document.getElementById('payrollAdvance');
+  if(advEl) { advEl.value = p.advance ? money(p.advance) : ''; }
+  
+  const paidEl = document.getElementById('payrollPaid');
+  if(paidEl) { paidEl.value = p.paid ? money(p.paid) : ''; }
 }
 
 window.savePayroll = function() {
@@ -1473,6 +1138,7 @@ window.savePayroll = function() {
   const staffId = document.getElementById('payrollStaffId').value;
   const monthStr = document.getElementById('payrollMonth').value;
   
+  // Tự động thêm 3 số 0 ẩn
   const advance = parseMoney(document.getElementById('payrollAdvance').value) * 1000;
   const paid = parseMoney(document.getElementById('payrollPaid').value) * 1000;
 
@@ -1508,11 +1174,9 @@ function renderStaffMonthList(){
   const smM = document.getElementById('staffMonthM');
   const smY = document.getElementById('staffMonthY');
   
-  // Logic Fix Fallback Thông Minh
-  let mVal = smM?.value;
-  let m = mVal ? Number(mVal) : current.getMonth() + 1;
-  let yVal = smY?.value;
-  let y = yVal ? Number(yVal) : current.getFullYear();
+  // Luôn đảm bảo có giá trị fallback an toàn nhất
+  let m = smM?.value ? Number(smM.value) : current.getMonth() + 1;
+  let y = smY?.value ? Number(smY.value) : current.getFullYear();
   
   const staffDays = {};
   const staffToRender = data.staff.filter(s => s.role !== 'Freelance'); 
@@ -1550,11 +1214,8 @@ function renderMonthSummary(){
   const sM = document.getElementById('summaryMonthM');
   const sY = document.getElementById('summaryMonthY');
   
-  // Logic Fix Fallback Thông Minh
-  let smVal = sM?.value;
-  let m = smVal ? Number(smVal) - 1 : current.getMonth();
-  let syVal = sY?.value;
-  let y = syVal ? Number(syVal) : current.getFullYear();
+  let m = sM?.value ? Number(sM.value) - 1 : current.getMonth();
+  let y = sY?.value ? Number(sY.value) : current.getFullYear();
   
   const ev = data.events.filter(e => {
       const ed = parseDate(e.date);
@@ -1670,7 +1331,7 @@ window.updateDepositLabel = function() {
 }
 
 // ----------------------------------------------------
-// UI TỪNG BƯỚC FORM LỊCH & THỜI GIAN THỰC
+// UI TỪNG BƯỚC FORM LỊCH & THỜI GIAN THỰC (TỰ MỞ LINK)
 // ----------------------------------------------------
 window.updateModalVisibility = function() {
     const nameVal = document.getElementById('eventName')?.value.trim() || '';
@@ -1689,11 +1350,12 @@ window.updateModalVisibility = function() {
     const evEnd = document.getElementById('eventEnd')?.value;
     let isEnded = false;
     if(evDate && evEnd) {
+        // So sánh Date + Giờ kết thúc với Date.now()
         isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
     }
 
     document.querySelectorAll('.staff-modal-item, .staff-modal-staffonly').forEach(el => {
-        const isChecked = el.querySelector('.staff-check')?.checked || (currentUserRole === 'staff'); // Staff always checked for their own item
+        const isChecked = el.querySelector('.staff-check')?.checked || (currentUserRole === 'staff');
         const linkCont = el.querySelector('.staff-link-container');
         if(linkCont) {
             linkCont.style.display = (isEnded && isChecked) ? 'flex' : 'none';
@@ -1711,7 +1373,7 @@ window.saveStaffLinkLocally = function(sId, sName) {
     const urlInput = document.getElementById('link-input-'+sId)?.value.trim();
     if(!urlInput) { showToast('Vui lòng dán link'); return; }
     
-    // Lưu thẳng vào Firebase nếu là Staff
+    // Lưu thẳng vào Firebase nếu là Staff (Bảo mật quyền ghi)
     const evId = document.getElementById('eventId')?.value;
     if(evId) {
         const idx = data.events.findIndex(e => e.id === evId);
@@ -1733,7 +1395,7 @@ window.saveStaffLinkLocally = function(sId, sName) {
     
     document.getElementById('link-edit-'+sId).style.display = 'none';
     document.getElementById('link-view-'+sId).style.display = 'flex';
-    showToast('Đã lưu link Source!');
+    showToast('Đã nộp Source thành công!');
 }
 
 window.toggleEditLink = function(sId) {
@@ -1761,7 +1423,7 @@ window.addProductRow = function(name='', url='', isReadonly=false) {
               🔗 <span class="prod-view-name">${escapeHtml(name || 'Link Bàn Giao')}</span>
            </a>
            <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px;" onclick="copyText(this.parentElement.parentElement.querySelector('.prod-url').value)">📋 Copy</button>
-           <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px;" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'">✏️ Sửa</button>
+           <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px;" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'">✏️️ Sửa</button>
        </div>
        
        <div class="prod-edit admin-only-flex" style="display:${isSaved ? 'none' : 'flex'}; gap: 10px; flex-wrap:wrap; align-items:center">
@@ -1813,16 +1475,18 @@ window.renderEventStaffList = function() {
     if(!evStaffEl) return;
 
     if (!isAdmin) {
+        // GÓC NHÌN CỦA THỢ: Ẩn tiền thợ khác, cho phép điền link của mình nếu hết giờ
         evStaffEl.innerHTML = currentEventAssignments.map(a => {
             const s = data.staff.find(x => x.id === a.id);
             if(!s) return '';
             const taskText = a.task ? ` - ${escapeHtml(a.task)}` : '';
-            const isMe = (s.id === staffViewId);
+            const isMe = (s.id === staffViewId); // Đúng người đang login bằng link
             
             let myCostHtml = '';
             let myLinkHtml = '';
 
             if (isMe) {
+                // Thợ chỉ thấy tiền công của mình
                 const costVal = a.cost ? money(a.cost) + ' đ' : '0 đ';
                 myCostHtml = `<span style="font-weight:800; color:var(--green); float:right; background: var(--bg-green); padding: 6px 12px; border-radius: 99px;">${costVal}</span>`;
                 
@@ -1833,14 +1497,14 @@ window.renderEventStaffList = function() {
                         <a id="link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
                            🔗 Bấm xem Source
                         </a>
-                        <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa</button>
+                        <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa Link</button>
                     </div>
                     <div id="link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
-                        <input type="url" id="link-input-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link File Gốc..." style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
-                        <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu</button>
+                        <input type="url" id="link-input-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link tải Source (Drive/Fshare...)" style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
+                        <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Nộp Source</button>
                     </div>
                 </div>
-                <div class="wait-link-msg" style="display:${!isEnded ? 'block' : 'none'}; font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic; padding:12px; background:#f4f4f5; border-radius:8px;">⏳ Ô nộp Source sẽ mở sau khi lịch chụp kết thúc.</div>
+                <div class="wait-link-msg" style="display:${!isEnded ? 'block' : 'none'}; font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic; padding:12px; background:#f4f4f5; border-radius:8px; text-align:center;">⏳ Ô nộp Source sẽ tự mở sau khi kết thúc giờ chụp.</div>
                 `;
             }
 
@@ -1859,7 +1523,7 @@ window.renderEventStaffList = function() {
         return;
     }
 
-    // ADMIN VIEW 
+    // ADMIN VIEW: FULL QUYỀN VÀ THẤY TẤT CẢ LINK 
     evStaffEl.innerHTML = data.staff.length
       ? data.staff.map(s => {
           const a = currentEventAssignments.find(x => x.id === s.id);
@@ -1874,8 +1538,8 @@ window.renderEventStaffList = function() {
                   <span id="busy-info-${s.id}"></span>
                 </label>
                 
-                <div style="display:${isChecked ? 'flex' : 'none'}; gap:12px; align-items:center; flex:1.5; justify-content:flex-end; min-width:260px;">
-                  <select id="task-${s.id}" style="width:170px; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text)">
+                <div style="display:${isChecked ? 'flex' : 'none'}; gap:12px; align-items:center; flex:1.5; justify-content:flex-end; min-width:300px;">
+                  <select id="task-${s.id}" style="flex:1; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); min-width:160px;">
                     <option value="Chụp truyền thống" ${a?.task==='Chụp truyền thống'?'selected':''}>Chụp truyền thống</option>
                     <option value="Chụp phóng sự" ${a?.task==='Chụp phóng sự'?'selected':''}>Chụp phóng sự</option>
                     <option value="Chụp Concept" ${a?.task==='Chụp Concept'?'selected':''}>Chụp Concept</option>
@@ -1884,7 +1548,7 @@ window.renderEventStaffList = function() {
                     <option value="Makeup" ${a?.task==='Makeup'?'selected':''}>Makeup</option>
                     <option value="Khác" ${a?.task==='Khác'?'selected':''}>Khác</option>
                   </select>
-                  <div class="currency-wrap" style="width:140px;">
+                  <div class="currency-wrap" style="width:140px; min-width:140px;">
                      <input type="text" inputmode="numeric" id="cost-${s.id}" placeholder="0" value="${a?.cost ? money(a.cost/1000) : ''}" oninput="window.formatMoneyInput(this)" style="background:#f4f4f5;border:1px solid transparent;padding:10px 14px;border-radius:10px;outline:0;font-size:14px;font-weight:700;color:var(--text);">
                   </div>
                 </div>
@@ -1903,6 +1567,7 @@ window.renderEventStaffList = function() {
                      <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu</button>
                  </div>
             </div>
+            <div class="wait-link-msg" style="display:${!isEnded && isChecked ? 'block' : 'none'}; font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic; margin-left:32px;">⏳ Hệ thống nộp Link Source sẽ mở cho thợ sau khi lịch kết thúc.</div>
           </div>`;
         }).join('')
       : '<div style="font-size:13.5px;color:var(--muted);padding:10px;">Chưa có nhân sự. Vào “Đội ngũ” để thêm.</div>';
@@ -1950,8 +1615,12 @@ window.openEventModal = function(prefill={}){
   setSafeValue('eventStatus', e?.status||'pending');
   setSafeValue('eventLocation', e?.location||'');
   setSafeValue('eventPhone', e?.phone||'');
-  setSafeValue('eventPrice', e?.price ? money(e.price/1000) : '');
-  setSafeValue('eventDeposit', e?.deposit ? money(e.deposit/1000) : '');
+  
+  const pE = document.getElementById('eventPrice');
+  if(pE) pE.value = e?.price ? money(e.price/1000) : '';
+  const dE = document.getElementById('eventDeposit');
+  if(dE) dE.value = e?.deposit ? money(e.deposit/1000) : '';
+  
   setSafeValue('eventNote', e?.note||'');
   
   const ff = document.getElementById('freelanceForm');
@@ -2008,8 +1677,7 @@ window.openEventModal = function(prefill={}){
   if (prodSec) prodSec.style.display = isAdmin ? 'block' : 'none';
 
   document.querySelectorAll('#eventForm input, #eventForm select, #eventForm textarea').forEach(el => {
-      // Bỏ chặn ô nhập Link cho nhân sự
-      if (el.id.includes('link-input')) return; 
+      if (el.id.includes('link-input')) return; // Bỏ chặn ô nộp Link Source
 
       if (!isAdmin) {
           el.setAttribute('readonly', 'true');
@@ -2217,7 +1885,6 @@ document.getElementById('clearAll')?.addEventListener('click', ()=>{
 
 ['staffFilter','statusFilter'].forEach(id=>document.getElementById(id)?.addEventListener('input',render));
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click', ()=>setView(b.dataset.view)));
-
 ['eventDate','eventStart','eventEnd'].forEach(id=>document.getElementById(id)?.addEventListener('input', () => {
     window.updateModalVisibility();
     window.checkConflict();
