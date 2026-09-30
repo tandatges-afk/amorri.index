@@ -118,6 +118,7 @@ input[type=number] { -moz-appearance: textfield; }
 .mini-main { min-width: 0; }
 .mini-title { font-size: 13.5px; font-weight: 750; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini-sub { font-size: 12px; color: var(--muted); margin-top: 5px; font-weight: 500; }
+
 .pill { font-size: 11px; padding: 5px 10px; border-radius: 8px; background: #f1f5f9; color: #475569; font-weight: 750; white-space: nowrap; }
 .pill.green { background: #d1fae5; color: #047857; }
 .pill.orange { background: #fef3c7; color: #b45309; }
@@ -155,6 +156,7 @@ input[type=number] { -moz-appearance: textfield; }
 .fab { position: fixed; bottom: 90px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: white; display: none; place-items: center; font-size: 28px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.4); z-index: 90; transition: transform 0.2s; }
 .fab:active { transform: scale(0.9); }
 
+/* Màn hình Loading Overlay để không bị treo App */
 #loadingOverlay { position: fixed; inset: 0; background: #f8fafc; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .loading-logo { width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(135deg, #6366f1, #4f46e5); display: grid; place-items: center; font-weight: 900; font-size: 20px; color: #fff; margin-bottom: 20px; animation: pulse 1.5s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.95); } }
@@ -393,7 +395,7 @@ input[type=number] { -moz-appearance: textfield; }
 <!-- Modal Cập Nhật Lương -->
 <div class="modal-backdrop" id="payrollModal">
   <div class="modal" style="width:min(450px,100%)">
-    <div class="modal-head"><div class="modal-title" id="payrollModalTitle">Thanh toán lương</div><button class="icon-btn" onclick="document.getElementById('payrollModal').style.display='none'" style="border:0;background:#f1f5f9;border-radius:50%">✕</button></div>
+    <div class="modal-head"><div class="modal-title" id="payrollModalTitle">Thanh toán lương</div><button class="icon-btn" id="closePayroll" style="border:0;background:#f1f5f9;border-radius:50%">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="payrollStaffId">
       <input type="hidden" id="payrollMonth">
@@ -409,8 +411,8 @@ input[type=number] { -moz-appearance: textfield; }
       </div>
     </div>
     <div class="modal-foot" style="justify-content:flex-end;">
-      <button class="btn ghost" onclick="document.getElementById('payrollModal').style.display='none'">Hủy</button>
-      <button class="btn primary" onclick="savePayroll()" style="margin-left: 10px;">Lưu</button>
+      <button class="btn ghost" id="cancelPayroll">Hủy</button>
+      <button class="btn primary" id="savePayrollBtn" style="margin-left: 10px;">Lưu</button>
     </div>
   </div>
 </div>
@@ -786,7 +788,7 @@ function renderMonth(){
   }
   html+='</div>';
   document.getElementById('calendar').innerHTML=html;
-  document.querySelectorAll('.day').forEach(el=>el.addEventListener('dblclick',()=>openEventModal({date:el.dataset.date})));
+  document.querySelectorAll('.day').forEach(el=>el.addEventListener('dblclick',()=>window.openEventModal({date:el.dataset.date})));
 }
 
 function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
@@ -876,7 +878,7 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false) {
                 <div style="font-size:11.5px;color:var(--muted);text-transform:uppercase;font-weight:750">Còn nợ</div>
                 <div style="font-weight:900;font-size:18px;margin-top:2px;color:${remain > 0 ? 'var(--red)' : 'var(--green)'}">${money(remain)}đ</div>
               </div>
-              <button class="btn ghost" style="padding:8px 12px;font-size:13px;border:1px solid var(--line)" onclick="openPayrollModal('${s.id}','${escapeHtml(s.name)}','${monthKey}')">✎ Cập nhật</button>
+              <button class="btn ghost" style="padding:8px 12px;font-size:13px;border:1px solid var(--line)" onclick="window.openPayrollModal('${s.id}','${escapeHtml(s.name)}','${monthKey}')">✎ Cập nhật</button>
             </div>
           </div>
           <div>
@@ -1116,14 +1118,6 @@ window.updateModalVisibility = function() {
     });
 }
 
-document.getElementById('fullPaidBtn').onclick = () => {
-   const price = document.getElementById('eventPrice').value;
-   if(price && Number(price) > 0) {
-      document.getElementById('eventDeposit').value = price;
-      updateDepositLabel();
-   }
-};
-
 let currentEventAssignments = [];
 
 window.saveStaffLinkLocally = function(sId, sName) {
@@ -1163,7 +1157,7 @@ window.addProductRow = function(name='', url='') {
        <div class="prod-edit" style="display:${isSaved ? 'none' : 'flex'}; gap: 8px; flex-wrap:wrap; align-items:center">
            <input type="text" class="prod-name field" value="${escapeHtml(name)}" placeholder="Tên SP (VD: Ảnh gốc...)" style="flex:1; min-width:120px; padding:8px 12px; font-size:13px; border-color:#bae6fd">
            <input type="url" class="prod-url field" value="${escapeHtml(url)}" placeholder="🔗 Dán link URL..." style="flex:2; min-width:150px; padding:8px 12px; font-size:13px; border-color:#bae6fd">
-           <button type="button" class="btn primary" style="padding:8px 16px; font-size:13px;" onclick="saveProductRow(this)">Lưu link</button>
+           <button type="button" class="btn primary" style="padding:8px 16px; font-size:13px;" onclick="window.saveProductRow(this)">Lưu link</button>
            <button type="button" class="btn danger ghost" style="padding:8px 12px; font-size:13px; background:#fff" onclick="this.parentElement.parentElement.remove()" title="Xóa">✕</button>
        </div>
     `;
@@ -1235,11 +1229,11 @@ function renderEventStaffList() {
                         🔗 ${escapeHtml(s.name)} - ${escapeHtml(a?.task || 'Source')}
                      </a>
                      <button type="button" class="btn ghost" style="padding:6px 10px; font-size:12px; background:#fff" onclick="copyText(document.getElementById('link-input-${s.id}').value)" title="Copy">📋 Copy</button>
-                     <button type="button" class="btn ghost" style="padding:6px 10px; font-size:12px; background:#fff" onclick="toggleEditLink('${s.id}')" title="Sửa">✏️ Sửa</button>
+                     <button type="button" class="btn ghost" style="padding:6px 10px; font-size:12px; background:#fff" onclick="window.toggleEditLink('${s.id}')" title="Sửa">✏️ Sửa</button>
                  </div>
                  <div id="link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 8px; flex:1; align-items:center; flex-wrap:wrap;">
                      <input type="url" id="link-input-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link Source thợ..." style="flex:1; border:1px solid #c7d2fe; padding:8px 12px; border-radius:8px; outline:0; font-size:13px; background:#fff; min-width:150px;">
-                     <button type="button" class="btn primary" style="padding:8px 16px; font-size:13px;" onclick="saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu link</button>
+                     <button type="button" class="btn primary" style="padding:8px 16px; font-size:13px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu link</button>
                  </div>
               </div>
 
@@ -1333,7 +1327,7 @@ window.checkConflict = function(){
          }
          
          if(overlap) {
-             infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
+             infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️️ Trùng: ${text})</span>`;
          } else {
              infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
          }
@@ -1401,13 +1395,13 @@ function renderStaffManage(){
   document.getElementById('staffManageList').innerHTML=data.staff.map(s=>`<div class="mini-item">
     <div class="staff-left"><div class="avatar">${initials(s.name)}</div><div class="staff-info"><div class="mini-title">${escapeHtml(s.name)}</div><div class="mini-sub">${escapeHtml(s.role)}</div></div></div>
     <button class="btn danger" style="padding:8px 12px;font-size:12px" data-delstaff="${s.id}">Xóa</button></div>`).join('');
-  document.querySelectorAll('[data-delstaff]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-delstaff]').forEach(b=>b.addEventListener('click', ()=>{
     const id=b.dataset.delstaff;
     if(data.events.some(e=>e.assignments.some(a=>a.id===id))&&!confirm('Nhân sự này đang được gắn vào lịch. Xóa nhân sự sẽ bỏ gán khỏi các lịch. Tiếp tục?'))return;
     data.staff=data.staff.filter(s=>s.id!==id);
     data.events.forEach(e=>e.assignments=e.assignments.filter(x=>x.id!==id));
     save();renderStaffManage();
-  });
+  }));
 }
 window.addStaff = function(){
   const name=document.getElementById('staffName').value.trim(); const role=document.getElementById('staffRole').value;
@@ -1419,32 +1413,52 @@ document.addEventListener('click',e=>{
   const chip=e.target.closest('[data-id]'); if(chip && (chip.classList.contains('event-chip')||chip.classList.contains('mini-item')||chip.classList.contains('agenda-event'))) openEventModal({id:chip.dataset.id});
 });
 
-document.getElementById('prevBtn').onclick=()=>{current.setMonth(current.getMonth()-1);render()};
-document.getElementById('nextBtn').onclick=()=>{current.setMonth(current.getMonth()+1);render()};
-document.getElementById('todayBtn').onclick=()=>{current=new Date();current.setHours(0,0,0,0);render()};
-document.getElementById('addBtn').onclick=()=>openEventModal({});
-document.getElementById('sideAdd').onclick=()=>openEventModal({});
-document.getElementById('fabAdd').onclick=()=>openEventModal({});
-document.getElementById('closeEvent').onclick=closeEventModal;
-document.getElementById('cancelEvent').onclick=closeEventModal;
-document.getElementById('saveEvent').onclick=saveEvent;
-document.getElementById('deleteEvent').onclick=deleteEvent;
-document.getElementById('openStaffBtn').onclick=openStaff;
-document.getElementById('closeStaff').onclick=()=>document.getElementById('staffModal').style.display='none';
-document.getElementById('addStaffBtn').onclick=addStaff;
-document.getElementById('settingsBtn').onclick=openSettings;
-document.getElementById('closeSettings').onclick=()=>document.getElementById('settingsModal').style.display='none';
+// Chống lỗi khi không tìm thấy phần tử DOM (Dùng Optional Chaining ?.)
+document.getElementById('prevBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()-1);render()});
+document.getElementById('nextBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()+1);render()});
+document.getElementById('addBtn')?.addEventListener('click', ()=>openEventModal({}));
+document.getElementById('sideAdd')?.addEventListener('click', ()=>openEventModal({}));
+document.getElementById('fabAdd')?.addEventListener('click', ()=>openEventModal({}));
+document.getElementById('closeEvent')?.addEventListener('click', closeEventModal);
+document.getElementById('cancelEvent')?.addEventListener('click', closeEventModal);
+document.getElementById('saveEvent')?.addEventListener('click', saveEvent);
+document.getElementById('deleteEvent')?.addEventListener('click', deleteEvent);
+document.getElementById('openStaffBtn')?.addEventListener('click', openStaff);
+document.getElementById('closeStaff')?.addEventListener('click', ()=>document.getElementById('staffModal').style.display='none');
+document.getElementById('addStaffBtn')?.addEventListener('click', addStaff);
+document.getElementById('settingsBtn')?.addEventListener('click', openSettings);
+document.getElementById('closeSettings')?.addEventListener('click', ()=>document.getElementById('settingsModal').style.display='none');
 
-document.getElementById('clearAll').onclick=()=>{if(confirm('Xóa toàn bộ dữ liệu thật chứ? Bạn không thể phục hồi đâu!')){data={staff:[],events:[],payroll:{}};save();render();document.getElementById('settingsModal').style.display='none';showToast('Đã dọn sạch dữ liệu')}};
+document.getElementById('closePayroll')?.addEventListener('click', ()=>document.getElementById('payrollModal').style.display='none');
+document.getElementById('cancelPayroll')?.addEventListener('click', ()=>document.getElementById('payrollModal').style.display='none');
+document.getElementById('savePayrollBtn')?.addEventListener('click', savePayroll);
 
-['searchInput','staffFilter','statusFilter'].forEach(id=>document.getElementById(id).addEventListener('input',render));
-document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
-['eventDate','eventStart','eventEnd'].forEach(id=>document.getElementById(id).addEventListener('input',checkConflict));
-document.getElementById('eventDate').addEventListener('change',checkConflict);
-document.getElementById('staffMonthM').addEventListener('change', renderStaffMonthList);
-document.getElementById('staffMonthY').addEventListener('change', renderStaffMonthList);
-document.getElementById('summaryMonthM').addEventListener('change', renderMonthSummary);
-document.getElementById('summaryMonthY').addEventListener('change', renderMonthSummary);
+document.getElementById('fullPaidBtn')?.addEventListener('click', () => {
+   const price = document.getElementById('eventPrice').value;
+   if(price && Number(price) > 0) {
+      document.getElementById('eventDeposit').value = price;
+      updateDepositLabel();
+   }
+});
+
+document.getElementById('clearAll')?.addEventListener('click', ()=>{
+    if(confirm('Xóa toàn bộ dữ liệu thật chứ? Bạn không thể phục hồi đâu!')){
+        data={staff:[],events:[],payroll:{}};
+        save();
+        render();
+        document.getElementById('settingsModal').style.display='none';
+        showToast('Đã dọn sạch dữ liệu');
+    }
+});
+
+['searchInput','staffFilter','statusFilter'].forEach(id=>document.getElementById(id)?.addEventListener('input',render));
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click', ()=>setView(b.dataset.view)));
+['eventDate','eventStart','eventEnd'].forEach(id=>document.getElementById(id)?.addEventListener('input',checkConflict));
+document.getElementById('eventDate')?.addEventListener('change',checkConflict);
+document.getElementById('staffMonthM')?.addEventListener('change', renderStaffMonthList);
+document.getElementById('staffMonthY')?.addEventListener('change', renderStaffMonthList);
+document.getElementById('summaryMonthM')?.addEventListener('change', renderMonthSummary);
+document.getElementById('summaryMonthY')?.addEventListener('change', renderMonthSummary);
 
 // Bắt đầu chạy App
 initApp();
