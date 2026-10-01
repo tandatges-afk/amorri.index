@@ -771,10 +771,20 @@ function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;',
 function getStaffNames(ids){ return (ids||[]).map(id=>data.staff.find(s=>s.id===id)?.name).filter(Boolean); }
 function sameMonth(ds,d){return ds.getFullYear()===d.getFullYear() && ds.getMonth()===d.getMonth()}
 
+function safeUrl(str) {
+    try {
+        const raw = String(str || '').trim();
+        if(!raw) return '#';
+        const u = new URL(raw, window.location.href);
+        if(u.protocol !== 'http:' && u.protocol !== 'https:') return '#';
+        return escapeHtml(u.href);
+    } catch(e) { return '#'; }
+}
+
 function makeMapLink(str) {
     if(!str) return '#';
     str = str.trim();
-    if(str.startsWith('http://') || str.startsWith('https://')) return escapeHtml(str);
+    if(str.startsWith('http://') || str.startsWith('https://')) return safeUrl(str);
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(str)}`;
 }
 
@@ -796,21 +806,57 @@ window.copyText = function(txt) {
 
 function defaultData(){ return { staff: [], payroll: {}, events: [] } }
 
+function normalizeCollection(value) {
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (value && typeof value === 'object') {
+        return Object.entries(value).map(([key, item]) => {
+            if (!item || typeof item !== 'object') return null;
+            if (item.id === undefined || item.id === null || item.id === '') item.id = key;
+            return item;
+        }).filter(Boolean);
+    }
+    return [];
+}
+
 function sanitizeData(d) {
-    if(!d) d = defaultData();
-    if(!d.staff) d.staff = [];
-    if(!d.events) d.events = [];
-    if(!d.payroll) d.payroll = {};
+    if(!d || typeof d !== 'object') d = defaultData();
+    d.staff = normalizeCollection(d.staff);
+    d.events = normalizeCollection(d.events);
+    if(!d.payroll || typeof d.payroll !== 'object' || Array.isArray(d.payroll)) d.payroll = {};
     d.events.forEach(e => {
         if(e.isRuocDau === undefined) e.isRuocDau = false;
-        if(!e.assignments) e.assignments = [];
-        if(!e.products) e.products = [];
+        if(!Array.isArray(e.assignments)) e.assignments = normalizeCollection(e.assignments);
+        if(!Array.isArray(e.products)) e.products = normalizeCollection(e.products);
         if(!e.date) e.date = isoDate(new Date());
-        if(!e.start) e.start = '08:00';
+        // Rước dâu có 2 giờ riêng, không tự chèn 08:00 vào e.start.
+        if(!e.isRuocDau && !e.start) e.start = '08:00';
+        if(e.isRuocDau && e.start === undefined) e.start = '';
         if(!e.end) e.end = '12:00';
         e.assignments.forEach(a => { if(!a.locType) a.locType = ''; });
     });
     return d;
+}
+
+function persistLocal() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function dbSet(path, value) {
+    persistLocal();
+    if (!window.dbRef) return Promise.resolve();
+    return window.dbRef.child(path).set(value).catch(err => {
+        console.error('Firebase set error:', err);
+        showToast('Đã lưu Offline');
+    });
+}
+
+function dbRemove(path) {
+    persistLocal();
+    if (!window.dbRef) return Promise.resolve();
+    return window.dbRef.child(path).remove().catch(err => {
+        console.error('Firebase remove error:', err);
+        showToast('Đã lưu Offline');
+    });
 }
 
 function setupDefaultFilters() {
@@ -905,12 +951,18 @@ function initApp() {
                 const val = snapshot.val();
                 if (val) {
                     data = sanitizeData(val);
-                    localStorage.setItem(STORE_KEY, JSON.stringify(data)); 
-                    setupDefaultFilters();
+                    persistLocal();
+                    try { render(); } catch(e) { console.error('Render realtime error:', e); }
+                } else {
+                    data = defaultData();
+                    persistLocal();
                     try { render(); } catch(e) {}
                 }
                 hideLoading();
-            }, (error) => { hideLoading(); });
+            }, (error) => {
+                console.error('Realtime database error:', error);
+                hideLoading();
+            });
         }
     } catch (err) { hideLoading(); }
 }
@@ -1140,7 +1192,7 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isR
         const a = e.assignments.find(x => x.id === s.id);
         if(a) {
           const cost = Number(a.cost||0); totalCost += cost;
-          let taskLinkHtml = a.link ? `<a href="${escapeHtml(a.link)}" target="_blank" style="font-size:11.5px; color:var(--blue); text-decoration:none; background:var(--bg-blue); padding:4px 10px; border-radius:99px; margin-left:8px; display:inline-flex; align-items:center; font-weight:700;">🔗 Link Source</a>` : '';
+          let taskLinkHtml = a.link ? `<a href="${safeUrl(a.link)}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px; color:var(--blue); text-decoration:none; background:var(--bg-blue); padding:4px 10px; border-radius:99px; margin-left:8px; display:inline-flex; align-items:center; font-weight:700;">🔗 Link Source</a>` : '';
           
           let taskDetail = escapeHtml(a.task || 'Chưa xếp việc');
           if (e.isRuocDau && a.locType) {
@@ -1276,8 +1328,7 @@ window.savePayroll = function() {
   if(!data.payroll[monthStr]) data.payroll[monthStr] = {};
   data.payroll[monthStr][staffId] = { advance, paid };
   
-  if (window.dbRef) window.dbRef.child(`payroll/${monthStr}/${staffId}`).set({ advance, paid });
-  else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  dbSet(`payroll/${monthStr}/${staffId}`, { advance, paid });
   
   window.smoothClose('payrollModal'); render(); showToast('Đã cập nhật lương');
 }
@@ -1295,7 +1346,13 @@ function renderUpcoming(){
       if(e.status === 'cancelled') return false;
       if(parseDate(e.date) < today) return false;
       return e.assignments.some(a => a.id === staffViewId);
-  }).sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||'')));
+  }).sort((a,b)=>{
+      const aa = a.assignments.find(x => x.id === staffViewId);
+      const ba = b.assignments.find(x => x.id === staffViewId);
+      const at = getAssignmentStart(a, aa) || '99:99';
+      const bt = getAssignmentStart(b, ba) || '99:99';
+      return ((a.date||'')+at).localeCompare((b.date||'')+bt);
+  });
     
   const el=document.getElementById('upcomingList'); if(!el) return;
   el.innerHTML=list.length?list.map(e=>{
@@ -1316,11 +1373,16 @@ function renderUpcoming(){
             return sText;
         }).filter(Boolean).join(', ');
 
-    let myTime = e.start || 'Chưa định';
+    let myTime = getAssignmentStart(e, myAssignment) || 'Chưa định';
     let myLoc = e.location || '';
     let timeLabel = '<b style="color:var(--muted); min-width: 90px;">⏰ Bắt đầu:</b>';
     let myPhoneHtml = '';
     let mapText = '📍 Định vị bản đồ';
+    if(e.isRuocDau && myAssignment?.locType === 'Nhà trai') {
+        myLoc = e.locTrai || '';
+    } else if(e.isRuocDau && myAssignment?.locType === 'Nhà gái') {
+        myLoc = e.locGai || '';
+    }
     
     const buildPhoneUI = (num, labelColor = 'var(--text)', locName = '') => {
         if(!num) return '';
@@ -1573,6 +1635,8 @@ let currentEventAssignments = [];
 window.saveStaffLinkLocally = function(sId, sName) {
     const urlInput = document.getElementById('evt-link-in-'+sId)?.value.trim();
     if(!urlInput) { showToast('Vui lòng dán link'); return; }
+    const validatedUrl = safeUrl(urlInput);
+    if(validatedUrl === '#') { showToast('Link không hợp lệ. Chỉ chấp nhận http/https'); return; }
     
     const evId = document.getElementById('eventId')?.value;
     if(evId) {
@@ -1582,8 +1646,7 @@ window.saveStaffLinkLocally = function(sId, sName) {
             if(aIdx >= 0) {
                 data.events[idx].assignments[aIdx].link = urlInput;
                 // FIX FIREBASE WRITE: Chỉ cập nhật Node link
-                if(window.dbRef) window.dbRef.child(`events/${evId}/assignments/${aIdx}/link`).set(urlInput);
-                else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+                dbSet(`events/${evId}/assignments/${aIdx}/link`, urlInput);
             }
         }
     }
@@ -1608,7 +1671,7 @@ window.addProductRow = function(name='', url='', isReadonly=false) {
     const isSaved = url !== '';
     div.innerHTML = `
        <div class="prod-view" style="display:${isSaved ? 'flex' : 'none'}; gap: 10px; align-items:center; flex-wrap:wrap">
-           <a href="${escapeHtml(url)}" target="_blank" class="prod-view-link" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; flex:1; min-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+           <a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" class="prod-view-link" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; flex:1; min-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
               🔗 <span class="prod-view-name">${escapeHtml(name || 'Link Bàn Giao')}</span>
            </a>
            <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px;" onclick="copyText(this.parentElement.parentElement.querySelector('.prod-url').value)">📋 Copy</button>
@@ -1629,6 +1692,8 @@ window.saveProductRow = function(btn) {
     const nameInput = row.querySelector('.prod-name').value.trim();
     const urlInput = row.querySelector('.prod-url').value.trim();
     if(!urlInput) { showToast('Vui lòng dán link URL'); return; }
+    const validatedUrl = safeUrl(urlInput);
+    if(validatedUrl === '#') { showToast('Link không hợp lệ. Chỉ chấp nhận http/https'); return; }
     
     row.querySelector('.prod-view-link').href = urlInput;
     row.querySelector('.prod-view-name').textContent = nameInput || 'Link sản phẩm';
@@ -1679,7 +1744,7 @@ window.renderEventStaffList = function() {
                 myLinkHtml = `
                 <div class="staff-link-container" style="display:${isEnded ? 'flex' : 'none'}; gap: 8px; align-items:center; background:#fafafa; padding:12px 16px; border-radius:12px; border: 1px solid var(--line); margin-top: 16px;">
                     <div id="evt-link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
-                        <a id="evt-link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
+                        <a id="evt-link-tag-${s.id}" href="${safeUrl(savedLink)}" target="_blank" rel="noopener noreferrer" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
                            🔗 Bấm xem Source
                         </a>
                         <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa Link</button>
@@ -1756,7 +1821,7 @@ window.renderEventStaffList = function() {
 
             <div class="staff-link-container" style="display:${isEnded && isChecked ? 'flex' : 'none'}; gap: 10px; align-items:center; background:#fafafa; padding:12px 16px; border-radius:12px; border: 1px solid var(--line); margin-top: 16px; margin-left: 32px;">
                  <div id="evt-link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
-                     <a id="evt-link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
+                     <a id="evt-link-tag-${s.id}" href="${safeUrl(savedLink)}" target="_blank" rel="noopener noreferrer" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
                         🔗 Bấm xem Source
                      </a>
                      <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="copyText(document.getElementById('evt-link-in-${s.id}').value)">📋 Copy</button>
@@ -1787,8 +1852,7 @@ window.saveFreelanceQuick = function() {
     
     // FIX FIREBASE WRITE: Ghi thẳng vào node Staff
     data.staff.push(newStaff); 
-    if(window.dbRef) window.dbRef.child(`staff/${newStaff.id}`).set(newStaff);
-    else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    dbSet(`staff/${newStaff.id}`, newStaff);
 
     const fk = document.getElementById('f_khac'); if(fk) fk.checked = true;
     currentEventAssignments.push({ id: newStaff.id, task: skillLabel, locType: '', cost: 0, link: '' });
@@ -1875,6 +1939,47 @@ window.openEventModal = function(prefill={}){
   const btnCancel = document.getElementById('cancelEvent'); if(btnCancel) btnCancel.textContent = isAdmin ? 'Hủy' : 'Đóng';
 }
 
+function getAssignmentStart(event, assignment) {
+    if (!event) return '';
+    if (!event.isRuocDau) return event.start || '';
+    if (assignment?.locType === 'Nhà gái') return event.startGai || '';
+    if (assignment?.locType === 'Nhà trai') return event.startTrai || '';
+    return event.startTrai || event.startGai || '';
+}
+
+function timeRangesOverlap(startA, endA, startB, endB) {
+    if (!startA || !endA || !startB || !endB) return false;
+    if (endA <= startA || endB <= startB) return false;
+    return startA < endB && endA > startB;
+}
+
+function findEventConflicts(candidate) {
+    if (!candidate?.date || candidate.status === 'cancelled') return [];
+    const conflicts = [];
+    (candidate.assignments || []).forEach(a => {
+        const myStart = getAssignmentStart(candidate, a);
+        if (!myStart || !candidate.end || candidate.end <= myStart) return;
+        data.events.forEach(e => {
+            if (e.id === candidate.id || e.status === 'cancelled' || e.date !== candidate.date) return;
+            const other = (e.assignments || []).find(x => x.id === a.id);
+            if (!other) return;
+            const otherStart = getAssignmentStart(e, other);
+            if (timeRangesOverlap(myStart, candidate.end, otherStart, e.end)) {
+                const staff = data.staff.find(s => s.id === a.id);
+                conflicts.push({
+                    staffId: a.id,
+                    staffName: staff?.name || a.id,
+                    mine: `${myStart}-${candidate.end}`,
+                    other: `${otherStart}-${e.end}`,
+                    eventName: e.name || 'Lịch khác',
+                    locType: a.locType || ''
+                });
+            }
+        });
+    });
+    return conflicts;
+}
+
 // FIX: LOGIC CONFLICT RƯỚC DÂU RIÊNG TỪNG THỢ
 window.checkConflict = function(){
   if (currentUserRole !== 'admin') return;
@@ -1888,21 +1993,20 @@ window.checkConflict = function(){
      const sEvents = data.events.filter(e => e.id !== id && e.status !== 'cancelled' && e.date === date && e.assignments.some(a => a.id === s.id));
      if(sEvents.length === 0) { infoSpan.innerHTML = ''; return; }
 
-     let intervals = sEvents.map(e => {
-         let a = e.assignments.find(x => x.id === s.id);
-         let sTime = e.start;
-         if (e.isRuocDau) sTime = a.locType === 'Nhà gái' ? e.startGai : (a.locType === 'Nhà trai' ? e.startTrai : (e.startTrai || e.startGai));
-         return {s: sTime||'', e: e.end||''};
-     });
-     
-     let text = intervals.map(iv => `${iv.s}-${iv.e}`).join(', ');
-     
-     let overlap = false;
-     let locTeam = document.getElementById('evt-loc-'+s.id)?.value;
-     let myStart = isRuocDau ? (locTeam === 'Nhà gái' ? document.getElementById('eventStartGai').value : document.getElementById('eventStartTrai').value) : document.getElementById('eventStart').value;
-     
-     if(myStart && end && myStart < end) overlap = intervals.some(iv => (myStart < iv.e && end > iv.s));
-     
+     const intervals = sEvents.map(e => {
+         const a = e.assignments.find(x => x.id === s.id);
+         return { s: getAssignmentStart(e, a), e: e.end || '' };
+     }).filter(iv => iv.s && iv.e);
+
+     const text = intervals.map(iv => `${iv.s}-${iv.e}`).join(', ');
+     const locTeam = document.getElementById('evt-loc-'+s.id)?.value || '';
+     const myStart = isRuocDau
+         ? (locTeam === 'Nhà gái' ? (document.getElementById('eventStartGai')?.value || '') : (document.getElementById('eventStartTrai')?.value || ''))
+         : (document.getElementById('eventStart')?.value || '');
+
+     const overlap = timeRangesOverlap(myStart, end, intervals[0]?.s, intervals[0]?.e) ||
+         intervals.some(iv => timeRangesOverlap(myStart, end, iv.s, iv.e));
+
      if(overlap) infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
      else infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
   });
@@ -1952,17 +2056,25 @@ window.saveEvent = function(){
   if(isRuocDau && (!obj.startTrai || !obj.startGai)) { showToast('Vui lòng điền đủ Giờ nhà trai và Giờ nhà gái'); return;}
   if(!isRuocDau && !obj.start) { showToast('Vui lòng điền Giờ bắt đầu'); return;}
   
-  const checkStart = isRuocDau ? obj.startTrai : obj.start;
-  if(obj.end <= checkStart){
-      if(!confirm('Giờ kết thúc đang nhỏ hơn hoặc bằng giờ bắt đầu (Có thể do ca làm đêm qua ngày). Bạn có chắc chắn muốn lưu?')) return;
+  const starts = isRuocDau ? [obj.startTrai, obj.startGai] : [obj.start];
+  if(starts.some(t => !t || obj.end <= t)){
+      showToast(isRuocDau ? 'Giờ kết thúc phải sau cả giờ Nhà Trai và Nhà Gái' : 'Giờ kết thúc phải sau giờ bắt đầu');
+      return;
+  }
+
+  const conflicts = findEventConflicts(obj);
+  if(conflicts.length) {
+      const first = conflicts[0];
+      const more = conflicts.length > 1 ? ` (+${conflicts.length - 1} xung đột khác)` : '';
+      showToast(`⚠️ ${first.staffName} trùng ${first.eventName} ${first.other}${more}`);
+      return;
   }
   
   // FIX FIREBASE WRITE: Chỉ cập nhật Node Events
   const idx=data.events.findIndex(e=>e.id===id);
   if(idx>=0)data.events[idx]=obj; else data.events.push(obj);
-  
-  if (window.dbRef) window.dbRef.child(`events/${obj.id}`).set(obj);
-  else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  persistLocal();
+  dbSet(`events/${obj.id}`, obj);
   
   window.smoothClose('eventModal'); render(); showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
 }
@@ -1975,8 +2087,7 @@ window.deleteEvent = function(){
   
   data.events=data.events.filter(x=>x.id!==id);
   // FIX FIREBASE WRITE
-  if (window.dbRef) window.dbRef.child(`events/${id}`).remove();
-  else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  dbRemove(`events/${id}`);
   
   window.smoothClose('eventModal'); render(); showToast('Đã xóa lịch');
 }
@@ -2003,8 +2114,7 @@ function renderStaffManage(){
     if(data.events.some(e=>e.assignments.some(a=>a.id===id))&&!confirm('Nhân sự này đang được gắn vào lịch. Xóa nhân sự sẽ bỏ gán khỏi các lịch. Tiếp tục?'))return;
     
     data.staff=data.staff.filter(s=>s.id!==id);
-    if(window.dbRef) window.dbRef.child(`staff/${id}`).remove();
-    else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    dbRemove(`staff/${id}`);
     
     renderStaffManage();
   }));
@@ -2017,8 +2127,7 @@ window.addStaff = function(){
   const newStaff = {id:uid(),name,role};
   
   data.staff.push(newStaff);
-  if(window.dbRef) window.dbRef.child(`staff/${newStaff.id}`).set(newStaff);
-  else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  dbSet(`staff/${newStaff.id}`, newStaff);
   
   setSafeValue('staffName','');
   renderStaffManage();showToast('Đã thêm nhân sự');
@@ -2048,9 +2157,9 @@ document.getElementById('fullPaidBtn')?.addEventListener('click', () => {
 
 document.getElementById('clearAll')?.addEventListener('click', ()=>{
     if(confirm('Xóa toàn bộ dữ liệu thật chứ? Cả trên mạng và máy đều biến mất!')){
-        data={staff:[],events:[],payroll:{}}; 
-        if(window.dbRef) window.dbRef.set(data);
-        else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+        data={staff:[],events:[],payroll:{}};
+        persistLocal();
+        if(window.dbRef) window.dbRef.set(data).catch(err => console.error('Clear DB error:', err));
         render(); window.smoothClose('settingsModal'); showToast('Đã dọn sạch CSDL');
     }
 });
