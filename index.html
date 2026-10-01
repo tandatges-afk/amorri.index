@@ -824,7 +824,6 @@ window.setupLocationAutocomplete = function() {
             }, 400); 
         });
 
-        // Hide delay để cho phép click vào gợi ý
         input.addEventListener('blur', () => {
             setTimeout(() => { if(suggestBox) suggestBox.style.display = 'none'; }, 200);
         });
@@ -1233,52 +1232,74 @@ function renderUpcoming(){
     
     let myTime = e.start || 'Chưa định';
     let myLoc = e.location || '';
-    let locLabel = '<b style="color:var(--muted); min-width: 100px;">📍 Địa điểm:</b>';
-    let timeLabel = '<b style="color:var(--muted); min-width: 100px;">⏰ Bắt đầu:</b>';
+    let timeLabel = '<b style="color:var(--muted); min-width: 80px;">⏰ Bắt đầu:</b>';
     let myPhoneHtml = '';
-    let mapText = '📍 Định vị';
+    let mapText = '📍 Định vị bản đồ';
     
+    // UI Xử lý SĐT Đẹp Mắt
+    const buildPhoneUI = (num, labelColor = 'var(--text)', locName = '') => {
+        if(!num) return '';
+        let prefix = locName ? `<span style="color:${labelColor}; font-weight:800; font-size:12.5px; margin-right:6px; min-width:65px;">[${locName}]</span>` : '';
+        return `
+        <div style="display: flex; gap: 10px; align-items:center; margin-top:8px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center;">
+                ${prefix}
+                <span style="font-weight:800; color:var(--text); font-size:15px; letter-spacing:0.5px;">📞 ${escapeHtml(num)}</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+                <a href="tel:${escapeHtml(num)}" style="color:#065f46; font-weight:800; text-decoration:none; background:#d1fae5; padding:6px 14px; border-radius:8px; border:1px solid #a7f3d0; font-size: 12px; line-height: 1; display:inline-flex; align-items:center; box-shadow:var(--shadow-sm);">Gọi</a>
+                <button type="button" onclick="window.copyText('${escapeHtml(num)}')" style="color:var(--muted); font-weight:800; background:#f4f4f5; padding:6px 14px; border-radius:8px; border:1px solid #d4d4d8; font-size: 12px; line-height: 1; cursor:pointer; display:inline-flex; align-items:center; box-shadow:var(--shadow-sm);">Copy</button>
+            </div>
+        </div>`;
+    };
+
     if (e.isRuocDau && myAssignment && myAssignment.locType) {
         myTime = myAssignment.locType === 'Nhà trai' ? (e.startTrai || 'Chưa định') : (e.startGai || 'Chưa định');
         myLoc = myAssignment.locType === 'Nhà trai' ? e.locTrai : e.locGai;
         let cCol = myAssignment.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
-        locLabel = `<b style="color:${cCol}; min-width: 100px;">📍 Địa điểm:</b>`;
-        timeLabel = `<b style="color:${cCol}; min-width: 100px;">⏰ Có mặt:</b>`;
+        timeLabel = `<b style="color:${cCol}; min-width: 80px;">⏰ Có mặt:</b>`;
         mapText = myAssignment.locType === 'Nhà trai' ? '📍 Định vị Nhà Trai' : '📍 Định vị Nhà Gái';
         
         let pStr = myAssignment.locType === 'Nhà trai' ? e.phoneTrai : e.phoneGai;
-        if (pStr) {
-            myPhoneHtml = `<div style="display: flex; gap: 8px; align-items:center;"><b style="color:${cCol}; min-width: 100px;">📞 Khách hàng:</b> <a href="tel:${escapeHtml(pStr)}" style="color:var(--text); font-weight:800; text-decoration:none; background:#f4f4f5; padding:4px 12px; border-radius:99px; border:1px solid var(--line);">Gọi số ${escapeHtml(myAssignment.locType)}</a></div>`;
-        }
+        myPhoneHtml = buildPhoneUI(pStr, cCol, '');
     } else {
         if (e.isRuocDau) {
-             if(e.phoneTrai) myPhoneHtml += `<div style="display: flex; gap: 8px; align-items:center;"><b style="color:#0369a1; min-width: 100px;">📞 Khách hàng:</b> <a href="tel:${escapeHtml(e.phoneTrai)}" style="color:var(--text); font-weight:800; text-decoration:none; background:#f4f4f5; padding:4px 12px; border-radius:99px; border:1px solid var(--line);">Gọi Nhà trai</a></div>`;
-             if(e.phoneGai) myPhoneHtml += `<div style="display: flex; gap: 8px; align-items:center; margin-top:4px;"><b style="color:#be185d; min-width: 100px;"></b> <a href="tel:${escapeHtml(e.phoneGai)}" style="color:var(--text); font-weight:800; text-decoration:none; background:#f4f4f5; padding:4px 12px; border-radius:99px; border:1px solid var(--line);">Gọi Nhà gái</a></div>`;
+             myPhoneHtml += buildPhoneUI(e.phoneTrai, '#0369a1', 'Nhà Trai');
+             myPhoneHtml += buildPhoneUI(e.phoneGai, '#be185d', 'Nhà Gái');
         } else {
-             if(e.phone) myPhoneHtml = `<div style="display: flex; gap: 8px; align-items:center;"><b style="color:var(--muted); min-width: 100px;">📞 Khách hàng:</b> <a href="tel:${escapeHtml(e.phone)}" style="color:var(--text); font-weight:800; text-decoration:none; background:#f4f4f5; padding:4px 12px; border-radius:99px; border:1px solid var(--line);">Gọi ngay</a></div>`;
+             myPhoneHtml = buildPhoneUI(e.phone, 'var(--text)', '');
         }
     }
 
     const mapHref = makeMapLink(myLoc);
+    let myLocHtml = '';
+    
+    // UI Xử lý Nút Định Vị Đẹp Mắt
+    if (myLoc) {
+        let locColor = '#eff6ff'; let locBorder = '#bfdbfe'; let locTextCol = '#1d4ed8';
+        if (e.isRuocDau && myAssignment && myAssignment.locType === 'Nhà gái') { locColor = '#fdf2f8'; locBorder = '#fbcfe8'; locTextCol = '#be185d'; }
+        else if (e.isRuocDau && myAssignment && myAssignment.locType === 'Nhà trai') { locColor = '#f0f9ff'; locBorder = '#bae6fd'; locTextCol = '#0369a1'; }
+
+        myLocHtml = `<div style="margin-top:12px; margin-bottom:8px;"><a href="${mapHref}" target="_blank" style="display:inline-flex; align-items:center; color:${locTextCol}; font-weight:800; text-decoration:none; background: ${locColor}; padding: 10px 16px; border-radius: 12px; border: 1px solid ${locBorder}; font-size: 13.5px; transition:all 0.2s; box-shadow:var(--shadow-sm);">${mapText}</a></div>`;
+    }
 
     return `
-    <div class="mini-item" data-id="${e.id}" style="flex-direction:column; align-items:flex-start; gap:12px; padding: 20px;">
-        <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start;">
-            <div style="font-size: 16px; font-weight: 800; color: var(--primary); white-space:normal;">
+    <div class="mini-item" data-id="${e.id}" style="flex-direction:column; align-items:flex-start; gap:8px; padding: 20px;">
+        <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start; margin-bottom:4px;">
+            <div style="font-size: 16px; font-weight: 800; color: var(--primary); white-space:normal; line-height:1.4;">
                 ${escapeHtml(e.name)} ${e.isRuocDau ? '<span style="color:var(--orange);font-size:12px;margin-left:6px;vertical-align:middle;">(Rước dâu)</span>' : ''}
             </div>
             <span class="pill ${pillColor}">${STATUS_LABEL[e.status]}</span>
         </div>
         
-        <div style="font-size: 13.5px; color: var(--text); line-height: 1.8; width: 100%;">
-            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 100px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
-            <div style="display: flex; gap: 8px;">${timeLabel} <span style="font-weight:800; color:var(--primary);">${escapeHtml(myTime)}</span></div>
+        <div style="font-size: 13.5px; color: var(--text); line-height: 1.6; width: 100%;">
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 80px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
+            <div style="display: flex; gap: 8px; margin-bottom:8px;">${timeLabel} <span style="font-weight:800; color:var(--primary); font-size:14.5px;">${escapeHtml(myTime)}</span></div>
             
-            ${myLoc ? `<div style="display: flex; gap: 8px; align-items:center;">${locLabel} <a href="${mapHref}" target="_blank" style="color:var(--blue); font-weight:700; text-decoration:none; background: #eff6ff; padding: 4px 12px; border-radius: 99px; border: 1px solid #bfdbfe;">${mapText}</a></div>` : ''}
+            ${myLocHtml}
+            ${myPhoneHtml}
             
-            <div style="margin-top:4px;">${myPhoneHtml}</div>
-            
-            ${e.note ? `<div style="margin-top: 12px; padding: 12px; background: #fefce8; border: 1px dashed #fef08a; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú chung:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
+            ${e.note ? `<div style="margin-top: 16px; padding: 12px; background: #fefce8; border: 1px dashed #fef08a; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú chung:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
         </div>
     </div>`;
   }).join('') : '<div class="empty" style="padding:24px;background:#fafafa;border-radius:16px">Bạn chưa có lịch sắp tới.</div>';
@@ -1438,7 +1459,6 @@ window.updateModalVisibility = function() {
         el.style.display = nameVal ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; 
     });
     
-    // Toggle tài chính (Nằm chung hàng)
     const financeGroup = document.getElementById('financeGroup');
     if(financeGroup) {
         financeGroup.style.display = (nameVal && hasLoc) ? 'block' : 'none';
@@ -1892,7 +1912,7 @@ window.addStaff = function(){
   renderStaffManage();showToast('Đã thêm nhân sự');
 }
 
-// Bắt sự kiện Click tổng quan: Đã loại bỏ click vào link/nút mở nhầm Modal
+// Bắt sự kiện Click: CHẶN MỞ POPUP NẾU BẤM LINK, BUTTON VÀ LỊCH SẮP TỚI
 document.addEventListener('click', e => {
   if(e.target.closest('a') || e.target.closest('button')) return; // Chặn nổi bọt nếu bấm link/button
   const chip = e.target.closest('[data-id]'); 
