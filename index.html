@@ -702,7 +702,6 @@ else if (staffViewId) currentUserRole = 'staff';
 function applyRoleUI() {
     document.body.className = `role-${currentUserRole}`;
     
-    // Tự động gán UI ẩn/hiện cho các nút dùng class guest-only / admin-only
     const loginBtns = document.querySelectorAll('.login-btn-ui'); 
     const logoutBtns = document.querySelectorAll('.logout-btn-ui');
     
@@ -741,7 +740,6 @@ function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;',
 function getStaffNames(ids){ return (ids||[]).map(id=>data.staff.find(s=>s.id===id)?.name).filter(Boolean); }
 function sameMonth(ds,d){return ds.getFullYear()===d.getFullYear() && ds.getMonth()===d.getMonth()}
 
-// HÀM XỬ LÝ LINK GOOGLE MAPS THÔNG MINH
 function makeMapLink(str) {
     if(!str) return '#';
     str = str.trim();
@@ -802,7 +800,6 @@ window.setupLocationAutocomplete = function() {
             const query = this.value.trim();
             clearTimeout(timeoutId);
             
-            // Bỏ qua gợi ý nếu người dùng dán Link
             if (query.startsWith('http')) { suggestBox.style.display = 'none'; return; }
             if (query.length < 2) { suggestBox.style.display = 'none'; return; }
             
@@ -1229,18 +1226,20 @@ function renderUpcoming(){
 
     const myAssignment = e.assignments.find(a => a.id === staffViewId);
     
-    // Tự động nối danh sách staff đi chung
-    const staffNames = e.assignments.map(a => {
-        const s = data.staff.find(x => x.id === a.id);
-        if(!s) return '';
-        let sText = s.name;
-        if (e.isRuocDau && a.locType) sText += ` (${a.locType})`;
-        return sText;
-    }).filter(Boolean).join(', ');
+    // Tự động nối danh sách staff đi chung (ĐÃ LỌC BỎ CHÍNH MÌNH)
+    const staffNames = e.assignments
+        .filter(a => a.id !== staffViewId)
+        .map(a => {
+            const s = data.staff.find(x => x.id === a.id);
+            if(!s) return '';
+            let sText = s.name;
+            if (e.isRuocDau && a.locType) sText += ` (${a.locType})`;
+            return sText;
+        }).filter(Boolean).join(', ');
 
     let myTime = e.start || 'Chưa định';
     let myLoc = e.location || '';
-    let timeLabel = '<b style="color:var(--muted); min-width: 100px;">⏰ Bắt đầu:</b>';
+    let timeLabel = '<b style="color:var(--muted); min-width: 90px;">⏰ Bắt đầu:</b>';
     let myPhoneHtml = '';
     let mapText = '📍 Định vị bản đồ';
     
@@ -1264,7 +1263,7 @@ function renderUpcoming(){
         myTime = myAssignment.locType === 'Nhà trai' ? (e.startTrai || 'Chưa định') : (e.startGai || 'Chưa định');
         myLoc = myAssignment.locType === 'Nhà trai' ? e.locTrai : e.locGai;
         let cCol = myAssignment.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
-        timeLabel = `<b style="color:${cCol}; min-width: 100px;">⏰ Có mặt:</b>`;
+        timeLabel = `<b style="color:${cCol}; min-width: 90px;">⏰ Có mặt:</b>`;
         mapText = myAssignment.locType === 'Nhà trai' ? '📍 Định vị Nhà Trai' : '📍 Định vị Nhà Gái';
         
         let pStr = myAssignment.locType === 'Nhà trai' ? e.phoneTrai : e.phoneGai;
@@ -1288,6 +1287,12 @@ function renderUpcoming(){
 
         myLocHtml = `<div style="margin-top:12px;"><a href="${mapHref}" target="_blank" style="display:inline-flex; align-items:center; color:${locTextCol}; font-weight:800; text-decoration:none; background: ${locColor}; padding: 10px 16px; border-radius: 12px; border: 1px solid ${locBorder}; font-size: 13.5px; transition:all 0.2s; box-shadow:var(--shadow-sm);">${mapText}</a></div>`;
     }
+    
+    // Chỉ hiển thị phần "Đi cùng" nếu thực sự có người làm chung
+    let coWorkerHtml = '';
+    if (staffNames) {
+        coWorkerHtml = `<div style="display: flex; gap: 8px; margin-bottom:8px;"><b style="color:var(--muted); min-width: 90px;">👥 Đi cùng:</b> <span style="font-weight:600; color:var(--muted);">${escapeHtml(staffNames)}</span></div>`;
+    }
 
     return `
     <div class="mini-item" data-id="${e.id}" style="flex-direction:column; align-items:flex-start; gap:8px; padding: 20px;">
@@ -1299,9 +1304,9 @@ function renderUpcoming(){
         </div>
         
         <div style="font-size: 13.5px; color: var(--text); line-height: 1.6; width: 100%;">
-            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 100px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
-            <div style="display: flex; gap: 8px;">${timeLabel} <span style="font-weight:800; color:var(--primary); font-size:14.5px;">${escapeHtml(myTime)}</span></div>
-            <div style="display: flex; gap: 8px; margin-bottom:8px;"><b style="color:var(--muted); min-width: 100px;">👥 Đi cùng:</b> <span style="font-weight:600; color:var(--muted);">${escapeHtml(staffNames || 'Không có')}</span></div>
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 90px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
+            <div style="display: flex; gap: 8px; ${staffNames ? '' : 'margin-bottom:8px;'}">${timeLabel} <span style="font-weight:800; color:var(--primary); font-size:14.5px;">${escapeHtml(myTime)}</span></div>
+            ${coWorkerHtml}
             
             <div style="margin-top:4px;">${myPhoneHtml}</div>
             ${myLocHtml}
