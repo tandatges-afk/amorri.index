@@ -9,31 +9,26 @@
 <meta name="theme-color" content="#ffffff">
 
 <link rel="icon" href="logo.png" type="image/png">
-<!-- Phông chữ cao cấp Plus Jakarta Sans -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <title>Amorri Studio — Lịch Quay & Chụp</title>
 
+<!-- THÊM FIREBASE AUTH -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
 
 <style>
 /* FONT & CƠ BẢN */
 :root {
-  --bg: #f4f4f5; 
-  --panel: #ffffff; 
-  --text: #09090b; 
-  --muted: #52525b; 
-  --line: #e4e4e7; 
-  --primary: #18181b; 
-  --primary-hover: #27272a; 
+  --bg: #f4f4f5; --panel: #ffffff; --text: #09090b; --muted: #52525b; --line: #e4e4e7; 
+  --primary: #18181b; --primary-hover: #27272a; 
   --green: #10b981; --bg-green: #ecfdf5;
   --orange: #f59e0b; --bg-orange: #fffbeb;
   --blue: #3b82f6; --bg-blue: #eff6ff;
   --red: #ef4444; --bg-red: #fef2f2;
-  
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
@@ -42,8 +37,6 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text); background: var(--bg); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
-
-/* CHỐNG CUỘN NỀN KHI MỞ MODAL */
 body.modal-open { overflow: hidden; }
 
 button, input, select, textarea { font: inherit; }
@@ -126,7 +119,6 @@ body.role-guest .guest-only-inline { display: inline-flex !important; }
 .weekdays, .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
 .weekday { padding: 14px 10px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; background: #fafafa; }
 
-/* T7 CN Màu sắc sắc nét */
 .day { min-height: 140px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px; background: #fff; transition: background 0.2s; cursor: pointer; }
 .day.sat-bg { background-color: #fafafb; } 
 .day.sun-bg { background-color: #f1f5f9; } 
@@ -334,7 +326,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
         
         <div class="filters" id="mainFilters">
           <label for="searchInput" style="display:none;">Tìm kiếm</label>
-          <input class="field" id="searchInput" placeholder="Tìm tên lịch..." style="flex: 1; min-width: 200px;">
+          <input class="field" id="searchInput" placeholder="Tìm tên, SĐT, địa điểm, thợ..." style="flex: 1; min-width: 250px;">
           
           <label for="staffFilter" style="display:none;">Bộ lọc nhân sự</label>
           <select class="field admin-only" id="staffFilter">
@@ -431,7 +423,6 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
               </select>
           </div>
           
-          <!-- THỜI GIAN ĐỘNG -->
           <div class="form-group normal-time"><label for="eventStart">Giờ bắt đầu</label><input id="eventStart" type="time" onchange="window.checkConflict();"></div>
           
           <div class="form-group full ruocdau-time" style="display:none;">
@@ -475,13 +466,13 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_chup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">📷 Chụp</label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_quay" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">🎥 Quay</label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_makeup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">💄 Makeup</label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_khac" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">⚙️ Khác/Free</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_khac" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">⚙️️ Khác/Free</label>
             </div>
             
             <div id="eventStaff" class="staff-picker" style="padding:0; border:none; background:transparent;"></div>
           </div>
           
-          <!-- ĐỊA ĐIỂM ĐỘNG CHUNG HÀNG (CÓ FIX XUYÊN THẤU) -->
+          <!-- ĐỊA ĐIỂM ĐỘNG -->
           <div class="form-group full step2-item normal-loc loc-group-wrapper" style="display:none">
             <label>Địa điểm</label>
             <div style="position:relative; width: 100%;">
@@ -505,7 +496,6 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
             </div>
           </div>
 
-          <!-- SĐT ĐỘNG -->
           <div class="form-group full step2-item normal-phone" style="display:none">
             <label for="eventPhone">Số điện thoại khách</label>
             <input id="eventPhone" placeholder="090...">
@@ -524,7 +514,6 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
             </div>
           </div>
           
-          <!-- NHÓM TIỀN BẠC NẰM CHUNG HÀNG -->
           <div class="form-group full step3-item" style="display:none" id="financeGroup">
             <div style="display:flex; gap:24px; flex-wrap:wrap;">
                 <div style="flex:1; min-width:200px;">
@@ -634,7 +623,6 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -657,7 +645,7 @@ function setSafeValue(id, val) {
     }
 }
 
-// FIX UX: Lưu vị trí con trỏ chuột khi định dạng tiền tệ
+// FIX UX: Lưu vị trí con trỏ chuột khi nhập tiền
 window.formatMoneyInput = function(el) {
     let cursorPostion = el.selectionStart; 
     let oldLen = el.value.length;
@@ -697,12 +685,10 @@ window.smoothOpen = function(modalId) {
     }
 }
 
-// FIX UX: Click ra ngoài nền đen để đóng Modal
+// Bấm nền đen ngoài lề sẽ đóng Modal
 document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
     backdrop.addEventListener('click', (e) => {
-        if(e.target === backdrop) {
-            window.smoothClose(backdrop.id);
-        }
+        if(e.target === backdrop) window.smoothClose(backdrop.id);
     });
 });
 
@@ -729,12 +715,10 @@ let currentView = 'month'; let isFirstLoad = true;
 
 const urlParams = new URLSearchParams(window.location.search);
 const staffViewId = urlParams.get('staff');
-const isAdminLogged = localStorage.getItem('amorri_admin') === 'true';
 
 let currentUserRole = 'guest'; 
-if (isAdminLogged) currentUserRole = 'admin';
-else if (staffViewId) currentUserRole = 'staff';
 
+// FIX AUTH: Thay vì check LocalStorage, dùng Firebase Auth để phân quyền an toàn
 function applyRoleUI() {
     document.body.className = `role-${currentUserRole}`;
     
@@ -749,16 +733,27 @@ function applyRoleUI() {
     });
 }
 
+// FIX AUTH: Hàm Login bằng Firebase Email/Password thực tế
 window.loginAdmin = function() {
-    const pass = prompt("Nhập mật khẩu Admin:");
-    if (pass === 'amorri2026') {
-        localStorage.setItem('amorri_admin', 'true');
-        window.location.href = window.location.origin + window.location.pathname; 
-    } else if (pass !== null) { showToast("Sai mật khẩu!"); }
+    const email = prompt("Nhập Email Admin:");
+    if(!email) return;
+    const pass = prompt("Nhập Mật khẩu:");
+    if(!pass) return;
+    
+    firebase.auth().signInWithEmailAndPassword(email, pass)
+        .then((userCredential) => {
+            showToast("Đăng nhập thành công!");
+            // Observer sẽ tự động cập nhật Role
+        })
+        .catch((error) => {
+            showToast("Sai tài khoản hoặc mật khẩu!");
+        });
 }
+
 window.logoutAdmin = function() {
-    localStorage.removeItem('amorri_admin');
-    window.location.reload();
+    firebase.auth().signOut().then(() => {
+        window.location.reload();
+    });
 }
 
 function pad(n){return String(n).padStart(2,'0')}
@@ -824,8 +819,9 @@ function setupDefaultFilters() {
     ['staffMonthY', 'summaryMonthY'].forEach(id => { const el = document.getElementById(id); if(el) el.value = yy; });
 }
 
+// FIX: ABORT CONTROLLER CHỐNG SPAM API
+const locControllers = {};
 window.setupLocationAutocomplete = function() {
-    let timeoutId;
     ['eventLocation', 'eventLocationTrai', 'eventLocationGai'].forEach(id => {
         const input = document.getElementById(id);
         if(!input) return;
@@ -834,14 +830,17 @@ window.setupLocationAutocomplete = function() {
         input.addEventListener('input', function() {
             window.updateModalVisibility();
             const query = this.value.trim();
-            clearTimeout(timeoutId);
             
-            if (query.startsWith('http')) { suggestBox.style.display = 'none'; return; }
-            if (query.length < 2) { suggestBox.style.display = 'none'; return; }
+            if(locControllers[id]?.timeout) clearTimeout(locControllers[id].timeout);
+            if(locControllers[id]?.controller) locControllers[id].controller.abort();
             
-            // FIX API SPAM: Tăng độ trễ bắt phím
-            timeoutId = setTimeout(() => {
-                fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lat=10.0452&lon=105.7469`)
+            if (query.startsWith('http') || query.length < 2) { suggestBox.style.display = 'none'; return; }
+            
+            const controller = new AbortController();
+            locControllers[id] = { controller };
+            
+            locControllers[id].timeout = setTimeout(() => {
+                fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lat=10.0452&lon=105.7469`, { signal: controller.signal })
                 .then(res => res.json())
                 .then(resData => {
                     if(resData.features && resData.features.length > 0) {
@@ -853,7 +852,7 @@ window.setupLocationAutocomplete = function() {
                         }).join('');
                         suggestBox.style.display = 'block';
                     } else { suggestBox.style.display = 'none'; }
-                }).catch(()=> suggestBox.style.display = 'none');
+                }).catch(err => { if(err.name !== 'AbortError') suggestBox.style.display = 'none'; });
             }, 400); 
         });
 
@@ -870,7 +869,6 @@ window.selectLocation = function(inputId, name) {
 };
 
 function initApp() {
-    applyRoleUI();
     try {
         const raw = localStorage.getItem(STORE_KEY);
         if (raw) data = sanitizeData(JSON.parse(raw));
@@ -878,8 +876,6 @@ function initApp() {
     } catch(e) { data = defaultData(); }
     
     setupDefaultFilters();
-    try { render(); } catch(e) {}
-    window.setupLocationAutocomplete();
 
     const hideLoading = () => {
         if (!isFirstLoad) return;
@@ -887,12 +883,23 @@ function initApp() {
         if (overlay) overlay.classList.add('hidden');
         isFirstLoad = false;
     };
-    // Đảm bảo không bị kẹt Loading Screen nếu Firebase block
     setTimeout(hideLoading, 3000);
 
     try {
         if (typeof firebase !== 'undefined' && !firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
+            
+            // FIREBASE AUTH OBSERVER
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user) {
+                    currentUserRole = 'admin';
+                } else {
+                    currentUserRole = staffViewId ? 'staff' : 'guest';
+                }
+                applyRoleUI();
+                render();
+            });
+
             window.dbRef = firebase.database().ref('studioPlanner_v1');
             window.dbRef.on('value', (snapshot) => {
                 const val = snapshot.val();
@@ -906,12 +913,6 @@ function initApp() {
             }, (error) => { hideLoading(); });
         }
     } catch (err) { hideLoading(); }
-}
-
-window.save = function() {
-    if (currentUserRole === 'guest') return;
-    localStorage.setItem(STORE_KEY, JSON.stringify(data));
-    if(window.dbRef) window.dbRef.set(data).catch(err => { showToast("Đã lưu Offline"); });
 }
 
 function getOldDebt(staffId, targetY, targetM) {
@@ -936,13 +937,28 @@ function getOldDebt(staffId, targetY, targetM) {
     return debt;
 }
 
+// FIX: MỞ RỘNG SCOPE TÌM KIẾM
 function eventMatches(e){
   const q = document.getElementById('searchInput')?.value.trim().toLowerCase() || '';
   const sf = document.getElementById('staffFilter')?.value || '';
   const st = document.getElementById('statusFilter')?.value || '';
-  if(q && ![e.name,e.location,e.phone,e.note].join(' ').toLowerCase().includes(q)) return false;
+  
   if(sf && !e.assignments.some(a=>a.id===sf)) return false;
   if(st && e.status!==st) return false;
+  
+  if(q) {
+      const staffStr = e.assignments.map(a => {
+          const s = data.staff.find(x => x.id === a.id);
+          return (s ? s.name : '') + ' ' + (a.task || '') + ' ' + (a.locType || '');
+      }).join(' ');
+      
+      const searchStr = [
+          e.name, e.location, e.locTrai, e.locGai, 
+          e.phone, e.phoneTrai, e.phoneGai, e.note, staffStr
+      ].join(' ').toLowerCase();
+      
+      if(!searchStr.includes(q)) return false;
+  }
   return true;
 }
 
@@ -1088,21 +1104,17 @@ function renderMonth(){
     </div>`;
   }
   html+='</div>';
-  if(calEl) {
-      calEl.innerHTML=html;
-  }
+  if(calEl) calEl.innerHTML=html;
 }
 
-// FIX: Event Delegation cho phần click lịch Tháng (Chặn spam event memory leak)
+// FIX EVENT DELEGATION
 document.addEventListener('DOMContentLoaded', () => {
     const calEl = document.getElementById('calendar');
     if (calEl) {
         calEl.addEventListener('dblclick', (e) => {
             if (currentUserRole !== 'admin') return;
             const dayEl = e.target.closest('.day');
-            if (dayEl && dayEl.dataset.date) {
-                window.openEventModal({date: dayEl.dataset.date});
-            }
+            if (dayEl && dayEl.dataset.date) window.openEventModal({date: dayEl.dataset.date});
         });
         
         calEl.addEventListener('click', (e) => {
@@ -1260,20 +1272,30 @@ window.savePayroll = function() {
   const advance = parseMoney(document.getElementById('payrollAdvance').value) * 1000;
   const paid = parseMoney(document.getElementById('payrollPaid').value) * 1000;
 
+  // FIX FIREBASE WRITE: Chỉ cập nhật đúng node lương
   if(!data.payroll[monthStr]) data.payroll[monthStr] = {};
   data.payroll[monthStr][staffId] = { advance, paid };
   
-  save(); window.smoothClose('payrollModal'); render(); showToast('Đã cập nhật lương');
+  if (window.dbRef) window.dbRef.child(`payroll/${monthStr}/${staffId}`).set({ advance, paid });
+  else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  
+  window.smoothClose('payrollModal'); render(); showToast('Đã cập nhật lương');
 }
 
+// FIX: ĐỘC LẬP TÌM KIẾM CHO LỊCH SẮP TỚI
 function renderUpcoming(){
   const panel = document.getElementById('upcomingListPanel');
   if (currentUserRole !== 'staff') { if(panel) panel.style.display = 'none'; return; }
   if(panel) panel.style.display = 'block';
   
   const today=new Date();today.setHours(0,0,0,0);
-  let list = getFilteredEvents().filter(e=>parseDate(e.date)>=today&&e.status!=='cancelled')
-    .sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||'')));
+  
+  // Không dùng getFilteredEvents() nữa, lọc từ data gốc
+  let list = data.events.filter(e => {
+      if(e.status === 'cancelled') return false;
+      if(parseDate(e.date) < today) return false;
+      return e.assignments.some(a => a.id === staffViewId);
+  }).sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||'')));
     
   const el=document.getElementById('upcomingList'); if(!el) return;
   el.innerHTML=list.length?list.map(e=>{
@@ -1284,7 +1306,6 @@ function renderUpcoming(){
 
     const myAssignment = e.assignments.find(a => a.id === staffViewId);
     
-    // Tự động nối danh sách staff đi chung (ĐÃ LỌC BỎ CHÍNH MÌNH)
     const staffNames = e.assignments
         .filter(a => a.id !== staffViewId)
         .map(a => {
@@ -1323,7 +1344,6 @@ function renderUpcoming(){
         let cCol = myAssignment.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
         timeLabel = `<b style="color:${cCol}; min-width: 90px;">⏰ Có mặt:</b>`;
         mapText = myAssignment.locType === 'Nhà trai' ? '📍 Định vị Nhà Trai' : '📍 Định vị Nhà Gái';
-        
         let pStr = myAssignment.locType === 'Nhà trai' ? e.phoneTrai : e.phoneGai;
         myPhoneHtml = buildPhoneUI(pStr, cCol, '');
     } else {
@@ -1346,7 +1366,6 @@ function renderUpcoming(){
         myLocHtml = `<div style="margin-top:16px;"><a href="${mapHref}" target="_blank" style="display:inline-flex; align-items:center; color:${locTextCol}; font-weight:800; text-decoration:none; background: ${locColor}; padding: 10px 16px; border-radius: 12px; border: 1px solid ${locBorder}; font-size: 13.5px; transition:all 0.2s; box-shadow:var(--shadow-sm);">${mapText}</a></div>`;
     }
     
-    // Chỉ hiển thị phần "Đi cùng" nếu thực sự có người làm chung
     let coWorkerHtml = '';
     if (staffNames) {
         coWorkerHtml = `<div style="display: flex; gap: 8px; margin-bottom:8px;"><b style="color:var(--muted); min-width: 90px;">👥 Đi cùng:</b> <span style="font-weight:600; color:var(--muted);">${escapeHtml(staffNames)}</span></div>`;
@@ -1552,7 +1571,7 @@ window.updateModalVisibility = function() {
 let currentEventAssignments = [];
 
 window.saveStaffLinkLocally = function(sId, sName) {
-    const urlInput = document.getElementById('link-input-'+sId)?.value.trim();
+    const urlInput = document.getElementById('evt-link-in-'+sId)?.value.trim();
     if(!urlInput) { showToast('Vui lòng dán link'); return; }
     
     const evId = document.getElementById('eventId')?.value;
@@ -1562,21 +1581,22 @@ window.saveStaffLinkLocally = function(sId, sName) {
             const aIdx = data.events[idx].assignments.findIndex(a => a.id === sId);
             if(aIdx >= 0) {
                 data.events[idx].assignments[aIdx].link = urlInput;
-                localStorage.setItem(STORE_KEY, JSON.stringify(data));
-                if(window.dbRef) window.dbRef.set(data);
+                // FIX FIREBASE WRITE: Chỉ cập nhật Node link
+                if(window.dbRef) window.dbRef.child(`events/${evId}/assignments/${aIdx}/link`).set(urlInput);
+                else localStorage.setItem(STORE_KEY, JSON.stringify(data));
             }
         }
     }
-    const tag = document.getElementById('link-tag-'+sId);
+    const tag = document.getElementById('evt-link-tag-'+sId);
     if(tag) { tag.href = urlInput; tag.innerHTML = `🔗 Bấm xem Source`; }
-    document.getElementById('link-edit-'+sId).style.display = 'none';
-    document.getElementById('link-view-'+sId).style.display = 'flex';
+    document.getElementById('evt-link-edit-'+sId).style.display = 'none';
+    document.getElementById('evt-link-view-'+sId).style.display = 'flex';
     showToast('Đã nộp Source thành công!');
 }
 
 window.toggleEditLink = function(sId) {
-    document.getElementById('link-view-'+sId).style.display = 'none';
-    document.getElementById('link-edit-'+sId).style.display = 'flex';
+    document.getElementById('evt-link-view-'+sId).style.display = 'none';
+    document.getElementById('evt-link-edit-'+sId).style.display = 'flex';
 }
 
 window.addProductRow = function(name='', url='', isReadonly=false) {
@@ -1625,10 +1645,10 @@ window.renderEventStaffList = function() {
             const sId = cb.value;
             return { 
                 id: sId, 
-                task: document.getElementById('task-'+sId)?.value || '', 
-                locType: isRuocDau ? (document.getElementById('staff-loc-'+sId)?.value || '') : '',
-                cost: parseMoney(document.getElementById('cost-'+sId)?.value) * 1000,
-                link: document.getElementById('link-input-'+sId)?.value.trim() || ''
+                task: document.getElementById('evt-task-'+sId)?.value || '', 
+                locType: isRuocDau ? (document.getElementById('evt-loc-'+sId)?.value || '') : '',
+                cost: parseMoney(document.getElementById('evt-cost-'+sId)?.value) * 1000,
+                link: document.getElementById('evt-link-in-'+sId)?.value.trim() || ''
             };
         });
     }
@@ -1658,14 +1678,14 @@ window.renderEventStaffList = function() {
                 const savedLink = a.link || '';
                 myLinkHtml = `
                 <div class="staff-link-container" style="display:${isEnded ? 'flex' : 'none'}; gap: 8px; align-items:center; background:#fafafa; padding:12px 16px; border-radius:12px; border: 1px solid var(--line); margin-top: 16px;">
-                    <div id="link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
-                        <a id="link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
+                    <div id="evt-link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
+                        <a id="evt-link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
                            🔗 Bấm xem Source
                         </a>
                         <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa Link</button>
                     </div>
-                    <div id="link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
-                        <input type="url" id="link-input-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link tải Source (Drive/Fshare...)" style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
+                    <div id="evt-link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
+                        <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link tải Source (Drive/Fshare...)" style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
                         <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Nộp Source</button>
                     </div>
                 </div>
@@ -1701,7 +1721,7 @@ window.renderEventStaffList = function() {
               let textCol = a?.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
               
               locDropdownHtml = `
-              <select id="staff-loc-${s.id}" onchange="this.style.backgroundColor=this.value==='Nhà gái'?'#fce7f3':'#e0f2fe'; this.style.borderColor=this.value==='Nhà gái'?'#fbcfe8':'#7dd3fc'; this.style.color=this.value==='Nhà gái'?'#be185d':'#0369a1';" style="background:${bgCol}; border:1px solid ${borderCol}; padding:10px; border-radius:10px; outline:0; font-size:13px; font-weight:800; color:${textCol}; min-width:110px;">
+              <select id="evt-loc-${s.id}" onchange="this.style.backgroundColor=this.value==='Nhà gái'?'#fce7f3':'#e0f2fe'; this.style.borderColor=this.value==='Nhà gái'?'#fbcfe8':'#7dd3fc'; this.style.color=this.value==='Nhà gái'?'#be185d':'#0369a1';" style="background:${bgCol}; border:1px solid ${borderCol}; padding:10px; border-radius:10px; outline:0; font-size:13px; font-weight:800; color:${textCol}; min-width:110px;">
                   <option value="Nhà trai" ${a?.locType==='Nhà trai'?'selected':''}>Nhà trai</option>
                   <option value="Nhà gái" ${a?.locType==='Nhà gái'?'selected':''}>Nhà gái</option>
               </select>`;
@@ -1718,7 +1738,7 @@ window.renderEventStaffList = function() {
                 <div style="display:${isChecked ? 'flex' : 'none'}; gap:10px; align-items:center; flex:1.5; justify-content:flex-end; min-width:300px; flex-wrap:wrap;">
                   ${locDropdownHtml}
                   
-                  <select id="task-${s.id}" style="flex:1; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); min-width:160px;">
+                  <select id="evt-task-${s.id}" style="flex:1; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); min-width:160px;">
                     <option value="Chụp truyền thống" ${a?.task==='Chụp truyền thống'?'selected':''}>Chụp truyền thống</option>
                     <option value="Chụp phóng sự" ${a?.task==='Chụp phóng sự'?'selected':''}>Chụp phóng sự</option>
                     <option value="Chụp Concept" ${a?.task==='Chụp Concept'?'selected':''}>Chụp Concept</option>
@@ -1729,21 +1749,21 @@ window.renderEventStaffList = function() {
                   </select>
 
                   <div class="currency-wrap" style="width:140px; min-width:140px;">
-                     <input type="text" inputmode="numeric" id="cost-${s.id}" placeholder="0" value="${a?.cost ? money(a.cost/1000) : ''}" oninput="window.formatMoneyInput(this)" style="background:#f4f4f5;border:1px solid transparent;padding:10px 14px;border-radius:10px;outline:0;font-size:14px;font-weight:700;color:var(--text);">
+                     <input type="text" inputmode="numeric" id="evt-cost-${s.id}" placeholder="0" value="${a?.cost ? money(a.cost/1000) : ''}" oninput="window.formatMoneyInput(this)" style="background:#f4f4f5;border:1px solid transparent;padding:10px 14px;border-radius:10px;outline:0;font-size:14px;font-weight:700;color:var(--text);">
                   </div>
                 </div>
             </div>
 
             <div class="staff-link-container" style="display:${isEnded && isChecked ? 'flex' : 'none'}; gap: 10px; align-items:center; background:#fafafa; padding:12px 16px; border-radius:12px; border: 1px solid var(--line); margin-top: 16px; margin-left: 32px;">
-                 <div id="link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
-                     <a id="link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
+                 <div id="evt-link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
+                     <a id="evt-link-tag-${s.id}" href="${escapeHtml(savedLink || '#')}" target="_blank" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
                         🔗 Bấm xem Source
                      </a>
-                     <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="copyText(document.getElementById('link-input-${s.id}').value)">📋 Copy</button>
+                     <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="copyText(document.getElementById('evt-link-in-${s.id}').value)">📋 Copy</button>
                      <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa</button>
                  </div>
-                 <div id="link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
-                     <input type="url" id="link-input-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link Google Drive/Fshare..." style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
+                 <div id="evt-link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
+                     <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link Google Drive/Fshare..." style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
                      <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu</button>
                  </div>
             </div>
@@ -1764,7 +1784,11 @@ window.saveFreelanceQuick = function() {
 
     const displayName = `${name} (${skillLabel})`;
     const newStaff = { id: uid(), name: displayName, role: 'Freelance' };
-    data.staff.push(newStaff); save();
+    
+    // FIX FIREBASE WRITE: Ghi thẳng vào node Staff
+    data.staff.push(newStaff); 
+    if(window.dbRef) window.dbRef.child(`staff/${newStaff.id}`).set(newStaff);
+    else localStorage.setItem(STORE_KEY, JSON.stringify(data));
 
     const fk = document.getElementById('f_khac'); if(fk) fk.checked = true;
     currentEventAssignments.push({ id: newStaff.id, task: skillLabel, locType: '', cost: 0, link: '' });
@@ -1841,7 +1865,7 @@ window.openEventModal = function(prefill={}){
 
   // Khóa Input nếu không phải Admin
   document.querySelectorAll('#eventForm input, #eventForm select, #eventForm textarea').forEach(el => {
-      if (el.id.includes('link-input')) return; 
+      if (el.id.includes('evt-link-in')) return; 
       if (!isAdmin) {
           el.setAttribute('readonly', 'true');
           if(el.tagName === 'SELECT' || el.type === 'checkbox') el.disabled = true;
@@ -1851,6 +1875,7 @@ window.openEventModal = function(prefill={}){
   const btnCancel = document.getElementById('cancelEvent'); if(btnCancel) btnCancel.textContent = isAdmin ? 'Hủy' : 'Đóng';
 }
 
+// FIX: LOGIC CONFLICT RƯỚC DÂU RIÊNG TỪNG THỢ
 window.checkConflict = function(){
   if (currentUserRole !== 'admin') return;
   const date=document.getElementById('eventDate')?.value; 
@@ -1861,20 +1886,25 @@ window.checkConflict = function(){
   data.staff.forEach(s => {
      const infoSpan = document.getElementById('busy-info-' + s.id); if(!infoSpan) return;
      const sEvents = data.events.filter(e => e.id !== id && e.status !== 'cancelled' && e.date === date && e.assignments.some(a => a.id === s.id));
-     if(sEvents.length === 0) infoSpan.innerHTML = '';
-     else {
-         let intervals = sEvents.map(e => ({s: (e.isRuocDau ? (e.startTrai || e.startGai) : e.start)||'', e: e.end||''}));
-         let text = intervals.map(iv => `${iv.s}-${iv.e}`).join(', ');
-         
-         let overlap = false;
-         let locTeam = document.getElementById('staff-loc-'+s.id)?.value;
-         let myStart = isRuocDau ? (locTeam === 'Nhà gái' ? document.getElementById('eventStartGai').value : document.getElementById('eventStartTrai').value) : document.getElementById('eventStart').value;
-         
-         if(myStart && end && myStart < end) overlap = intervals.some(iv => (myStart < iv.e && end > iv.s));
-         
-         if(overlap) infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
-         else infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
-     }
+     if(sEvents.length === 0) { infoSpan.innerHTML = ''; return; }
+
+     let intervals = sEvents.map(e => {
+         let a = e.assignments.find(x => x.id === s.id);
+         let sTime = e.start;
+         if (e.isRuocDau) sTime = a.locType === 'Nhà gái' ? e.startGai : (a.locType === 'Nhà trai' ? e.startTrai : (e.startTrai || e.startGai));
+         return {s: sTime||'', e: e.end||''};
+     });
+     
+     let text = intervals.map(iv => `${iv.s}-${iv.e}`).join(', ');
+     
+     let overlap = false;
+     let locTeam = document.getElementById('evt-loc-'+s.id)?.value;
+     let myStart = isRuocDau ? (locTeam === 'Nhà gái' ? document.getElementById('eventStartGai').value : document.getElementById('eventStartTrai').value) : document.getElementById('eventStart').value;
+     
+     if(myStart && end && myStart < end) overlap = intervals.some(iv => (myStart < iv.e && end > iv.s));
+     
+     if(overlap) infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
+     else infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
   });
 }
 
@@ -1902,10 +1932,10 @@ window.saveEvent = function(){
        const sId = cb.value;
        return {
          id: sId,
-         task: document.getElementById('task-'+sId)?.value||'',
-         locType: isRuocDau ? (document.getElementById('staff-loc-'+sId)?.value||'') : '',
-         cost: parseMoney(document.getElementById('cost-'+sId)?.value) * 1000,
-         link: document.getElementById('link-input-'+sId)?.value.trim() || ''
+         task: document.getElementById('evt-task-'+sId)?.value||'',
+         locType: isRuocDau ? (document.getElementById('evt-loc-'+sId)?.value||'') : '',
+         cost: parseMoney(document.getElementById('evt-cost-'+sId)?.value) * 1000,
+         link: document.getElementById('evt-link-in-'+sId)?.value.trim() || ''
        };
     }),
     products:[...document.querySelectorAll('.product-row')].map(row => ({
@@ -1927,16 +1957,14 @@ window.saveEvent = function(){
       if(!confirm('Giờ kết thúc đang nhỏ hơn hoặc bằng giờ bắt đầu (Có thể do ca làm đêm qua ngày). Bạn có chắc chắn muốn lưu?')) return;
   }
   
-  const isOverlap = obj.assignments.some(x => {
-      return data.events.some(e => e.id !== id && e.status !== 'cancelled' && e.date === obj.date && 
-             e.assignments.some(a => a.id === x.id) && (isRuocDau ? obj.startTrai : obj.start) < e.end && (e.isRuocDau ? e.startTrai : e.start) < obj.end);
-  });
-  
-  if(isOverlap && !confirm('Lịch đang bị trùng giờ nhân sự. Vẫn lưu chứ?')) return;
+  // FIX FIREBASE WRITE: Chỉ cập nhật Node Events
   const idx=data.events.findIndex(e=>e.id===id);
   if(idx>=0)data.events[idx]=obj; else data.events.push(obj);
   
-  save(); window.smoothClose('eventModal'); render(); showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
+  if (window.dbRef) window.dbRef.child(`events/${obj.id}`).set(obj);
+  else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  
+  window.smoothClose('eventModal'); render(); showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
 }
 
 window.deleteEvent = function(){
@@ -1944,8 +1972,13 @@ window.deleteEvent = function(){
   const id=document.getElementById('eventId')?.value;if(!id)return;
   const e=data.events.find(x=>x.id===id); if(!e)return;
   if(!confirm(`Xóa lịch "${e.name}"?`))return;
+  
   data.events=data.events.filter(x=>x.id!==id);
-  save(); window.smoothClose('eventModal'); render(); showToast('Đã xóa lịch');
+  // FIX FIREBASE WRITE
+  if (window.dbRef) window.dbRef.child(`events/${id}`).remove();
+  else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  
+  window.smoothClose('eventModal'); render(); showToast('Đã xóa lịch');
 }
 
 window.openSettings = function(){ window.smoothOpen('settingsModal'); }
@@ -1968,9 +2001,12 @@ function renderStaffManage(){
   document.querySelectorAll('[data-delstaff]').forEach(b=>b.addEventListener('click', ()=>{
     const id=b.dataset.delstaff;
     if(data.events.some(e=>e.assignments.some(a=>a.id===id))&&!confirm('Nhân sự này đang được gắn vào lịch. Xóa nhân sự sẽ bỏ gán khỏi các lịch. Tiếp tục?'))return;
+    
     data.staff=data.staff.filter(s=>s.id!==id);
-    data.events.forEach(e=>e.assignments=e.assignments.filter(x=>x.id!==id));
-    save();renderStaffManage();
+    if(window.dbRef) window.dbRef.child(`staff/${id}`).remove();
+    else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    
+    renderStaffManage();
   }));
 }
 
@@ -1978,7 +2014,12 @@ window.addStaff = function(){
   if (currentUserRole !== 'admin') return;
   const name=document.getElementById('staffName')?.value.trim(); const role=document.getElementById('staffRole')?.value;
   if(!name){showToast('Nhập tên nhân sự');return}
-  data.staff.push({id:uid(),name,role});save();
+  const newStaff = {id:uid(),name,role};
+  
+  data.staff.push(newStaff);
+  if(window.dbRef) window.dbRef.child(`staff/${newStaff.id}`).set(newStaff);
+  else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  
   setSafeValue('staffName','');
   renderStaffManage();showToast('Đã thêm nhân sự');
 }
@@ -2007,7 +2048,10 @@ document.getElementById('fullPaidBtn')?.addEventListener('click', () => {
 
 document.getElementById('clearAll')?.addEventListener('click', ()=>{
     if(confirm('Xóa toàn bộ dữ liệu thật chứ? Cả trên mạng và máy đều biến mất!')){
-        data={staff:[],events:[],payroll:{}}; save(); render(); window.smoothClose('settingsModal'); showToast('Đã dọn sạch CSDL');
+        data={staff:[],events:[],payroll:{}}; 
+        if(window.dbRef) window.dbRef.set(data);
+        else localStorage.setItem(STORE_KEY, JSON.stringify(data));
+        render(); window.smoothClose('settingsModal'); showToast('Đã dọn sạch CSDL');
     }
 });
 
