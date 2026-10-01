@@ -54,11 +54,15 @@ input[type=number] { -moz-appearance: textfield; }
 
 /* ẨN HIỆN QUYỀN */
 .admin-only, .staff-only, .staff-only-block { display: none !important; }
+.guest-only { display: none !important; }
+
 body.role-admin .admin-only { display: flex !important; }
 body.role-admin .admin-only-block { display: block !important; }
 body.role-admin .admin-only-grid { display: grid !important; }
 body.role-staff .staff-only { display: flex !important; }
 body.role-staff .staff-only-block { display: block !important; }
+body.role-guest .guest-only { display: flex !important; }
+body.role-guest .guest-only-inline { display: inline-flex !important; }
 
 /* BỐ CỤC CHÍNH */
 .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
@@ -229,7 +233,11 @@ body.role-staff .staff-only-block { display: block !important; }
 
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.96); } }
 
-@media(max-width: 900px){ .layout { grid-template-columns: 1fr; } }
+/* RESPONSIVE MOBILE TỐI ƯU */
+@media(max-width: 900px){ 
+  .layout { display: flex; flex-direction: column; } 
+  .side-panel { order: -1; } /* Kéo Lịch sắp tới lên trên cùng ở Mobile */
+}
 @media(max-width: 768px){
   .app { grid-template-columns: 1fr; padding-bottom: 80px; } 
   .sidebar { position: fixed; bottom: 0; left: 0; right: 0; top: auto; height: 75px; flex-direction: row; padding: 0; border-top: 1px solid var(--line); z-index: 99; background: #ffffff; box-shadow: 0 -10px 25px rgba(0,0,0,0.05); }
@@ -247,7 +255,7 @@ body.role-staff .staff-only-block { display: block !important; }
   .stat { padding: 16px; }
   .stat-num { font-size: 24px; }
   .filters .field { flex: 1; min-width: 140px; }
-  .actions .primary { display: none; } 
+  
   .modal-backdrop { align-items: flex-end; padding: 0; }
   .modal { width: 100%; border-radius: 28px 28px 0 0; max-height: 92vh; margin: 0; }
   .modal-head { padding: 20px 24px; border-radius: 28px 28px 0 0; }
@@ -281,8 +289,8 @@ body.role-staff .staff-only-block { display: block !important; }
     </nav>
     <div class="sidebar-bottom">
       <button class="btn primary admin-only admin-only-block" id="sideAdd" style="padding:16px; font-size:14.5px; width: 100%;">＋ Thêm lịch mới</button>
-      <button class="btn" id="loginBtn" style="margin-top:12px; width:100%; justify-content:center; display:none; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff;" onclick="window.loginAdmin()">Đăng nhập Admin</button>
-      <button class="btn danger admin-only" id="logoutBtn" style="margin-top:12px; width:100%; justify-content:center; background: #7f1d1d; color: #fecaca; border: none;" onclick="window.logoutAdmin()">Đăng xuất</button>
+      <button class="btn guest-only login-btn-ui" style="margin-top:12px; width:100%; justify-content:center; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff;" onclick="window.loginAdmin()">Đăng nhập Admin</button>
+      <button class="btn danger admin-only logout-btn-ui" style="margin-top:12px; width:100%; justify-content:center; background: #7f1d1d; color: #fecaca; border: none;" onclick="window.logoutAdmin()">Đăng xuất</button>
     </div>
   </aside>
 
@@ -291,8 +299,11 @@ body.role-staff .staff-only-block { display: block !important; }
       <div class="topbar-left">
         <div><h2 class="title">Bảng điều khiển</h2><div class="subtitle" id="todayText"></div></div>
       </div>
-      <div class="actions admin-only">
-        <button class="btn primary" id="addBtn">＋ Thêm lịch</button>
+      <div class="actions" style="display:flex; gap:10px;">
+        <!-- Nút thêm lịch và đăng nhập cho Mobile -->
+        <button class="btn primary admin-only" id="addBtn">＋ Thêm lịch</button>
+        <button class="btn guest-only login-btn-ui" style="font-weight:700; display:none;" onclick="window.loginAdmin()">Đăng nhập Admin</button>
+        <button class="btn danger admin-only logout-btn-ui" style="font-weight:700; display:none;" onclick="window.logoutAdmin()">Đăng xuất</button>
       </div>
     </div>
 
@@ -395,7 +406,6 @@ body.role-staff .staff-only-block { display: block !important; }
                   <label for="eventName">Tên lịch / Khách hàng</label>
                   <input id="eventName" required placeholder="VD: Đám cưới Minh & Linh" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()">
               </div>
-              <!-- Checkbox Rước dâu -->
               <div class="admin-only admin-only-flex" style="align-items:center; gap:8px; margin-top: 22px; background:#fafafa; padding:10px 16px; border-radius:12px; border:1px solid var(--line);">
                   <input type="checkbox" id="eventIsRuocDau" style="width:20px; height:20px; accent-color:var(--primary); cursor:pointer;" onchange="window.updateModalVisibility(); window.renderEventStaffList();">
                   <label for="eventIsRuocDau" style="margin:0; cursor:pointer; font-weight:800; color:var(--text);">Rước dâu (2 nhà)</label>
@@ -416,15 +426,15 @@ body.role-staff .staff-only-block { display: block !important; }
           <!-- THỜI GIAN ĐỘNG -->
           <div class="form-group normal-time"><label for="eventStart">Giờ bắt đầu</label><input id="eventStart" type="time" onchange="window.checkConflict();"></div>
           
-          <div class="form-group ruocdau-time" style="display:none;">
-              <div style="display:flex; gap:16px; flex-wrap:wrap;">
-                  <div style="flex:1; min-width:140px;">
-                      <label for="eventStartTrai" style="color:#0369a1;">⏰ Giờ Nhà Trai</label>
-                      <input id="eventStartTrai" type="time" onchange="window.checkConflict();" style="width:100%; margin-top:6px;">
+          <div class="form-group full ruocdau-time" style="display:none;">
+              <div style="display:flex; gap:24px; flex-wrap:wrap;">
+                  <div style="flex:1; min-width:200px;">
+                      <label for="eventStartTrai" style="color:#0369a1; font-size:14.5px;">⏰ Giờ Nhà Trai</label>
+                      <input id="eventStartTrai" type="time" onchange="window.checkConflict();" style="width:100%; margin-top:8px;">
                   </div>
-                  <div style="flex:1; min-width:140px;">
-                      <label for="eventStartGai" style="color:#be185d;">⏰ Giờ Nhà Gái</label>
-                      <input id="eventStartGai" type="time" onchange="window.checkConflict();" style="width:100%; margin-top:6px;">
+                  <div style="flex:1; min-width:200px;">
+                      <label for="eventStartGai" style="color:#be185d; font-size:14.5px;">⏰ Giờ Nhà Gái</label>
+                      <input id="eventStartGai" type="time" onchange="window.checkConflict();" style="width:100%; margin-top:8px;">
                   </div>
               </div>
           </div>
@@ -463,8 +473,8 @@ body.role-staff .staff-only-block { display: block !important; }
             <div id="eventStaff" class="staff-picker" style="padding:0; border:none; background:transparent;"></div>
           </div>
           
-          <!-- ĐỊA ĐIỂM ĐỘNG -->
-          <div class="form-group step2-item normal-loc" style="display:none">
+          <!-- ĐỊA ĐIỂM ĐỘNG CHUNG HÀNG -->
+          <div class="form-group full step2-item normal-loc" style="display:none">
             <label>Địa điểm</label>
             <div style="position:relative; width: 100%;">
                 <input id="eventLocation" placeholder="Tên đường hoặc Link Google Maps..." autocomplete="off" style="width:100%;">
@@ -472,52 +482,55 @@ body.role-staff .staff-only-block { display: block !important; }
             </div>
           </div>
 
-          <div class="form-group step2-item ruocdau-loc" style="display:none">
-            <label style="color:#0369a1;">📍 Địa điểm Nhà Trai</label>
-            <div style="position:relative; width: 100%;">
-                <input id="eventLocationTrai" placeholder="Tên đường hoặc Link Google Maps..." autocomplete="off" style="width:100%;">
-                <div class="autocomplete-suggestions"></div>
-            </div>
-          </div>
-
-          <div class="form-group step2-item ruocdau-loc" style="display:none">
-            <label style="color:#be185d;">📍 Địa điểm Nhà Gái</label>
-            <div style="position:relative; width: 100%;">
-                <input id="eventLocationGai" placeholder="Tên đường hoặc Link Google Maps..." autocomplete="off" style="width:100%;">
-                <div class="autocomplete-suggestions"></div>
+          <div class="form-group full step2-item ruocdau-loc" style="display:none">
+            <div style="display:flex; gap:24px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:200px; position:relative;">
+                    <label style="color:#0369a1; font-size:14.5px;">📍 Địa điểm Nhà Trai</label>
+                    <input id="eventLocationTrai" placeholder="Link Map / Tên đường..." autocomplete="off" style="width:100%; margin-top:8px;">
+                    <div class="autocomplete-suggestions"></div>
+                </div>
+                <div style="flex:1; min-width:200px; position:relative;">
+                    <label style="color:#be185d; font-size:14.5px;">📍 Địa điểm Nhà Gái</label>
+                    <input id="eventLocationGai" placeholder="Link Map / Tên đường..." autocomplete="off" style="width:100%; margin-top:8px;">
+                    <div class="autocomplete-suggestions"></div>
+                </div>
             </div>
           </div>
 
           <!-- SĐT ĐỘNG -->
-          <div class="form-group step2-item normal-phone" style="display:none">
+          <div class="form-group full step2-item normal-phone" style="display:none">
             <label for="eventPhone">Số điện thoại khách</label>
             <input id="eventPhone" placeholder="090...">
           </div>
 
-          <div class="form-group step2-item ruocdau-phone" style="display:none">
-            <div style="display:flex; gap:16px; flex-wrap:wrap;">
-                <div style="flex:1; min-width:140px;">
-                    <label for="eventPhoneTrai" style="color:#0369a1;">📞 SĐT Nhà Trai</label>
-                    <input id="eventPhoneTrai" placeholder="090..." style="width:100%; margin-top:6px;">
+          <div class="form-group full step2-item ruocdau-phone" style="display:none">
+            <div style="display:flex; gap:24px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:200px;">
+                    <label for="eventPhoneTrai" style="color:#0369a1; font-size:14.5px;">📞 SĐT Nhà Trai</label>
+                    <input id="eventPhoneTrai" placeholder="090..." style="width:100%; margin-top:8px;">
                 </div>
-                <div style="flex:1; min-width:140px;">
-                    <label for="eventPhoneGai" style="color:#be185d;">📞 SĐT Nhà Gái</label>
-                    <input id="eventPhoneGai" placeholder="090..." style="width:100%; margin-top:6px;">
+                <div style="flex:1; min-width:200px;">
+                    <label for="eventPhoneGai" style="color:#be185d; font-size:14.5px;">📞 SĐT Nhà Gái</label>
+                    <input id="eventPhoneGai" placeholder="090..." style="width:100%; margin-top:8px;">
                 </div>
             </div>
           </div>
           
-          <!-- NHÓM TIỀN BẠC -->
-          <div class="form-group step3-item" style="display:none" id="priceGroup">
-            <label for="eventPrice">Giá trị booking</label>
-            <div class="currency-wrap">
-              <input id="eventPrice" type="text" inputmode="numeric" oninput="window.formatMoneyInput(this); window.updateDepositLabel()" placeholder="1.200">
-            </div>
-          </div>
-          <div class="form-group step3-item" style="display:none" id="depositGroup">
-            <label for="eventDeposit" id="depositLabel">Đã cọc</label>
-            <div class="currency-wrap">
-              <input id="eventDeposit" type="text" inputmode="numeric" oninput="window.formatMoneyInput(this); window.updateDepositLabel()" placeholder="300">
+          <!-- NHÓM TIỀN BẠC NẰM CHUNG HÀNG -->
+          <div class="form-group full step3-item" style="display:none" id="financeGroup">
+            <div style="display:flex; gap:24px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:200px;">
+                    <label for="eventPrice">Giá trị booking</label>
+                    <div class="currency-wrap" style="margin-top:8px;">
+                      <input id="eventPrice" type="text" inputmode="numeric" oninput="window.formatMoneyInput(this); window.updateDepositLabel()" placeholder="1.200">
+                    </div>
+                </div>
+                <div style="flex:1; min-width:200px;">
+                    <label for="eventDeposit" id="depositLabel">Đã cọc</label>
+                    <div class="currency-wrap" style="margin-top:8px;">
+                      <input id="eventDeposit" type="text" inputmode="numeric" oninput="window.formatMoneyInput(this); window.updateDepositLabel()" placeholder="300">
+                    </div>
+                </div>
             </div>
           </div>
           
@@ -689,9 +702,17 @@ else if (staffViewId) currentUserRole = 'staff';
 
 function applyRoleUI() {
     document.body.className = `role-${currentUserRole}`;
-    const loginBtn = document.getElementById('loginBtn'); const logoutBtn = document.getElementById('logoutBtn');
-    if(loginBtn) loginBtn.style.display = (currentUserRole === 'guest') ? 'flex' : 'none';
-    if(logoutBtn) logoutBtn.style.display = (currentUserRole === 'admin') ? 'flex' : 'none';
+    
+    // Tự động gán UI ẩn/hiện cho các nút dùng class guest-only / admin-only
+    const loginBtns = document.querySelectorAll('.login-btn-ui'); 
+    const logoutBtns = document.querySelectorAll('.logout-btn-ui');
+    
+    loginBtns.forEach(b => {
+        b.style.display = (currentUserRole === 'guest') ? (b.classList.contains('guest-only-inline') ? 'inline-flex' : 'flex') : 'none';
+    });
+    logoutBtns.forEach(b => {
+        b.style.display = (currentUserRole === 'admin') ? 'flex' : 'none';
+    });
 }
 
 window.loginAdmin = function() {
@@ -1210,31 +1231,31 @@ function renderUpcoming(){
 
     const myAssignment = e.assignments.find(a => a.id === staffViewId);
     
-    // GÓC NHÌN THỢ (Tự động hiển thị giờ/địa điểm theo nhiệm vụ của Thợ)
     let myTime = e.start || 'Chưa định';
     let myLoc = e.location || '';
-    let locLabel = '<b style="color:var(--muted); min-width: 120px;">📍 Địa điểm:</b>';
-    let timeLabel = '<b style="color:var(--muted); min-width: 120px;">⏰ Bắt đầu:</b>';
+    let locLabel = '<b style="color:var(--muted); min-width: 100px;">📍 Địa điểm:</b>';
+    let timeLabel = '<b style="color:var(--muted); min-width: 100px;">⏰ Bắt đầu:</b>';
     let myPhoneHtml = '';
+    let mapText = '📍 Định vị';
     
     if (e.isRuocDau && myAssignment && myAssignment.locType) {
         myTime = myAssignment.locType === 'Nhà trai' ? (e.startTrai || 'Chưa định') : (e.startGai || 'Chưa định');
         myLoc = myAssignment.locType === 'Nhà trai' ? e.locTrai : e.locGai;
         let cCol = myAssignment.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
-        locLabel = `<b style="color:${cCol}; min-width: 120px;">📍 Địa điểm (${myAssignment.locType}):</b>`;
-        timeLabel = `<b style="color:${cCol}; min-width: 120px;">⏰ Có mặt (${myAssignment.locType}):</b>`;
+        locLabel = `<b style="color:${cCol}; min-width: 100px;">📍 Địa điểm:</b>`;
+        timeLabel = `<b style="color:${cCol}; min-width: 100px;">⏰ Có mặt:</b>`;
+        mapText = myAssignment.locType === 'Nhà trai' ? '📍 Định vị Nhà Trai' : '📍 Định vị Nhà Gái';
         
         let pStr = myAssignment.locType === 'Nhà trai' ? e.phoneTrai : e.phoneGai;
         if (pStr) {
-            myPhoneHtml = `<div style="display: flex; gap: 8px;"><b style="color:${cCol}; min-width: 120px;">📞 SĐT (${myAssignment.locType}):</b> <a href="tel:${escapeHtml(pStr)}" style="color:var(--text); font-weight:800; text-decoration:none;">${escapeHtml(pStr)}</a></div>`;
+            myPhoneHtml = `<div style="display: flex; gap: 8px; align-items:center;"><b style="color:${cCol}; min-width: 100px;">📞 Khách hàng:</b> <a href="tel:${escapeHtml(pStr)}" style="color:var(--text); font-weight:800; text-decoration:none; background:#f4f4f5; padding:4px 12px; border-radius:99px; border:1px solid var(--line);">Gọi số ${escapeHtml(myAssignment.locType)}</a></div>`;
         }
     } else {
-        // Lịch thường hoặc Thợ đi chung 2 nhà mà không phân chia cụ thể
         if (e.isRuocDau) {
-             if(e.phoneTrai) myPhoneHtml += `<div style="display: flex; gap: 8px;"><b style="color:#0369a1; min-width: 120px;">📞 SĐT Nhà trai:</b> <a href="tel:${escapeHtml(e.phoneTrai)}" style="color:var(--text); font-weight:800; text-decoration:none;">${escapeHtml(e.phoneTrai)}</a></div>`;
-             if(e.phoneGai) myPhoneHtml += `<div style="display: flex; gap: 8px;"><b style="color:#be185d; min-width: 120px;">📞 SĐT Nhà gái:</b> <a href="tel:${escapeHtml(e.phoneGai)}" style="color:var(--text); font-weight:800; text-decoration:none;">${escapeHtml(e.phoneGai)}</a></div>`;
+             if(e.phoneTrai) myPhoneHtml += `<div style="display: flex; gap: 8px; align-items:center;"><b style="color:#0369a1; min-width: 100px;">📞 Khách hàng:</b> <a href="tel:${escapeHtml(e.phoneTrai)}" style="color:var(--text); font-weight:800; text-decoration:none; background:#f4f4f5; padding:4px 12px; border-radius:99px; border:1px solid var(--line);">Gọi Nhà trai</a></div>`;
+             if(e.phoneGai) myPhoneHtml += `<div style="display: flex; gap: 8px; align-items:center; margin-top:4px;"><b style="color:#be185d; min-width: 100px;"></b> <a href="tel:${escapeHtml(e.phoneGai)}" style="color:var(--text); font-weight:800; text-decoration:none; background:#f4f4f5; padding:4px 12px; border-radius:99px; border:1px solid var(--line);">Gọi Nhà gái</a></div>`;
         } else {
-             if(e.phone) myPhoneHtml = `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">📞 SĐT:</b> <a href="tel:${escapeHtml(e.phone)}" style="color:var(--text); font-weight:800; text-decoration:none;">${escapeHtml(e.phone)}</a></div>`;
+             if(e.phone) myPhoneHtml = `<div style="display: flex; gap: 8px; align-items:center;"><b style="color:var(--muted); min-width: 100px;">📞 Khách hàng:</b> <a href="tel:${escapeHtml(e.phone)}" style="color:var(--text); font-weight:800; text-decoration:none; background:#f4f4f5; padding:4px 12px; border-radius:99px; border:1px solid var(--line);">Gọi ngay</a></div>`;
         }
     }
 
@@ -1250,12 +1271,12 @@ function renderUpcoming(){
         </div>
         
         <div style="font-size: 13.5px; color: var(--text); line-height: 1.8; width: 100%;">
-            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 100px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
             <div style="display: flex; gap: 8px;">${timeLabel} <span style="font-weight:800; color:var(--primary);">${escapeHtml(myTime)}</span></div>
             
-            ${myLoc ? `<div style="display: flex; gap: 8px;">${locLabel} <a href="${mapHref}" target="_blank" style="color:var(--blue); font-weight:700; text-decoration:none;">${escapeHtml(myLoc)}</a></div>` : ''}
+            ${myLoc ? `<div style="display: flex; gap: 8px; align-items:center;">${locLabel} <a href="${mapHref}" target="_blank" style="color:var(--blue); font-weight:700; text-decoration:none; background: #eff6ff; padding: 4px 12px; border-radius: 99px; border: 1px solid #bfdbfe;">${mapText}</a></div>` : ''}
             
-            ${myPhoneHtml}
+            <div style="margin-top:4px;">${myPhoneHtml}</div>
             
             ${e.note ? `<div style="margin-top: 12px; padding: 12px; background: #fefce8; border: 1px dashed #fef08a; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú chung:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
         </div>
@@ -1417,7 +1438,12 @@ window.updateModalVisibility = function() {
         el.style.display = nameVal ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; 
     });
     
-    document.querySelectorAll('.step3-item').forEach(el => { 
+    // Toggle tài chính (Nằm chung hàng)
+    const financeGroup = document.getElementById('financeGroup');
+    if(financeGroup) {
+        financeGroup.style.display = (nameVal && hasLoc) ? 'block' : 'none';
+    }
+    document.querySelectorAll('.step3-item:not(#financeGroup)').forEach(el => { 
         el.style.display = (nameVal && hasLoc) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; 
     });
     
@@ -1722,11 +1748,7 @@ window.openEventModal = function(prefill={}){
 
   const sFilters = document.getElementById('staffFiltersContainer'); if (sFilters) sFilters.style.display = isAdmin ? 'flex' : 'none';
 
-  const pGroup = document.getElementById('priceGroup'); const dGroup = document.getElementById('depositGroup'); const prodSec = document.getElementById('productsSection');
-  if (pGroup) pGroup.style.display = isAdmin ? 'block' : 'none';
-  if (dGroup) dGroup.style.display = isAdmin ? 'block' : 'none';
-  if (prodSec) prodSec.style.display = isAdmin ? 'block' : 'none';
-
+  // Khóa Input nếu không phải Admin
   document.querySelectorAll('#eventForm input, #eventForm select, #eventForm textarea').forEach(el => {
       if (el.id.includes('link-input')) return; 
       if (!isAdmin) {
@@ -1870,10 +1892,15 @@ window.addStaff = function(){
   renderStaffManage();showToast('Đã thêm nhân sự');
 }
 
-document.addEventListener('click',e=>{
-  const chip=e.target.closest('[data-id]'); 
-  if(chip && (chip.classList.contains('event-chip')||chip.classList.contains('mini-item')||chip.classList.contains('agenda-event'))) {
-      window.openEventModal({id:chip.dataset.id});
+// Bắt sự kiện Click tổng quan: Đã loại bỏ click vào link/nút mở nhầm Modal
+document.addEventListener('click', e => {
+  if(e.target.closest('a') || e.target.closest('button')) return; // Chặn nổi bọt nếu bấm link/button
+  const chip = e.target.closest('[data-id]'); 
+  if(chip) {
+      if (chip.classList.contains('mini-item')) return; // Chặn bấm vào Lịch sắp tới
+      if (chip.classList.contains('event-chip') || chip.classList.contains('agenda-event')) {
+          window.openEventModal({id:chip.dataset.id});
+      }
   }
 });
 
