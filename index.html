@@ -227,6 +227,31 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
 .kpi-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; margin: 14px 0; color: #52525b; }
 .staff-picker { border-radius: 14px; max-height: 400px; overflow-y: auto; }
 
+/* AUDIT LOG + STAFF ACTIVITY FEED */
+.audit-log-list, .staff-activity-list { display:grid; gap:10px; margin-top:16px; max-height:430px; overflow-y:auto; padding-right:4px; }
+.audit-log-item, .staff-activity-item { position:relative; display:flex; gap:12px; align-items:flex-start; padding:14px 16px; border:1px solid var(--line); border-left:4px solid #d4d4d8; border-radius:14px; background:#fff; }
+.audit-log-item .audit-dot, .staff-activity-item .audit-dot { width:10px; height:10px; border-radius:50%; background:#a1a1aa; flex:0 0 auto; margin-top:5px; }
+.audit-log-item.warning, .staff-activity-item.warning { border-left-color:var(--orange); background:#fffbeb; }
+.audit-log-item.warning .audit-dot, .staff-activity-item.warning .audit-dot { background:var(--orange); }
+.audit-log-item.danger, .staff-activity-item.danger { border-left-color:var(--red); background:#fef2f2; }
+.audit-log-item.danger .audit-dot, .staff-activity-item.danger .audit-dot { background:var(--red); }
+.audit-log-item.success, .staff-activity-item.success { border-left-color:var(--green); background:#ecfdf5; }
+.audit-log-item.success .audit-dot, .staff-activity-item.success .audit-dot { background:var(--green); }
+.audit-log-item.info, .staff-activity-item.info { border-left-color:var(--blue); background:#eff6ff; }
+.audit-log-item.info .audit-dot, .staff-activity-item.info .audit-dot { background:var(--blue); }
+.audit-main { min-width:0; flex:1; }
+.audit-title { font-size:13.5px; font-weight:800; color:var(--text); line-height:1.45; }
+.audit-sub { margin-top:4px; font-size:12px; color:var(--muted); line-height:1.5; font-weight:600; }
+.audit-time { white-space:nowrap; font-size:11px; color:#71717a; font-weight:700; }
+.audit-filter-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+.audit-filter-row .btn { padding:7px 12px; font-size:12px; }
+.staff-activity-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
+.staff-activity-head .badge { font-size:10.5px; padding:3px 8px; border-radius:99px; font-weight:800; border:1px solid transparent; }
+.staff-activity-item.warning .badge { background:#fef3c7; color:#92400e; border-color:#fde68a; }
+.staff-activity-item.danger .badge { background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+.staff-activity-item.info .badge { background:#dbeafe; color:#1d4ed8; border-color:#bfdbfe; }
+.staff-activity-item.success .badge { background:#d1fae5; color:#047857; border-color:#a7f3d0; }
+
 #loadingOverlay { position: fixed; inset: 0; background: rgba(244, 244, 245, 0.95); backdrop-filter: blur(10px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s; }
 #loadingOverlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 .loading-logo { width: 80px; height: 80px; border-radius: 20px; background: #fff; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; box-shadow: var(--shadow-md); overflow: hidden; border: 1px solid var(--line); }
@@ -353,6 +378,12 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
         <div class="panel side-card staff-only-block" id="upcomingListPanel" style="display:none;">
           <h3>Lịch sắp tới của bạn</h3>
           <div class="mini-list" id="upcomingList"></div>
+          <div style="height:1px;background:var(--line);margin:24px 0 20px"></div>
+          <div class="staff-activity-head">
+            <h3 style="margin:0;font-size:16px;">Thông báo từ Admin</h3>
+            <span id="staffActivityBadge" class="pill orange" style="display:none">Mới</span>
+          </div>
+          <div id="staffActivityList" class="staff-activity-list"></div>
         </div>
         
         <div class="panel side-card admin-only admin-only-block">
@@ -616,8 +647,26 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
     <div class="modal-head"><div class="modal-title">Cài đặt</div><button type="button" class="icon-btn" onclick="window.smoothClose('settingsModal')" style="border:0;background:#f4f4f5;border-radius:50%">✕</button></div>
     <div class="modal-body">
       <p style="font-size:14.5px; color:var(--muted); line-height:1.6; margin-top:0">Hệ thống đồng bộ Thời gian thực. Nếu mất mạng, App tự động chuyển sang chế độ Offline.</p>
-      <div style="display:grid;gap:16px; margin-top: 32px">
-        <button type="button" class="btn danger" id="clearAll" style="justify-content:center;">⚠️ Làm sạch toàn bộ CSDL</button>
+      <div style="margin-top:32px; border-top:1px solid var(--line); padding-top:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+          <div>
+            <h3 style="margin:0;font-size:17px;font-weight:800;">Nhật ký hoạt động</h3>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:5px;font-weight:600;">Theo dõi ai đã thêm, sửa, phân công, xóa hoặc thay đổi dữ liệu.</div>
+          </div>
+          <span class="pill blue">Admin Log</span>
+        </div>
+        <div class="audit-filter-row">
+          <button type="button" class="btn ghost" data-audit-filter="all">Tất cả</button>
+          <button type="button" class="btn ghost" data-audit-filter="booking">Lịch</button>
+          <button type="button" class="btn ghost" data-audit-filter="staff">Nhân sự</button>
+          <button type="button" class="btn ghost" data-audit-filter="source">Source</button>
+          <button type="button" class="btn ghost" data-audit-filter="payroll">Lương</button>
+        </div>
+        <input id="auditSearchInput" class="field" placeholder="Tìm trong nhật ký..." style="width:100%;margin-top:12px;">
+        <div id="auditLogList" class="audit-log-list"></div>
+      </div>
+      <div style="display:grid;gap:16px; margin-top: 24px">
+        <button type="button" class="btn danger" id="clearAll" style="justify-content:center;">⚠️ Làm sạch dữ liệu lịch / thợ / lương</button>
       </div>
     </div>
   </div>
@@ -804,7 +853,7 @@ window.copyText = function(txt) {
     navigator.clipboard.writeText(txt).then(() => showToast('Đã copy!')).catch(() => showToast('Lỗi copy!'));
 }
 
-function defaultData(){ return { staff: [], payroll: {}, events: [] } }
+function defaultData(){ return { staff: [], payroll: {}, events: [], auditLogs: [] } }
 
 function normalizeCollection(value) {
     if (Array.isArray(value)) return value.filter(Boolean);
@@ -823,6 +872,7 @@ function sanitizeData(d) {
     d.staff = normalizeCollection(d.staff);
     d.events = normalizeCollection(d.events);
     if(!d.payroll || typeof d.payroll !== 'object' || Array.isArray(d.payroll)) d.payroll = {};
+    d.auditLogs = normalizeCollection(d.auditLogs);
     d.events.forEach(e => {
         if(e.isRuocDau === undefined) e.isRuocDau = false;
         if(!Array.isArray(e.assignments)) e.assignments = normalizeCollection(e.assignments);
@@ -857,6 +907,172 @@ function dbRemove(path) {
         console.error('Firebase remove error:', err);
         showToast('Đã lưu Offline');
     });
+}
+
+const AUDIT_META = {
+    EVENT_CREATED: {label:'Tạo lịch', category:'booking'},
+    EVENT_UPDATED: {label:'Cập nhật lịch', category:'booking'},
+    EVENT_DELETED: {label:'Xóa lịch', category:'booking'},
+    STAFF_ASSIGNED: {label:'Phân công thợ', category:'staff'},
+    STAFF_REMOVED: {label:'Gỡ thợ khỏi lịch', category:'staff'},
+    STAFF_ADDED: {label:'Thêm nhân sự', category:'staff'},
+    STAFF_DELETED: {label:'Xóa nhân sự', category:'staff'},
+    SOURCE_SUBMITTED: {label:'Nộp Source', category:'source'},
+    SOURCE_UPDATED: {label:'Cập nhật Source', category:'source'},
+    PAYROLL_UPDATED: {label:'Cập nhật lương', category:'payroll'},
+    SYSTEM_CLEAR: {label:'Làm sạch dữ liệu', category:'system'}
+};
+
+let currentAuditFilter = 'all';
+
+function getActorSnapshot() {
+    try {
+        const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+        if(user) return { id:user.uid || 'admin', name:user.displayName || user.email || 'Admin', role:'admin' };
+    } catch(e) {}
+    const staff = data.staff.find(s => s.id === staffViewId);
+    return staff ? { id:staff.id, name:staff.name, role:'staff' } : { id:currentUserRole || 'guest', name:currentUserRole === 'admin' ? 'Admin' : 'Khách', role:currentUserRole };
+}
+
+function writeAuditLog(action, opts = {}) {
+    const meta = AUDIT_META[action] || {label:action, category:opts.category || 'system'};
+    const actor = getActorSnapshot();
+    const log = {
+        id: 'log_' + uid(),
+        timestamp: Date.now(),
+        actorId: actor.id,
+        actorName: actor.name,
+        actorRole: actor.role,
+        action,
+        actionLabel: meta.label,
+        category: opts.category || meta.category,
+        severity: opts.severity || 'info',
+        targetType: opts.targetType || '',
+        targetId: opts.targetId || '',
+        targetStaffIds: Array.isArray(opts.targetStaffIds) ? opts.targetStaffIds : [],
+        eventName: opts.eventName || '',
+        eventDate: opts.eventDate || '',
+        message: opts.message || meta.label,
+        staffMessageType: opts.staffMessageType || '',
+        metadata: opts.metadata || {},
+        changes: opts.changes || {}
+    };
+    data.auditLogs.push(log);
+    if(data.auditLogs.length > 1000) data.auditLogs = data.auditLogs.slice(-1000);
+    persistLocal();
+    return dbSet(`auditLogs/${log.id}`, log);
+}
+
+function formatAuditTime(ts) {
+    return new Date(Number(ts || 0)).toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function staffNameById(id) { return data.staff.find(s => s.id === id)?.name || id || 'Nhân sự'; }
+
+function eventRelevantChanges(oldE, newE, staffId) {
+    const oldA = (oldE.assignments || []).find(a => a.id === staffId) || {};
+    const newA = (newE.assignments || []).find(a => a.id === staffId) || {};
+    const changes = [];
+    if((oldE.date||'') !== (newE.date||'')) changes.push(`ngày ${formatDate(oldE.date)} → ${formatDate(newE.date)}`);
+    const oldStart = getAssignmentStart(oldE, oldA) || '';
+    const newStart = getAssignmentStart(newE, newA) || '';
+    if(oldStart !== newStart) changes.push(`giờ ${oldStart || '—'} → ${newStart || '—'}`);
+    if((oldE.end||'') !== (newE.end||'')) changes.push(`kết thúc ${oldE.end || '—'} → ${newE.end || '—'}`);
+    if((oldA.task||'') !== (newA.task||'')) changes.push(`nhiệm vụ ${oldA.task || 'chưa xếp'} → ${newA.task || 'chưa xếp'}`);
+    if((oldA.locType||'') !== (newA.locType||'')) changes.push(`vị trí ${oldA.locType || 'Chung'} → ${newA.locType || 'Chung'}`);
+    const oldLoc = oldA.locType === 'Nhà trai' ? oldE.locTrai : oldA.locType === 'Nhà gái' ? oldE.locGai : oldE.location;
+    const newLoc = newA.locType === 'Nhà trai' ? newE.locTrai : newA.locType === 'Nhà gái' ? newE.locGai : newE.location;
+    if((oldLoc||'') !== (newLoc||'')) changes.push('địa điểm');
+    if((oldA.link||'') !== (newA.link||'')) changes.push('Source');
+    if((oldE.name||'') !== (newE.name||'')) changes.push(`tên lịch “${oldE.name || '—'}” → “${newE.name || '—'}”`);
+    return changes;
+}
+
+function getStaffAuditMessage(log, staffId) {
+    const m = log.metadata || {};
+    const name = log.eventName || 'lịch';
+    const dateText = log.eventDate ? formatDate(log.eventDate) : 'ngày chưa xác định';
+    switch(log.action) {
+        case 'EVENT_CREATED': {
+            const added = (m.createdStaffIds || []).includes(staffId);
+            const coworkers = (m.createdStaffIds || []).filter(id => id !== staffId).map(staffNameById);
+            return added
+              ? `Admin vừa thêm bạn vào ${name} ngày ${dateText}${coworkers.length ? ` để đi cùng ${coworkers.join(', ')}` : ''}.`
+              : `Admin vừa tạo ${name} ngày ${dateText}.`;
+        }
+        case 'STAFF_ASSIGNED': {
+            const added = m.affectedStaffId === staffId;
+            const coworkers = (m.coworkerIds || []).filter(id => id !== staffId).map(staffNameById);
+            return added
+              ? `Admin vừa thêm bạn vào ${name} ngày ${dateText}${coworkers.length ? ` để đi cùng ${coworkers.join(', ')}` : ''}.`
+              : `Admin vừa thêm ${staffNameById(m.affectedStaffId)} vào ${name} ngày ${dateText} để đi chung với bạn.`;
+        }
+        case 'STAFF_REMOVED':
+            if(m.affectedStaffId === staffId) return `Admin vừa thay đổi phân công: bạn đã được gỡ khỏi ${name} ngày ${dateText}.`;
+            return `Admin vừa gỡ ${staffNameById(m.affectedStaffId)} khỏi ${name} ngày ${dateText}.`;
+        case 'EVENT_UPDATED':
+            return `Admin vừa thay đổi ${name} ngày ${dateText}${m.details ? `: ${m.details}.` : '.'}`;
+        case 'EVENT_DELETED':
+            return `Admin vừa xoá lịch ${name} ngày ${dateText}.`;
+        case 'SOURCE_SUBMITTED':
+            return `Source của ${name} ngày ${dateText} vừa được nộp.`;
+        case 'SOURCE_UPDATED':
+            return `Source của ${name} ngày ${dateText} vừa được cập nhật.`;
+        default:
+            return log.message || log.actionLabel || 'Có thay đổi mới.';
+    }
+}
+
+function renderStaffActivityLog() {
+    const el = document.getElementById('staffActivityList');
+    if(!el || currentUserRole !== 'staff') return;
+    const staffVisibleActions = new Set(['EVENT_CREATED','STAFF_ASSIGNED','STAFF_REMOVED','EVENT_UPDATED','EVENT_DELETED','SOURCE_SUBMITTED','SOURCE_UPDATED']);
+    const logs = data.auditLogs
+      .filter(l => staffVisibleActions.has(l.action))
+      .filter(l => Array.isArray(l.targetStaffIds) && l.targetStaffIds.includes(staffViewId))
+      .sort((a,b)=>(b.timestamp||0)-(a.timestamp||0))
+      .slice(0,50);
+    const badge = document.getElementById('staffActivityBadge');
+    const alertCount = logs.filter(l => ['danger','warning'].includes(l.severity)).length;
+    if(badge) { badge.style.display = alertCount ? 'inline-flex' : 'none'; badge.textContent = alertCount ? `${alertCount} lưu ý` : ''; }
+    el.innerHTML = logs.length ? logs.map(log => {
+        const sev = ['danger','warning','success','info'].includes(log.severity) ? log.severity : 'info';
+        const label = sev === 'danger' ? '⚠️ Quan trọng' : sev === 'warning' ? '🔔 Cập nhật' : sev === 'success' ? '✓ Đã ghi nhận' : 'ℹ Thông báo';
+        return `<div class="staff-activity-item ${sev}">
+          <div class="audit-dot"></div>
+          <div class="audit-main">
+            <div class="staff-activity-head"><div class="audit-title">${escapeHtml(getStaffAuditMessage(log, staffViewId))}</div><span class="badge">${label}</span></div>
+            <div class="audit-sub">${escapeHtml(log.actorName || 'Admin')} · ${escapeHtml(formatAuditTime(log.timestamp))}</div>
+          </div>
+        </div>`;
+    }).join('') : '<div class="empty" style="padding:18px;background:#fafafa;border-radius:14px">Chưa có thông báo hoạt động.</div>';
+}
+
+function renderAuditLog() {
+    const el = document.getElementById('auditLogList');
+    if(!el || currentUserRole !== 'admin') return;
+    const q = (document.getElementById('auditSearchInput')?.value || '').trim().toLowerCase();
+    const logs = data.auditLogs.slice().sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).filter(log => {
+        if(currentAuditFilter !== 'all' && log.category !== currentAuditFilter) return false;
+        if(q) {
+            const hay = [log.actorName, log.actionLabel, log.message, log.eventName, log.eventDate, log.metadata?.details].join(' ').toLowerCase();
+            if(!hay.includes(q)) return false;
+        }
+        return true;
+    }).slice(0,150);
+    el.innerHTML = logs.length ? logs.map(log => {
+        const sev = ['danger','warning','success','info'].includes(log.severity) ? log.severity : 'info';
+        const staffText = (log.targetStaffIds||[]).map(staffNameById).join(', ');
+        const targetText = log.eventName ? `${log.eventName}${log.eventDate ? ` · ${formatDate(log.eventDate)}` : ''}` : (staffText || 'Hệ thống');
+        return `<div class="audit-log-item ${sev}">
+          <div class="audit-dot"></div>
+          <div class="audit-main">
+            <div class="audit-title">${escapeHtml(log.actionLabel || log.action)} · ${escapeHtml(log.actorName || 'Người dùng')}</div>
+            <div class="audit-sub">${escapeHtml(log.message || '')}${targetText ? ` · ${escapeHtml(targetText)}` : ''}${staffText ? ` · Thợ: ${escapeHtml(staffText)}` : ''}</div>
+          </div>
+          <div class="audit-time">${escapeHtml(formatAuditTime(log.timestamp))}</div>
+        </div>`;
+    }).join('') : '<div class="empty" style="padding:24px;background:#fafafa;border-radius:14px">Chưa có nhật ký hoạt động.</div>';
 }
 
 function setupDefaultFilters() {
@@ -1329,6 +1545,11 @@ window.savePayroll = function() {
   data.payroll[monthStr][staffId] = { advance, paid };
   
   dbSet(`payroll/${monthStr}/${staffId}`, { advance, paid });
+  writeAuditLog('PAYROLL_UPDATED', {
+      severity:'info', category:'payroll', targetType:'payroll', targetId:`${monthStr}_${staffId}`,
+      targetStaffIds:[staffId], message:`Cập nhật lương ${staffNameById(staffId)} tháng ${monthStr}`,
+      metadata:{month:monthStr, staffId, advance, paid}
+  });
   
   window.smoothClose('payrollModal'); render(); showToast('Đã cập nhật lương');
 }
@@ -1540,7 +1761,7 @@ function render(){
   } else {
       renderPayroll(); const mf = document.getElementById('mainFilters'); if(mf) mf.style.display = 'none';
   }
-  renderUpcoming(); renderStaffMonthList(); renderMonthSummary();
+  renderUpcoming(); renderStaffActivityLog(); renderStaffMonthList(); renderMonthSummary(); renderAuditLog();
   const options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
   const tt = document.getElementById('todayText'); if(tt) tt.textContent=`Hôm nay · ${new Date().toLocaleDateString('vi-VN', options)}`;
 }
@@ -1654,6 +1875,12 @@ window.saveStaffLinkLocally = function(sId, sName) {
     if(tag) { tag.href = urlInput; tag.innerHTML = `🔗 Bấm xem Source`; }
     document.getElementById('evt-link-edit-'+sId).style.display = 'none';
     document.getElementById('evt-link-view-'+sId).style.display = 'flex';
+    const currentEvent = evId ? data.events.find(e => e.id === evId) : null;
+    writeAuditLog('SOURCE_SUBMITTED', {
+      severity:'success', category:'source', targetType:'assignment', targetId:`${evId || ''}_${sId}`,
+      targetStaffIds:[sId], eventName:currentEvent?.name || 'lịch', eventDate:currentEvent?.date || '',
+      message:`${sName || staffNameById(sId)} vừa nộp Source`, staffMessageType:'source'
+    });
     showToast('Đã nộp Source thành công!');
 }
 
@@ -1985,6 +2212,7 @@ window.checkConflict = function(){
   if (currentUserRole !== 'admin') return;
   const date=document.getElementById('eventDate')?.value; 
   const id=document.getElementById('eventId')?.value;
+  const previousEvent = id ? JSON.parse(JSON.stringify(data.events.find(e => e.id === id) || null)) : null;
   const isRuocDau = document.getElementById('eventIsRuocDau')?.checked;
   const end = document.getElementById('eventEnd')?.value;
   
@@ -2075,6 +2303,57 @@ window.saveEvent = function(){
   if(idx>=0)data.events[idx]=obj; else data.events.push(obj);
   persistLocal();
   dbSet(`events/${obj.id}`, obj);
+
+  const newStaffIds = staffIdsFromAssignments(obj.assignments).filter(sid => !(previousEvent?.assignments || []).some(a => a.id === sid));
+  const removedStaffIds = (previousEvent?.assignments || []).map(a => a.id).filter(sid => !staffIdsFromAssignments(obj.assignments).includes(sid));
+  const coworkersForNew = staffIdsFromAssignments(obj.assignments).filter(sid => !newStaffIds.includes(sid));
+
+  if(!previousEvent) {
+      const targetStaffIds = staffIdsFromAssignments(obj.assignments);
+      writeAuditLog('EVENT_CREATED', {
+          severity:'info', category:'booking', targetType:'event', targetId:obj.id, targetStaffIds,
+          eventName:obj.name, eventDate:obj.date,
+          message:`Admin tạo lịch ${obj.name} ngày ${obj.date}`,
+          metadata:{createdStaffIds:targetStaffIds}
+      });
+  } else {
+      newStaffIds.forEach(affectedId => {
+          const targetStaffIds = Array.from(new Set([affectedId, ...staffIdsFromAssignments(obj.assignments).filter(id => id !== affectedId)]));
+          writeAuditLog('STAFF_ASSIGNED', {
+              severity:'warning', category:'staff', targetType:'event', targetId:obj.id, targetStaffIds,
+              eventName:obj.name, eventDate:obj.date,
+              message:`Thêm ${staffNameById(affectedId)} vào lịch ${obj.name} ngày ${obj.date}`,
+              metadata:{affectedStaffId:affectedId, coworkerIds:coworkersForNew.filter(id => id !== affectedId)}
+          });
+      });
+      removedStaffIds.forEach(affectedId => {
+          const targetStaffIds = Array.from(new Set([affectedId, ...staffIdsFromAssignments(previousEvent.assignments)]));
+          writeAuditLog('STAFF_REMOVED', {
+              severity:'danger', category:'staff', targetType:'event', targetId:obj.id, targetStaffIds,
+              eventName:previousEvent.name || obj.name, eventDate:previousEvent.date || obj.date,
+              message:`Gỡ ${staffNameById(affectedId)} khỏi lịch ${previousEvent.name || obj.name} ngày ${previousEvent.date || obj.date}`,
+              metadata:{affectedStaffId:affectedId, coworkerIds:staffIdsFromAssignments(previousEvent.assignments).filter(id => id !== affectedId)}
+          });
+      });
+      const changeTargetIds = staffIdsFromAssignments(obj.assignments).filter(sid => !newStaffIds.includes(sid)).filter(sid => eventRelevantChanges(previousEvent, obj, sid).length);
+      if(changeTargetIds.length || JSON.stringify(previousEvent) !== JSON.stringify(obj)) {
+          const detailParts = [];
+          if((previousEvent.date||'') !== (obj.date||'')) detailParts.push(`ngày ${formatDate(previousEvent.date)} → ${formatDate(obj.date)}`);
+          if((previousEvent.end||'') !== (obj.end||'')) detailParts.push(`giờ kết thúc ${previousEvent.end || '—'} → ${obj.end || '—'}`);
+          if((previousEvent.name||'') !== (obj.name||'')) detailParts.push('tên lịch');
+          if(JSON.stringify(previousEvent.assignments||[]) !== JSON.stringify(obj.assignments||[])) detailParts.push('phân công');
+          if((previousEvent.location||'') !== (obj.location||'') || (previousEvent.locTrai||'') !== (obj.locTrai||'') || (previousEvent.locGai||'') !== (obj.locGai||'')) detailParts.push('địa điểm');
+          const detail = detailParts.join(', ') || 'thông tin booking';
+          const targetStaffIds = changeTargetIds;
+          writeAuditLog('EVENT_UPDATED', {
+              severity: targetStaffIds.length ? 'warning' : 'info', category:'booking', targetType:'event', targetId:obj.id,
+              targetStaffIds, eventName:obj.name, eventDate:obj.date,
+              message:`Cập nhật lịch ${obj.name} ngày ${obj.date}`,
+              metadata:{details:detail, previousDate:previousEvent.date || '', newDate:obj.date || ''},
+              changes:{detail}
+          });
+      }
+  }
   
   window.smoothClose('eventModal'); render(); showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
 }
@@ -2084,6 +2363,13 @@ window.deleteEvent = function(){
   const id=document.getElementById('eventId')?.value;if(!id)return;
   const e=data.events.find(x=>x.id===id); if(!e)return;
   if(!confirm(`Xóa lịch "${e.name}"?`))return;
+  const targetStaffIds = staffIdsFromAssignments(e.assignments);
+  writeAuditLog('EVENT_DELETED', {
+      severity:'danger', category:'booking', targetType:'event', targetId:id, targetStaffIds,
+      eventName:e.name, eventDate:e.date,
+      message:`Admin vừa xoá lịch ${e.name} ngày ${e.date}`,
+      metadata:{deletedStaffIds:targetStaffIds, deletedEventSnapshot:{name:e.name, date:e.date, status:e.status}}
+  });
   
   data.events=data.events.filter(x=>x.id!==id);
   // FIX FIREBASE WRITE
@@ -2113,7 +2399,12 @@ function renderStaffManage(){
     const id=b.dataset.delstaff;
     if(data.events.some(e=>e.assignments.some(a=>a.id===id))&&!confirm('Nhân sự này đang được gắn vào lịch. Xóa nhân sự sẽ bỏ gán khỏi các lịch. Tiếp tục?'))return;
     
+    const deletedStaff = data.staff.find(s=>s.id===id);
     data.staff=data.staff.filter(s=>s.id!==id);
+    writeAuditLog('STAFF_DELETED', {
+        severity:'danger', category:'staff', targetType:'staff', targetId:id, targetStaffIds:[id],
+        message:`Xóa nhân sự ${deletedStaff?.name || id}`, metadata:{staffId:id, staffName:deletedStaff?.name || ''}
+    });
     dbRemove(`staff/${id}`);
     
     renderStaffManage();
@@ -2128,6 +2419,10 @@ window.addStaff = function(){
   
   data.staff.push(newStaff);
   dbSet(`staff/${newStaff.id}`, newStaff);
+  writeAuditLog('STAFF_ADDED', {
+      severity:'info', category:'staff', targetType:'staff', targetId:newStaff.id, targetStaffIds:[newStaff.id],
+      message:`Thêm nhân sự ${newStaff.name}`, metadata:{staffId:newStaff.id, staffName:newStaff.name, role:newStaff.role}
+  });
   
   setSafeValue('staffName','');
   renderStaffManage();showToast('Đã thêm nhân sự');
@@ -2156,11 +2451,13 @@ document.getElementById('fullPaidBtn')?.addEventListener('click', () => {
 });
 
 document.getElementById('clearAll')?.addEventListener('click', ()=>{
-    if(confirm('Xóa toàn bộ dữ liệu thật chứ? Cả trên mạng và máy đều biến mất!')){
-        data={staff:[],events:[],payroll:{}};
-        persistLocal();
+    if(confirm('Xóa toàn bộ dữ liệu lịch, nhân sự và lương? Nhật ký hoạt động sẽ được giữ lại.')){
+        const keptLogs = data.auditLogs || [];
+        data={staff:[],events:[],payroll:{},auditLogs:keptLogs};
+        writeAuditLog('SYSTEM_CLEAR', { severity:'danger', category:'system', targetType:'system', message:'Admin làm sạch dữ liệu lịch / nhân sự / lương' });
         if(window.dbRef) window.dbRef.set(data).catch(err => console.error('Clear DB error:', err));
-        render(); window.smoothClose('settingsModal'); showToast('Đã dọn sạch CSDL');
+        else persistLocal();
+        render(); window.smoothClose('settingsModal'); showToast('Đã dọn dữ liệu, giữ Audit Log');
     }
 });
 
@@ -2174,6 +2471,12 @@ document.getElementById('staffMonthM')?.addEventListener('change', renderStaffMo
 document.getElementById('staffMonthY')?.addEventListener('change', renderStaffMonthList);
 document.getElementById('summaryMonthM')?.addEventListener('change', renderMonthSummary);
 document.getElementById('summaryMonthY')?.addEventListener('change', renderMonthSummary);
+
+document.querySelectorAll('[data-audit-filter]').forEach(btn => btn.addEventListener('click', () => {
+    currentAuditFilter = btn.dataset.auditFilter || 'all';
+    renderAuditLog();
+}));
+document.getElementById('auditSearchInput')?.addEventListener('input', renderAuditLog);
 
 initApp();
 
