@@ -42,6 +42,10 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text); background: var(--bg); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+
+/* CHỐNG CUỘN NỀN KHI MỞ MODAL */
+body.modal-open { overflow: hidden; }
+
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; border: none; outline: none; }
 
@@ -65,8 +69,8 @@ body.role-guest .guest-only { display: flex !important; }
 body.role-guest .guest-only-inline { display: inline-flex !important; }
 
 /* BỐ CỤC CHÍNH */
-.app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
-.sidebar { background: #09090b; color: #fafafa; padding: 32px 20px; display: flex; flex-direction: column; gap: 32px; position: sticky; top: 0; height: 100vh; z-index: 40; }
+.app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; min-height: 100dvh; }
+.sidebar { background: #09090b; color: #fafafa; padding: 32px 20px; display: flex; flex-direction: column; gap: 32px; position: sticky; top: 0; height: 100vh; height: 100dvh; z-index: 40; }
 .brand { display: flex; align-items: center; gap: 14px; padding: 0 8px; }
 .brand-mark { width: 44px; height: 44px; border-radius: 12px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 .brand-mark img { width: 100%; height: 100%; object-fit: cover; }
@@ -189,7 +193,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
 .staff-role { font-size: 12.5px; color: var(--muted); margin-top: 2px; font-weight: 600; }
 
 /* MODALS */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(9, 9, 11, 0.4); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; backdrop-filter: blur(8px); opacity: 0; transition: opacity 0.3s ease; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(9, 9, 11, 0.4); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 1000; backdrop-filter: blur(8px); opacity: 0; transition: opacity 0.3s ease; }
 .modal-backdrop.show { display: flex; opacity: 1; }
 .modal-backdrop.closing { opacity: 0; pointer-events: none; }
 .modal { width: min(850px, 100%); max-height: 90vh; overflow-y: auto; background: #fff; border-radius: 28px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; transform: translateY(30px) scale(0.98); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -218,7 +222,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
 
 /* AUTOCOMPLETE GOOGLE MAPS FIX XUYÊN THẤU */
 .loc-group-wrapper { position: relative; z-index: 50; }
-.autocomplete-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1000; max-height: 250px; overflow-y: auto; display: none; margin-top: 4px; padding: 6px; }
+.autocomplete-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1050; max-height: 250px; overflow-y: auto; display: none; margin-top: 4px; padding: 6px; }
 .suggest-item { padding: 12px 16px; font-size: 13.5px; font-weight: 500; cursor: pointer; border-radius: 8px; color: var(--text); display: flex; gap: 8px; align-items: center; transition: all 0.2s; }
 .suggest-item:hover { background: #f4f4f5; color: var(--primary); font-weight: 700; }
 
@@ -653,10 +657,19 @@ function setSafeValue(id, val) {
     }
 }
 
+// FIX UX: Lưu vị trí con trỏ chuột khi định dạng tiền tệ
 window.formatMoneyInput = function(el) {
+    let cursorPostion = el.selectionStart; 
+    let oldLen = el.value.length;
+    
     let raw = el.value.replace(/[^0-9]/g, '');
     if(raw === '') { el.value = ''; } 
     else { el.value = new Intl.NumberFormat('vi-VN').format(parseInt(raw, 10)); }
+    
+    let newLen = el.value.length;
+    cursorPostion = cursorPostion - oldLen + newLen;
+    if (cursorPostion < 0) cursorPostion = 0;
+    el.setSelectionRange(cursorPostion, cursorPostion);
 }
 function parseMoney(str) {
     if(!str) return 0;
@@ -667,13 +680,31 @@ window.smoothClose = function(modalId) {
     const m = document.getElementById(modalId);
     if(!m) return;
     m.classList.add('closing');
-    setTimeout(() => { m.classList.remove('show', 'closing'); }, 280); 
+    setTimeout(() => { 
+        m.classList.remove('show', 'closing'); 
+        if(!document.querySelector('.modal-backdrop.show')) {
+            document.body.classList.remove('modal-open');
+        }
+    }, 280); 
 };
 
 window.smoothOpen = function(modalId) {
     const m = document.getElementById(modalId);
-    if(m) { m.classList.remove('closing'); m.classList.add('show'); }
+    if(m) { 
+        m.classList.remove('closing'); 
+        m.classList.add('show'); 
+        document.body.classList.add('modal-open');
+    }
 }
+
+// FIX UX: Click ra ngoài nền đen để đóng Modal
+document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+    backdrop.addEventListener('click', (e) => {
+        if(e.target === backdrop) {
+            window.smoothClose(backdrop.id);
+        }
+    });
+});
 
 const STORE_KEY = 'amorriPlanner_v2';
 const firebaseConfig = {
@@ -808,6 +839,7 @@ window.setupLocationAutocomplete = function() {
             if (query.startsWith('http')) { suggestBox.style.display = 'none'; return; }
             if (query.length < 2) { suggestBox.style.display = 'none'; return; }
             
+            // FIX API SPAM: Tăng độ trễ bắt phím
             timeoutId = setTimeout(() => {
                 fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lat=10.0452&lon=105.7469`)
                 .then(res => res.json())
@@ -855,6 +887,7 @@ function initApp() {
         if (overlay) overlay.classList.add('hidden');
         isFirstLoad = false;
     };
+    // Đảm bảo không bị kẹt Loading Screen nếu Firebase block
     setTimeout(hideLoading, 3000);
 
     try {
@@ -1057,11 +1090,31 @@ function renderMonth(){
   html+='</div>';
   if(calEl) {
       calEl.innerHTML=html;
-      document.querySelectorAll('.day').forEach(el => el.addEventListener('dblclick', () => {
-          if (currentUserRole === 'admin') window.openEventModal({date: el.dataset.date});
-      }));
   }
 }
+
+// FIX: Event Delegation cho phần click lịch Tháng (Chặn spam event memory leak)
+document.addEventListener('DOMContentLoaded', () => {
+    const calEl = document.getElementById('calendar');
+    if (calEl) {
+        calEl.addEventListener('dblclick', (e) => {
+            if (currentUserRole !== 'admin') return;
+            const dayEl = e.target.closest('.day');
+            if (dayEl && dayEl.dataset.date) {
+                window.openEventModal({date: dayEl.dataset.date});
+            }
+        });
+        
+        calEl.addEventListener('click', (e) => {
+            const chip = e.target.closest('.event-chip');
+            if(chip) {
+                if (currentUserRole === 'guest') return; 
+                window.openEventModal({id:chip.dataset.id});
+            }
+        });
+    }
+});
+
 
 function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isReadonly = false) {
   let html = ''; let renderedCount = 0;
@@ -1231,6 +1284,7 @@ function renderUpcoming(){
 
     const myAssignment = e.assignments.find(a => a.id === staffViewId);
     
+    // Tự động nối danh sách staff đi chung (ĐÃ LỌC BỎ CHÍNH MÌNH)
     const staffNames = e.assignments
         .filter(a => a.id !== staffViewId)
         .map(a => {
@@ -1269,6 +1323,7 @@ function renderUpcoming(){
         let cCol = myAssignment.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
         timeLabel = `<b style="color:${cCol}; min-width: 90px;">⏰ Có mặt:</b>`;
         mapText = myAssignment.locType === 'Nhà trai' ? '📍 Định vị Nhà Trai' : '📍 Định vị Nhà Gái';
+        
         let pStr = myAssignment.locType === 'Nhà trai' ? e.phoneTrai : e.phoneGai;
         myPhoneHtml = buildPhoneUI(pStr, cCol, '');
     } else {
@@ -1291,13 +1346,14 @@ function renderUpcoming(){
         myLocHtml = `<div style="margin-top:16px;"><a href="${mapHref}" target="_blank" style="display:inline-flex; align-items:center; color:${locTextCol}; font-weight:800; text-decoration:none; background: ${locColor}; padding: 10px 16px; border-radius: 12px; border: 1px solid ${locBorder}; font-size: 13.5px; transition:all 0.2s; box-shadow:var(--shadow-sm);">${mapText}</a></div>`;
     }
     
+    // Chỉ hiển thị phần "Đi cùng" nếu thực sự có người làm chung
     let coWorkerHtml = '';
     if (staffNames) {
         coWorkerHtml = `<div style="display: flex; gap: 8px; margin-bottom:8px;"><b style="color:var(--muted); min-width: 90px;">👥 Đi cùng:</b> <span style="font-weight:600; color:var(--muted);">${escapeHtml(staffNames)}</span></div>`;
     }
 
     return `
-    <div class="mini-item" data-id="${e.id}" style="flex-direction:column; align-items:flex-start; gap:8px; padding: 20px;">
+    <div class="mini-item" style="flex-direction:column; align-items:flex-start; gap:8px; padding: 20px;">
         <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start; margin-bottom:4px;">
             <div style="font-size: 16px; font-weight: 800; color: var(--primary); white-space:normal; line-height:1.4;">
                 ${escapeHtml(e.name)} ${e.isRuocDau ? '<span style="color:var(--orange);font-size:12px;margin-left:6px;vertical-align:middle;">(Rước dâu)</span>' : ''}
@@ -1783,6 +1839,7 @@ window.openEventModal = function(prefill={}){
 
   const sFilters = document.getElementById('staffFiltersContainer'); if (sFilters) sFilters.style.display = isAdmin ? 'flex' : 'none';
 
+  // Khóa Input nếu không phải Admin
   document.querySelectorAll('#eventForm input, #eventForm select, #eventForm textarea').forEach(el => {
       if (el.id.includes('link-input')) return; 
       if (!isAdmin) {
@@ -1925,18 +1982,6 @@ window.addStaff = function(){
   setSafeValue('staffName','');
   renderStaffManage();showToast('Đã thêm nhân sự');
 }
-
-document.addEventListener('click', e => {
-  if(e.target.closest('a') || e.target.closest('button')) return;
-  const chip = e.target.closest('[data-id]'); 
-  if(chip) {
-      if (chip.classList.contains('mini-item')) return;
-      if (chip.classList.contains('event-chip') || chip.classList.contains('agenda-event')) {
-          if (currentUserRole === 'guest') return; 
-          window.openEventModal({id:chip.dataset.id});
-      }
-  }
-});
 
 let searchTimeout;
 document.getElementById('searchInput')?.addEventListener('input', () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(render, 150); });
