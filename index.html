@@ -417,10 +417,15 @@ body.role-staff .staff-only-block { display: block !important; }
           <div class="form-group normal-time"><label for="eventStart">Giờ bắt đầu</label><input id="eventStart" type="time" onchange="window.checkConflict();"></div>
           
           <div class="form-group ruocdau-time" style="display:none;">
-              <label>Giờ Nhà Trai & Nhà Gái</label>
-              <div style="display:flex; gap:10px;">
-                  <input id="eventStartTrai" type="time" onchange="window.checkConflict();" style="flex:1" title="Giờ Nhà Trai">
-                  <input id="eventStartGai" type="time" onchange="window.checkConflict();" style="flex:1" title="Giờ Nhà Gái">
+              <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                  <div style="flex:1; min-width:140px;">
+                      <label for="eventStartTrai" style="color:#0369a1;">⏰ Giờ Nhà Trai</label>
+                      <input id="eventStartTrai" type="time" onchange="window.checkConflict();" style="width:100%; margin-top:6px;">
+                  </div>
+                  <div style="flex:1; min-width:140px;">
+                      <label for="eventStartGai" style="color:#be185d;">⏰ Giờ Nhà Gái</label>
+                      <input id="eventStartGai" type="time" onchange="window.checkConflict();" style="width:100%; margin-top:6px;">
+                  </div>
               </div>
           </div>
 
@@ -483,7 +488,24 @@ body.role-staff .staff-only-block { display: block !important; }
             </div>
           </div>
 
-          <div class="form-group step2-item" style="display:none"><label for="eventPhone">Số điện thoại khách</label><input id="eventPhone" placeholder="090..."></div>
+          <!-- SĐT ĐỘNG -->
+          <div class="form-group step2-item normal-phone" style="display:none">
+            <label for="eventPhone">Số điện thoại khách</label>
+            <input id="eventPhone" placeholder="090...">
+          </div>
+
+          <div class="form-group step2-item ruocdau-phone" style="display:none">
+            <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:140px;">
+                    <label for="eventPhoneTrai" style="color:#0369a1;">📞 SĐT Nhà Trai</label>
+                    <input id="eventPhoneTrai" placeholder="090..." style="width:100%; margin-top:6px;">
+                </div>
+                <div style="flex:1; min-width:140px;">
+                    <label for="eventPhoneGai" style="color:#be185d;">📞 SĐT Nhà Gái</label>
+                    <input id="eventPhoneGai" placeholder="090..." style="width:100%; margin-top:6px;">
+                </div>
+            </div>
+          </div>
           
           <!-- NHÓM TIỀN BẠC -->
           <div class="form-group step3-item" style="display:none" id="priceGroup">
@@ -703,7 +725,7 @@ function sameMonth(ds,d){return ds.getFullYear()===d.getFullYear() && ds.getMont
 function makeMapLink(str) {
     if(!str) return '#';
     str = str.trim();
-    if(str.startsWith('http://') || str.startsWith('https://')) return escapeHtml(str); // Mở link gốc nếu dán link Maps
+    if(str.startsWith('http://') || str.startsWith('https://')) return escapeHtml(str);
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(str)}`;
 }
 
@@ -753,7 +775,7 @@ window.setupLocationAutocomplete = function() {
     ['eventLocation', 'eventLocationTrai', 'eventLocationGai'].forEach(id => {
         const input = document.getElementById(id);
         if(!input) return;
-        const suggestBox = input.nextElementSibling; // div.autocomplete-suggestions
+        const suggestBox = input.nextElementSibling;
 
         input.addEventListener('input', function() {
             window.updateModalVisibility();
@@ -899,12 +921,73 @@ function renderStats(){
   const elUnpaid = document.getElementById('statUnpaid'); if(elUnpaid) elUnpaid.textContent = unpaidCount;
 }
 
+function getOutageWarnings(ds) {
+  if (currentUserRole !== 'admin') return [];
+  const dayEvents = data.events.filter(e => e.date === ds && e.status !== 'cancelled');
+  if(!dayEvents.length) return [];
+  
+  const warnings = [];
+  const checkRole = (roleStr, label) => {
+    const staffOfRole = data.staff.filter(s => s.role === roleStr);
+    if (staffOfRole.length === 0) return;
+    const staffIntervals = {};
+    staffOfRole.forEach(s => staffIntervals[s.id] = []);
+    dayEvents.forEach(e => {
+      e.assignments.forEach(a => {
+        if (staffIntervals[a.id]) {
+            let sTime = (e.isRuocDau && a.locType === 'Nhà gái') ? e.startGai : ((e.isRuocDau && a.locType === 'Nhà trai') ? e.startTrai : e.start);
+            staffIntervals[a.id].push({ start: sTime||'', end: e.end||'' });
+        }
+      });
+    });
+    let timepoints = new Set();
+    for (let sid in staffIntervals) {
+      staffIntervals[sid].forEach(iv => { 
+          if(iv.start) timepoints.add(iv.start); 
+          if(iv.end) timepoints.add(iv.end); 
+      });
+    }
+    timepoints = Array.from(timepoints).sort();
+    let busyPeriods = [];
+    for (let i = 0; i < timepoints.length - 1; i++) {
+      const t1 = timepoints[i], t2 = timepoints[i+1];
+      let allBusy = true;
+      for (let sid in staffIntervals) {
+        if (!staffIntervals[sid].some(iv => iv.start <= t1 && iv.end >= t2)) { allBusy = false; break; }
+      }
+      if (allBusy) {
+        if (busyPeriods.length > 0 && busyPeriods[busyPeriods.length - 1].end === t1) {
+          busyPeriods[busyPeriods.length - 1].end = t2;
+        } else {
+          busyPeriods.push({ start: t1, end: t2 });
+        }
+      }
+    }
+    if (busyPeriods.length > 0) {
+      const timeStrs = busyPeriods.map(p => `${p.start}-${p.end}`).join(', ');
+      warnings.push(`${label} (${timeStrs})`); 
+    }
+  };
+  checkRole('Photographer', 'Chụp');
+  checkRole('Videographer', 'Quay');
+  checkRole('Makeup', 'Makeup');
+  return warnings;
+}
+
 function chip(e){
   const status='status-'+e.status;
   const staffNames = getStaffNames(e.assignments.map(a=>a.id)).join(', ');
+  let chipTime = escapeHtml(e.start||'');
+  if(e.isRuocDau) {
+      if(e.startTrai && e.startGai) chipTime = `${escapeHtml(e.startTrai)} & ${escapeHtml(e.startGai)}`;
+      else if (e.startTrai) chipTime = escapeHtml(e.startTrai);
+      else if (e.startGai) chipTime = escapeHtml(e.startGai);
+      else chipTime = 'Rước dâu';
+  }
+
   return `<div class="event-chip ${status}" data-id="${e.id}" title="${escapeHtml(e.name)}${staffNames ? ` (${escapeHtml(staffNames)})` : ''}">
     <div style="min-width:0; overflow:hidden">
-      <div class="time">${escapeHtml(e.isRuocDau ? (e.startTrai || 'Rước dâu') : (e.start || ''))}</div> 
+      <div class="time">${chipTime}</div> 
       <div class="name">${escapeHtml(e.name)}</div>
       ${staffNames ? `<div class="staff-tag">👤 ${escapeHtml(staffNames)}</div>` : ''}
     </div>
@@ -928,7 +1011,13 @@ function renderMonth(){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const ds=isoDate(d); 
     const all = allEventsForView.filter(e=>e.date===ds).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
-    
+    let warningsHtml = '';
+    const warnings = getOutageWarnings(ds);
+    if(warnings.length) {
+      warningsHtml = `<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
+        ${warnings.map(w => `<span style="background:#fecaca;color:#991b1b;font-size:10.5px;padding:4px 6px;border-radius:6px;font-weight:800;line-height:1.2;">⚠️ ${w}</span>`).join('')}
+      </div>`;
+    }
     const isOtherMonth = d.getMonth() !== m;
     const displayDate = isOtherMonth ? `${d.getDate()}/${d.getMonth()+1}` : d.getDate();
 
@@ -940,6 +1029,7 @@ function renderMonth(){
     
     html+=`<div class="${dayClass}" data-date="${ds}">
       <div class="daynum" style="${isOtherMonth?'width:auto;padding:0 8px':''}">${displayDate}</div>
+      ${warningsHtml}
       ${all.slice(0,5).map(chip).join('')}${all.length>5?`<div style="font-size:11.5px;color:var(--muted);padding:4px 6px;font-weight:700">+${all.length-5} lịch khác</div>`:''}
     </div>`;
   }
@@ -967,7 +1057,10 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isR
           let taskLinkHtml = a.link ? `<a href="${escapeHtml(a.link)}" target="_blank" style="font-size:11.5px; color:var(--blue); text-decoration:none; background:var(--bg-blue); padding:4px 10px; border-radius:99px; margin-left:8px; display:inline-flex; align-items:center; font-weight:700;">🔗 Link Source</a>` : '';
           
           let taskDetail = escapeHtml(a.task || 'Chưa xếp việc');
-          if (e.isRuocDau && a.locType) taskDetail += ` (${escapeHtml(a.locType)})`;
+          if (e.isRuocDau && a.locType) {
+              let locColor = a.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
+              taskDetail += ` <span style="color:${locColor}; font-weight:800">(${escapeHtml(a.locType)})</span>`;
+          }
 
           tasksHtml += `
             <div class="mini-item" data-id="${e.id}" style="border:0;border-bottom:1px solid var(--line);border-radius:0;padding:16px 24px;background:transparent;box-shadow:none">
@@ -1120,14 +1213,29 @@ function renderUpcoming(){
     // GÓC NHÌN THỢ (Tự động hiển thị giờ/địa điểm theo nhiệm vụ của Thợ)
     let myTime = e.start || 'Chưa định';
     let myLoc = e.location || '';
-    let locLabel = '📍 Địa điểm:';
-    let timeLabel = '⏰ Bắt đầu:';
+    let locLabel = '<b style="color:var(--muted); min-width: 120px;">📍 Địa điểm:</b>';
+    let timeLabel = '<b style="color:var(--muted); min-width: 120px;">⏰ Bắt đầu:</b>';
+    let myPhoneHtml = '';
     
     if (e.isRuocDau && myAssignment && myAssignment.locType) {
         myTime = myAssignment.locType === 'Nhà trai' ? (e.startTrai || 'Chưa định') : (e.startGai || 'Chưa định');
         myLoc = myAssignment.locType === 'Nhà trai' ? e.locTrai : e.locGai;
-        locLabel = `📍 Địa điểm (${myAssignment.locType}):`;
-        timeLabel = `⏰ Có mặt (${myAssignment.locType}):`;
+        let cCol = myAssignment.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
+        locLabel = `<b style="color:${cCol}; min-width: 120px;">📍 Địa điểm (${myAssignment.locType}):</b>`;
+        timeLabel = `<b style="color:${cCol}; min-width: 120px;">⏰ Có mặt (${myAssignment.locType}):</b>`;
+        
+        let pStr = myAssignment.locType === 'Nhà trai' ? e.phoneTrai : e.phoneGai;
+        if (pStr) {
+            myPhoneHtml = `<div style="display: flex; gap: 8px;"><b style="color:${cCol}; min-width: 120px;">📞 SĐT (${myAssignment.locType}):</b> <a href="tel:${escapeHtml(pStr)}" style="color:var(--text); font-weight:800; text-decoration:none;">${escapeHtml(pStr)}</a></div>`;
+        }
+    } else {
+        // Lịch thường hoặc Thợ đi chung 2 nhà mà không phân chia cụ thể
+        if (e.isRuocDau) {
+             if(e.phoneTrai) myPhoneHtml += `<div style="display: flex; gap: 8px;"><b style="color:#0369a1; min-width: 120px;">📞 SĐT Nhà trai:</b> <a href="tel:${escapeHtml(e.phoneTrai)}" style="color:var(--text); font-weight:800; text-decoration:none;">${escapeHtml(e.phoneTrai)}</a></div>`;
+             if(e.phoneGai) myPhoneHtml += `<div style="display: flex; gap: 8px;"><b style="color:#be185d; min-width: 120px;">📞 SĐT Nhà gái:</b> <a href="tel:${escapeHtml(e.phoneGai)}" style="color:var(--text); font-weight:800; text-decoration:none;">${escapeHtml(e.phoneGai)}</a></div>`;
+        } else {
+             if(e.phone) myPhoneHtml = `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">📞 SĐT:</b> <a href="tel:${escapeHtml(e.phone)}" style="color:var(--text); font-weight:800; text-decoration:none;">${escapeHtml(e.phone)}</a></div>`;
+        }
     }
 
     const mapHref = makeMapLink(myLoc);
@@ -1143,11 +1251,11 @@ function renderUpcoming(){
         
         <div style="font-size: 13.5px; color: var(--text); line-height: 1.8; width: 100%;">
             <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
-            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">${timeLabel}</b> <span style="font-weight:700; color:var(--primary);">${escapeHtml(myTime)}</span></div>
+            <div style="display: flex; gap: 8px;">${timeLabel} <span style="font-weight:800; color:var(--primary);">${escapeHtml(myTime)}</span></div>
             
-            ${myLoc ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">${locLabel}</b> <a href="${mapHref}" target="_blank" style="color:var(--blue); font-weight:600; text-decoration:none;">${escapeHtml(myLoc)}</a></div>` : ''}
+            ${myLoc ? `<div style="display: flex; gap: 8px;">${locLabel} <a href="${mapHref}" target="_blank" style="color:var(--blue); font-weight:700; text-decoration:none;">${escapeHtml(myLoc)}</a></div>` : ''}
             
-            ${e.phone ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">📞 SĐT:</b> <a href="tel:${escapeHtml(e.phone)}" style="color:var(--text); font-weight:600; text-decoration:none;">${escapeHtml(e.phone)}</a></div>` : ''}
+            ${myPhoneHtml}
             
             ${e.note ? `<div style="margin-top: 12px; padding: 12px; background: #fefce8; border: 1px dashed #fef08a; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú chung:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
         </div>
@@ -1277,7 +1385,6 @@ window.updateModalVisibility = function() {
     const isRuocDau = document.getElementById('eventIsRuocDau')?.checked;
     const nameVal = document.getElementById('eventName')?.value.trim() || '';
     
-    // Check required fields based on mode
     let hasLoc = false;
     if(isRuocDau) {
         hasLoc = (document.getElementById('eventLocationTrai')?.value.trim() || document.getElementById('eventLocationGai')?.value.trim());
@@ -1285,7 +1392,6 @@ window.updateModalVisibility = function() {
         hasLoc = document.getElementById('eventLocation')?.value.trim();
     }
 
-    // Toggle Time & Loc Fields based on Checkbox
     document.querySelectorAll('.normal-time').forEach(el => el.style.display = isRuocDau ? 'none' : 'block');
     document.querySelectorAll('.ruocdau-time').forEach(el => el.style.display = isRuocDau ? 'block' : 'none');
     
@@ -1298,7 +1404,16 @@ window.updateModalVisibility = function() {
         else el.style.display = 'none'; 
     });
 
-    document.querySelectorAll('.step2-item:not(.normal-loc):not(.ruocdau-loc)').forEach(el => { 
+    document.querySelectorAll('.normal-phone').forEach(el => { 
+        if(!isRuocDau && nameVal) el.style.display = el.classList.contains('full') ? 'block' : 'grid'; 
+        else el.style.display = 'none'; 
+    });
+    document.querySelectorAll('.ruocdau-phone').forEach(el => { 
+        if(isRuocDau && nameVal) el.style.display = el.classList.contains('full') ? 'block' : 'grid'; 
+        else el.style.display = 'none'; 
+    });
+
+    document.querySelectorAll('.step2-item:not(.normal-loc):not(.ruocdau-loc):not(.normal-phone):not(.ruocdau-phone)').forEach(el => { 
         el.style.display = nameVal ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; 
     });
     
@@ -1413,7 +1528,10 @@ window.renderEventStaffList = function() {
         evStaffEl.innerHTML = currentEventAssignments.map(a => {
             const s = data.staff.find(x => x.id === a.id); if(!s) return '';
             let taskText = a.task ? ` - ${escapeHtml(a.task)}` : '';
-            if (isRuocDau && a.locType) taskText += ` (${escapeHtml(a.locType)})`;
+            if (isRuocDau && a.locType) {
+                let locColor = a.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
+                taskText += ` <span style="color:${locColor}; font-weight:800">(${escapeHtml(a.locType)})</span>`;
+            }
 
             const isMe = (s.id === staffViewId); 
             let myCostHtml = ''; let myLinkHtml = '';
@@ -1460,11 +1578,14 @@ window.renderEventStaffList = function() {
           const a = currentEventAssignments.find(x => x.id === s.id);
           const isChecked = !!a; const savedLink = a?.link || '';
           
-          // NÚT CHỌN ĐỊA ĐIỂM (CHỈ HIỂN THỊ KHI TÍCH RƯỚC DÂU)
           let locDropdownHtml = '';
           if (isRuocDau) {
+              let bgCol = a?.locType === 'Nhà gái' ? '#fce7f3' : '#e0f2fe';
+              let borderCol = a?.locType === 'Nhà gái' ? '#fbcfe8' : '#7dd3fc';
+              let textCol = a?.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
+              
               locDropdownHtml = `
-              <select id="staff-loc-${s.id}" style="background:#e0f2fe; border:1px solid #7dd3fc; padding:10px; border-radius:10px; outline:0; font-size:13px; font-weight:700; color:#0369a1; min-width:110px;">
+              <select id="staff-loc-${s.id}" onchange="this.style.backgroundColor=this.value==='Nhà gái'?'#fce7f3':'#e0f2fe'; this.style.borderColor=this.value==='Nhà gái'?'#fbcfe8':'#7dd3fc'; this.style.color=this.value==='Nhà gái'?'#be185d':'#0369a1';" style="background:${bgCol}; border:1px solid ${borderCol}; padding:10px; border-radius:10px; outline:0; font-size:13px; font-weight:800; color:${textCol}; min-width:110px;">
                   <option value="Nhà trai" ${a?.locType==='Nhà trai'?'selected':''}>Nhà trai</option>
                   <option value="Nhà gái" ${a?.locType==='Nhà gái'?'selected':''}>Nhà gái</option>
               </select>`;
@@ -1567,6 +1688,8 @@ window.openEventModal = function(prefill={}){
   
   setSafeValue('eventStatus', e?.status||'pending');
   setSafeValue('eventPhone', e?.phone||'');
+  setSafeValue('eventPhoneTrai', e?.phoneTrai||'');
+  setSafeValue('eventPhoneGai', e?.phoneGai||'');
   
   const pE = document.getElementById('eventPrice'); if(pE) pE.value = e?.price ? money(e.price/1000) : '';
   const dE = document.getElementById('eventDeposit'); if(dE) dE.value = e?.deposit ? money(e.deposit/1000) : '';
@@ -1580,7 +1703,7 @@ window.openEventModal = function(prefill={}){
   const ep = document.getElementById('eventProductsList'); if(ep) ep.innerHTML = '';
   
   currentEventAssignments = e?.assignments ? JSON.parse(JSON.stringify(e.assignments)) : [];
-  window.updateModalVisibility(); // Call before render staff to setup UI state
+  window.updateModalVisibility(); 
   window.renderEventStaffList();
   
   if (e && e.products && e.products.length > 0) e.products.forEach(p => window.addProductRow(p.name, p.url, !isAdmin)); 
@@ -1627,12 +1750,12 @@ window.checkConflict = function(){
      const sEvents = data.events.filter(e => e.id !== id && e.status !== 'cancelled' && e.date === date && e.assignments.some(a => a.id === s.id));
      if(sEvents.length === 0) infoSpan.innerHTML = '';
      else {
-         // Logic cảnh báo trùng lịch: lấy start tổng quát của lịch cũ
-         let intervals = sEvents.map(e => ({s: (e.isRuocDau ? e.startTrai : e.start)||'', e: e.end||''}));
+         let intervals = sEvents.map(e => ({s: (e.isRuocDau ? (e.startTrai || e.startGai) : e.start)||'', e: e.end||''}));
          let text = intervals.map(iv => `${iv.s}-${iv.e}`).join(', ');
          
          let overlap = false;
-         let myStart = isRuocDau ? (document.getElementById('staff-loc-'+s.id)?.value === 'Nhà trai' ? document.getElementById('eventStartTrai').value : document.getElementById('eventStartGai').value) : document.getElementById('eventStart').value;
+         let locTeam = document.getElementById('staff-loc-'+s.id)?.value;
+         let myStart = isRuocDau ? (locTeam === 'Nhà gái' ? document.getElementById('eventStartGai').value : document.getElementById('eventStartTrai').value) : document.getElementById('eventStart').value;
          
          if(myStart && end && myStart < end) overlap = intervals.some(iv => (myStart < iv.e && end > iv.s));
          
@@ -1659,6 +1782,9 @@ window.saveEvent = function(){
     location: isRuocDau ? '' : (document.getElementById('eventLocation')?.value.trim()||''),
     locTrai: isRuocDau ? (document.getElementById('eventLocationTrai')?.value.trim()||'') : '',
     locGai: isRuocDau ? (document.getElementById('eventLocationGai')?.value.trim()||'') : '',
+    phone: isRuocDau ? '' : (document.getElementById('eventPhone')?.value.trim()||''),
+    phoneTrai: isRuocDau ? (document.getElementById('eventPhoneTrai')?.value.trim()||'') : '',
+    phoneGai: isRuocDau ? (document.getElementById('eventPhoneGai')?.value.trim()||'') : '',
     assignments:[...document.querySelectorAll('#eventStaff input[type="checkbox"]:checked')].map(cb=>{
        const sId = cb.value;
        return {
@@ -1674,11 +1800,11 @@ window.saveEvent = function(){
        url: row.querySelector('.prod-url')?.value.trim()||''
     })).filter(p => p.url),
     status:document.getElementById('eventStatus')?.value||'pending',
-    phone:document.getElementById('eventPhone')?.value.trim()||'',
     price: parseMoney(document.getElementById('eventPrice')?.value) * 1000,
     deposit: parseMoney(document.getElementById('eventDeposit')?.value) * 1000,
     note:document.getElementById('eventNote')?.value.trim()||''
   };
+  
   if(!obj.name||!obj.date||!obj.end){showToast('Vui lòng điền đủ Tên, Ngày và Giờ kết thúc');return}
   if(isRuocDau && (!obj.startTrai || !obj.startGai)) { showToast('Vui lòng điền đủ Giờ nhà trai và Giờ nhà gái'); return;}
   if(!isRuocDau && !obj.start) { showToast('Vui lòng điền Giờ bắt đầu'); return;}
@@ -1688,6 +1814,12 @@ window.saveEvent = function(){
       if(!confirm('Giờ kết thúc đang nhỏ hơn hoặc bằng giờ bắt đầu (Có thể do ca làm đêm qua ngày). Bạn có chắc chắn muốn lưu?')) return;
   }
   
+  const isOverlap = obj.assignments.some(x => {
+      return data.events.some(e => e.id !== id && e.status !== 'cancelled' && e.date === obj.date && 
+             e.assignments.some(a => a.id === x.id) && (isRuocDau ? obj.startTrai : obj.start) < e.end && (e.isRuocDau ? e.startTrai : e.start) < obj.end);
+  });
+  
+  if(isOverlap && !confirm('Lịch đang bị trùng giờ nhân sự. Vẫn lưu chứ?')) return;
   const idx=data.events.findIndex(e=>e.id===id);
   if(idx>=0)data.events[idx]=obj; else data.events.push(obj);
   
@@ -1776,7 +1908,6 @@ document.getElementById('clearAll')?.addEventListener('click', ()=>{
 ['staffFilter','statusFilter'].forEach(id=>document.getElementById(id)?.addEventListener('input',render));
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click', ()=>setView(b.dataset.view)));
 
-// Auto update Conflict on dynamic times
 document.getElementById('eventStartTrai')?.addEventListener('input', window.checkConflict);
 document.getElementById('eventStartGai')?.addEventListener('input', window.checkConflict);
 
