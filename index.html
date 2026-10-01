@@ -122,12 +122,10 @@ body.role-staff .staff-only-block { display: block !important; }
 .day { min-height: 140px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px; background: #fff; transition: background 0.2s; cursor: pointer; }
 .day.sat-bg { background-color: #fafafb; } 
 .day.sun-bg { background-color: #f1f5f9; } 
-
 .day.other .daynum { color: #a1a1aa; font-weight: 600; } 
 .day.other { background-color: #fff; opacity: 0.85; }
 .day.other.sat-bg { background-color: #fafafb; }
 .day.other.sun-bg { background-color: #f1f5f9; }
-
 .day:nth-child(7n) { border-right: 0; }
 .day:hover { filter: brightness(0.96); }
 .day.today { box-shadow: inset 0 4px 0 var(--primary); background: #fff; }
@@ -210,8 +208,7 @@ body.role-staff .staff-only-block { display: block !important; }
 .currency-wrap input { width: 100%; padding-right: 68px !important; text-align: right; }
 .currency-wrap::after { content: '.000 đ'; position: absolute; right: 14px; color: #94a3b8; font-weight: 800; font-size: 14.5px; pointer-events: none; }
 
-/* AUTOCOMPLETE GOOGLE MAPS (NOMINATIM FREE) */
-.autocomplete-wrapper { position: relative; display: flex; flex: 1; align-items: center; }
+/* AUTOCOMPLETE GOOGLE MAPS */
 .autocomplete-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1000; max-height: 250px; overflow-y: auto; display: none; margin-top: 4px; padding: 6px; }
 .suggest-item { padding: 12px 16px; font-size: 13.5px; font-weight: 500; cursor: pointer; border-radius: 8px; color: var(--text); display: flex; gap: 8px; align-items: center; transition: all 0.2s; }
 .suggest-item:hover { background: #f4f4f5; color: var(--primary); font-weight: 700; }
@@ -250,9 +247,7 @@ body.role-staff .staff-only-block { display: block !important; }
   .stat { padding: 16px; }
   .stat-num { font-size: 24px; }
   .filters .field { flex: 1; min-width: 140px; }
-  
   .actions .primary { display: none; } 
-
   .modal-backdrop { align-items: flex-end; padding: 0; }
   .modal { width: 100%; border-radius: 28px 28px 0 0; max-height: 92vh; margin: 0; }
   .modal-head { padding: 20px 24px; border-radius: 28px 28px 0 0; }
@@ -344,7 +339,6 @@ body.role-staff .staff-only-block { display: block !important; }
       </div>
 
       <aside class="side-panel">
-        <!-- LỊCH SẮP TỚI CHỈ HIỆN VỚI THỢ ĐÃ ĐƯỢC JS ÉP BLOCK BÊN DƯỚI -->
         <div class="panel side-card staff-only-block" id="upcomingListPanel" style="display:none;">
           <h3>Lịch sắp tới của bạn</h3>
           <div class="mini-list" id="upcomingList"></div>
@@ -396,7 +390,18 @@ body.role-staff .staff-only-block { display: block !important; }
       <form id="eventForm">
         <input type="hidden" id="eventId">
         <div class="form-grid">
-          <div class="form-group full"><label for="eventName">Tên lịch / Khách hàng</label><input id="eventName" required placeholder="VD: Đám cưới Minh & Linh (Ngày 1)" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()"></div>
+          <div class="form-group full" style="display:flex; gap:16px; align-items:center; flex-wrap:wrap">
+              <div style="flex:1; min-width: 250px;">
+                  <label for="eventName">Tên lịch / Khách hàng</label>
+                  <input id="eventName" required placeholder="VD: Đám cưới Minh & Linh" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()">
+              </div>
+              <!-- Checkbox Rước dâu -->
+              <div class="admin-only admin-only-flex" style="align-items:center; gap:8px; margin-top: 22px; background:#fafafa; padding:10px 16px; border-radius:12px; border:1px solid var(--line);">
+                  <input type="checkbox" id="eventIsRuocDau" style="width:20px; height:20px; accent-color:var(--primary); cursor:pointer;" onchange="window.updateModalVisibility(); window.renderEventStaffList();">
+                  <label for="eventIsRuocDau" style="margin:0; cursor:pointer; font-weight:800; color:var(--text);">Rước dâu (2 nhà)</label>
+              </div>
+          </div>
+          
           <div class="form-group"><label for="eventDate">Ngày</label><input id="eventDate" type="date" required onchange="window.updateModalVisibility(); window.checkConflict();"></div>
           <div class="form-group">
               <label for="eventStatus">Trạng thái</label>
@@ -407,8 +412,19 @@ body.role-staff .staff-only-block { display: block !important; }
                   <option value="cancelled">Đã hủy</option>
               </select>
           </div>
-          <div class="form-group"><label for="eventStart">Giờ bắt đầu</label><input id="eventStart" type="time" required onchange="window.checkConflict();"></div>
-          <div class="form-group"><label for="eventEnd">Giờ kết thúc</label><input id="eventEnd" type="time" required onchange="window.updateModalVisibility(); window.checkConflict();"></div>
+          
+          <!-- THỜI GIAN ĐỘNG -->
+          <div class="form-group normal-time"><label for="eventStart">Giờ bắt đầu</label><input id="eventStart" type="time" onchange="window.checkConflict();"></div>
+          
+          <div class="form-group ruocdau-time" style="display:none;">
+              <label>Giờ Nhà Trai & Nhà Gái</label>
+              <div style="display:flex; gap:10px;">
+                  <input id="eventStartTrai" type="time" onchange="window.checkConflict();" style="flex:1" title="Giờ Nhà Trai">
+                  <input id="eventStartGai" type="time" onchange="window.checkConflict();" style="flex:1" title="Giờ Nhà Gái">
+              </div>
+          </div>
+
+          <div class="form-group"><label for="eventEnd">Giờ kết thúc chung</label><input id="eventEnd" type="time" required onchange="window.updateModalVisibility(); window.checkConflict();"></div>
           
           <div class="form-group full step2-item" style="display:none">
             <div class="admin-only" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:10px" id="adminStaffLabel">
@@ -442,15 +458,34 @@ body.role-staff .staff-only-block { display: block !important; }
             <div id="eventStaff" class="staff-picker" style="padding:0; border:none; background:transparent;"></div>
           </div>
           
-          <div class="form-group step2-item" style="display:none">
-            <label for="eventLocation">Địa điểm (Lộ trình chung)</label>
-            <div id="locationInputGroup" style="position:relative; width: 100%;">
-                <input id="eventLocation" placeholder="VD: Nhà Gái -> Nhà Trai..." autocomplete="off" style="width:100%;">
-                <div id="locationSuggestions" style="display:none;"></div>
+          <!-- ĐỊA ĐIỂM ĐỘNG -->
+          <div class="form-group step2-item normal-loc" style="display:none">
+            <label>Địa điểm</label>
+            <div style="position:relative; width: 100%;">
+                <input id="eventLocation" placeholder="Tên đường hoặc Link Google Maps..." autocomplete="off" style="width:100%;">
+                <div class="autocomplete-suggestions"></div>
             </div>
           </div>
+
+          <div class="form-group step2-item ruocdau-loc" style="display:none">
+            <label style="color:#0369a1;">📍 Địa điểm Nhà Trai</label>
+            <div style="position:relative; width: 100%;">
+                <input id="eventLocationTrai" placeholder="Tên đường hoặc Link Google Maps..." autocomplete="off" style="width:100%;">
+                <div class="autocomplete-suggestions"></div>
+            </div>
+          </div>
+
+          <div class="form-group step2-item ruocdau-loc" style="display:none">
+            <label style="color:#be185d;">📍 Địa điểm Nhà Gái</label>
+            <div style="position:relative; width: 100%;">
+                <input id="eventLocationGai" placeholder="Tên đường hoặc Link Google Maps..." autocomplete="off" style="width:100%;">
+                <div class="autocomplete-suggestions"></div>
+            </div>
+          </div>
+
           <div class="form-group step2-item" style="display:none"><label for="eventPhone">Số điện thoại khách</label><input id="eventPhone" placeholder="090..."></div>
           
+          <!-- NHÓM TIỀN BẠC -->
           <div class="form-group step3-item" style="display:none" id="priceGroup">
             <label for="eventPrice">Giá trị booking</label>
             <div class="currency-wrap">
@@ -556,11 +591,10 @@ body.role-staff .staff-only-block { display: block !important; }
   </div>
 </div>
 
-<!-- Toast Trượt Mượt Mà -->
+<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-// --- CHỐNG TREO APP TOÀN CỤC ---
 window.onerror = function(msg, url, lineNo, columnNo, error) {
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) overlay.classList.add('hidden');
@@ -571,7 +605,8 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
 function setSafeValue(id, val) {
     const el = document.getElementById(id);
     if(el) {
-        el.value = String(val);
+        if(el.type === 'checkbox') { el.checked = !!val; }
+        else { el.value = String(val); }
         if(el.tagName === 'SELECT') {
             const opt = el.querySelector(`option[value="${val}"]`);
             if(opt) opt.selected = true;
@@ -581,11 +616,8 @@ function setSafeValue(id, val) {
 
 window.formatMoneyInput = function(el) {
     let raw = el.value.replace(/[^0-9]/g, '');
-    if(raw === '') {
-        el.value = '';
-    } else {
-        el.value = new Intl.NumberFormat('vi-VN').format(parseInt(raw, 10));
-    }
+    if(raw === '') { el.value = ''; } 
+    else { el.value = new Intl.NumberFormat('vi-VN').format(parseInt(raw, 10)); }
 }
 function parseMoney(str) {
     if(!str) return 0;
@@ -596,20 +628,14 @@ window.smoothClose = function(modalId) {
     const m = document.getElementById(modalId);
     if(!m) return;
     m.classList.add('closing');
-    setTimeout(() => {
-        m.classList.remove('show', 'closing');
-    }, 280); 
+    setTimeout(() => { m.classList.remove('show', 'closing'); }, 280); 
 };
 
 window.smoothOpen = function(modalId) {
     const m = document.getElementById(modalId);
-    if(m) {
-        m.classList.remove('closing');
-        m.classList.add('show');
-    }
+    if(m) { m.classList.remove('closing'); m.classList.add('show'); }
 }
 
-// --- CẤU HÌNH FIREBASE ---
 const STORE_KEY = 'amorriPlanner_v2';
 const firebaseConfig = {
   apiKey: "AIzaSyA3rwXOsYAYSBYuYC5DIrPbKi0m5ViLs7E",
@@ -624,18 +650,12 @@ const firebaseConfig = {
 const DAY_NAMES = ['T2','T3','T4','T5','T6','T7','CN']; 
 const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
 const STATUS_LABEL = {
-    'pending': 'Chờ xác nhận',
-    'confirmed': 'Đã chốt',
-    'done': 'Hoàn thành',
-    'cancelled': 'Đã hủy'
+    'pending': 'Chờ xác nhận', 'confirmed': 'Đã chốt', 'done': 'Hoàn thành', 'cancelled': 'Đã hủy'
 };
 
-// --- BIẾN TOÀN CỤC & PHÂN QUYỀN ---
 let data = { staff: [], events: [], payroll: {} };
-let current = new Date();
-current.setHours(0,0,0,0);
-let currentView = 'month';
-let isFirstLoad = true;
+let current = new Date(); current.setHours(0,0,0,0);
+let currentView = 'month'; let isFirstLoad = true;
 
 const urlParams = new URLSearchParams(window.location.search);
 const staffViewId = urlParams.get('staff');
@@ -647,8 +667,7 @@ else if (staffViewId) currentUserRole = 'staff';
 
 function applyRoleUI() {
     document.body.className = `role-${currentUserRole}`;
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
+    const loginBtn = document.getElementById('loginBtn'); const logoutBtn = document.getElementById('logoutBtn');
     if(loginBtn) loginBtn.style.display = (currentUserRole === 'guest') ? 'flex' : 'none';
     if(logoutBtn) logoutBtn.style.display = (currentUserRole === 'admin') ? 'flex' : 'none';
 }
@@ -658,9 +677,7 @@ window.loginAdmin = function() {
     if (pass === 'amorri2026') {
         localStorage.setItem('amorri_admin', 'true');
         window.location.href = window.location.origin + window.location.pathname; 
-    } else if (pass !== null) {
-        showToast("Sai mật khẩu!");
-    }
+    } else if (pass !== null) { showToast("Sai mật khẩu!"); }
 }
 window.logoutAdmin = function() {
     localStorage.removeItem('amorri_admin');
@@ -682,31 +699,31 @@ function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;',
 function getStaffNames(ids){ return (ids||[]).map(id=>data.staff.find(s=>s.id===id)?.name).filter(Boolean); }
 function sameMonth(ds,d){return ds.getFullYear()===d.getFullYear() && ds.getMonth()===d.getMonth()}
 
+// HÀM XỬ LÝ LINK GOOGLE MAPS THÔNG MINH
+function makeMapLink(str) {
+    if(!str) return '#';
+    str = str.trim();
+    if(str.startsWith('http://') || str.startsWith('https://')) return escapeHtml(str); // Mở link gốc nếu dán link Maps
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(str)}`;
+}
+
 window.toastTimer = null;
 function showToast(msg){
-  const t = document.getElementById('toast');
-  if(!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
+  const t = document.getElementById('toast'); if(!t) return;
+  t.textContent = msg; t.classList.add('show');
   clearTimeout(window.toastTimer);
-  window.toastTimer = setTimeout(()=> {
-      t.classList.remove('show');
-  }, 2500);
+  window.toastTimer = setTimeout(()=> { t.classList.remove('show'); }, 2500);
 }
 
 window.copyText = function(txt) {
     if (!txt) return;
     if (!navigator.clipboard) {
-        const el = document.createElement('textarea');
-        el.value = txt; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
-        showToast('Đã copy!'); return;
+        const el = document.createElement('textarea'); el.value = txt; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast('Đã copy!'); return;
     }
     navigator.clipboard.writeText(txt).then(() => showToast('Đã copy!')).catch(() => showToast('Lỗi copy!'));
 }
 
-function defaultData(){
-  return { staff: [], payroll: {}, events: [] }
-}
+function defaultData(){ return { staff: [], payroll: {}, events: [] } }
 
 function sanitizeData(d) {
     if(!d) d = defaultData();
@@ -714,76 +731,66 @@ function sanitizeData(d) {
     if(!d.events) d.events = [];
     if(!d.payroll) d.payroll = {};
     d.events.forEach(e => {
+        if(e.isRuocDau === undefined) e.isRuocDau = false;
         if(!e.assignments) e.assignments = [];
         if(!e.products) e.products = [];
         if(!e.date) e.date = isoDate(new Date());
         if(!e.start) e.start = '08:00';
         if(!e.end) e.end = '12:00';
-        // Sanitize new property for older events
-        e.assignments.forEach(a => { if(!a.note) a.note = ''; });
+        e.assignments.forEach(a => { if(!a.locType) a.locType = ''; });
     });
     return d;
 }
 
 function setupDefaultFilters() {
-    const mm = String(current.getMonth() + 1);
-    const yy = String(current.getFullYear());
-    
-    ['staffMonthM', 'summaryMonthM'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.value = mm;
-    });
-    
-    ['staffMonthY', 'summaryMonthY'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.value = yy;
-    });
+    const mm = String(current.getMonth() + 1); const yy = String(current.getFullYear());
+    ['staffMonthM', 'summaryMonthM'].forEach(id => { const el = document.getElementById(id); if(el) el.value = mm; });
+    ['staffMonthY', 'summaryMonthY'].forEach(id => { const el = document.getElementById(id); if(el) el.value = yy; });
 }
 
 window.setupLocationAutocomplete = function() {
-    const input = document.getElementById('eventLocation');
-    const suggestBox = document.getElementById('locationSuggestions');
-    if(!input || !suggestBox) return;
-
     let timeoutId;
-    input.addEventListener('input', function() {
-        window.updateModalVisibility();
-        
-        const query = this.value.trim();
-        clearTimeout(timeoutId);
-        if (query.length < 2) {
-            suggestBox.style.display = 'none';
-            return;
-        }
-        
-        timeoutId = setTimeout(() => {
-            fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lat=10.0452&lon=105.7469`)
-            .then(res => res.json())
-            .then(resData => {
-                if(resData.features && resData.features.length > 0) {
-                    suggestBox.innerHTML = resData.features.map(f => {
-                        const p = f.properties;
-                        const parts = [p.name, p.street, p.district, p.city, p.state, p.country].filter(Boolean);
-                        const uniqueStr = [...new Set(parts)].join(', ');
-                        return `<div class="suggest-item" onclick="window.selectLocation('${escapeHtml(uniqueStr)}')">📍 ${escapeHtml(uniqueStr)}</div>`;
-                    }).join('');
-                    suggestBox.style.display = 'block';
-                } else {
-                    suggestBox.style.display = 'none';
-                }
-            }).catch(()=> suggestBox.style.display = 'none');
-        }, 400); 
-    });
+    ['eventLocation', 'eventLocationTrai', 'eventLocationGai'].forEach(id => {
+        const input = document.getElementById(id);
+        if(!input) return;
+        const suggestBox = input.nextElementSibling; // div.autocomplete-suggestions
 
-    document.addEventListener('click', (e) => {
-        if(e.target !== input) suggestBox.style.display = 'none';
+        input.addEventListener('input', function() {
+            window.updateModalVisibility();
+            const query = this.value.trim();
+            clearTimeout(timeoutId);
+            
+            // Bỏ qua gợi ý nếu người dùng dán Link
+            if (query.startsWith('http')) { suggestBox.style.display = 'none'; return; }
+            if (query.length < 2) { suggestBox.style.display = 'none'; return; }
+            
+            timeoutId = setTimeout(() => {
+                fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lat=10.0452&lon=105.7469`)
+                .then(res => res.json())
+                .then(resData => {
+                    if(resData.features && resData.features.length > 0) {
+                        suggestBox.innerHTML = resData.features.map(f => {
+                            const p = f.properties;
+                            const parts = [p.name, p.street, p.district, p.city, p.state, p.country].filter(Boolean);
+                            const uniqueStr = [...new Set(parts)].join(', ');
+                            return `<div class="suggest-item" onclick="window.selectLocation('${id}', '${escapeHtml(uniqueStr)}')">📍 ${escapeHtml(uniqueStr)}</div>`;
+                        }).join('');
+                        suggestBox.style.display = 'block';
+                    } else { suggestBox.style.display = 'none'; }
+                }).catch(()=> suggestBox.style.display = 'none');
+            }, 400); 
+        });
+
+        // Hide delay để cho phép click vào gợi ý
+        input.addEventListener('blur', () => {
+            setTimeout(() => { if(suggestBox) suggestBox.style.display = 'none'; }, 200);
+        });
     });
 }
 
-window.selectLocation = function(name) {
-    const input = document.getElementById('eventLocation');
+window.selectLocation = function(inputId, name) {
+    const input = document.getElementById(inputId);
     if(input) input.value = name;
-    document.getElementById('locationSuggestions').style.display = 'none';
     window.updateModalVisibility();
 };
 
@@ -797,7 +804,6 @@ function initApp() {
     
     setupDefaultFilters();
     try { render(); } catch(e) {}
-    
     window.setupLocationAutocomplete();
 
     const hideLoading = () => {
@@ -829,11 +835,7 @@ function initApp() {
 window.save = function() {
     if (currentUserRole === 'guest') return;
     localStorage.setItem(STORE_KEY, JSON.stringify(data));
-    if(window.dbRef) {
-        window.dbRef.set(data).catch(err => {
-            showToast("Đã lưu Offline");
-        });
-    }
+    if(window.dbRef) window.dbRef.set(data).catch(err => { showToast("Đã lưu Offline"); });
 }
 
 function getOldDebt(staffId, targetY, targetM) {
@@ -870,9 +872,7 @@ function eventMatches(e){
 
 function getFilteredEvents() {
     let evs = data.events.filter(eventMatches);
-    if (currentUserRole === 'staff') {
-        evs = evs.filter(e => e.assignments.some(a => a.id === staffViewId));
-    }
+    if (currentUserRole === 'staff') evs = evs.filter(e => e.assignments.some(a => a.id === staffViewId));
     return evs;
 }
 
@@ -883,8 +883,7 @@ function monthEvents(){
 
 function renderFilters(){
   if (currentUserRole !== 'admin') return;
-  const sf = document.getElementById('staffFilter');
-  if(!sf) return;
+  const sf = document.getElementById('staffFilter'); if(!sf) return;
   const old = sf.value;
   sf.innerHTML='<option value="">Tất cả nhân sự</option>'+data.staff.map(s=>`<option value="${s.id}">${escapeHtml(s.name)} — ${escapeHtml(s.role)}</option>`).join('');
   sf.value=data.staff.some(s=>s.id===old)?old:'';
@@ -893,68 +892,11 @@ function renderFilters(){
 function renderStats(){
   if (currentUserRole !== 'admin') return;
   const ev=monthEvents();
-  const elTotal = document.getElementById('statTotal');
-  if(elTotal) elTotal.textContent=ev.length;
-  
-  const elConf = document.getElementById('statConfirmed');
-  if(elConf) elConf.textContent=ev.filter(e=>e.status==='confirmed').length;
-  
-  const elPend = document.getElementById('statPending');
-  if(elPend) elPend.textContent=ev.filter(e=>e.status==='pending').length;
-  
+  const elTotal = document.getElementById('statTotal'); if(elTotal) elTotal.textContent=ev.length;
+  const elConf = document.getElementById('statConfirmed'); if(elConf) elConf.textContent=ev.filter(e=>e.status==='confirmed').length;
+  const elPend = document.getElementById('statPending'); if(elPend) elPend.textContent=ev.filter(e=>e.status==='pending').length;
   const unpaidCount = ev.filter(e => e.status !== 'cancelled' && (Number(e.price||0) > Number(e.deposit||0))).length;
-  const elUnpaid = document.getElementById('statUnpaid');
-  if(elUnpaid) elUnpaid.textContent = unpaidCount;
-}
-
-function getOutageWarnings(ds) {
-  if (currentUserRole !== 'admin') return [];
-  const dayEvents = data.events.filter(e => e.date === ds && e.status !== 'cancelled');
-  if(!dayEvents.length) return [];
-  
-  const warnings = [];
-  const checkRole = (roleStr, label) => {
-    const staffOfRole = data.staff.filter(s => s.role === roleStr);
-    if (staffOfRole.length === 0) return;
-    const staffIntervals = {};
-    staffOfRole.forEach(s => staffIntervals[s.id] = []);
-    dayEvents.forEach(e => {
-      e.assignments.forEach(a => {
-        if (staffIntervals[a.id]) staffIntervals[a.id].push({ start: e.start||'', end: e.end||'' });
-      });
-    });
-    let timepoints = new Set();
-    for (let sid in staffIntervals) {
-      staffIntervals[sid].forEach(iv => { 
-          if(iv.start) timepoints.add(iv.start); 
-          if(iv.end) timepoints.add(iv.end); 
-      });
-    }
-    timepoints = Array.from(timepoints).sort();
-    let busyPeriods = [];
-    for (let i = 0; i < timepoints.length - 1; i++) {
-      const t1 = timepoints[i], t2 = timepoints[i+1];
-      let allBusy = true;
-      for (let sid in staffIntervals) {
-        if (!staffIntervals[sid].some(iv => iv.start <= t1 && iv.end >= t2)) { allBusy = false; break; }
-      }
-      if (allBusy) {
-        if (busyPeriods.length > 0 && busyPeriods[busyPeriods.length - 1].end === t1) {
-          busyPeriods[busyPeriods.length - 1].end = t2;
-        } else {
-          busyPeriods.push({ start: t1, end: t2 });
-        }
-      }
-    }
-    if (busyPeriods.length > 0) {
-      const timeStrs = busyPeriods.map(p => `${p.start}-${p.end}`).join(', ');
-      warnings.push(`${label} (${timeStrs})`); 
-    }
-  };
-  checkRole('Photographer', 'Chụp');
-  checkRole('Videographer', 'Quay');
-  checkRole('Makeup', 'Makeup');
-  return warnings;
+  const elUnpaid = document.getElementById('statUnpaid'); if(elUnpaid) elUnpaid.textContent = unpaidCount;
 }
 
 function chip(e){
@@ -962,7 +904,7 @@ function chip(e){
   const staffNames = getStaffNames(e.assignments.map(a=>a.id)).join(', ');
   return `<div class="event-chip ${status}" data-id="${e.id}" title="${escapeHtml(e.name)}${staffNames ? ` (${escapeHtml(staffNames)})` : ''}">
     <div style="min-width:0; overflow:hidden">
-      <div class="time">${escapeHtml(e.start||'')}</div> 
+      <div class="time">${escapeHtml(e.isRuocDau ? (e.startTrai || 'Rước dâu') : (e.start || ''))}</div> 
       <div class="name">${escapeHtml(e.name)}</div>
       ${staffNames ? `<div class="staff-tag">👤 ${escapeHtml(staffNames)}</div>` : ''}
     </div>
@@ -970,18 +912,13 @@ function chip(e){
 }
 
 function renderMonth(){
-  const calEl = document.getElementById('calendar');
-  const agEl = document.getElementById('agenda');
-  if(calEl) calEl.style.display='block';
-  if(agEl) agEl.style.display='none';
+  const calEl = document.getElementById('calendar'); const agEl = document.getElementById('agenda');
+  if(calEl) calEl.style.display='block'; if(agEl) agEl.style.display='none';
   
   const y=current.getFullYear(),m=current.getMonth();
-  const ct = document.getElementById('calendarTitle');
-  if(ct) ct.textContent=`${MONTH_NAMES[m]} ${y}`;
+  const ct = document.getElementById('calendarTitle'); if(ct) ct.textContent=`${MONTH_NAMES[m]} ${y}`;
   
-  const first=new Date(y,m,1);
-  let firstDay = first.getDay(); 
-  let offset = firstDay === 0 ? 6 : firstDay - 1; 
+  const first=new Date(y,m,1); let firstDay = first.getDay(); let offset = firstDay === 0 ? 6 : firstDay - 1; 
   const start = new Date(first); start.setDate(1 - offset);
 
   const allEventsForView = getFilteredEvents();
@@ -991,13 +928,7 @@ function renderMonth(){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const ds=isoDate(d); 
     const all = allEventsForView.filter(e=>e.date===ds).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
-    let warningsHtml = '';
-    const warnings = getOutageWarnings(ds);
-    if(warnings.length) {
-      warningsHtml = `<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
-        ${warnings.map(w => `<span style="background:#fecaca;color:#991b1b;font-size:10.5px;padding:4px 6px;border-radius:6px;font-weight:800;line-height:1.2;">⚠️ ${w}</span>`).join('')}
-      </div>`;
-    }
+    
     const isOtherMonth = d.getMonth() !== m;
     const displayDate = isOtherMonth ? `${d.getDate()}/${d.getMonth()+1}` : d.getDate();
 
@@ -1009,7 +940,6 @@ function renderMonth(){
     
     html+=`<div class="${dayClass}" data-date="${ds}">
       <div class="daynum" style="${isOtherMonth?'width:auto;padding:0 8px':''}">${displayDate}</div>
-      ${warningsHtml}
       ${all.slice(0,5).map(chip).join('')}${all.length>5?`<div style="font-size:11.5px;color:var(--muted);padding:4px 6px;font-weight:700">+${all.length-5} lịch khác</div>`:''}
     </div>`;
   }
@@ -1033,16 +963,18 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isR
       sEvents.forEach(e => {
         const a = e.assignments.find(x => x.id === s.id);
         if(a) {
-          const cost = Number(a.cost||0);
-          totalCost += cost;
+          const cost = Number(a.cost||0); totalCost += cost;
           let taskLinkHtml = a.link ? `<a href="${escapeHtml(a.link)}" target="_blank" style="font-size:11.5px; color:var(--blue); text-decoration:none; background:var(--bg-blue); padding:4px 10px; border-radius:99px; margin-left:8px; display:inline-flex; align-items:center; font-weight:700;">🔗 Link Source</a>` : '';
           
+          let taskDetail = escapeHtml(a.task || 'Chưa xếp việc');
+          if (e.isRuocDau && a.locType) taskDetail += ` (${escapeHtml(a.locType)})`;
+
           tasksHtml += `
             <div class="mini-item" data-id="${e.id}" style="border:0;border-bottom:1px solid var(--line);border-radius:0;padding:16px 24px;background:transparent;box-shadow:none">
               <div>
                 <b style="color:var(--text);font-size:14.5px">${formatDate(e.date)} · ${escapeHtml(e.name)}</b>
                 <div style="color:var(--muted);margin-top:6px;font-size:13.5px;font-weight:600">
-                    ${escapeHtml(a.task || 'Chưa xếp việc')} ${a.note ? ` - ${escapeHtml(a.note)}` : ''} ${taskLinkHtml}
+                    ${taskDetail} ${taskLinkHtml}
                 </div>
               </div>
               <div style="text-align:right">
@@ -1169,47 +1101,54 @@ window.savePayroll = function() {
 
 function renderUpcoming(){
   const panel = document.getElementById('upcomingListPanel');
-  if (currentUserRole !== 'staff') {
-      if(panel) panel.style.display = 'none'; return;
-  }
+  if (currentUserRole !== 'staff') { if(panel) panel.style.display = 'none'; return; }
   if(panel) panel.style.display = 'block';
   
   const today=new Date();today.setHours(0,0,0,0);
   let list = getFilteredEvents().filter(e=>parseDate(e.date)>=today&&e.status!=='cancelled')
     .sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||'')));
     
-  const el=document.getElementById('upcomingList');
-  if(!el) return;
+  const el=document.getElementById('upcomingList'); if(!el) return;
   el.innerHTML=list.length?list.map(e=>{
     let pillColor = 'orange';
     if(e.status==='confirmed') pillColor = 'green';
     else if(e.status==='done') pillColor = 'blue';
     else if(e.status==='cancelled') pillColor = 'red';
 
-    const staffNames = e.assignments.map(a => {
-        const s = data.staff.find(x => x.id === a.id);
-        return s ? `${s.name} (${a.task})` : '';
-    }).filter(Boolean).join(', ');
-
-    const gmapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}`;
     const myAssignment = e.assignments.find(a => a.id === staffViewId);
-    // HIỂN THỊ GHI CHÚ ĐỊA ĐIỂM RIÊNG CỦA THỢ TRONG VIEW UPCOMING
-    const myNoteHtml = (myAssignment && myAssignment.note) ? `<div style="margin-top: 12px; padding: 10px 14px; background: #e0f2fe; border: 1px dashed #7dd3fc; border-radius: 8px; color: #0369a1; font-size: 13.5px;"><b>📍 Yêu cầu/Vị trí riêng của bạn:</b> ${escapeHtml(myAssignment.note)}</div>` : '';
     
+    // GÓC NHÌN THỢ (Tự động hiển thị giờ/địa điểm theo nhiệm vụ của Thợ)
+    let myTime = e.start || 'Chưa định';
+    let myLoc = e.location || '';
+    let locLabel = '📍 Địa điểm:';
+    let timeLabel = '⏰ Bắt đầu:';
+    
+    if (e.isRuocDau && myAssignment && myAssignment.locType) {
+        myTime = myAssignment.locType === 'Nhà trai' ? (e.startTrai || 'Chưa định') : (e.startGai || 'Chưa định');
+        myLoc = myAssignment.locType === 'Nhà trai' ? e.locTrai : e.locGai;
+        locLabel = `📍 Địa điểm (${myAssignment.locType}):`;
+        timeLabel = `⏰ Có mặt (${myAssignment.locType}):`;
+    }
+
+    const mapHref = makeMapLink(myLoc);
+
     return `
     <div class="mini-item" data-id="${e.id}" style="flex-direction:column; align-items:flex-start; gap:12px; padding: 20px;">
         <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start;">
-            <div style="font-size: 16px; font-weight: 800; color: var(--primary); white-space:normal;">${escapeHtml(e.name)}</div>
+            <div style="font-size: 16px; font-weight: 800; color: var(--primary); white-space:normal;">
+                ${escapeHtml(e.name)} ${e.isRuocDau ? '<span style="color:var(--orange);font-size:12px;margin-left:6px;vertical-align:middle;">(Rước dâu)</span>' : ''}
+            </div>
             <span class="pill ${pillColor}">${STATUS_LABEL[e.status]}</span>
         </div>
         
         <div style="font-size: 13.5px; color: var(--text); line-height: 1.8; width: 100%;">
-            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
-            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">⏰ Bắt đầu:</b> <span style="font-weight:700;">${escapeHtml(e.start || 'Chưa định')}</span></div>
-            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">👥 Nhân sự chung:</b> <span>${escapeHtml(staffNames || 'Chưa xếp')}</span></div>
-            ${e.location ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">📍 Lộ trình:</b> <a href="${gmapLink}" target="_blank" style="color:var(--blue); font-weight:600; text-decoration:none;">${escapeHtml(e.location)}</a></div>` : ''}
-            ${e.phone ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 110px;">📞 SĐT:</b> <a href="tel:${escapeHtml(e.phone)}" style="color:var(--text); font-weight:600; text-decoration:none;">${escapeHtml(e.phone)}</a></div>` : ''}
-            ${myNoteHtml}
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">${timeLabel}</b> <span style="font-weight:700; color:var(--primary);">${escapeHtml(myTime)}</span></div>
+            
+            ${myLoc ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">${locLabel}</b> <a href="${mapHref}" target="_blank" style="color:var(--blue); font-weight:600; text-decoration:none;">${escapeHtml(myLoc)}</a></div>` : ''}
+            
+            ${e.phone ? `<div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 120px;">📞 SĐT:</b> <a href="tel:${escapeHtml(e.phone)}" style="color:var(--text); font-weight:600; text-decoration:none;">${escapeHtml(e.phone)}</a></div>` : ''}
+            
             ${e.note ? `<div style="margin-top: 12px; padding: 12px; background: #fefce8; border: 1px dashed #fef08a; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú chung:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
         </div>
     </div>`;
@@ -1232,8 +1171,7 @@ function renderStaffMonthList(){
     }
   });
   
-  const el = document.getElementById('staffMonthList');
-  if(!el) return;
+  const el = document.getElementById('staffMonthList'); if(!el) return;
   el.innerHTML = staffToRender.map(s => {
     const daysArr = Array.from(staffDays[s.id]).sort((a,b)=>a-b);
     const daysStr = daysArr.join(', ');
@@ -1270,16 +1208,14 @@ function renderMonthSummary(){
   });
   const missing = revenue - paidFull - depositOnly;
 
-  const monthKey = `${y}-${pad(m+1)}`;
-  let totalAdvance = 0, totalPaid = 0;
+  const monthKey = `${y}-${pad(m+1)}`; let totalAdvance = 0, totalPaid = 0;
   data.staff.forEach(s => {
       const p = (data.payroll[monthKey] && data.payroll[monthKey][s.id]) || {advance:0, paid:0};
       totalAdvance += p.advance; totalPaid += p.paid;
   });
   const sumStaffPaid = totalAdvance + totalPaid; const sumStaffUnpaid = staffCost - sumStaffPaid;
 
-  const ms = document.getElementById('monthSummary');
-  if(!ms) return;
+  const ms = document.getElementById('monthSummary'); if(!ms) return;
   ms.innerHTML=`
     <div class="kpi-row"><span style="font-weight:700">Tổng ca chụp</span><b style="color:var(--text);font-size:14.5px">${total}</b></div>
     <div style="height:1px;background:var(--line);margin:16px 0"></div>
@@ -1297,19 +1233,15 @@ function renderMonthSummary(){
 }
 
 function render(){
-  renderFilters();
-  renderStats();
+  renderFilters(); renderStats();
   if(currentView === 'month') {
       renderMonth(); const mf = document.getElementById('mainFilters'); if(mf) mf.style.display = 'flex';
   } else {
       renderPayroll(); const mf = document.getElementById('mainFilters'); if(mf) mf.style.display = 'none';
   }
-  renderUpcoming();
-  renderStaffMonthList();
-  renderMonthSummary();
+  renderUpcoming(); renderStaffMonthList(); renderMonthSummary();
   const options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
-  const tt = document.getElementById('todayText');
-  if(tt) tt.textContent=`Hôm nay · ${new Date().toLocaleDateString('vi-VN', options)}`;
+  const tt = document.getElementById('todayText'); if(tt) tt.textContent=`Hôm nay · ${new Date().toLocaleDateString('vi-VN', options)}`;
 }
 
 function setView(v){
@@ -1333,8 +1265,7 @@ window.filterStaffModal = function() {
 window.updateDepositLabel = function() {
   const price = parseMoney(document.getElementById('eventPrice')?.value) * 1000;
   const dep = parseMoney(document.getElementById('eventDeposit')?.value) * 1000;
-  const label = document.getElementById('depositLabel');
-  if(!label) return;
+  const label = document.getElementById('depositLabel'); if(!label) return;
   if (price > 0 && dep >= price) { label.textContent = 'Đã thanh toán đủ'; label.style.color = 'var(--green)'; } 
   else { label.textContent = 'Đã cọc'; label.style.color = 'inherit'; }
 }
@@ -1343,11 +1274,37 @@ window.updateDepositLabel = function() {
 // UI TỪNG BƯỚC FORM LỊCH & THỜI GIAN THỰC
 // ----------------------------------------------------
 window.updateModalVisibility = function() {
+    const isRuocDau = document.getElementById('eventIsRuocDau')?.checked;
     const nameVal = document.getElementById('eventName')?.value.trim() || '';
-    const locVal = document.getElementById('eventLocation')?.value.trim() || '';
     
-    document.querySelectorAll('.step2-item').forEach(el => { el.style.display = nameVal ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; });
-    document.querySelectorAll('.step3-item').forEach(el => { el.style.display = (nameVal && locVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; });
+    // Check required fields based on mode
+    let hasLoc = false;
+    if(isRuocDau) {
+        hasLoc = (document.getElementById('eventLocationTrai')?.value.trim() || document.getElementById('eventLocationGai')?.value.trim());
+    } else {
+        hasLoc = document.getElementById('eventLocation')?.value.trim();
+    }
+
+    // Toggle Time & Loc Fields based on Checkbox
+    document.querySelectorAll('.normal-time').forEach(el => el.style.display = isRuocDau ? 'none' : 'block');
+    document.querySelectorAll('.ruocdau-time').forEach(el => el.style.display = isRuocDau ? 'block' : 'none');
+    
+    document.querySelectorAll('.normal-loc').forEach(el => { 
+        if(!isRuocDau && nameVal) el.style.display = el.classList.contains('full') ? 'block' : 'grid'; 
+        else el.style.display = 'none'; 
+    });
+    document.querySelectorAll('.ruocdau-loc').forEach(el => { 
+        if(isRuocDau && nameVal) el.style.display = el.classList.contains('full') ? 'block' : 'grid'; 
+        else el.style.display = 'none'; 
+    });
+
+    document.querySelectorAll('.step2-item:not(.normal-loc):not(.ruocdau-loc)').forEach(el => { 
+        el.style.display = nameVal ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; 
+    });
+    
+    document.querySelectorAll('.step3-item').forEach(el => { 
+        el.style.display = (nameVal && hasLoc) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; 
+    });
     
     const evDate = document.getElementById('eventDate')?.value; const evEnd = document.getElementById('eventEnd')?.value;
     let isEnded = false; if(evDate && evEnd) isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
@@ -1429,6 +1386,8 @@ window.saveProductRow = function(btn) {
 }
 
 window.renderEventStaffList = function() {
+    const isRuocDau = document.getElementById('eventIsRuocDau')?.checked;
+    
     const existingChecks = document.querySelectorAll('#eventStaff .staff-check');
     if (existingChecks.length > 0) {
         currentEventAssignments = [...existingChecks].filter(cb => cb.checked).map(cb => {
@@ -1436,7 +1395,7 @@ window.renderEventStaffList = function() {
             return { 
                 id: sId, 
                 task: document.getElementById('task-'+sId)?.value || '', 
-                note: document.getElementById('staff-note-'+sId)?.value || '',
+                locType: isRuocDau ? (document.getElementById('staff-loc-'+sId)?.value || '') : '',
                 cost: parseMoney(document.getElementById('cost-'+sId)?.value) * 1000,
                 link: document.getElementById('link-input-'+sId)?.value.trim() || ''
             };
@@ -1453,15 +1412,15 @@ window.renderEventStaffList = function() {
         // GÓC NHÌN THỢ
         evStaffEl.innerHTML = currentEventAssignments.map(a => {
             const s = data.staff.find(x => x.id === a.id); if(!s) return '';
-            const taskText = a.task ? ` - ${escapeHtml(a.task)}` : '';
+            let taskText = a.task ? ` - ${escapeHtml(a.task)}` : '';
+            if (isRuocDau && a.locType) taskText += ` (${escapeHtml(a.locType)})`;
+
             const isMe = (s.id === staffViewId); 
-            
-            let myCostHtml = ''; let myLinkHtml = ''; let myNoteHtml = '';
+            let myCostHtml = ''; let myLinkHtml = '';
 
             if (isMe) {
                 const costVal = a.cost ? money(a.cost) + ' đ' : '0 đ';
                 myCostHtml = `<span style="font-weight:800; color:var(--green); float:right; background: var(--bg-green); padding: 6px 12px; border-radius: 99px;">${costVal}</span>`;
-                if(a.note) myNoteHtml = `<div style="margin-top:8px; font-size:13px; color:#0369a1; background:#e0f2fe; padding:8px 12px; border-radius:8px;">📍 <b>Yêu cầu / Trạm đón:</b> ${escapeHtml(a.note)}</div>`;
                 const savedLink = a.link || '';
                 myLinkHtml = `
                 <div class="staff-link-container" style="display:${isEnded ? 'flex' : 'none'}; gap: 8px; align-items:center; background:#fafafa; padding:12px 16px; border-radius:12px; border: 1px solid var(--line); margin-top: 16px;">
@@ -1489,7 +1448,6 @@ window.renderEventStaffList = function() {
                     </div>
                     ${myCostHtml}
                 </div>
-                ${myNoteHtml}
                 ${myLinkHtml}
             </div>`;
         }).join('') || '<div style="font-size:13px;color:var(--muted); padding:10px;">Chưa xếp nhân sự</div>';
@@ -1501,6 +1459,16 @@ window.renderEventStaffList = function() {
       ? data.staff.map(s => {
           const a = currentEventAssignments.find(x => x.id === s.id);
           const isChecked = !!a; const savedLink = a?.link || '';
+          
+          // NÚT CHỌN ĐỊA ĐIỂM (CHỈ HIỂN THỊ KHI TÍCH RƯỚC DÂU)
+          let locDropdownHtml = '';
+          if (isRuocDau) {
+              locDropdownHtml = `
+              <select id="staff-loc-${s.id}" style="background:#e0f2fe; border:1px solid #7dd3fc; padding:10px; border-radius:10px; outline:0; font-size:13px; font-weight:700; color:#0369a1; min-width:110px;">
+                  <option value="Nhà trai" ${a?.locType==='Nhà trai'?'selected':''}>Nhà trai</option>
+                  <option value="Nhà gái" ${a?.locType==='Nhà gái'?'selected':''}>Nhà gái</option>
+              </select>`;
+          }
 
           return `<div class="staff-modal-item" data-role="${s.role}" style="border:1px solid transparent; border-bottom-color:var(--line); padding:16px 0; background:transparent;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
@@ -1511,6 +1479,8 @@ window.renderEventStaffList = function() {
                 </label>
                 
                 <div style="display:${isChecked ? 'flex' : 'none'}; gap:10px; align-items:center; flex:1.5; justify-content:flex-end; min-width:300px; flex-wrap:wrap;">
+                  ${locDropdownHtml}
+                  
                   <select id="task-${s.id}" style="flex:1; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); min-width:160px;">
                     <option value="Chụp truyền thống" ${a?.task==='Chụp truyền thống'?'selected':''}>Chụp truyền thống</option>
                     <option value="Chụp phóng sự" ${a?.task==='Chụp phóng sự'?'selected':''}>Chụp phóng sự</option>
@@ -1520,8 +1490,6 @@ window.renderEventStaffList = function() {
                     <option value="Makeup" ${a?.task==='Makeup'?'selected':''}>Makeup</option>
                     <option value="Khác" ${a?.task==='Khác'?'selected':''}>Khác</option>
                   </select>
-                  
-                  <input type="text" id="staff-note-${s.id}" value="${escapeHtml(a?.note||'')}" placeholder="📍 Trạm đón / Ghi chú riêng..." style="flex:1.5; min-width:180px; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text);">
 
                   <div class="currency-wrap" style="width:140px; min-width:140px;">
                      <input type="text" inputmode="numeric" id="cost-${s.id}" placeholder="0" value="${a?.cost ? money(a.cost/1000) : ''}" oninput="window.formatMoneyInput(this)" style="background:#f4f4f5;border:1px solid transparent;padding:10px 14px;border-radius:10px;outline:0;font-size:14px;font-weight:700;color:var(--text);">
@@ -1562,7 +1530,7 @@ window.saveFreelanceQuick = function() {
     data.staff.push(newStaff); save();
 
     const fk = document.getElementById('f_khac'); if(fk) fk.checked = true;
-    currentEventAssignments.push({ id: newStaff.id, task: skillLabel, note: '', cost: 0, link: '' });
+    currentEventAssignments.push({ id: newStaff.id, task: skillLabel, locType: '', cost: 0, link: '' });
 
     setSafeValue('newFreeName', '');
     const ff = document.getElementById('freelanceForm');
@@ -1585,10 +1553,19 @@ window.openEventModal = function(prefill={}){
   setSafeValue('eventId', e?.id||'');
   setSafeValue('eventName', e?.name||'');
   setSafeValue('eventDate', e?.date||prefill.date||isoDate(current));
+  
+  setSafeValue('eventIsRuocDau', e?.isRuocDau||false);
+
   setSafeValue('eventStart', e?.start||'08:00');
+  setSafeValue('eventStartTrai', e?.startTrai||'07:00');
+  setSafeValue('eventStartGai', e?.startGai||'06:00');
   setSafeValue('eventEnd', e?.end||'12:00');
-  setSafeValue('eventStatus', e?.status||'pending');
+  
   setSafeValue('eventLocation', e?.location||'');
+  setSafeValue('eventLocationTrai', e?.locTrai||'');
+  setSafeValue('eventLocationGai', e?.locGai||'');
+  
+  setSafeValue('eventStatus', e?.status||'pending');
   setSafeValue('eventPhone', e?.phone||'');
   
   const pE = document.getElementById('eventPrice'); if(pE) pE.value = e?.price ? money(e.price/1000) : '';
@@ -1603,6 +1580,7 @@ window.openEventModal = function(prefill={}){
   const ep = document.getElementById('eventProductsList'); if(ep) ep.innerHTML = '';
   
   currentEventAssignments = e?.assignments ? JSON.parse(JSON.stringify(e.assignments)) : [];
+  window.updateModalVisibility(); // Call before render staff to setup UI state
   window.renderEventStaffList();
   
   if (e && e.products && e.products.length > 0) e.products.forEach(p => window.addProductRow(p.name, p.url, !isAdmin)); 
@@ -1635,32 +1613,28 @@ window.openEventModal = function(prefill={}){
   });
 
   const btnCancel = document.getElementById('cancelEvent'); if(btnCancel) btnCancel.textContent = isAdmin ? 'Hủy' : 'Đóng';
-  
-  setTimeout(() => {
-      if(isAdmin) window.updateModalVisibility();
-      else {
-          document.querySelectorAll('.step2-item, .step3-item').forEach(el => {
-              if (el.id !== 'priceGroup' && el.id !== 'depositGroup' && el.id !== 'productsSection') el.style.display = el.classList.contains('full') ? 'block' : 'grid';
-          });
-          window.updateModalVisibility();
-      }
-  }, 10);
 }
 
 window.checkConflict = function(){
   if (currentUserRole !== 'admin') return;
-  const date=document.getElementById('eventDate')?.value; const start=document.getElementById('eventStart')?.value;
-  const end=document.getElementById('eventEnd')?.value; const id=document.getElementById('eventId')?.value;
+  const date=document.getElementById('eventDate')?.value; 
+  const id=document.getElementById('eventId')?.value;
+  const isRuocDau = document.getElementById('eventIsRuocDau')?.checked;
+  const end = document.getElementById('eventEnd')?.value;
   
   data.staff.forEach(s => {
      const infoSpan = document.getElementById('busy-info-' + s.id); if(!infoSpan) return;
      const sEvents = data.events.filter(e => e.id !== id && e.status !== 'cancelled' && e.date === date && e.assignments.some(a => a.id === s.id));
      if(sEvents.length === 0) infoSpan.innerHTML = '';
      else {
-         let intervals = sEvents.map(e => ({s: e.start||'', e: e.end||''}));
+         // Logic cảnh báo trùng lịch: lấy start tổng quát của lịch cũ
+         let intervals = sEvents.map(e => ({s: (e.isRuocDau ? e.startTrai : e.start)||'', e: e.end||''}));
          let text = intervals.map(iv => `${iv.s}-${iv.e}`).join(', ');
+         
          let overlap = false;
-         if(start && end && start < end) overlap = intervals.some(iv => (start < iv.e && end > iv.s));
+         let myStart = isRuocDau ? (document.getElementById('staff-loc-'+s.id)?.value === 'Nhà trai' ? document.getElementById('eventStartTrai').value : document.getElementById('eventStartGai').value) : document.getElementById('eventStart').value;
+         
+         if(myStart && end && myStart < end) overlap = intervals.some(iv => (myStart < iv.e && end > iv.s));
          
          if(overlap) infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
          else infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
@@ -1671,18 +1645,26 @@ window.checkConflict = function(){
 window.saveEvent = function(){
   if (currentUserRole !== 'admin') return;
   const id=document.getElementById('eventId')?.value;
+  const isRuocDau = document.getElementById('eventIsRuocDau')?.checked;
+  
   const obj={
     id:id||uid(),
+    isRuocDau: isRuocDau,
     name:document.getElementById('eventName')?.value.trim()||'',
     date:document.getElementById('eventDate')?.value||'',
-    start:document.getElementById('eventStart')?.value||'',
+    start: isRuocDau ? '' : (document.getElementById('eventStart')?.value||''),
+    startTrai: isRuocDau ? (document.getElementById('eventStartTrai')?.value||'') : '',
+    startGai: isRuocDau ? (document.getElementById('eventStartGai')?.value||'') : '',
     end:document.getElementById('eventEnd')?.value||'',
+    location: isRuocDau ? '' : (document.getElementById('eventLocation')?.value.trim()||''),
+    locTrai: isRuocDau ? (document.getElementById('eventLocationTrai')?.value.trim()||'') : '',
+    locGai: isRuocDau ? (document.getElementById('eventLocationGai')?.value.trim()||'') : '',
     assignments:[...document.querySelectorAll('#eventStaff input[type="checkbox"]:checked')].map(cb=>{
        const sId = cb.value;
        return {
          id: sId,
          task: document.getElementById('task-'+sId)?.value||'',
-         note: document.getElementById('staff-note-'+sId)?.value.trim()||'', // LƯU GHI CHÚ RIÊNG MỚI
+         locType: isRuocDau ? (document.getElementById('staff-loc-'+sId)?.value||'') : '',
          cost: parseMoney(document.getElementById('cost-'+sId)?.value) * 1000,
          link: document.getElementById('link-input-'+sId)?.value.trim() || ''
        };
@@ -1692,26 +1674,20 @@ window.saveEvent = function(){
        url: row.querySelector('.prod-url')?.value.trim()||''
     })).filter(p => p.url),
     status:document.getElementById('eventStatus')?.value||'pending',
-    location:document.getElementById('eventLocation')?.value.trim()||'',
     phone:document.getElementById('eventPhone')?.value.trim()||'',
     price: parseMoney(document.getElementById('eventPrice')?.value) * 1000,
     deposit: parseMoney(document.getElementById('eventDeposit')?.value) * 1000,
     note:document.getElementById('eventNote')?.value.trim()||''
   };
-  if(!obj.name||!obj.date||!obj.start||!obj.end){showToast('Vui lòng điền đủ tên, ngày và giờ');return}
+  if(!obj.name||!obj.date||!obj.end){showToast('Vui lòng điền đủ Tên, Ngày và Giờ kết thúc');return}
+  if(isRuocDau && (!obj.startTrai || !obj.startGai)) { showToast('Vui lòng điền đủ Giờ nhà trai và Giờ nhà gái'); return;}
+  if(!isRuocDau && !obj.start) { showToast('Vui lòng điền Giờ bắt đầu'); return;}
   
-  // Logic cũ chặn quá khắt khe: (obj.end <= obj.start)
-  // FIX MỚI: Nếu giờ kết thúc < giờ bắt đầu (Tức là làm đêm kéo sang ngày hôm sau), hệ thống chỉ cảnh báo hỏi lại chứ không chặn.
-  if(obj.end <= obj.start){
+  const checkStart = isRuocDau ? obj.startTrai : obj.start;
+  if(obj.end <= checkStart){
       if(!confirm('Giờ kết thúc đang nhỏ hơn hoặc bằng giờ bắt đầu (Có thể do ca làm đêm qua ngày). Bạn có chắc chắn muốn lưu?')) return;
   }
   
-  const isOverlap = obj.assignments.some(x => {
-      return data.events.some(e => e.id !== id && e.status !== 'cancelled' && e.date === obj.date && 
-             e.assignments.some(a => a.id === x.id) && obj.start < e.end && e.start < obj.end);
-  });
-  
-  if(isOverlap && !confirm('Lịch đang bị trùng giờ nhân sự. Vẫn lưu chứ?')) return;
   const idx=data.events.findIndex(e=>e.id===id);
   if(idx>=0)data.events[idx]=obj; else data.events.push(obj);
   
@@ -1799,9 +1775,10 @@ document.getElementById('clearAll')?.addEventListener('click', ()=>{
 
 ['staffFilter','statusFilter'].forEach(id=>document.getElementById(id)?.addEventListener('input',render));
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click', ()=>setView(b.dataset.view)));
-['eventDate','eventStart','eventEnd'].forEach(id=>document.getElementById(id)?.addEventListener('input', () => {
-    window.updateModalVisibility(); window.checkConflict();
-}));
+
+// Auto update Conflict on dynamic times
+document.getElementById('eventStartTrai')?.addEventListener('input', window.checkConflict);
+document.getElementById('eventStartGai')?.addEventListener('input', window.checkConflict);
 
 document.getElementById('staffMonthM')?.addEventListener('change', renderStaffMonthList);
 document.getElementById('staffMonthY')?.addEventListener('change', renderStaffMonthList);
