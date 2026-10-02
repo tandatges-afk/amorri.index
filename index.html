@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#f8fafc">
 
 <link rel="icon" href="logo.png" type="image/png">
 <!-- Phông chữ cao cấp Plus Jakarta Sans -->
@@ -22,18 +22,24 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
 
 <style>
-/* FONT & CƠ BẢN */
+/* FONT & CƠ BẢN (NÂNG CẤP BẢNG MÀU SANG TRỌNG) */
 :root {
-  --bg: #f4f4f5; --panel: #ffffff; --text: #09090b; --muted: #52525b; --line: #e4e4e7; 
-  --primary: #18181b; --primary-hover: #27272a; 
-  --green: #10b981; --bg-green: #ecfdf5;
-  --orange: #f59e0b; --bg-orange: #fffbeb;
-  --blue: #3b82f6; --bg-blue: #eff6ff;
-  --red: #ef4444; --bg-red: #fef2f2;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-  --radius: 24px;
+  --bg: #f8fafc; /* Nền xám xanh cực nhạt, sang trọng */
+  --panel: #ffffff; 
+  --text: #0f172a; /* Slate 900 - Đen sâu */
+  --muted: #64748b; /* Slate 500 */
+  --line: #e2e8f0; /* Slate 200 */
+  --primary: #0f172a; 
+  --primary-hover: #334155; 
+  --green: #10b981; --bg-green: #d1fae5;
+  --orange: #f59e0b; --bg-orange: #fef3c7;
+  --blue: #3b82f6; --bg-blue: #dbeafe;
+  --red: #ef4444; --bg-red: #fee2e2;
+  
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
+  --radius: 20px;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -45,8 +51,8 @@ button { cursor: pointer; border: none; outline: none; }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; }
 
@@ -64,19 +70,19 @@ body.role-guest .guest-only-inline { display: inline-flex !important; }
 
 /* BỐ CỤC CHÍNH */
 .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; min-height: 100dvh; }
-.sidebar { background: #09090b; color: #fafafa; padding: 32px 20px; display: flex; flex-direction: column; gap: 32px; position: sticky; top: 0; height: 100vh; height: 100dvh; z-index: 40; }
+.sidebar { background: #0f172a; color: #f8fafc; padding: 32px 20px; display: flex; flex-direction: column; gap: 32px; position: sticky; top: 0; height: 100vh; height: 100dvh; z-index: 40; border-right: 1px solid #1e293b; }
 .brand { display: flex; align-items: center; gap: 14px; padding: 0 8px; }
-.brand-mark { width: 44px; height: 44px; border-radius: 12px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+.brand-mark { width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #ffffff, #e2e8f0); display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
 .brand-mark img { width: 100%; height: 100%; object-fit: cover; }
 .brand h1 { font-size: 17px; margin: 0; font-weight: 800; letter-spacing: -0.3px; }
-.brand small { color: #a1a1aa; font-size: 12px; font-weight: 500; }
+.brand small { color: #94a3b8; font-size: 12px; font-weight: 500; }
 
 .side-nav { display: grid; gap: 6px; }
-.nav-btn { background: transparent; color: #a1a1aa; padding: 12px 16px; border-radius: 12px; text-align: left; display: flex; gap: 12px; align-items: center; font-weight: 600; font-size: 14.5px; transition: all 0.2s ease; }
-.nav-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
-.nav-btn.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 700; }
+.nav-btn { background: transparent; color: #94a3b8; padding: 12px 16px; border-radius: 14px; text-align: left; display: flex; gap: 12px; align-items: center; font-weight: 600; font-size: 14.5px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+.nav-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.nav-btn.active { background: #ffffff; color: #0f172a; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 .nav-btn b { font-size: 18px; font-weight: normal; opacity: 0.8; transition: transform 0.2s; }
-.nav-btn.active b { transform: scale(1.1); opacity: 1; }
+.nav-btn.active b { transform: scale(1.1); opacity: 1; color: var(--blue); }
 .sidebar-bottom { margin-top: auto; display: grid; gap: 10px; }
 
 .main { padding: 40px; min-width: 0; }
@@ -85,80 +91,79 @@ body.role-guest .guest-only-inline { display: inline-flex !important; }
 .subtitle { font-size: 14px; color: var(--muted); margin-top: 6px; font-weight: 600; }
 
 .btn { background: #fff; border: 1px solid var(--line); color: var(--text); padding: 12px 20px; border-radius: 999px; font-weight: 700; font-size: 13.5px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm); }
-.btn:hover { background: #fafafa; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn:hover { background: #f8fafc; transform: translateY(-1px); box-shadow: var(--shadow-md); border-color: #cbd5e1; }
 .btn:active { transform: translateY(1px); box-shadow: none; }
-.btn.primary { border-color: transparent; background: var(--primary); color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
-.btn.primary:hover { background: var(--primary-hover); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
+.btn.primary { border-color: transparent; background: var(--primary); color: #fff; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2); }
+.btn.primary:hover { background: var(--primary-hover); box-shadow: 0 6px 20px rgba(15, 23, 42, 0.25); border-color: transparent;}
 .btn.danger { color: #b91c1c; border-color: transparent; background: #fef2f2; box-shadow: none; }
-.btn.danger:hover { background: #fee2e2; }
+.btn.danger:hover { background: #fee2e2; border-color: transparent;}
 .btn.ghost { background: transparent; border-color: transparent; box-shadow: none; }
-.btn.ghost:hover { background: #f4f4f5; }
+.btn.ghost:hover { background: #f1f5f9; border-color: transparent;}
 
 .grid-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin-bottom: 32px; }
-.stat { background: var(--panel); border: 1px solid var(--line); padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow-sm); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-.stat:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: #d4d4d8; }
+.stat { background: linear-gradient(145deg, #ffffff, #f8fafc); border: none; padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow-md); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.stat:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
 .stat-label { color: var(--muted); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 .stat-num { font-size: 34px; font-weight: 800; margin-top: 8px; color: var(--text); letter-spacing: -1px; }
 .stat-meta { font-size: 13px; color: var(--muted); margin-top: 4px; font-weight: 600; }
 
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 24px; }
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+.panel { background: var(--panel); border: none; border-radius: var(--radius); box-shadow: var(--shadow-md); overflow: hidden; }
 
-.calendar-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; background: #fff; }
+.calendar-head { padding: 24px; border-bottom: none; display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; background: transparent; }
 .calendar-nav { display: flex; gap: 8px; align-items: center; }
 .icon-btn { width: 38px; height: 38px; border: 1px solid var(--line); background: #fff; border-radius: 50%; display: grid; place-items: center; transition: all 0.2s; font-size: 16px; color: var(--text); box-shadow: var(--shadow-sm); cursor: pointer;}
-.icon-btn:hover { background: #f4f4f5; transform: scale(1.05); }
-.month-title { font-size: 18px; font-weight: 800; min-width: 140px; text-align: center; }
+.icon-btn:hover { background: #f8fafc; transform: scale(1.05); border-color: #cbd5e1; }
+.month-title { font-size: 19px; font-weight: 800; min-width: 140px; text-align: center; color: var(--text); }
 
-.filters { padding: 16px 24px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; flex-wrap: wrap; background: #fafafa; }
-.field { border: 1px solid transparent; background: #f4f4f5; border-radius: 12px; padding: 10px 16px; outline: none; font-size: 13.5px; transition: all 0.2s; color: var(--text); font-weight: 600; font-family: inherit; }
-.field:focus { background: #fff; border-color: #a1a1aa; box-shadow: 0 0 0 4px rgba(24, 24, 27, 0.05); }
-.field:hover { background: #e4e4e7; }
+.filters { padding: 16px 24px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; flex-wrap: wrap; background: #ffffff; border-radius: 24px 24px 0 0; }
+.field { border: 1px solid #e2e8f0; background: #f1f5f9; border-radius: 14px; padding: 12px 16px; outline: none; font-size: 13.5px; transition: all 0.2s; color: var(--text); font-weight: 600; font-family: inherit; }
+.field:focus { background: #fff; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+.field:hover { background: #e2e8f0; }
 
 .calendar-wrap { overflow-x: auto; }
-.calendar { min-width: 900px; background: #fff; }
+.calendar { min-width: 900px; background: #fff; border-top: none; border-radius: 0 0 24px 24px;}
 .weekdays, .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
-.weekday { padding: 14px 10px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; background: #fafafa; }
+.weekday { padding: 16px 10px; border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); color: #64748b; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; background: #f8fafc; }
 
-.day { min-height: 140px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px; background: #fff; transition: background 0.2s; cursor: pointer; position: relative; }
+.day { min-height: 140px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 12px; background: #fff; transition: background 0.2s; cursor: pointer; position: relative; }
 .day.sat-bg { background-color: #fafafb; } 
 .day.sun-bg { background-color: #f1f5f9; } 
-.day.other .daynum { color: #a1a1aa; font-weight: 600; } 
-.day.other { background-color: #fff; opacity: 0.85; }
+.day.other .daynum { color: #cbd5e1; font-weight: 600; } 
+.day.other { background-color: #fff; opacity: 0.6; }
 .day.other.sat-bg { background-color: #fafafb; }
 .day.other.sun-bg { background-color: #f1f5f9; }
 .day:nth-child(7n) { border-right: 0; }
-.day:hover { filter: brightness(0.96); }
-.day.today { box-shadow: inset 0 4px 0 var(--primary); background: #fff; }
+.day:hover { background: #f8fafc; }
 .daynum { font-size: 13.5px; font-weight: 700; min-width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; border-radius: 8px; margin-bottom: 8px; color: var(--muted); transition: all 0.2s; }
-.day.today .daynum { background: var(--primary); color: #fff; font-weight: 800; }
+.day.today .daynum { background: var(--blue); color: #fff; font-weight: 800; border-radius: 50%; width: 30px; height: 30px; padding: 0; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4); }
 
 /* EVENT CHIPS & PHÂN LỚP MÀU DỊCH VỤ */
-.event-chip { padding: 8px 10px; border-radius: 8px; margin: 5px 0; display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; line-height: 1.3; border-left: 4px solid var(--primary); background: #f4f4f5; transition: all 0.2s; cursor: pointer; }
+.event-chip { padding: 8px 10px; border-radius: 10px; margin: 5px 0; display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; line-height: 1.3; border-left: 4px solid var(--primary); background: #f4f4f5; transition: all 0.2s; cursor: pointer; border-bottom: 1px solid transparent; border-right: 1px solid transparent; border-top: 1px solid transparent; }
 body.role-guest .event-chip { cursor: default; }
-.event-chip:hover { transform: scale(1.02); box-shadow: var(--shadow-sm); z-index: 1; position: relative; }
-body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
+.event-chip:hover { transform: scale(1.02); box-shadow: var(--shadow-sm); z-index: 1; position: relative; border-color: var(--line); }
+body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-color: transparent;}
 .event-chip .time { font-weight: 800; color: var(--text); font-size: 12px; }
 .event-chip .name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 13.5px;}
 .event-chip .staff-tag { font-size:11.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px; color: var(--muted); }
 
-/* Bảng màu Gói Chụp */
-.type-cuoi { background: #fdf2f8 !important; border-left-color: #be185d !important; }
-.type-cuoi .time, .type-cuoi .name { color: #831843 !important; }
-.type-prewedding { background: #f3e8ff !important; border-left-color: #9333ea !important; }
-.type-prewedding .time, .type-prewedding .name { color: #581c87 !important; }
-.type-totnghiep { background: #e0f2fe !important; border-left-color: #0284c7 !important; }
+/* Bảng màu Gói Chụp tinh tế */
+.type-cuoi { background: #fdf2f8 !important; border-left-color: #db2777 !important; }
+.type-cuoi .time, .type-cuoi .name { color: #9d174d !important; }
+.type-prewedding { background: #faf5ff !important; border-left-color: #9333ea !important; }
+.type-prewedding .time, .type-prewedding .name { color: #6b21a8 !important; }
+.type-totnghiep { background: #f0f9ff !important; border-left-color: #0284c7 !important; }
 .type-totnghiep .time, .type-totnghiep .name { color: #075985 !important; }
-.type-concept { background: #ffedd5 !important; border-left-color: #ea580c !important; }
+.type-concept { background: #fff7ed !important; border-left-color: #ea580c !important; }
 .type-concept .time, .type-concept .name { color: #9a3412 !important; }
-.type-sukien { background: #ecfdf5 !important; border-left-color: #059669 !important; }
+.type-sukien { background: #f0fdf4 !important; border-left-color: #059669 !important; }
 .type-sukien .time, .type-sukien .name { color: #064e3b !important; }
 
 .status-done { opacity: 0.6; }
 .status-cancelled { text-decoration:line-through; opacity: 0.5; filter: grayscale(1); }
 
 /* Báo bận */
-.blackout-chip { padding: 4px 8px; border-radius: 6px; margin: 3px 0; background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; font-size: 11px; font-weight: 800; cursor: pointer; text-align: center; }
+.blackout-chip { padding: 4px 8px; border-radius: 8px; margin: 3px 0; background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; font-size: 11px; font-weight: 800; cursor: pointer; text-align: center; }
 
 .empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 14.5px; font-weight: 600; }
 .agenda { display: none; padding: 24px; }
@@ -166,8 +171,8 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
 .side-card { padding: 24px; border-radius: var(--radius); }
 .side-card h3 { margin: 0; font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
 .mini-list { display: grid; gap: 10px; margin-top: 16px; }
-.mini-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); background: #fff; box-shadow: var(--shadow-sm); }
-.mini-item:hover { border-color: #d4d4d8; box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.mini-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); background: #fff; box-shadow: var(--shadow-sm); }
+.mini-item:hover { border-color: #cbd5e1; box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .mini-main { min-width: 0; width: 100%; }
 .mini-title { font-size: 14.5px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini-sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; font-weight: 600; }
@@ -179,14 +184,15 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
 .pill.red { background: var(--bg-red); color: #b91c1c; }
 
 .staff-list { display: grid; gap: 12px; margin-top: 16px; }
-.staff { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: #fafafa; border-radius: 16px; border: 1px solid var(--line); }
-.avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: #e4e4e7; color: var(--text); font-weight: 800; font-size: 14px; letter-spacing: 0.5px; }
+.staff { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: #f8fafc; border-radius: 16px; border: 1px solid var(--line); transition: all 0.2s; }
+.staff:hover { border-color: #cbd5e1; }
+.avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: #e2e8f0; color: var(--text); font-weight: 800; font-size: 15px; letter-spacing: 0.5px; }
 .staff-left { display: flex; gap: 12px; align-items: center; min-width: 0; }
-.staff-name { font-size: 14.5px; font-weight: 700; color: var(--text); }
+.staff-name { font-size: 15px; font-weight: 700; color: var(--text); }
 .staff-role { font-size: 12.5px; color: var(--muted); margin-top: 2px; font-weight: 600; }
 
 /* MODALS */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(9, 9, 11, 0.4); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 1000; backdrop-filter: blur(8px); opacity: 0; transition: opacity 0.3s ease; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 1000; backdrop-filter: blur(8px); opacity: 0; transition: opacity 0.3s ease; }
 .modal-backdrop.show { display: flex; opacity: 1; }
 .modal-backdrop.closing { opacity: 0; pointer-events: none; }
 .modal { width: min(850px, 100%); max-height: 90vh; overflow-y: auto; background: #fff; border-radius: 28px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; transform: translateY(30px) scale(0.98); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -195,43 +201,43 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
 .modal-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 24px 32px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); z-index: 10; }
 .modal-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
 .modal-body { padding: 32px; flex: 1; overflow-y: auto; }
-.modal-foot { display: flex; align-items: center; padding: 20px 32px; border-top: 1px solid var(--line); background: #fafafa; position: sticky; bottom: 0; z-index: 10; border-radius: 0 0 28px 28px; }
+.modal-foot { display: flex; align-items: center; padding: 20px 32px; border-top: 1px solid var(--line); background: #f8fafc; position: sticky; bottom: 0; z-index: 10; border-radius: 0 0 28px 28px; }
 
 /* FORM */
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 .full { grid-column: 1 / -1; }
 .form-group { display: grid; gap: 8px; }
-.form-group label { font-size: 13.5px; font-weight: 700; color: #52525b; }
-.form-group input, .form-group select, .form-group textarea { width: 100%; background: #f4f4f5; border: 1px solid transparent; padding: 12px 16px; border-radius: 12px; outline: none; font-size: 14.5px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-weight: 600; color: var(--text); font-family: inherit; }
-.form-group input:hover, .form-group select:hover, .form-group textarea:hover { background: #e4e4e7; }
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus { background: #fff; border-color: #a1a1aa; box-shadow: 0 0 0 4px rgba(24,24,27,0.05); }
+.form-group label { font-size: 13.5px; font-weight: 700; color: #475569; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 14px 18px; border-radius: 14px; outline: none; font-size: 14.5px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-weight: 600; color: var(--text); font-family: inherit; }
+.form-group input:hover, .form-group select:hover, .form-group textarea:hover { background: #e2e8f0; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { background: #fff; border-color: var(--blue); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
 .form-group textarea { min-height: 100px; resize: vertical; line-height: 1.5; }
-.form-group input[readonly], .form-group textarea[readonly], .form-group select[disabled] { background: #fafafa; color: #a1a1aa; cursor: not-allowed; opacity: 0.8; }
+.form-group input[readonly], .form-group textarea[readonly], .form-group select[disabled] { background: #f8fafc; color: #94a3b8; cursor: not-allowed; opacity: 0.8; }
 
 /* Tiền tệ đ thông minh */
 .currency-wrap { position: relative; width: 100%; display: flex; align-items: center; }
 .currency-wrap input { width: 100%; padding-right: 68px !important; text-align: right; }
-.currency-wrap::after { content: '.000 đ'; position: absolute; right: 14px; color: #94a3b8; font-weight: 800; font-size: 14.5px; pointer-events: none; }
+.currency-wrap::after { content: '.000 đ'; position: absolute; right: 16px; color: #94a3b8; font-weight: 800; font-size: 14.5px; pointer-events: none; }
 
 /* AUTOCOMPLETE GOOGLE MAPS FIX XUYÊN THẤU */
 .loc-group-wrapper { position: relative; z-index: 50; }
-.autocomplete-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1050; max-height: 250px; overflow-y: auto; display: none; margin-top: 4px; padding: 6px; }
-.suggest-item { padding: 12px 16px; font-size: 13.5px; font-weight: 500; cursor: pointer; border-radius: 8px; color: var(--text); display: flex; gap: 8px; align-items: center; transition: all 0.2s; }
-.suggest-item:hover { background: #f4f4f5; color: var(--primary); font-weight: 700; }
+.autocomplete-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-lg); z-index: 1050; max-height: 250px; overflow-y: auto; display: none; margin-top: 4px; padding: 6px; }
+.suggest-item { padding: 12px 16px; font-size: 13.5px; font-weight: 500; cursor: pointer; border-radius: 10px; color: var(--text); display: flex; gap: 8px; align-items: center; transition: all 0.2s; }
+.suggest-item:hover { background: #f1f5f9; color: var(--primary); font-weight: 700; }
 
 .step2-item, .step3-item { animation: fadeSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 @keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-.toast { position: fixed; right: 24px; bottom: 24px; background: #09090b; color: #fff; padding: 14px 24px; border-radius: 99px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-size: 14.5px; font-weight: 600; letter-spacing: 0.3px; z-index: 9999; opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
+.toast { position: fixed; right: 24px; bottom: 24px; background: #0f172a; color: #fff; padding: 16px 28px; border-radius: 99px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-size: 14.5px; font-weight: 600; letter-spacing: 0.3px; z-index: 9999; opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
 .toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 
-.kpi-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; margin: 14px 0; color: #52525b; }
+.kpi-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; margin: 14px 0; color: #475569; }
 .staff-picker { border-radius: 14px; max-height: 400px; overflow-y: auto; }
 
 /* AUDIT LOG + STAFF ACTIVITY FEED */
 .audit-log-list, .staff-activity-list { display:grid; gap:10px; margin-top:16px; max-height:430px; overflow-y:auto; padding-right:4px; }
-.audit-log-item, .staff-activity-item { position:relative; display:flex; gap:12px; align-items:flex-start; padding:14px 16px; border:1px solid var(--line); border-left:4px solid #d4d4d8; border-radius:14px; background:#fff; }
-.audit-log-item .audit-dot, .staff-activity-item .audit-dot { width:10px; height:10px; border-radius:50%; background:#a1a1aa; flex:0 0 auto; margin-top:5px; }
+.audit-log-item, .staff-activity-item { position:relative; display:flex; gap:12px; align-items:flex-start; padding:14px 16px; border:1px solid var(--line); border-left:4px solid #cbd5e1; border-radius:14px; background:#fff; box-shadow: var(--shadow-sm); }
+.audit-log-item .audit-dot, .staff-activity-item .audit-dot { width:10px; height:10px; border-radius:50%; background:#94a3b8; flex:0 0 auto; margin-top:5px; }
 .audit-log-item.warning, .staff-activity-item.warning { border-left-color:var(--orange); background:#fffbeb; }
 .audit-log-item.warning .audit-dot, .staff-activity-item.warning .audit-dot { background:var(--orange); }
 .audit-log-item.danger, .staff-activity-item.danger { border-left-color:var(--red); background:#fef2f2; }
@@ -243,7 +249,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
 .audit-main { min-width:0; flex:1; }
 .audit-title { font-size:13.5px; font-weight:800; color:var(--text); line-height:1.45; }
 .audit-sub { margin-top:4px; font-size:12px; color:var(--muted); line-height:1.5; font-weight:600; }
-.audit-time { white-space:nowrap; font-size:11px; color:#71717a; font-weight:700; }
+.audit-time { white-space:nowrap; font-size:11px; color:#94a3b8; font-weight:700; }
 .audit-filter-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
 .audit-filter-row .btn { padding:7px 12px; font-size:12px; }
 .staff-activity-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
@@ -253,7 +259,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
 .staff-activity-item.info .badge { background:#dbeafe; color:#1d4ed8; border-color:#bfdbfe; }
 .staff-activity-item.success .badge { background:#d1fae5; color:#047857; border-color:#a7f3d0; }
 
-#loadingOverlay { position: fixed; inset: 0; background: rgba(244, 244, 245, 0.95); backdrop-filter: blur(10px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s; }
+#loadingOverlay { position: fixed; inset: 0; background: rgba(248, 250, 252, 0.95); backdrop-filter: blur(10px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s; }
 #loadingOverlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 .loading-logo { width: 80px; height: 80px; border-radius: 20px; background: #fff; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; box-shadow: var(--shadow-md); overflow: hidden; border: 1px solid var(--line); }
 .loading-logo img { width: 100%; height: 100%; object-fit: cover; }
@@ -267,12 +273,12 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
 }
 @media(max-width: 768px){
   .app { grid-template-columns: 1fr; padding-bottom: 80px; } 
-  .sidebar { position: fixed; bottom: 0; left: 0; right: 0; top: auto; height: 75px; flex-direction: row; padding: 0; border-top: 1px solid var(--line); z-index: 99; background: #ffffff; box-shadow: 0 -10px 25px rgba(0,0,0,0.05); }
+  .sidebar { position: fixed; bottom: 0; left: 0; right: 0; top: auto; height: 75px; flex-direction: row; padding: 0; border-top: 1px solid #1e293b; z-index: 99; background: #0f172a; box-shadow: 0 -10px 25px rgba(0,0,0,0.1); }
   .brand, .sidebar-bottom { display: none; }
   .side-nav { display: flex; width: 100%; justify-content: space-around; align-items: center; padding: 0 10px; gap: 0; }
-  .nav-btn { flex-direction: column; gap: 4px; padding: 10px 0; width: 70px; color: var(--muted); border-radius: 12px; justify-content: center; font-size: 11px; background: transparent !important; box-shadow: none !important; }
-  .nav-btn.active { color: var(--primary); font-weight: 700; background: transparent; }
-  .nav-btn.active b { transform: scale(1.15); opacity: 1; color: var(--primary); }
+  .nav-btn { flex-direction: column; gap: 4px; padding: 10px 0; width: 70px; color: #94a3b8; border-radius: 12px; justify-content: center; font-size: 11px; background: transparent !important; box-shadow: none !important; }
+  .nav-btn.active { color: #fff; font-weight: 700; background: transparent; }
+  .nav-btn.active b { transform: scale(1.15); opacity: 1; color: #3b82f6; }
   .nav-btn b { font-size: 22px; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
   
   .main { padding: 24px 16px 40px; }
@@ -286,7 +292,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
   .modal-backdrop { align-items: flex-end; padding: 0; }
   .modal { width: 100%; border-radius: 28px 28px 0 0; max-height: 92vh; margin: 0; }
   .modal-head { padding: 20px 24px; border-radius: 28px 28px 0 0; }
-  .modal-head::before { content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: #d4d4d8; border-radius: 10px; }
+  .modal-head::before { content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: #cbd5e1; border-radius: 10px; }
   .modal-body { padding: 24px; }
   .form-grid { grid-template-columns: 1fr; gap: 20px; }
   .modal-foot { flex-wrap: wrap; padding: 20px 24px; padding-bottom: max(20px, env(safe-area-inset-bottom)); border-radius: 0; }
@@ -298,14 +304,14 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
 
 <div id="loadingOverlay">
     <div class="loading-logo"><img src="logo.png" alt="Amorri" onerror="this.style.display='none'"></div>
-    <div style="font-weight:700; color:var(--text); font-size: 15px; letter-spacing: 0.5px;">Đang đồng bộ dữ liệu...</div>
+    <div style="font-weight:700; color:var(--text); font-size: 15px; letter-spacing: 0.5px; margin-top:10px;">Đang đồng bộ dữ liệu...</div>
 </div>
 
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
         <div class="brand-mark"><img src="logo.png" alt="Amorri" onerror="this.style.display='none'"></div>
-        <div><h1>Amorri Studio</h1><small>Lịch quay & chụp</small></div>
+        <div><h1 style="color:#fff;">Amorri Studio</h1><small>Lịch quay & chụp</small></div>
     </div>
     <nav class="side-nav">
       <button class="nav-btn active" data-view="month"><b>▦</b><span>Lịch tháng</span></button>
@@ -316,7 +322,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
       <button class="nav-btn admin-only" id="settingsBtn"><b>⚙</b><span>Cài đặt</span></button>
     </nav>
     <div class="sidebar-bottom">
-      <button class="btn primary admin-only admin-only-block" id="sideAdd" style="padding:16px; font-size:14.5px; width: 100%;">＋ Thêm lịch mới</button>
+      <button class="btn primary admin-only admin-only-block" id="sideAdd" style="padding:16px; font-size:14.5px; width: 100%; background:#fff; color:#0f172a;">＋ Thêm lịch mới</button>
       <button class="btn guest-only login-btn-ui" style="margin-top:12px; width:100%; justify-content:center; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff;" onclick="window.loginAdmin()">Đăng nhập Admin</button>
       <button class="btn danger admin-only logout-btn-ui" style="margin-top:12px; width:100%; justify-content:center; background: #7f1d1d; color: #fecaca; border: none;" onclick="window.logoutAdmin()">Đăng xuất</button>
     </div>
@@ -475,11 +481,11 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
              <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; color:var(--muted); font-weight:700; cursor:pointer;" onclick="document.getElementById('weddingSubGrid').style.display='none'; document.getElementById('mainTypeGrid').style.display='grid';">
                  ‹ Quay lại
              </div>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fce7f3; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Dạm Ngõ')">Dạm Ngõ</button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fce7f3; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Đám Nối')">Đám Nối</button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fce7f3; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Vu Quy')">Vu Quy</button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fce7f3; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Rước Dâu')">Rước Dâu (Thành hôn)</button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fce7f3; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Xuất Giá')">Xuất Giá (16h - 22h)</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fdf2f8; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Dạm Ngõ')">Dạm Ngõ</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fdf2f8; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Đám Nối')">Đám Nối</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fdf2f8; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Vu Quy')">Vu Quy</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fdf2f8; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Rước Dâu')">Rước Dâu (Thành hôn)</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fdf2f8; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Xuất Giá')">Xuất Giá (16h - 22h)</button>
          </div>
      </div>
   </div>
@@ -494,11 +500,11 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
         <input type="hidden" id="eventId">
         
         <!-- NHẬP LIỆU THẦN TỐC (SMART PASTE) -->
-        <div class="form-group full admin-only admin-only-block" style="background:#f0fdfa; padding:16px; border-radius:16px; border:1px dashed #14b8a6; margin-bottom: 24px;">
+        <div class="form-group full admin-only admin-only-block" style="background:#f0fdfa; padding:16px; border-radius:20px; border:1px solid #ccfbf1; margin-bottom: 24px;">
             <label style="color:#0f766e; display:flex; align-items:center; gap:6px;">⚡ Nhập liệu thần tốc (Tự động điền form)</label>
             <div style="display:flex; gap:10px; margin-top:8px;">
-                <textarea id="smartPasteInput" rows="2" placeholder="Dán tin nhắn Zalo vào đây... (VD: Đám cưới Minh Lan ngày 20/11 lúc 7h nhà gái. Sđt 0901234567. Giá 5tr cọc 1tr)" style="flex:1; border:1px solid #99f6e4; background:#fff; font-weight:normal; resize:none;"></textarea>
-                <button type="button" class="btn primary" style="background:#0d9488; color:#fff; border:none; padding:0 24px; white-space:nowrap;" onclick="window.runSmartPaste()">Phân tích</button>
+                <textarea id="smartPasteInput" rows="2" placeholder="Dán tin nhắn Zalo vào đây... (VD: Đám cưới Minh Lan ngày 20/11 lúc 7h nhà gái. Sđt 0901234567. Giá 5tr cọc 1tr)" style="flex:1; border:1px solid #99f6e4; background:#fff; font-weight:normal; resize:none; border-radius: 12px; padding: 10px 14px;"></textarea>
+                <button type="button" class="btn primary" style="background:#0d9488; color:#fff; border:none; padding:0 24px; white-space:nowrap; border-radius:12px; box-shadow:0 4px 10px rgba(13,148,136,0.3);" onclick="window.runSmartPaste()">Phân tích</button>
             </div>
             <div style="font-size:11.5px; color:#0f766e; margin-top:8px;">Hệ thống tự nhận diện: Ngày, Giờ, Gói chụp, Tên, Số điện thoại và Tiền bạc.</div>
         </div>
@@ -509,7 +515,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
                   <label for="eventName">Tên lịch / Khách hàng</label>
                   <input id="eventName" required placeholder="VD: Đám cưới Minh & Linh" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()">
               </div>
-              <div class="admin-only admin-only-flex" style="align-items:center; gap:8px; margin-top: 22px; background:#fafafa; padding:10px 16px; border-radius:12px; border:1px solid var(--line);">
+              <div class="admin-only admin-only-flex" style="align-items:center; gap:8px; margin-top: 22px; background:#f8fafc; padding:10px 16px; border-radius:14px; border:1px solid var(--line);">
                   <input type="checkbox" id="eventIsRuocDau" style="width:20px; height:20px; accent-color:var(--primary); cursor:pointer;" onchange="window.updateModalVisibility(); window.renderEventStaffList();">
                   <label for="eventIsRuocDau" style="margin:0; cursor:pointer; font-weight:800; color:var(--text);">Rước dâu (2 nhà)</label>
               </div>
@@ -556,18 +562,18 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
               </select>
           </div>
 
-          <div class="form-group full step2-item" style="display:none; padding-top:16px; border-top:1px solid var(--line);">
-            <div class="admin-only" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:10px" id="adminStaffLabel">
-              <label style="font-size:15px;">Phân công nhân sự</label>
-              <button type="button" id="btnShowFreelance" class="btn ghost" style="padding:8px 16px; font-size:12.5px; border:1px solid #d4d4d8; color: var(--text)" onclick="document.getElementById('freelanceForm').style.display='flex'">+ Thêm Freelance</button>
+          <div class="form-group full step2-item" style="display:none; padding-top:20px; border-top:1px solid var(--line);">
+            <div class="admin-only" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px" id="adminStaffLabel">
+              <label style="font-size:15px; color:#0f172a;">Phân công nhân sự</label>
+              <button type="button" id="btnShowFreelance" class="btn ghost" style="padding:8px 16px; font-size:12.5px; border:1px solid #cbd5e1; color: var(--text)" onclick="document.getElementById('freelanceForm').style.display='flex'">+ Thêm Freelance</button>
             </div>
             <label id="guestStaffLabel" style="margin-bottom:8px; font-size:14.5px; font-weight:800; color:var(--text); display:none;">Nhân sự tham gia</label>
             
-            <div id="freelanceForm" style="display:none; gap:10px; margin-bottom:14px; padding:18px; background:#fafafa; border-radius:16px; align-items:center; font-size:13px; border: 1px solid var(--line); flex-wrap:wrap">
+            <div id="freelanceForm" style="display:none; gap:10px; margin-bottom:16px; padding:20px; background:#f8fafc; border-radius:20px; align-items:center; font-size:13px; border: 1px solid var(--line); flex-wrap:wrap">
               <label for="newFreeName" style="display:none;">Tên Freelance</label>
-              <input type="text" id="newFreeName" placeholder="Tên thợ Freelance" style="flex:1; min-width: 140px; padding:12px 16px; background:#fff; border:1px solid var(--line); border-radius:10px; outline:0;">
+              <input type="text" id="newFreeName" placeholder="Tên thợ Freelance" style="flex:1; min-width: 140px; background:#fff;">
               <label for="newFreeRole" style="display:none;">Bộ phận</label>
-              <select id="newFreeRole" style="padding:12px 16px; background:#fff; border:1px solid var(--line); border-radius:10px; outline:0; min-width: 120px;">
+              <select id="newFreeRole" style="background:#fff; min-width: 120px;">
                   <option value="Chụp">Chụp</option>
                   <option value="Quay">Quay</option>
                   <option value="Makeup">Makeup</option>
@@ -577,7 +583,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
               <button type="button" class="btn ghost" style="padding:12px 20px; font-size:13.5px;" onclick="document.getElementById('freelanceForm').style.display='none'">Hủy</button>
             </div>
 
-            <div id="staffFiltersContainer" style="display:flex; gap:16px; margin-bottom:16px; align-items:center; font-size:13.5px; font-weight:600; padding:16px 20px; background:#f4f4f5; border-radius:14px; flex-wrap:wrap">
+            <div id="staffFiltersContainer" style="display:flex; gap:16px; margin-bottom:16px; align-items:center; font-size:13.5px; font-weight:600; padding:16px 20px; background:#f8fafc; border-radius:16px; flex-wrap:wrap; border: 1px solid var(--line);">
               <span style="color:var(--muted)">Lọc theo Tag Vị trí:</span>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_chup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">📷 Chụp</label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_quay" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">🎥 Quay</label>
@@ -632,7 +638,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
           </div>
           
           <!-- NHÓM TIỀN BẠC NẰM CHUNG HÀNG -->
-          <div class="form-group full step3-item" style="display:none; padding-top:16px; border-top:1px solid var(--line);" id="financeGroup">
+          <div class="form-group full step3-item" style="display:none; padding-top:20px; border-top:1px solid var(--line);" id="financeGroup">
             <div style="display:flex; gap:24px; flex-wrap:wrap;">
                 <div style="flex:1; min-width:200px;">
                     <label for="eventPrice">Giá trị booking</label>
@@ -653,8 +659,8 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
 
           <div class="form-group full step3-item admin-only admin-only-block" id="productsSection" style="display:none; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 24px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <label>📦 Sản Phẩm / Bàn Giao File</label>
-                <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:8px 16px; font-size:13px; border:1px solid var(--line);" onclick="window.addProductRow()">+ Thêm Link</button>
+                <label style="font-size:15px; color:#0f172a;">📦 Sản Phẩm / Bàn Giao File</label>
+                <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:8px 16px; font-size:13px; border:1px solid #cbd5e1;" onclick="window.addProductRow()">+ Thêm Link</button>
             </div>
             <div id="eventProductsList" style="display:flex; flex-direction:column; gap:12px;"></div>
           </div>
@@ -663,7 +669,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
       </form>
     </div>
     <div class="modal-foot">
-      <button type="button" class="btn admin-only admin-only-block" id="fullPaidBtn" style="color:#065f46;background:var(--bg-green);border-color:#a7f3d0;display:none;">💰 Đã thanh toán đủ</button>
+      <button type="button" class="btn admin-only admin-only-block" id="fullPaidBtn" style="color:#047857;background:var(--bg-green);border-color:#a7f3d0;display:none; box-shadow:none;">💰 Đã thanh toán đủ</button>
       <button type="button" class="btn danger admin-only admin-only-flex" id="deleteEvent" style="display:none;margin-left:12px">Xóa lịch</button>
       <div style="margin-left:auto;display:flex;gap:12px">
         <button type="button" class="btn ghost" onclick="window.smoothClose('eventModal')" id="cancelEvent">Hủy</button>
@@ -711,7 +717,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
         <div class="form-group full"><label for="staffName">Tên thợ</label><input id="staffName" placeholder="VD: Bii"></div>
         <div class="form-group full">
             <label>Gắn Tag Vai Trò (Có thể chọn nhiều)</label>
-            <div id="staffRoleChecks" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; background:#f4f4f5; padding:14px; border-radius:12px;">
+            <div id="staffRoleChecks" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; background:#f8fafc; padding:16px; border-radius:16px; border: 1px solid #e2e8f0;">
                 <label style="display:flex; gap:8px; align-items:center; font-weight:600;"><input type="checkbox" value="Chụp" style="width:18px;height:18px;accent-color:var(--primary)"> Chụp</label>
                 <label style="display:flex; gap:8px; align-items:center; font-weight:600;"><input type="checkbox" value="Quay" style="width:18px;height:18px;accent-color:var(--primary)"> Quay</label>
                 <label style="display:flex; gap:8px; align-items:center; font-weight:600;"><input type="checkbox" value="Makeup" style="width:18px;height:18px;accent-color:var(--primary)"> Makeup</label>
@@ -743,11 +749,11 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
           <span class="pill blue">Admin Log</span>
         </div>
         <div class="audit-filter-row">
-          <button type="button" class="btn ghost" data-audit-filter="all">Tất cả</button>
-          <button type="button" class="btn ghost" data-audit-filter="booking">Lịch</button>
-          <button type="button" class="btn ghost" data-audit-filter="staff">Nhân sự</button>
-          <button type="button" class="btn ghost" data-audit-filter="source">Source</button>
-          <button type="button" class="btn ghost" data-audit-filter="payroll">Lương</button>
+          <button type="button" class="btn ghost" style="border: 1px solid #e2e8f0;" data-audit-filter="all">Tất cả</button>
+          <button type="button" class="btn ghost" style="border: 1px solid #e2e8f0;" data-audit-filter="booking">Lịch</button>
+          <button type="button" class="btn ghost" style="border: 1px solid #e2e8f0;" data-audit-filter="staff">Nhân sự</button>
+          <button type="button" class="btn ghost" style="border: 1px solid #e2e8f0;" data-audit-filter="source">Source</button>
+          <button type="button" class="btn ghost" style="border: 1px solid #e2e8f0;" data-audit-filter="payroll">Lương</button>
         </div>
         <input id="auditSearchInput" class="field" placeholder="Tìm trong nhật ký..." style="width:100%;margin-top:12px;">
         <div id="auditLogList" class="audit-log-list"></div>
@@ -854,7 +860,6 @@ const staffViewId = urlParams.get('staff');
 
 let currentUserRole = 'guest'; 
 
-// FIX AUTH: Phân quyền an toàn
 function applyRoleUI() {
     document.body.className = `role-${currentUserRole}`;
     
@@ -957,12 +962,10 @@ function normalizeCollection(value) {
     return [];
 }
 
-// FIX: Cập nhật Role cho Data Cũ từ Select Text -> Array String
 function sanitizeData(d) {
     if(!d || typeof d !== 'object') d = defaultData();
     d.staff = normalizeCollection(d.staff);
     
-    // Tương thích ngược: Đổi role cũ thành hệ Checkbox mới
     d.staff.forEach(s => {
         if(s.role && !s.role.includes(',')) {
             let newRoles = [];
@@ -1184,78 +1187,7 @@ function renderAuditLog() {
     }).join('') : '<div class="empty" style="padding:24px;background:#fafafa;border-radius:14px">Chưa có nhật ký hoạt động.</div>';
 }
 
-function setupDefaultFilters() {
-    const mm = String(current.getMonth() + 1); const yy = String(current.getFullYear());
-    ['staffMonthM', 'summaryMonthM'].forEach(id => { const el = document.getElementById(id); if(el) el.value = mm; });
-    ['staffMonthY', 'summaryMonthY'].forEach(id => { const el = document.getElementById(id); if(el) el.value = yy; });
-}
-
-// FIX: SMART ZALO PASTE THÔNG MINH
-window.runSmartPaste = function() {
-    const txt = document.getElementById('smartPasteInput').value;
-    if(!txt) return;
-
-    const lowerTxt = txt.toLowerCase();
-
-    // 1. Phone
-    const phoneMatch = txt.match(/0\d{9}/);
-    if(phoneMatch) setSafeValue('eventPhone', phoneMatch[0]);
-
-    // 2. Date (DD/MM/YYYY or DD/MM)
-    const dateMatch = txt.match(/(\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{4}|\d{2}))?/);
-    if (dateMatch) {
-        let d = pad(dateMatch[1]);
-        let m = pad(dateMatch[2]);
-        let y = dateMatch[3] ? (dateMatch[3].length===2 ? '20'+dateMatch[3] : dateMatch[3]) : current.getFullYear();
-        setSafeValue('eventDate', `${y}-${m}-${d}`);
-    }
-
-    // 3. Time
-    const timeMatch = txt.match(/(\d{1,2})(?:[:h]| giờ)(\d{2})?/i);
-    if (timeMatch) {
-        let hh = pad(timeMatch[1]);
-        let mm = timeMatch[2] ? pad(timeMatch[2]) : '00';
-        setSafeValue('eventStart', `${hh}:${mm}`);
-        setSafeValue('eventStartTrai', `${hh}:${mm}`);
-        setSafeValue('eventStartGai', `${hh}:${mm}`);
-    }
-
-    // 4. Price
-    const priceMatch = txt.match(/giá\s*(\d+)\s*(tr|triệu|k)/i) || txt.match(/(\d+)\s*(tr|triệu)/i);
-    if (priceMatch) {
-        let val = parseInt(priceMatch[1]);
-        if(priceMatch[2].toLowerCase().startsWith('tr')) val = val * 1000;
-        setSafeValue('eventPrice', money(val));
-    }
-    const depMatch = txt.match(/cọc\s*(\d+)\s*(tr|triệu|k)/i);
-    if (depMatch) {
-        let val = parseInt(depMatch[1]);
-        if(depMatch[2].toLowerCase().startsWith('tr')) val = val * 1000;
-        setSafeValue('eventDeposit', money(val));
-    }
-
-    // 5. Gói dịch vụ
-    if(lowerTxt.includes('phóng sự') || lowerTxt.includes('ps')) setSafeValue('eventType', 'Phóng sự');
-    else if(lowerTxt.includes('pre') || lowerTxt.includes('cổng')) setSafeValue('eventType', 'Pre-wedding');
-    else if(lowerTxt.includes('em bé') || lowerTxt.includes('thôi nôi')) setSafeValue('eventType', 'Em bé');
-    else if(lowerTxt.includes('tiệc') || lowerTxt.includes('sự kiện')) setSafeValue('eventType', 'Sự kiện');
-
-    // 6. Rước dâu Mode
-    if(lowerTxt.includes('nhà trai') || lowerTxt.includes('nhà gái') || lowerTxt.includes('rước dâu') || lowerTxt.includes('xuất giá')) {
-        document.getElementById('eventIsRuocDau').checked = true;
-    }
-
-    // 7. Đoán tên Khách
-    let nameGuess = txt.split(/ngày|lúc|sđt|giá|cọc/i)[0].replace(/chụp|đám cưới|đặt lịch|chốt|rước dâu|xuất giá|vu quy/ig, '').trim();
-    if(nameGuess) setSafeValue('eventName', nameGuess.substring(0,40));
-
-    window.updateModalVisibility();
-    window.checkConflict();
-    showToast('⚡ Đã điền tự động! Vui lòng kiểm tra lại.');
-    document.getElementById('smartPasteInput').value = '';
-}
-
-
+// FIX API SPAM & MAP LINKS
 const locControllers = {};
 window.setupLocationAutocomplete = function() {
     ['eventLocation', 'eventLocationTrai', 'eventLocationGai'].forEach(id => {
@@ -1356,7 +1288,6 @@ function initApp() {
     } catch (err) { hideLoading(); }
 }
 
-// LỊCH NGHỈ PHÉP
 window.openBlackoutModal = function() {
     window.smoothOpen('blackoutModal');
     setSafeValue('blackoutDate', isoDate(new Date()));
@@ -1577,6 +1508,15 @@ function renderMonth(){
         }).join('');
     }
 
+    // FIX WARNINGS HTML BUG
+    let warningsHtml = '';
+    const warnings = getOutageWarnings(ds);
+    if(warnings.length) {
+      warningsHtml = `<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px">
+        ${warnings.map(w => `<span style="background:#fee2e2;color:#991b1b;font-size:10.5px;padding:4px 6px;border-radius:6px;font-weight:800;line-height:1.2;">⚠️ ${w}</span>`).join('')}
+      </div>`;
+    }
+
     const isOtherMonth = d.getMonth() !== m;
     const displayDate = isOtherMonth ? `${d.getDate()}/${d.getMonth()+1}` : d.getDate();
 
@@ -1597,7 +1537,7 @@ function renderMonth(){
   if(calEl) calEl.innerHTML=html;
 }
 
-// DELEGATION CHỌN LỊCH / THÊM MỚI
+// EVENT DELEGATION: Thay thế dblclick từng ô bằng 1 event tổng
 document.addEventListener('DOMContentLoaded', () => {
     const calEl = document.getElementById('calendar');
     if (calEl) {
@@ -1835,7 +1775,7 @@ function renderUpcoming(){
             </div>
             <div style="display:flex; gap:6px;">
                 <a href="tel:${escapeHtml(num)}" style="color:#065f46; font-weight:800; text-decoration:none; background:#d1fae5; padding:6px 14px; border-radius:8px; border:1px solid #a7f3d0; font-size: 12px; line-height: 1; display:inline-flex; align-items:center; box-shadow:var(--shadow-sm);">Gọi</a>
-                <button type="button" onclick="window.copyText('${escapeHtml(num)}')" style="color:var(--muted); font-weight:800; background:#f4f4f5; padding:6px 14px; border-radius:8px; border:1px solid #d4d4d8; font-size: 12px; line-height: 1; cursor:pointer; display:inline-flex; align-items:center; box-shadow:var(--shadow-sm);">Copy</button>
+                <button type="button" onclick="window.copyText('${escapeHtml(num)}')" style="color:var(--muted); font-weight:800; background:#f4f4f5; padding:6px 14px; border-radius:8px; border:1px solid #cbd5e1; font-size: 12px; line-height: 1; cursor:pointer; display:inline-flex; align-items:center; box-shadow:var(--shadow-sm);">Copy</button>
             </div>
         </div>`;
     };
@@ -1879,7 +1819,7 @@ function renderUpcoming(){
             <div style="font-size: 16px; font-weight: 800; color: var(--primary); white-space:normal; line-height:1.4;">
                 ${escapeHtml(e.name)} 
                 ${e.isRuocDau ? '<span style="color:var(--orange);font-size:12px;margin-left:6px;vertical-align:middle;">(Rước dâu)</span>' : ''}
-                <span class="pill ghost" style="font-size:10px; border:1px solid #d4d4d8; padding:2px 6px; margin-left:6px;">${escapeHtml(e.eventType||'')}</span>
+                <span class="pill ghost" style="font-size:10px; border:1px solid #cbd5e1; padding:2px 6px; margin-left:6px;">${escapeHtml(e.eventType||'')}</span>
             </div>
             <span class="pill ${pillColor}">${STATUS_LABEL[e.status]}</span>
         </div>
@@ -1892,10 +1832,10 @@ function renderUpcoming(){
             <div style="margin-top:4px;">${myPhoneHtml}</div>
             ${myLocHtml}
             
-            ${e.note ? `<div style="margin-top: 16px; padding: 12px; background: #fefce8; border: 1px dashed #fef08a; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú chung:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
+            ${e.note ? `<div style="margin-top: 16px; padding: 12px; background: #fefce8; border: 1px dashed #fde047; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú chung:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
         </div>
     </div>`;
-  }).join('') : '<div class="empty" style="padding:24px;background:#fafafa;border-radius:16px">Bạn chưa có lịch sắp tới.</div>';
+  }).join('') : '<div class="empty" style="padding:24px;background:#ffffff;border-radius:16px; border: 1px solid var(--line);">Bạn chưa có lịch sắp tới.</div>';
 }
 
 function renderStaffMonthList(){
@@ -2174,7 +2114,6 @@ window.renderEventStaffList = function() {
     const evStaffEl = document.getElementById('eventStaff'); if(!evStaffEl) return;
 
     if (!isAdmin) {
-        // GÓC NHÌN THỢ TRONG MODAL CHI TIẾT
         evStaffEl.innerHTML = currentEventAssignments.map(a => {
             const s = data.staff.find(x => x.id === a.id); if(!s) return '';
             let taskText = a.task ? ` - ${escapeHtml(a.task)}` : '';
@@ -2229,7 +2168,7 @@ window.renderEventStaffList = function() {
           const isChecked = !!a; const savedLink = a?.link || '';
           
           const isBlackout = evDate ? data.blackouts.some(b => b.staffId === s.id && b.date === evDate) : false;
-          const blackoutBadge = isBlackout ? `<span style="color:#ef4444;font-size:10px;font-weight:800;border:1px solid #fca5a5;background:#fef2f2;padding:2px 6px;border-radius:4px;margin-left:8px;">⛔ Nghỉ phép</span>` : '';
+          const blackoutBadge = isBlackout ? `<span style="color:#ef4444;font-size:10px;font-weight:800;border:1px solid #fca5a5;background:#fef2f2;padding:2px 6px;border-radius:6px;margin-left:8px;">⛔ Nghỉ phép</span>` : '';
 
           let locDropdownHtml = '';
           if (isRuocDau) {
@@ -2238,7 +2177,7 @@ window.renderEventStaffList = function() {
               let textCol = a?.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
               
               locDropdownHtml = `
-              <select id="evt-loc-${s.id}" onchange="this.style.backgroundColor=this.value==='Nhà gái'?'#fce7f3':'#e0f2fe'; this.style.borderColor=this.value==='Nhà gái'?'#fbcfe8':'#7dd3fc'; this.style.color=this.value==='Nhà gái'?'#be185d':'#0369a1';" style="background:${bgCol}; border:1px solid ${borderCol}; padding:10px; border-radius:10px; outline:0; font-size:13px; font-weight:800; color:${textCol}; min-width:110px;">
+              <select id="evt-loc-${s.id}" onchange="this.style.backgroundColor=this.value==='Nhà gái'?'#fce7f3':'#e0f2fe'; this.style.borderColor=this.value==='Nhà gái'?'#fbcfe8':'#7dd3fc'; this.style.color=this.value==='Nhà gái'?'#be185d':'#0369a1';" style="background:${bgCol}; border:1px solid ${borderCol}; padding:10px; border-radius:12px; outline:0; font-size:13px; font-weight:800; color:${textCol}; min-width:110px;">
                   <option value="Nhà trai" ${a?.locType==='Nhà trai'?'selected':''}>Nhà trai</option>
                   <option value="Nhà gái" ${a?.locType==='Nhà gái'?'selected':''}>Nhà gái</option>
               </select>`;
@@ -2256,9 +2195,8 @@ window.renderEventStaffList = function() {
                 <div style="display:${isChecked ? 'flex' : 'none'}; gap:10px; align-items:center; flex:1.5; justify-content:flex-end; min-width:300px; flex-wrap:wrap;">
                   ${locDropdownHtml}
                   
-                  <!-- FIX ĐA NHIỆM: Thêm Datalist hoặc Editable Select (Sử dụng List HTML5) -->
                   <div style="flex:1; min-width:160px; position:relative;">
-                      <input type="text" id="evt-task-${s.id}" list="task-options-${s.id}" value="${escapeHtml(a?.task || 'Chụp truyền thống')}" style="width:100%; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text);">
+                      <input type="text" id="evt-task-${s.id}" list="task-options-${s.id}" value="${escapeHtml(a?.task || 'Chụp truyền thống')}" style="width:100%; background:#f1f5f9; border:1px solid #e2e8f0; padding:10px 14px; border-radius:12px; outline:0; font-size:13.5px; font-weight:600; color:var(--text);">
                       <datalist id="task-options-${s.id}">
                         <option value="Chụp truyền thống">
                         <option value="Chụp phóng sự">
@@ -2272,21 +2210,21 @@ window.renderEventStaffList = function() {
                   </div>
 
                   <div class="currency-wrap" style="width:140px; min-width:140px;">
-                     <input type="text" inputmode="numeric" id="evt-cost-${s.id}" placeholder="0" value="${a?.cost ? money(a.cost/1000) : ''}" oninput="window.formatMoneyInput(this)" style="background:#f4f4f5;border:1px solid transparent;padding:10px 14px;border-radius:10px;outline:0;font-size:14px;font-weight:700;color:var(--text);">
+                     <input type="text" inputmode="numeric" id="evt-cost-${s.id}" placeholder="0" value="${a?.cost ? money(a.cost/1000) : ''}" oninput="window.formatMoneyInput(this)" style="background:#f1f5f9;border:1px solid #e2e8f0;padding:10px 14px;border-radius:12px;outline:0;font-size:14px;font-weight:700;color:var(--text);">
                   </div>
                 </div>
             </div>
 
-            <div class="staff-link-container" style="display:${isEnded && isChecked ? 'flex' : 'none'}; gap: 10px; align-items:center; background:#fafafa; padding:12px 16px; border-radius:12px; border: 1px solid var(--line); margin-top: 16px; margin-left: 32px;">
+            <div class="staff-link-container" style="display:${isEnded && isChecked ? 'flex' : 'none'}; gap: 10px; align-items:center; background:#f8fafc; padding:12px 16px; border-radius:14px; border: 1px solid var(--line); margin-top: 16px; margin-left: 32px;">
                  <div id="evt-link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
                      <a id="evt-link-tag-${s.id}" href="${safeUrl(savedLink)}" target="_blank" rel="noopener noreferrer" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
                         🔗 Bấm xem Source
                      </a>
-                     <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="copyText(document.getElementById('evt-link-in-${s.id}').value)">📋 Copy</button>
-                     <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa</button>
+                     <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px; border:1px solid #cbd5e1;" onclick="copyText(document.getElementById('evt-link-in-${s.id}').value)">📋 Copy</button>
+                     <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px; border:1px solid #cbd5e1;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa</button>
                  </div>
                  <div id="evt-link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
-                     <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link Google Drive/Fshare..." style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
+                     <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link Google Drive/Fshare..." style="flex:1; background:#fff; border:1px solid #cbd5e1; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; min-width:150px;">
                      <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu</button>
                  </div>
             </div>
@@ -2299,7 +2237,6 @@ window.renderEventStaffList = function() {
     window.checkConflict();
 }
 
-// FIX: MỞ POPUP CHỌN LOẠI LỊCH (PRE-SELECTION)
 window.openChooseTypeModal = function(date = '') {
     window.tempPrefillDate = date || isoDate(current);
     document.getElementById('mainTypeGrid').style.display='grid';
@@ -2329,7 +2266,6 @@ window.openEventModal = function(prefill={}){
   setSafeValue('eventId', e?.id||'');
   setSafeValue('eventDate', e?.date||prefill.date||isoDate(current));
 
-  // Áp dụng Phân loại nếu tạo mới
   if (!prefill.id && window.tempPrefillType) {
       setSafeValue('eventType', window.tempPrefillType);
       const sub = window.tempPrefillSubType;
@@ -2385,7 +2321,6 @@ window.openEventModal = function(prefill={}){
   
   const ff = document.getElementById('freelanceForm'); if(ff) ff.style.display='none';
   
-  // Dọn dẹp form staff cũ
   const es = document.getElementById('eventStaff'); if(es) es.innerHTML = '';
   const ep = document.getElementById('eventProductsList'); if(ep) ep.innerHTML = '';
   
@@ -2487,8 +2422,8 @@ window.checkConflict = function(){
      const overlap = timeRangesOverlap(myStart, end, intervals[0]?.s, intervals[0]?.e) ||
          intervals.some(iv => timeRangesOverlap(myStart, end, iv.s, iv.e));
 
-     if(overlap) infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
-     else infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
+     if(overlap) infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:6px">(⚠️ Trùng: ${text})</span>`;
+     else infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:6px">(Có lịch: ${text})</span>`;
   });
 }
 
@@ -2663,7 +2598,6 @@ function renderStaffManage(){
   }));
 }
 
-// FIX: LƯU THỢ VỚI NHIỀU VAI TRÒ
 window.addStaff = function(){
   if (currentUserRole !== 'admin') return;
   const name=document.getElementById('staffName')?.value.trim(); 
@@ -2686,13 +2620,24 @@ window.addStaff = function(){
   renderStaffManage();showToast('Đã thêm nhân sự');
 }
 
+document.addEventListener('click', e => {
+  if(e.target.closest('a') || e.target.closest('button') || e.target.closest('.blackout-chip')) return;
+  const chip = e.target.closest('[data-id]'); 
+  if(chip) {
+      if (chip.classList.contains('mini-item')) return;
+      if (chip.classList.contains('event-chip') || chip.classList.contains('agenda-event')) {
+          if (currentUserRole === 'guest') return; 
+          window.openEventModal({id:chip.dataset.id});
+      }
+  }
+});
+
 let searchTimeout;
 document.getElementById('searchInput')?.addEventListener('input', () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(render, 150); });
 
 document.getElementById('prevBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()-1);render()});
 document.getElementById('nextBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()+1);render()});
 
-// THAY ĐỔI: Bấm Thêm lịch sẽ gọi Popup Chọn loại lịch trước
 document.getElementById('addBtn')?.addEventListener('click', ()=>window.openChooseTypeModal());
 document.getElementById('sideAdd')?.addEventListener('click', ()=>window.openChooseTypeModal());
 
