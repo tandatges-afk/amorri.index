@@ -120,7 +120,7 @@ body.role-guest .guest-only-inline { display: inline-flex !important; }
 .weekdays, .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
 .weekday { padding: 14px 10px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; background: #fafafa; }
 
-.day { min-height: 140px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px; background: #fff; transition: background 0.2s; cursor: pointer; }
+.day { min-height: 140px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px; background: #fff; transition: background 0.2s; cursor: pointer; position: relative; }
 .day.sat-bg { background-color: #fafafb; } 
 .day.sun-bg { background-color: #f1f5f9; } 
 .day.other .daynum { color: #a1a1aa; font-weight: 600; } 
@@ -133,32 +133,32 @@ body.role-guest .guest-only-inline { display: inline-flex !important; }
 .daynum { font-size: 13.5px; font-weight: 700; min-width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; border-radius: 8px; margin-bottom: 8px; color: var(--muted); transition: all 0.2s; }
 .day.today .daynum { background: var(--primary); color: #fff; font-weight: 800; }
 
-/* EVENT CHIPS */
+/* EVENT CHIPS & PHÂN LỚP MÀU DỊCH VỤ */
 .event-chip { padding: 8px 10px; border-radius: 8px; margin: 5px 0; display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; line-height: 1.3; border-left: 4px solid var(--primary); background: #f4f4f5; transition: all 0.2s; cursor: pointer; }
 body.role-guest .event-chip { cursor: default; }
-
 .event-chip:hover { transform: scale(1.02); box-shadow: var(--shadow-sm); z-index: 1; position: relative; }
 body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
-
 .event-chip .time { font-weight: 800; color: var(--text); font-size: 12px; }
 .event-chip .name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 13.5px;}
 .event-chip .staff-tag { font-size:11.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px; color: var(--muted); }
 
-.status-confirmed { background: var(--bg-green); border-left-color: var(--green); }
-.status-confirmed .time, .status-confirmed .name { color: #064e3b; }
-.status-confirmed .staff-tag { color: #065f46; }
+/* Bảng màu Gói Chụp */
+.type-cuoi { background: #fdf2f8 !important; border-left-color: #be185d !important; }
+.type-cuoi .time, .type-cuoi .name { color: #831843 !important; }
+.type-prewedding { background: #f3e8ff !important; border-left-color: #9333ea !important; }
+.type-prewedding .time, .type-prewedding .name { color: #581c87 !important; }
+.type-totnghiep { background: #e0f2fe !important; border-left-color: #0284c7 !important; }
+.type-totnghiep .time, .type-totnghiep .name { color: #075985 !important; }
+.type-concept { background: #ffedd5 !important; border-left-color: #ea580c !important; }
+.type-concept .time, .type-concept .name { color: #9a3412 !important; }
+.type-sukien { background: #ecfdf5 !important; border-left-color: #059669 !important; }
+.type-sukien .time, .type-sukien .name { color: #064e3b !important; }
 
-.status-pending { background: var(--bg-orange); border-left-color: var(--orange); }
-.status-pending .time, .status-pending .name { color: #78350f; }
-.status-pending .staff-tag { color: #92400e; }
+.status-done { opacity: 0.6; }
+.status-cancelled { text-decoration:line-through; opacity: 0.5; filter: grayscale(1); }
 
-.status-done { background: var(--bg-blue); border-left-color: var(--blue); }
-.status-done .time, .status-done .name { color: #1e3a8a; }
-.status-done .staff-tag { color: #1e40af; }
-
-.status-cancelled { background: var(--bg-red); border-left-color: var(--red); }
-.status-cancelled .time, .status-cancelled .name { color: #7f1d1d; text-decoration:line-through; }
-.status-cancelled .staff-tag { color: #991b1b; }
+/* Báo bận */
+.blackout-chip { padding: 4px 8px; border-radius: 6px; margin: 3px 0; background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; font-size: 11px; font-weight: 800; cursor: pointer; text-align: center; }
 
 .empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 14.5px; font-weight: 600; }
 .agenda { display: none; padding: 24px; }
@@ -312,6 +312,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
       <button class="nav-btn admin-only" data-view="agenda"><b>💰</b><span>Lương thợ</span></button>
       <button class="nav-btn staff-only" data-view="agenda"><b>💰</b><span>Lương của tôi</span></button>
       <button class="nav-btn admin-only" id="openStaffBtn"><b>✦</b><span>Đội ngũ</span></button>
+      <button class="nav-btn staff-only" onclick="window.openBlackoutModal()"><b>⛔</b><span>Báo bận/nghỉ</span></button>
       <button class="nav-btn admin-only" id="settingsBtn"><b>⚙</b><span>Cài đặt</span></button>
     </nav>
     <div class="sidebar-bottom">
@@ -425,6 +426,65 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
   </main>
 </div>
 
+<!-- Modal Báo Bận (Staff Blackout) -->
+<div class="modal-backdrop" id="blackoutModal">
+  <div class="modal" style="width:min(450px,100%)">
+    <div class="modal-head">
+      <div class="modal-title">Đăng ký ngày nghỉ</div>
+      <button type="button" class="icon-btn" onclick="window.smoothClose('blackoutModal')" style="border:0;background:#f4f4f5;border-radius:50%">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13.5px; color:var(--muted); margin-top:0;">Chọn ngày bạn bận để Admin không xếp lịch trùng.</p>
+      <div class="form-grid" style="grid-template-columns:1fr; gap:16px;">
+        <div class="form-group">
+          <label for="blackoutDate">Ngày nghỉ</label>
+          <input type="date" id="blackoutDate" required>
+        </div>
+        <div class="form-group">
+          <label for="blackoutReason">Lý do (Tùy chọn)</label>
+          <input type="text" id="blackoutReason" placeholder="VD: Việc gia đình, Đi du lịch...">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:flex-end; gap:10px;">
+      <button type="button" class="btn ghost" onclick="window.smoothClose('blackoutModal')">Hủy</button>
+      <button type="button" class="btn primary" onclick="window.saveBlackout()">Lưu ngày nghỉ</button>
+    </div>
+  </div>
+</div>
+
+<!-- MỚI: MODAL CHỌN LOẠI LỊCH (PRE-SELECTION) -->
+<div class="modal-backdrop" id="chooseTypeModal">
+  <div class="modal" style="width:min(400px, 100%)">
+     <div class="modal-head">
+         <div class="modal-title">Chọn loại lịch</div>
+         <button type="button" class="icon-btn" onclick="window.smoothClose('chooseTypeModal')" style="border:0;background:#f4f4f5;border-radius:50%">✕</button>
+     </div>
+     <div class="modal-body" style="padding: 24px;">
+         <div id="mainTypeGrid" style="display:grid; gap:12px;">
+             <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:15px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Tốt nghiệp', '')">🎓 Tốt nghiệp</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:15px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Concept', '')">✨ Concept</button>
+             <button class="btn ghost" style="justify-content:space-between; padding:16px; font-size:15px; border:1px solid var(--line)" onclick="document.getElementById('mainTypeGrid').style.display='none'; document.getElementById('weddingSubGrid').style.display='grid';">
+                 <span>💍 Cưới</span> <span>›</span>
+             </button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:15px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Pre-wedding', '')">🖼️ Chụp cổng - Prewedding</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:15px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Sự kiện', '')">🎉 Sự kiện</button>
+         </div>
+         
+         <div id="weddingSubGrid" style="display:none; gap:12px;">
+             <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; color:var(--muted); font-weight:700; cursor:pointer;" onclick="document.getElementById('weddingSubGrid').style.display='none'; document.getElementById('mainTypeGrid').style.display='grid';">
+                 ‹ Quay lại
+             </div>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fce7f3; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Dạm Ngõ')">Dạm Ngõ</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fce7f3; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Đám Nối')">Đám Nối</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fce7f3; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Vu Quy')">Vu Quy</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fce7f3; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Rước Dâu')">Rước Dâu (Thành hôn)</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fce7f3; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Xuất Giá')">Xuất Giá (16h - 22h)</button>
+         </div>
+     </div>
+  </div>
+</div>
+
 <!-- Modal Thêm/Sửa Sự Kiện -->
 <div class="modal-backdrop" id="eventModal">
   <div class="modal">
@@ -432,6 +492,17 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
     <div class="modal-body">
       <form id="eventForm">
         <input type="hidden" id="eventId">
+        
+        <!-- NHẬP LIỆU THẦN TỐC (SMART PASTE) -->
+        <div class="form-group full admin-only admin-only-block" style="background:#f0fdfa; padding:16px; border-radius:16px; border:1px dashed #14b8a6; margin-bottom: 24px;">
+            <label style="color:#0f766e; display:flex; align-items:center; gap:6px;">⚡ Nhập liệu thần tốc (Tự động điền form)</label>
+            <div style="display:flex; gap:10px; margin-top:8px;">
+                <textarea id="smartPasteInput" rows="2" placeholder="Dán tin nhắn Zalo vào đây... (VD: Đám cưới Minh Lan ngày 20/11 lúc 7h nhà gái. Sđt 0901234567. Giá 5tr cọc 1tr)" style="flex:1; border:1px solid #99f6e4; background:#fff; font-weight:normal; resize:none;"></textarea>
+                <button type="button" class="btn primary" style="background:#0d9488; color:#fff; border:none; padding:0 24px; white-space:nowrap;" onclick="window.runSmartPaste()">Phân tích</button>
+            </div>
+            <div style="font-size:11.5px; color:#0f766e; margin-top:8px;">Hệ thống tự nhận diện: Ngày, Giờ, Gói chụp, Tên, Số điện thoại và Tiền bạc.</div>
+        </div>
+
         <div class="form-grid">
           <div class="form-group full" style="display:flex; gap:16px; align-items:center; flex-wrap:wrap">
               <div style="flex:1; min-width: 250px;">
@@ -445,17 +516,19 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
           </div>
           
           <div class="form-group"><label for="eventDate">Ngày</label><input id="eventDate" type="date" required onchange="window.updateModalVisibility(); window.checkConflict();"></div>
+          
           <div class="form-group">
-              <label for="eventStatus">Trạng thái</label>
-              <select id="eventStatus" onchange="window.updateModalVisibility()">
-                  <option value="pending">Chờ xác nhận</option>
-                  <option value="confirmed">Đã chốt</option>
-                  <option value="done">Hoàn thành</option>
-                  <option value="cancelled">Đã hủy</option>
+              <label for="eventType">Gói Dịch Vụ</label>
+              <select id="eventType" onchange="window.updateModalVisibility()">
+                  <option value="Cưới">💍 Cưới (Hỏi, Vu Quy, Rước Dâu...)</option>
+                  <option value="Pre-wedding">🖼️ Chụp cổng - Prewedding</option>
+                  <option value="Tốt nghiệp">🎓 Tốt nghiệp</option>
+                  <option value="Concept">✨ Concept</option>
+                  <option value="Sự kiện">🎉 Sự kiện / Tiệc</option>
+                  <option value="Khác">Khác</option>
               </select>
           </div>
-          
-          <!-- THỜI GIAN ĐỘNG -->
+
           <div class="form-group normal-time"><label for="eventStart">Giờ bắt đầu</label><input id="eventStart" type="time" onchange="window.checkConflict();"></div>
           
           <div class="form-group full ruocdau-time" style="display:none;">
@@ -473,12 +546,22 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
 
           <div class="form-group"><label for="eventEnd">Giờ kết thúc chung</label><input id="eventEnd" type="time" required onchange="window.updateModalVisibility(); window.checkConflict();"></div>
           
-          <div class="form-group full step2-item" style="display:none">
+          <div class="form-group">
+              <label for="eventStatus">Trạng thái</label>
+              <select id="eventStatus" onchange="window.updateModalVisibility()">
+                  <option value="pending">Chờ xác nhận</option>
+                  <option value="confirmed">Đã chốt</option>
+                  <option value="done">Hoàn thành</option>
+                  <option value="cancelled">Đã hủy</option>
+              </select>
+          </div>
+
+          <div class="form-group full step2-item" style="display:none; padding-top:16px; border-top:1px solid var(--line);">
             <div class="admin-only" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:10px" id="adminStaffLabel">
-              <label>Phân công nhân sự</label>
+              <label style="font-size:15px;">Phân công nhân sự</label>
               <button type="button" id="btnShowFreelance" class="btn ghost" style="padding:8px 16px; font-size:12.5px; border:1px solid #d4d4d8; color: var(--text)" onclick="document.getElementById('freelanceForm').style.display='flex'">+ Thêm Freelance</button>
             </div>
-            <label id="guestStaffLabel" style="margin-bottom:8px; font-size:13.5px; font-weight:700; color:#52525b; display:none;">Nhân sự tham gia</label>
+            <label id="guestStaffLabel" style="margin-bottom:8px; font-size:14.5px; font-weight:800; color:var(--text); display:none;">Nhân sự tham gia</label>
             
             <div id="freelanceForm" style="display:none; gap:10px; margin-bottom:14px; padding:18px; background:#fafafa; border-radius:16px; align-items:center; font-size:13px; border: 1px solid var(--line); flex-wrap:wrap">
               <label for="newFreeName" style="display:none;">Tên Freelance</label>
@@ -495,7 +578,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
             </div>
 
             <div id="staffFiltersContainer" style="display:flex; gap:16px; margin-bottom:16px; align-items:center; font-size:13.5px; font-weight:600; padding:16px 20px; background:#f4f4f5; border-radius:14px; flex-wrap:wrap">
-              <span style="color:var(--muted)">Lọc bộ phận:</span>
+              <span style="color:var(--muted)">Lọc theo Tag Vị trí:</span>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_chup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">📷 Chụp</label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_quay" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">🎥 Quay</label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_makeup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">💄 Makeup</label>
@@ -529,6 +612,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
             </div>
           </div>
 
+          <!-- SĐT ĐỘNG -->
           <div class="form-group full step2-item normal-phone" style="display:none">
             <label for="eventPhone">Số điện thoại khách</label>
             <input id="eventPhone" placeholder="090...">
@@ -548,7 +632,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
           </div>
           
           <!-- NHÓM TIỀN BẠC NẰM CHUNG HÀNG -->
-          <div class="form-group full step3-item" style="display:none" id="financeGroup">
+          <div class="form-group full step3-item" style="display:none; padding-top:16px; border-top:1px solid var(--line);" id="financeGroup">
             <div style="display:flex; gap:24px; flex-wrap:wrap;">
                 <div style="flex:1; min-width:200px;">
                     <label for="eventPrice">Giá trị booking</label>
@@ -618,23 +702,23 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
   </div>
 </div>
 
-<!-- Modal Đội Ngũ -->
+<!-- Modal Đội Ngũ (MULTI-ROLE) -->
 <div class="modal-backdrop" id="staffModal">
   <div class="modal" style="width:min(640px,100%)">
     <div class="modal-head"><div class="modal-title">Đội ngũ & Truy cập</div><button type="button" class="icon-btn" onclick="window.smoothClose('staffModal')" style="border:0;background:#f4f4f5;border-radius:50%">✕</button></div>
     <div class="modal-body">
       <div class="form-grid" style="margin-bottom:32px; padding-bottom: 32px; border-bottom: 1px solid var(--line)">
-        <div class="form-group"><label for="staffName">Tên thợ</label><input id="staffName" placeholder="VD: Bii"></div>
-        <div class="form-group"><label for="staffRole">Vai trò chính</label>
-          <select id="staffRole">
-            <option value="Photographer">Photographer (Chụp)</option>
-            <option value="Videographer">Videographer (Quay)</option>
-            <option value="Makeup">Makeup (Trang điểm)</option>
-            <option value="Editor">Editor (Hậu kỳ)</option>
-            <option value="Assistant">Assistant (Trợ lý)</option>
-            <option value="Freelance">Freelance (Cộng tác viên)</option>
-            <option value="Khác">Khác</option>
-          </select>
+        <div class="form-group full"><label for="staffName">Tên thợ</label><input id="staffName" placeholder="VD: Bii"></div>
+        <div class="form-group full">
+            <label>Gắn Tag Vai Trò (Có thể chọn nhiều)</label>
+            <div id="staffRoleChecks" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; background:#f4f4f5; padding:14px; border-radius:12px;">
+                <label style="display:flex; gap:8px; align-items:center; font-weight:600;"><input type="checkbox" value="Chụp" style="width:18px;height:18px;accent-color:var(--primary)"> Chụp</label>
+                <label style="display:flex; gap:8px; align-items:center; font-weight:600;"><input type="checkbox" value="Quay" style="width:18px;height:18px;accent-color:var(--primary)"> Quay</label>
+                <label style="display:flex; gap:8px; align-items:center; font-weight:600;"><input type="checkbox" value="Makeup" style="width:18px;height:18px;accent-color:var(--primary)"> Makeup</label>
+                <label style="display:flex; gap:8px; align-items:center; font-weight:600;"><input type="checkbox" value="Freelance" style="width:18px;height:18px;accent-color:var(--primary)"> Freelance</label>
+                <label style="display:flex; gap:8px; align-items:center; font-weight:600;"><input type="checkbox" value="Editor" style="width:18px;height:18px;accent-color:var(--primary)"> Editor</label>
+                <label style="display:flex; gap:8px; align-items:center; font-weight:600;"><input type="checkbox" value="Assistant" style="width:18px;height:18px;accent-color:var(--primary)"> Assistant</label>
+            </div>
         </div>
         <div class="form-group full"><button type="button" class="btn primary" id="addStaffBtn">＋ Thêm nhân sự</button></div>
       </div>
@@ -761,7 +845,7 @@ const STATUS_LABEL = {
     'pending': 'Chờ xác nhận', 'confirmed': 'Đã chốt', 'done': 'Hoàn thành', 'cancelled': 'Đã hủy'
 };
 
-let data = { staff: [], events: [], payroll: {} };
+let data = { staff: [], events: [], payroll: {}, blackouts: [], auditLogs: [] };
 let current = new Date(); current.setHours(0,0,0,0);
 let currentView = 'month'; let isFirstLoad = true;
 
@@ -854,13 +938,12 @@ window.copyText = function(txt) {
     navigator.clipboard.writeText(txt).then(() => showToast('Đã copy!')).catch(() => showToast('Lỗi copy!'));
 }
 
-// BỔ SUNG HÀM BỊ THIẾU TỪ BẢN TRƯỚC (QUAN TRỌNG ĐỂ LƯU/XÓA)
 function staffIdsFromAssignments(assignments) {
     if (!Array.isArray(assignments)) return [];
     return assignments.map(a => a.id).filter(Boolean);
 }
 
-function defaultData(){ return { staff: [], payroll: {}, events: [], auditLogs: [] } }
+function defaultData(){ return { staff: [], payroll: {}, events: [], blackouts: [], auditLogs: [] } }
 
 function normalizeCollection(value) {
     if (Array.isArray(value)) return value.filter(Boolean);
@@ -874,14 +957,34 @@ function normalizeCollection(value) {
     return [];
 }
 
+// FIX: Cập nhật Role cho Data Cũ từ Select Text -> Array String
 function sanitizeData(d) {
     if(!d || typeof d !== 'object') d = defaultData();
     d.staff = normalizeCollection(d.staff);
+    
+    // Tương thích ngược: Đổi role cũ thành hệ Checkbox mới
+    d.staff.forEach(s => {
+        if(s.role && !s.role.includes(',')) {
+            let newRoles = [];
+            if(s.role.includes('Chụp') || s.role.includes('Photo')) newRoles.push('Chụp');
+            if(s.role.includes('Quay') || s.role.includes('Video')) newRoles.push('Quay');
+            if(s.role.includes('Makeup')) newRoles.push('Makeup');
+            if(s.role.includes('Free')) newRoles.push('Freelance');
+            if(s.role.includes('Editor')) newRoles.push('Editor');
+            if(s.role.includes('Assistant')) newRoles.push('Assistant');
+            if(newRoles.length === 0) newRoles.push('Khác');
+            s.role = newRoles.join(', ');
+        }
+    });
+
     d.events = normalizeCollection(d.events);
+    d.blackouts = normalizeCollection(d.blackouts);
     if(!d.payroll || typeof d.payroll !== 'object' || Array.isArray(d.payroll)) d.payroll = {};
     d.auditLogs = normalizeCollection(d.auditLogs);
+    
     d.events.forEach(e => {
         if(e.isRuocDau === undefined) e.isRuocDau = false;
+        if(!e.eventType) e.eventType = 'Cưới'; 
         if(!Array.isArray(e.assignments)) e.assignments = normalizeCollection(e.assignments);
         if(!Array.isArray(e.products)) e.products = normalizeCollection(e.products);
         if(!e.date) e.date = isoDate(new Date());
@@ -1087,7 +1190,72 @@ function setupDefaultFilters() {
     ['staffMonthY', 'summaryMonthY'].forEach(id => { const el = document.getElementById(id); if(el) el.value = yy; });
 }
 
-// FIX: ABORT CONTROLLER CHỐNG SPAM API
+// FIX: SMART ZALO PASTE THÔNG MINH
+window.runSmartPaste = function() {
+    const txt = document.getElementById('smartPasteInput').value;
+    if(!txt) return;
+
+    const lowerTxt = txt.toLowerCase();
+
+    // 1. Phone
+    const phoneMatch = txt.match(/0\d{9}/);
+    if(phoneMatch) setSafeValue('eventPhone', phoneMatch[0]);
+
+    // 2. Date (DD/MM/YYYY or DD/MM)
+    const dateMatch = txt.match(/(\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{4}|\d{2}))?/);
+    if (dateMatch) {
+        let d = pad(dateMatch[1]);
+        let m = pad(dateMatch[2]);
+        let y = dateMatch[3] ? (dateMatch[3].length===2 ? '20'+dateMatch[3] : dateMatch[3]) : current.getFullYear();
+        setSafeValue('eventDate', `${y}-${m}-${d}`);
+    }
+
+    // 3. Time
+    const timeMatch = txt.match(/(\d{1,2})(?:[:h]| giờ)(\d{2})?/i);
+    if (timeMatch) {
+        let hh = pad(timeMatch[1]);
+        let mm = timeMatch[2] ? pad(timeMatch[2]) : '00';
+        setSafeValue('eventStart', `${hh}:${mm}`);
+        setSafeValue('eventStartTrai', `${hh}:${mm}`);
+        setSafeValue('eventStartGai', `${hh}:${mm}`);
+    }
+
+    // 4. Price
+    const priceMatch = txt.match(/giá\s*(\d+)\s*(tr|triệu|k)/i) || txt.match(/(\d+)\s*(tr|triệu)/i);
+    if (priceMatch) {
+        let val = parseInt(priceMatch[1]);
+        if(priceMatch[2].toLowerCase().startsWith('tr')) val = val * 1000;
+        setSafeValue('eventPrice', money(val));
+    }
+    const depMatch = txt.match(/cọc\s*(\d+)\s*(tr|triệu|k)/i);
+    if (depMatch) {
+        let val = parseInt(depMatch[1]);
+        if(depMatch[2].toLowerCase().startsWith('tr')) val = val * 1000;
+        setSafeValue('eventDeposit', money(val));
+    }
+
+    // 5. Gói dịch vụ
+    if(lowerTxt.includes('phóng sự') || lowerTxt.includes('ps')) setSafeValue('eventType', 'Phóng sự');
+    else if(lowerTxt.includes('pre') || lowerTxt.includes('cổng')) setSafeValue('eventType', 'Pre-wedding');
+    else if(lowerTxt.includes('em bé') || lowerTxt.includes('thôi nôi')) setSafeValue('eventType', 'Em bé');
+    else if(lowerTxt.includes('tiệc') || lowerTxt.includes('sự kiện')) setSafeValue('eventType', 'Sự kiện');
+
+    // 6. Rước dâu Mode
+    if(lowerTxt.includes('nhà trai') || lowerTxt.includes('nhà gái') || lowerTxt.includes('rước dâu') || lowerTxt.includes('xuất giá')) {
+        document.getElementById('eventIsRuocDau').checked = true;
+    }
+
+    // 7. Đoán tên Khách
+    let nameGuess = txt.split(/ngày|lúc|sđt|giá|cọc/i)[0].replace(/chụp|đám cưới|đặt lịch|chốt|rước dâu|xuất giá|vu quy/ig, '').trim();
+    if(nameGuess) setSafeValue('eventName', nameGuess.substring(0,40));
+
+    window.updateModalVisibility();
+    window.checkConflict();
+    showToast('⚡ Đã điền tự động! Vui lòng kiểm tra lại.');
+    document.getElementById('smartPasteInput').value = '';
+}
+
+
 const locControllers = {};
 window.setupLocationAutocomplete = function() {
     ['eventLocation', 'eventLocationTrai', 'eventLocationGai'].forEach(id => {
@@ -1157,7 +1325,6 @@ function initApp() {
         if (typeof firebase !== 'undefined' && !firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
             
-            // FIREBASE AUTH OBSERVER
             firebase.auth().onAuthStateChanged((user) => {
                 if (user) {
                     currentUserRole = 'admin';
@@ -1187,6 +1354,41 @@ function initApp() {
             });
         }
     } catch (err) { hideLoading(); }
+}
+
+// LỊCH NGHỈ PHÉP
+window.openBlackoutModal = function() {
+    window.smoothOpen('blackoutModal');
+    setSafeValue('blackoutDate', isoDate(new Date()));
+    setSafeValue('blackoutReason', '');
+}
+
+window.saveBlackout = function() {
+    const date = document.getElementById('blackoutDate').value;
+    const reason = document.getElementById('blackoutReason').value.trim();
+    if(!date) { showToast('Vui lòng chọn ngày nghỉ'); return; }
+    
+    const isOverlap = data.events.some(e => e.date === date && e.status !== 'cancelled' && e.assignments.some(a => a.id === staffViewId));
+    if(isOverlap) {
+        alert('Bạn đang có lịch xếp vào ngày này. Vui lòng báo Admin gỡ lịch trước khi đăng ký nghỉ.');
+        return;
+    }
+
+    const bId = uid();
+    const newB = { id: bId, staffId: staffViewId, date, reason };
+    data.blackouts.push(newB);
+    dbSet(`blackouts/${bId}`, newB);
+    showToast('Đã ghi nhận lịch nghỉ!');
+    window.smoothClose('blackoutModal');
+    render();
+}
+
+window.deleteBlackout = function(bId) {
+    if(!confirm('Hủy ngày nghỉ này?')) return;
+    data.blackouts = data.blackouts.filter(b => b.id !== bId);
+    dbRemove(`blackouts/${bId}`);
+    showToast('Đã hủy ngày nghỉ');
+    render();
 }
 
 function getOldDebt(staffId, targetY, targetM) {
@@ -1227,7 +1429,7 @@ function eventMatches(e){
       
       const searchStr = [
           e.name, e.location, e.locTrai, e.locGai, 
-          e.phone, e.phoneTrai, e.phoneGai, e.note, staffStr
+          e.phone, e.phoneTrai, e.phoneGai, e.note, staffStr, e.eventType
       ].join(' ').toLowerCase();
       
       if(!searchStr.includes(q)) return false;
@@ -1271,7 +1473,7 @@ function getOutageWarnings(ds) {
   
   const warnings = [];
   const checkRole = (roleStr, label) => {
-    const staffOfRole = data.staff.filter(s => s.role === roleStr);
+    const staffOfRole = data.staff.filter(s => s.role && s.role.includes(roleStr));
     if (staffOfRole.length === 0) return;
     const staffIntervals = {};
     staffOfRole.forEach(s => staffIntervals[s.id] = []);
@@ -1311,8 +1513,8 @@ function getOutageWarnings(ds) {
       warnings.push(`${label} (${timeStrs})`); 
     }
   };
-  checkRole('Photographer', 'Chụp');
-  checkRole('Videographer', 'Quay');
+  checkRole('Chụp', 'Chụp');
+  checkRole('Quay', 'Quay');
   checkRole('Makeup', 'Makeup');
   return warnings;
 }
@@ -1327,8 +1529,17 @@ function chip(e){
       else if (e.startGai) chipTime = escapeHtml(e.startGai);
       else chipTime = 'Rước dâu';
   }
+  
+  let typeClass = '';
+  if(e.eventType === 'Pre-wedding') typeClass = 'type-prewedding';
+  else if(e.eventType === 'Phóng sự') typeClass = 'type-phongsu';
+  else if(e.eventType === 'Truyền thống' || e.eventType === 'Cưới') typeClass = 'type-cuoi';
+  else if(e.eventType === 'Em bé') typeClass = 'type-embe';
+  else if(e.eventType === 'Tốt nghiệp') typeClass = 'type-totnghiep';
+  else if(e.eventType === 'Concept') typeClass = 'type-concept';
+  else if(e.eventType === 'Sự kiện') typeClass = 'type-sukien';
 
-  return `<div class="event-chip ${status}" data-id="${e.id}" title="${escapeHtml(e.name)}${staffNames ? ` (${escapeHtml(staffNames)})` : ''}">
+  return `<div class="event-chip ${status} ${typeClass}" data-id="${e.id}" title="${escapeHtml(e.name)}${staffNames ? ` (${escapeHtml(staffNames)})` : ''}">
     <div style="min-width:0; overflow:hidden">
       <div class="time">${chipTime}</div> 
       <div class="name">${escapeHtml(e.name)}</div>
@@ -1348,19 +1559,24 @@ function renderMonth(){
   const start = new Date(first); start.setDate(1 - offset);
 
   const allEventsForView = getFilteredEvents();
+  const currentBlackouts = data.blackouts || [];
 
   let html='<div class="weekdays">'+DAY_NAMES.map(x=>`<div class="weekday">${x}</div>`).join('')+'</div><div class="month-grid">';
   for(let i=0;i<42;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const ds=isoDate(d); 
     const all = allEventsForView.filter(e=>e.date===ds).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
-    let warningsHtml = '';
-    const warnings = getOutageWarnings(ds);
-    if(warnings.length) {
-      warningsHtml = `<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
-        ${warnings.map(w => `<span style="background:#fecaca;color:#991b1b;font-size:10.5px;padding:4px 6px;border-radius:6px;font-weight:800;line-height:1.2;">⚠️ ${w}</span>`).join('')}
-      </div>`;
+    
+    let blackoutsHtml = '';
+    const dayBlackouts = currentBlackouts.filter(b => b.date === ds && (currentUserRole === 'admin' || b.staffId === staffViewId));
+    if(dayBlackouts.length) {
+        blackoutsHtml = dayBlackouts.map(b => {
+            const sName = staffNameById(b.staffId);
+            const canDelete = currentUserRole === 'admin' || b.staffId === staffViewId;
+            return `<div class="blackout-chip" ${canDelete ? `onclick="window.deleteBlackout('${b.id}')"` : ''} title="${escapeHtml(b.reason||'Nghỉ phép')}">⛔ ${escapeHtml(sName)} nghỉ</div>`;
+        }).join('');
     }
+
     const isOtherMonth = d.getMonth() !== m;
     const displayDate = isOtherMonth ? `${d.getDate()}/${d.getMonth()+1}` : d.getDate();
 
@@ -1372,6 +1588,7 @@ function renderMonth(){
     
     html+=`<div class="${dayClass}" data-date="${ds}">
       <div class="daynum" style="${isOtherMonth?'width:auto;padding:0 8px':''}">${displayDate}</div>
+      ${blackoutsHtml}
       ${warningsHtml}
       ${all.slice(0,5).map(chip).join('')}${all.length>5?`<div style="font-size:11.5px;color:var(--muted);padding:4px 6px;font-weight:700">+${all.length-5} lịch khác</div>`:''}
     </div>`;
@@ -1380,14 +1597,14 @@ function renderMonth(){
   if(calEl) calEl.innerHTML=html;
 }
 
-// FIX EVENT DELEGATION
+// DELEGATION CHỌN LỊCH / THÊM MỚI
 document.addEventListener('DOMContentLoaded', () => {
     const calEl = document.getElementById('calendar');
     if (calEl) {
         calEl.addEventListener('dblclick', (e) => {
             if (currentUserRole !== 'admin') return;
             const dayEl = e.target.closest('.day');
-            if (dayEl && dayEl.dataset.date) window.openEventModal({date: dayEl.dataset.date});
+            if (dayEl && dayEl.dataset.date) window.openChooseTypeModal(dayEl.dataset.date);
         });
         
         calEl.addEventListener('click', (e) => {
@@ -1512,8 +1729,8 @@ function renderPayroll(){
   }
 
   let html = `<div>`;
-  const mainStaff = data.staff.filter(s => s.role !== 'Freelance');
-  const freeStaff = data.staff.filter(s => s.role === 'Freelance');
+  const mainStaff = data.staff.filter(s => !s.role.includes('Freelance'));
+  const freeStaff = data.staff.filter(s => s.role.includes('Freelance'));
 
   if (mainStaff.length) html += generatePayrollHTML(mainStaff, evs, monthKey, false, false);
   else if (freeStaff.length === 0) html += `<div class="empty" style="background:#fff;border-radius:20px;border:1px dashed var(--line)">Chưa có nhân sự. Hãy vào mục "Đội ngũ" để thêm.</div>`;
@@ -1545,7 +1762,6 @@ window.savePayroll = function() {
   const advance = parseMoney(document.getElementById('payrollAdvance').value) * 1000;
   const paid = parseMoney(document.getElementById('payrollPaid').value) * 1000;
 
-  // FIX FIREBASE WRITE: Chỉ cập nhật đúng node lương
   if(!data.payroll[monthStr]) data.payroll[monthStr] = {};
   data.payroll[monthStr][staffId] = { advance, paid };
   
@@ -1559,7 +1775,6 @@ window.savePayroll = function() {
   window.smoothClose('payrollModal'); render(); showToast('Đã cập nhật lương');
 }
 
-// FIX: ĐỘC LẬP TÌM KIẾM CHO LỊCH SẮP TỚI
 function renderUpcoming(){
   const panel = document.getElementById('upcomingListPanel');
   if (currentUserRole !== 'staff') { if(panel) panel.style.display = 'none'; return; }
@@ -1567,7 +1782,6 @@ function renderUpcoming(){
   
   const today=new Date();today.setHours(0,0,0,0);
   
-  // Không dùng getFilteredEvents() nữa, lọc từ data gốc
   let list = data.events.filter(e => {
       if(e.status === 'cancelled') return false;
       if(parseDate(e.date) < today) return false;
@@ -1660,10 +1874,12 @@ function renderUpcoming(){
     }
 
     return `
-    <div class="mini-item" style="flex-direction:column; align-items:flex-start; gap:8px; padding: 20px;">
+    <div class="mini-item" data-id="${e.id}" style="flex-direction:column; align-items:flex-start; gap:8px; padding: 20px;">
         <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start; margin-bottom:4px;">
             <div style="font-size: 16px; font-weight: 800; color: var(--primary); white-space:normal; line-height:1.4;">
-                ${escapeHtml(e.name)} ${e.isRuocDau ? '<span style="color:var(--orange);font-size:12px;margin-left:6px;vertical-align:middle;">(Rước dâu)</span>' : ''}
+                ${escapeHtml(e.name)} 
+                ${e.isRuocDau ? '<span style="color:var(--orange);font-size:12px;margin-left:6px;vertical-align:middle;">(Rước dâu)</span>' : ''}
+                <span class="pill ghost" style="font-size:10px; border:1px solid #d4d4d8; padding:2px 6px; margin-left:6px;">${escapeHtml(e.eventType||'')}</span>
             </div>
             <span class="pill ${pillColor}">${STATUS_LABEL[e.status]}</span>
         </div>
@@ -1688,7 +1904,7 @@ function renderStaffMonthList(){
   let m = smM?.value ? Number(smM.value) : current.getMonth() + 1;
   let y = smY?.value ? Number(smY.value) : current.getFullYear();
   
-  const staffDays = {}; const staffToRender = data.staff.filter(s => s.role !== 'Freelance'); 
+  const staffDays = {}; const staffToRender = data.staff.filter(s => !s.role.includes('Freelance')); 
   staffToRender.forEach(s => staffDays[s.id] = new Set());
   
   data.events.filter(e => e.status !== 'cancelled').forEach(e => {
@@ -1780,10 +1996,14 @@ window.filterStaffModal = function() {
   const cMakeup = document.getElementById('f_makeup')?.checked; const cKhac = document.getElementById('f_khac')?.checked;
   
   document.querySelectorAll('.staff-modal-item').forEach(el => {
-     const role = el.dataset.role; let show = false;
-     if(role === 'Photographer' && cChup) show = true; else if(role === 'Videographer' && cQuay) show = true;
-     else if(role === 'Makeup' && cMakeup) show = true; else if(['Editor', 'Assistant', 'Khác', 'Freelance'].includes(role) && cKhac) show = true;
-     
+     const role = el.dataset.role || ''; let show = false;
+     if (!cChup && !cQuay && !cMakeup && !cKhac) show = true; 
+     else {
+         if(cChup && role.includes('Chụp')) show = true;
+         if(cQuay && role.includes('Quay')) show = true;
+         if(cMakeup && role.includes('Makeup')) show = true;
+         if(cKhac && (role.includes('Khác') || role.includes('Freelance') || role.includes('Editor') || role.includes('Assistant'))) show = true;
+     }
      const cb = el.querySelector('.staff-check'); if(cb && cb.checked) show = true; 
      el.style.display = show ? 'block' : 'none';
   });
@@ -1931,6 +2151,7 @@ window.saveProductRow = function(btn) {
 
 window.renderEventStaffList = function() {
     const isRuocDau = document.getElementById('eventIsRuocDau')?.checked;
+    const evDate = document.getElementById('eventDate')?.value;
     
     const existingChecks = document.querySelectorAll('#eventStaff .staff-check');
     if (existingChecks.length > 0) {
@@ -1946,13 +2167,14 @@ window.renderEventStaffList = function() {
         });
     }
     
-    const evDate = document.getElementById('eventDate')?.value; const evEnd = document.getElementById('eventEnd')?.value;
+    const evEnd = document.getElementById('eventEnd')?.value;
     let isEnded = false; if(evDate && evEnd) isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
     
     const isAdmin = currentUserRole === 'admin';
     const evStaffEl = document.getElementById('eventStaff'); if(!evStaffEl) return;
 
     if (!isAdmin) {
+        // GÓC NHÌN THỢ TRONG MODAL CHI TIẾT
         evStaffEl.innerHTML = currentEventAssignments.map(a => {
             const s = data.staff.find(x => x.id === a.id); if(!s) return '';
             let taskText = a.task ? ` - ${escapeHtml(a.task)}` : '';
@@ -2006,6 +2228,9 @@ window.renderEventStaffList = function() {
           const a = currentEventAssignments.find(x => x.id === s.id);
           const isChecked = !!a; const savedLink = a?.link || '';
           
+          const isBlackout = evDate ? data.blackouts.some(b => b.staffId === s.id && b.date === evDate) : false;
+          const blackoutBadge = isBlackout ? `<span style="color:#ef4444;font-size:10px;font-weight:800;border:1px solid #fca5a5;background:#fef2f2;padding:2px 6px;border-radius:4px;margin-left:8px;">⛔ Nghỉ phép</span>` : '';
+
           let locDropdownHtml = '';
           if (isRuocDau) {
               let bgCol = a?.locType === 'Nhà gái' ? '#fce7f3' : '#e0f2fe';
@@ -2024,21 +2249,27 @@ window.renderEventStaffList = function() {
                 <label style="display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700;cursor:pointer;color:var(--text); flex:1; min-width:180px;">
                   <input type="checkbox" class="staff-check" value="${s.id}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.nextElementSibling.style.display=this.checked?'flex':'none'; window.updateModalVisibility();" style="accent-color:var(--primary);width:20px;height:20px">
                   ${escapeHtml(s.name)} <span style="color:var(--muted);font-weight:500;font-size:12px">— ${escapeHtml(s.role)}</span>
+                  ${blackoutBadge}
                   <span id="busy-info-${s.id}"></span>
                 </label>
                 
                 <div style="display:${isChecked ? 'flex' : 'none'}; gap:10px; align-items:center; flex:1.5; justify-content:flex-end; min-width:300px; flex-wrap:wrap;">
                   ${locDropdownHtml}
                   
-                  <select id="evt-task-${s.id}" style="flex:1; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); min-width:160px;">
-                    <option value="Chụp truyền thống" ${a?.task==='Chụp truyền thống'?'selected':''}>Chụp truyền thống</option>
-                    <option value="Chụp phóng sự" ${a?.task==='Chụp phóng sự'?'selected':''}>Chụp phóng sự</option>
-                    <option value="Chụp Concept" ${a?.task==='Chụp Concept'?'selected':''}>Chụp Concept</option>
-                    <option value="Quay truyền thống" ${a?.task==='Quay truyền thống'?'selected':''}>Quay truyền thống</option>
-                    <option value="Quay phóng sự" ${a?.task==='Quay phóng sự'?'selected':''}>Quay phóng sự</option>
-                    <option value="Makeup" ${a?.task==='Makeup'?'selected':''}>Makeup</option>
-                    <option value="Khác" ${a?.task==='Khác'?'selected':''}>Khác</option>
-                  </select>
+                  <!-- FIX ĐA NHIỆM: Thêm Datalist hoặc Editable Select (Sử dụng List HTML5) -->
+                  <div style="flex:1; min-width:160px; position:relative;">
+                      <input type="text" id="evt-task-${s.id}" list="task-options-${s.id}" value="${escapeHtml(a?.task || 'Chụp truyền thống')}" style="width:100%; background:#f4f4f5; border:1px solid transparent; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; font-weight:600; color:var(--text);">
+                      <datalist id="task-options-${s.id}">
+                        <option value="Chụp truyền thống">
+                        <option value="Chụp phóng sự">
+                        <option value="Chụp Concept">
+                        <option value="Quay truyền thống">
+                        <option value="Quay phóng sự">
+                        <option value="Chụp & Quay">
+                        <option value="Makeup">
+                        <option value="Khác">
+                      </datalist>
+                  </div>
 
                   <div class="currency-wrap" style="width:140px; min-width:140px;">
                      <input type="text" inputmode="numeric" id="evt-cost-${s.id}" placeholder="0" value="${a?.cost ? money(a.cost/1000) : ''}" oninput="window.formatMoneyInput(this)" style="background:#f4f4f5;border:1px solid transparent;padding:10px 14px;border-radius:10px;outline:0;font-size:14px;font-weight:700;color:var(--text);">
@@ -2068,28 +2299,21 @@ window.renderEventStaffList = function() {
     window.checkConflict();
 }
 
-window.saveFreelanceQuick = function() {
-    if (currentUserRole !== 'admin') return;
-    const name = document.getElementById('newFreeName')?.value.trim();
-    const skillLabel = document.getElementById('newFreeRole')?.value;
-    if (!name) { showToast('Vui lòng nhập tên Freelance'); return; }
+// FIX: MỞ POPUP CHỌN LOẠI LỊCH (PRE-SELECTION)
+window.openChooseTypeModal = function(date = '') {
+    window.tempPrefillDate = date || isoDate(current);
+    document.getElementById('mainTypeGrid').style.display='grid';
+    document.getElementById('weddingSubGrid').style.display='none';
+    window.smoothOpen('chooseTypeModal');
+}
 
-    const displayName = `${name} (${skillLabel})`;
-    const newStaff = { id: uid(), name: displayName, role: 'Freelance' };
-    
-    data.staff.push(newStaff); 
-    dbSet(`staff/${newStaff.id}`, newStaff);
-
-    const fk = document.getElementById('f_khac'); if(fk) fk.checked = true;
-    currentEventAssignments.push({ id: newStaff.id, task: skillLabel, locType: '', cost: 0, link: '' });
-
-    setSafeValue('newFreeName', '');
-    const ff = document.getElementById('freelanceForm');
-    if(ff) { ff.style.display = 'none'; ff.classList.remove('admin-only'); }
-
-    window.renderEventStaffList();
-    showToast('Đã thêm Freelance: ' + displayName);
-};
+window.proceedWithEventType = function(type, subtype) {
+    window.smoothClose('chooseTypeModal');
+    let prefill = { date: window.tempPrefillDate };
+    window.tempPrefillType = type;
+    window.tempPrefillSubType = subtype;
+    setTimeout(() => { window.openEventModal(prefill); }, 300);
+}
 
 window.openEventModal = function(prefill={}){
   if (currentUserRole === 'guest') return; 
@@ -2103,15 +2327,47 @@ window.openEventModal = function(prefill={}){
   if(et) et.textContent= e ? (isAdmin ? 'Chỉnh sửa lịch' : 'Chi tiết lịch') : 'Thêm lịch';
   
   setSafeValue('eventId', e?.id||'');
-  setSafeValue('eventName', e?.name||'');
   setSafeValue('eventDate', e?.date||prefill.date||isoDate(current));
-  
-  setSafeValue('eventIsRuocDau', e?.isRuocDau||false);
 
-  setSafeValue('eventStart', e?.start||'08:00');
+  // Áp dụng Phân loại nếu tạo mới
+  if (!prefill.id && window.tempPrefillType) {
+      setSafeValue('eventType', window.tempPrefillType);
+      const sub = window.tempPrefillSubType;
+      if (sub) {
+          if (sub === 'Rước Dâu') {
+              setSafeValue('eventName', 'Rước Dâu ');
+              document.getElementById('eventIsRuocDau').checked = true;
+              setSafeValue('eventStart', '08:00');
+              setSafeValue('eventEnd', '12:00');
+          } else if (sub === 'Xuất Giá') {
+              setSafeValue('eventName', 'Xuất Giá ');
+              document.getElementById('eventIsRuocDau').checked = false;
+              setSafeValue('eventStart', '16:00');
+              setSafeValue('eventEnd', '22:00');
+          } else {
+              setSafeValue('eventName', sub + ' ');
+              document.getElementById('eventIsRuocDau').checked = false;
+              setSafeValue('eventStart', '08:00');
+              setSafeValue('eventEnd', '12:00');
+          }
+      } else {
+          setSafeValue('eventName', '');
+          document.getElementById('eventIsRuocDau').checked = false;
+          setSafeValue('eventStart', '08:00');
+          setSafeValue('eventEnd', '12:00');
+      }
+      window.tempPrefillType = null;
+      window.tempPrefillSubType = null;
+  } else {
+      setSafeValue('eventName', e?.name||'');
+      setSafeValue('eventType', e?.eventType||'Cưới');
+      setSafeValue('eventIsRuocDau', e?.isRuocDau||false);
+      setSafeValue('eventStart', e?.start||'08:00');
+      setSafeValue('eventEnd', e?.end||'12:00');
+  }
+
   setSafeValue('eventStartTrai', e?.startTrai||'07:00');
   setSafeValue('eventStartGai', e?.startGai||'06:00');
-  setSafeValue('eventEnd', e?.end||'12:00');
   
   setSafeValue('eventLocation', e?.location||'');
   setSafeValue('eventLocationTrai', e?.locTrai||'');
@@ -2128,8 +2384,8 @@ window.openEventModal = function(prefill={}){
   setSafeValue('eventNote', e?.note||'');
   
   const ff = document.getElementById('freelanceForm'); if(ff) ff.style.display='none';
-  ['f_chup','f_quay','f_makeup','f_khac'].forEach(id=>{ const cb = document.getElementById(id); if(cb) cb.checked = false; });
-
+  
+  // Dọn dẹp form staff cũ
   const es = document.getElementById('eventStaff'); if(es) es.innerHTML = '';
   const ep = document.getElementById('eventProductsList'); if(ep) ep.innerHTML = '';
   
@@ -2205,7 +2461,6 @@ function findEventConflicts(candidate) {
     return conflicts;
 }
 
-// FIX: LOGIC CONFLICT RƯỚC DÂU RIÊNG TỪNG THỢ
 window.checkConflict = function(){
   if (currentUserRole !== 'admin') return;
   const date=document.getElementById('eventDate')?.value; 
@@ -2246,6 +2501,7 @@ window.saveEvent = function(){
   const obj={
     id:id||uid(),
     isRuocDau: isRuocDau,
+    eventType: document.getElementById('eventType')?.value || 'Cưới',
     name:document.getElementById('eventName')?.value.trim()||'',
     date:document.getElementById('eventDate')?.value||'',
     start: isRuocDau ? '' : (document.getElementById('eventStart')?.value||''),
@@ -2339,6 +2595,7 @@ window.saveEvent = function(){
           if((previousEvent.name||'') !== (obj.name||'')) detailParts.push('tên lịch');
           if(JSON.stringify(previousEvent.assignments||[]) !== JSON.stringify(obj.assignments||[])) detailParts.push('phân công');
           if((previousEvent.location||'') !== (obj.location||'') || (previousEvent.locTrai||'') !== (obj.locTrai||'') || (previousEvent.locGai||'') !== (obj.locGai||'')) detailParts.push('địa điểm');
+          if((previousEvent.eventType||'') !== (obj.eventType||'')) detailParts.push('gói chụp');
           const detail = detailParts.join(', ') || 'thông tin booking';
           writeAuditLog('EVENT_UPDATED', {
               severity: changeTargetIds.length ? 'warning' : 'info', category:'booking', targetType:'event', targetId:obj.id,
@@ -2406,11 +2663,16 @@ function renderStaffManage(){
   }));
 }
 
+// FIX: LƯU THỢ VỚI NHIỀU VAI TRÒ
 window.addStaff = function(){
   if (currentUserRole !== 'admin') return;
-  const name=document.getElementById('staffName')?.value.trim(); const role=document.getElementById('staffRole')?.value;
+  const name=document.getElementById('staffName')?.value.trim(); 
+  const roles = [...document.querySelectorAll('#staffRoleChecks input:checked')].map(cb => cb.value).join(', ');
+  
   if(!name){showToast('Nhập tên nhân sự');return}
-  const newStaff = {id:uid(),name,role};
+  if(!roles){showToast('Chọn ít nhất 1 vai trò');return}
+  
+  const newStaff = {id:uid(),name,role: roles};
   
   data.staff.push(newStaff);
   dbSet(`staff/${newStaff.id}`, newStaff);
@@ -2420,6 +2682,7 @@ window.addStaff = function(){
   });
   
   setSafeValue('staffName','');
+  document.querySelectorAll('#staffRoleChecks input').forEach(cb => cb.checked = false);
   renderStaffManage();showToast('Đã thêm nhân sự');
 }
 
@@ -2428,9 +2691,11 @@ document.getElementById('searchInput')?.addEventListener('input', () => { clearT
 
 document.getElementById('prevBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()-1);render()});
 document.getElementById('nextBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()+1);render()});
-document.getElementById('addBtn')?.addEventListener('click', ()=>window.openEventModal({}));
-document.getElementById('sideAdd')?.addEventListener('click', ()=>window.openEventModal({}));
-document.getElementById('fabAdd')?.addEventListener('click', ()=>window.openEventModal({}));
+
+// THAY ĐỔI: Bấm Thêm lịch sẽ gọi Popup Chọn loại lịch trước
+document.getElementById('addBtn')?.addEventListener('click', ()=>window.openChooseTypeModal());
+document.getElementById('sideAdd')?.addEventListener('click', ()=>window.openChooseTypeModal());
+
 document.getElementById('cancelEvent')?.addEventListener('click', ()=>window.smoothClose('eventModal'));
 document.getElementById('saveEvent')?.addEventListener('click', window.saveEvent);
 document.getElementById('deleteEvent')?.addEventListener('click', window.deleteEvent);
@@ -2448,7 +2713,7 @@ document.getElementById('fullPaidBtn')?.addEventListener('click', () => {
 document.getElementById('clearAll')?.addEventListener('click', ()=>{
     if(confirm('Xóa toàn bộ dữ liệu lịch, nhân sự và lương? Nhật ký hoạt động sẽ được giữ lại.')){
         const keptLogs = data.auditLogs || [];
-        data={staff:[],events:[],payroll:{},auditLogs:keptLogs};
+        data={staff:[],events:[],payroll:{},blackouts:[],auditLogs:keptLogs};
         writeAuditLog('SYSTEM_CLEAR', { severity:'danger', category:'system', targetType:'system', message:'Admin làm sạch dữ liệu lịch / nhân sự / lương' });
         if(window.dbRef) window.dbRef.set(data).catch(err => console.error('Clear DB error:', err));
         else persistLocal();
