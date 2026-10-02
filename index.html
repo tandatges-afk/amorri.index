@@ -69,7 +69,7 @@ body.role-guest .guest-only { display: flex !important; }
 body.role-guest .guest-only-inline { display: inline-flex !important; }
 
 /* BỐ CỤC CHÍNH */
-.app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; min-height: 100dvh; background: var(--bg); transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; min-height: 100dvh; max-width: 1800px; margin: 0 auto; background: var(--bg); transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 
 /* SIDEBAR DARK THEME + NÚT TOGGLE */
 .sidebar { background: #0f172a; color: #f8fafc; padding: 32px 20px; display: flex; flex-direction: column; gap: 32px; position: sticky; top: 0; height: 100vh; height: 100dvh; z-index: 40; transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; }
@@ -177,7 +177,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 .status-cancelled { text-decoration:line-through; opacity: 0.5; filter: grayscale(1); }
 
 /* Báo bận */
-.blackout-chip { padding: 4px 8px; border-radius: 8px; margin: 3px 0; background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; font-size: 11px; font-weight: 800; cursor: pointer; text-align: center; }
+.blackout-chip { padding: 4px 8px; border-radius: 6px; margin: 3px 0; background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; font-size: 11px; font-weight: 800; cursor: pointer; text-align: center; }
 
 .empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 14.5px; font-weight: 600; }
 .agenda { display: none; padding: 24px; }
@@ -331,12 +331,12 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
     </div>
     
     <nav class="side-nav">
-      <button class="nav-btn active" data-view="month"><b>▦</b><span>Lịch tháng</span></button>
-      <button class="nav-btn admin-only" data-view="agenda"><b>💰</b><span>Lương thợ</span></button>
-      <button class="nav-btn staff-only" data-view="agenda"><b>💰</b><span>Lương của tôi</span></button>
-      <button class="nav-btn admin-only" id="openStaffBtn"><b>✦</b><span>Đội ngũ</span></button>
-      <button class="nav-btn staff-only" onclick="window.openBlackoutModal()"><b>⛔</b><span>Báo bận/nghỉ</span></button>
-      <button class="nav-btn admin-only" id="settingsBtn"><b>⚙</b><span>Cài đặt</span></button>
+      <button class="nav-btn active" data-view="month"><b>▦</b><span class="sb-text">Lịch tháng</span></button>
+      <button class="nav-btn admin-only" data-view="agenda"><b>💰</b><span class="sb-text">Lương thợ</span></button>
+      <button class="nav-btn staff-only" data-view="agenda"><b>💰</b><span class="sb-text">Lương của tôi</span></button>
+      <button class="nav-btn admin-only" id="openStaffBtn"><b>✦</b><span class="sb-text">Đội ngũ</span></button>
+      <button class="nav-btn staff-only" onclick="window.openBlackoutModal()"><b>⛔</b><span class="sb-text">Báo bận/nghỉ</span></button>
+      <button class="nav-btn admin-only" id="settingsBtn"><b>⚙</b><span class="sb-text">Cài đặt</span></button>
     </nav>
     <div class="sidebar-bottom">
       <button class="btn primary admin-only admin-only-block" id="sideAdd" style="padding:16px; font-size:14.5px; width: 100%; background:#fff; color:#0f172a;">
@@ -350,7 +350,6 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
   <main class="main">
     <div class="topbar">
       <div class="topbar-left" style="display:flex; align-items:center; gap:16px;">
-        <button id="sidebarToggleBtn" class="icon-btn admin-only" style="border:none; background:#fff; box-shadow:var(--shadow-sm); display:none;"><b style="font-size:20px;">≡</b></button>
         <div><h2 class="title">Bảng điều khiển</h2><div class="subtitle" id="todayText"></div></div>
       </div>
       <div class="actions" style="display:flex; gap:10px;">
@@ -476,7 +475,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
   </div>
 </div>
 
-<!-- MỚI: MODAL CHỌN LOẠI LỊCH (PRE-SELECTION) -->
+<!-- Modal Chọn Loại Lịch (PRE-SELECTION) -->
 <div class="modal-backdrop" id="chooseTypeModal">
   <div class="modal" style="width:min(400px, 100%)">
      <div class="modal-head">
@@ -530,7 +529,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
     <div class="modal-body">
       <form id="eventForm">
         <input type="hidden" id="eventId">
-        <input type="checkbox" id="eventIsRuocDau" style="display:none;" onchange="window.updateModalVisibility(); window.renderEventStaffList();">
+        <input type="hidden" id="eventIsRuocDau" value="false">
         
         <div class="form-grid">
           <div class="form-group full">
@@ -725,7 +724,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
   </div>
 </div>
 
-<!-- Modal Đội Ngũ (MULTI-ROLE) -->
+<!-- Modal Đội Ngũ -->
 <div class="modal-backdrop" id="staffModal">
   <div class="modal" style="width:min(640px,100%)">
     <div class="modal-head"><div class="modal-title">Đội ngũ & Truy cập</div><button type="button" class="icon-btn" onclick="window.smoothClose('staffModal')" style="border:0;background:#f4f4f5;border-radius:50%">✕</button></div>
@@ -894,6 +893,21 @@ document.getElementById('sidebarToggleBtn')?.addEventListener('click', () => {
     localStorage.setItem('sidebar_closed', document.body.classList.contains('sidebar-closed'));
 });
 
+window.loginAdmin = function() {
+    const email = prompt("Nhập Email Admin:");
+    if(!email) return;
+    const pass = prompt("Nhập Mật khẩu:");
+    if(!pass) return;
+    
+    firebase.auth().signInWithEmailAndPassword(email, pass)
+        .then((userCredential) => { showToast("Đăng nhập thành công!"); })
+        .catch((error) => { showToast("Sai tài khoản hoặc mật khẩu!"); });
+}
+
+window.logoutAdmin = function() {
+    firebase.auth().signOut().then(() => { window.location.reload(); });
+}
+
 function pad(n){return String(n).padStart(2,'0')}
 function isoDate(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
 function parseDate(s){
@@ -964,7 +978,6 @@ function normalizeCollection(value) {
 function sanitizeData(d) {
     if(!d || typeof d !== 'object') d = defaultData();
     d.staff = normalizeCollection(d.staff);
-    
     d.staff.forEach(s => {
         if(s.role && !s.role.includes(',')) {
             let newRoles = [];
@@ -1951,6 +1964,736 @@ window.filterStaffModal = function() {
      
      el.style.display = show ? 'block' : 'none';
   });
+}
+
+window.updateDepositLabel = function() {
+  const price = parseMoney(document.getElementById('eventPrice')?.value) * 1000;
+  const dep = parseMoney(document.getElementById('eventDeposit')?.value) * 1000;
+  const label = document.getElementById('depositLabel'); if(!label) return;
+  if (price > 0 && dep >= price) { label.textContent = 'Đã thanh toán đủ'; label.style.color = 'var(--green)'; } 
+  else { label.textContent = 'Đã cọc'; label.style.color = 'inherit'; }
+}
+
+window.updateModalVisibility = function() {
+    const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
+    const nameVal = document.getElementById('eventName')?.value.trim() || '';
+    
+    let hasLoc = false;
+    if(isRuocDau) {
+        hasLoc = (document.getElementById('eventLocationTrai')?.value.trim() || document.getElementById('eventLocationGai')?.value.trim());
+    } else {
+        hasLoc = document.getElementById('eventLocation')?.value.trim();
+    }
+
+    document.querySelectorAll('.normal-time').forEach(el => el.style.display = isRuocDau ? 'none' : 'block');
+    document.querySelectorAll('.ruocdau-time').forEach(el => el.style.display = isRuocDau ? 'block' : 'none');
+    
+    document.querySelectorAll('.normal-loc').forEach(el => { 
+        if(!isRuocDau && nameVal) el.style.display = el.classList.contains('full') ? 'block' : 'grid'; 
+        else el.style.display = 'none'; 
+    });
+    document.querySelectorAll('.ruocdau-loc').forEach(el => { 
+        if(isRuocDau && nameVal) el.style.display = el.classList.contains('full') ? 'block' : 'grid'; 
+        else el.style.display = 'none'; 
+    });
+
+    document.querySelectorAll('.normal-phone').forEach(el => { 
+        if(!isRuocDau && nameVal) el.style.display = el.classList.contains('full') ? 'block' : 'grid'; 
+        else el.style.display = 'none'; 
+    });
+    document.querySelectorAll('.ruocdau-phone').forEach(el => { 
+        if(isRuocDau && nameVal) el.style.display = el.classList.contains('full') ? 'block' : 'grid'; 
+        else el.style.display = 'none'; 
+    });
+
+    document.querySelectorAll('.step2-item:not(.normal-loc):not(.ruocdau-loc):not(.normal-phone):not(.ruocdau-phone)').forEach(el => { 
+        el.style.display = nameVal ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; 
+    });
+    
+    const financeGroup = document.getElementById('financeGroup');
+    if(financeGroup) {
+        financeGroup.style.display = (nameVal && hasLoc) ? 'block' : 'none';
+    }
+    document.querySelectorAll('.step3-item:not(#financeGroup)').forEach(el => { 
+        el.style.display = (nameVal && hasLoc) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; 
+    });
+    
+    const evDate = document.getElementById('eventDate')?.value; const evEnd = document.getElementById('eventEnd')?.value;
+    let isEnded = false; if(evDate && evEnd) isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
+
+    document.querySelectorAll('.staff-modal-item, .staff-modal-staffonly').forEach(el => {
+        const isChecked = el.querySelector('.staff-check')?.checked || (currentUserRole === 'staff');
+        const linkCont = el.querySelector('.staff-link-container');
+        if(linkCont) linkCont.style.display = (isEnded && isChecked) ? 'flex' : 'none';
+        const waitMsg = el.querySelector('.wait-link-msg');
+        if(waitMsg) waitMsg.style.display = (!isEnded && isChecked) ? 'block' : 'none';
+    });
+}
+
+let currentEventAssignments = [];
+
+window.saveStaffLinkLocally = function(sId, sName) {
+    const urlInput = document.getElementById('evt-link-in-'+sId)?.value.trim();
+    if(!urlInput) { showToast('Vui lòng dán link'); return; }
+    const validatedUrl = safeUrl(urlInput);
+    if(validatedUrl === '#') { showToast('Link không hợp lệ. Chỉ chấp nhận http/https'); return; }
+    
+    const evId = document.getElementById('eventId')?.value;
+    if(evId) {
+        const idx = data.events.findIndex(e => e.id === evId);
+        if(idx >= 0) {
+            const aIdx = data.events[idx].assignments.findIndex(a => a.id === sId);
+            if(aIdx >= 0) {
+                data.events[idx].assignments[aIdx].link = urlInput;
+                dbSet(`events/${evId}/assignments/${aIdx}/link`, urlInput);
+            }
+        }
+    }
+    const tag = document.getElementById('evt-link-tag-'+sId);
+    if(tag) { tag.href = urlInput; tag.innerHTML = `🔗 Bấm xem Source`; }
+    document.getElementById('evt-link-edit-'+sId).style.display = 'none';
+    document.getElementById('evt-link-view-'+sId).style.display = 'flex';
+    const currentEvent = evId ? data.events.find(e => e.id === evId) : null;
+    writeAuditLog('SOURCE_SUBMITTED', {
+      severity:'success', category:'source', targetType:'assignment', targetId:`${evId || ''}_${sId}`,
+      targetStaffIds:[sId], eventName:currentEvent?.name || 'lịch', eventDate:currentEvent?.date || '',
+      message:`${sName || staffNameById(sId)} vừa nộp Source`, staffMessageType:'source'
+    });
+    showToast('Đã nộp Source thành công!');
+}
+
+window.toggleEditLink = function(sId) {
+    document.getElementById('evt-link-view-'+sId).style.display = 'none';
+    document.getElementById('evt-link-edit-'+sId).style.display = 'flex';
+}
+
+window.addProductRow = function(name='', url='', isReadonly=false) {
+    const container = document.getElementById('eventProductsList'); if(!container) return;
+    const div = document.createElement('div');
+    div.className = 'product-row'; div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#f8fafc; padding:16px; border-radius:16px; border:1px solid var(--line)';
+    
+    if (isReadonly) return;
+    const isSaved = url !== '';
+    div.innerHTML = `
+       <div class="prod-view" style="display:${isSaved ? 'flex' : 'none'}; gap: 10px; align-items:center; flex-wrap:wrap">
+           <a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" class="prod-view-link" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; flex:1; min-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              🔗 <span class="prod-view-name">${escapeHtml(name || 'Link Bàn Giao')}</span>
+           </a>
+           <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px; border:1px solid #cbd5e1;" onclick="copyText(this.parentElement.parentElement.querySelector('.prod-url').value)">📋 Copy</button>
+           <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'">✏️ Sửa</button>
+       </div>
+       <div class="prod-edit admin-only-flex" style="display:${isSaved ? 'none' : 'flex'}; gap: 10px; flex-wrap:wrap; align-items:center">
+           <input type="text" class="prod-name field" value="${escapeHtml(name)}" placeholder="Tên SP (Ảnh gốc...)" style="flex:1; min-width:120px;">
+           <input type="url" class="prod-url field" value="${escapeHtml(url)}" placeholder="🔗 Dán link..." style="flex:2; min-width:150px;">
+           <button type="button" class="btn primary" style="padding:10px 16px; font-size:13px;" onclick="window.saveProductRow(this)">Lưu</button>
+           <button type="button" class="btn danger ghost" style="padding:10px 14px; font-size:13px;" onclick="this.parentElement.parentElement.remove()">✕</button>
+       </div>
+    `;
+    container.appendChild(div);
+}
+
+window.saveProductRow = function(btn) {
+    const row = btn.closest('.product-row');
+    const nameInput = row.querySelector('.prod-name').value.trim();
+    const urlInput = row.querySelector('.prod-url').value.trim();
+    if(!urlInput) { showToast('Vui lòng dán link URL'); return; }
+    const validatedUrl = safeUrl(urlInput);
+    if(validatedUrl === '#') { showToast('Link không hợp lệ. Chỉ chấp nhận http/https'); return; }
+    
+    row.querySelector('.prod-view-link').href = urlInput;
+    row.querySelector('.prod-view-name').textContent = nameInput || 'Link sản phẩm';
+    row.querySelector('.prod-edit').style.display = 'none';
+    row.querySelector('.prod-view').style.display = 'flex';
+}
+
+window.renderEventStaffList = function() {
+    const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
+    const evDate = document.getElementById('eventDate')?.value;
+    
+    const existingChecks = document.querySelectorAll('#eventStaff .staff-check');
+    if (existingChecks.length > 0) {
+        currentEventAssignments = [...existingChecks].filter(cb => cb.checked).map(cb => {
+            const sId = cb.value;
+            return { 
+                id: sId, 
+                task: document.getElementById('evt-task-'+sId)?.value || '', 
+                locType: isRuocDau ? (document.getElementById('evt-loc-'+sId)?.value || '') : '',
+                cost: parseMoney(document.getElementById('evt-cost-'+sId)?.value) * 1000,
+                link: document.getElementById('evt-link-in-'+sId)?.value.trim() || ''
+            };
+        });
+    }
+    
+    const evEnd = document.getElementById('eventEnd')?.value;
+    let isEnded = false; if(evDate && evEnd) isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
+    
+    const isAdmin = currentUserRole === 'admin';
+    const evStaffEl = document.getElementById('eventStaff'); if(!evStaffEl) return;
+
+    if (!isAdmin) {
+        evStaffEl.innerHTML = currentEventAssignments.map(a => {
+            const s = data.staff.find(x => x.id === a.id); if(!s) return '';
+            let taskText = a.task ? ` - ${escapeHtml(a.task)}` : '';
+            if (isRuocDau && a.locType) {
+                let locColor = a.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
+                taskText += ` <span style="color:${locColor}; font-weight:800">(${escapeHtml(a.locType)})</span>`;
+            }
+
+            const isMe = (s.id === staffViewId); 
+            let myCostHtml = ''; let myLinkHtml = '';
+
+            if (isMe) {
+                const costVal = a.cost ? money(a.cost) + ' đ' : '0 đ';
+                myCostHtml = `<span style="font-weight:800; color:var(--green); float:right; background: var(--bg-green); padding: 6px 12px; border-radius: 99px;">${costVal}</span>`;
+                const savedLink = a.link || '';
+                myLinkHtml = `
+                <div class="staff-link-container" style="display:${isEnded ? 'flex' : 'none'}; gap: 8px; align-items:center; background:#fafafa; padding:12px 16px; border-radius:12px; border: 1px solid var(--line); margin-top: 16px;">
+                    <div id="evt-link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
+                        <a id="evt-link-tag-${s.id}" href="${safeUrl(savedLink)}" target="_blank" rel="noopener noreferrer" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
+                           🔗 Bấm xem Source
+                        </a>
+                        <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa Link</button>
+                    </div>
+                    <div id="evt-link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
+                        <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link tải Source (Drive/Fshare...)" style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
+                        <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Nộp Source</button>
+                    </div>
+                </div>
+                <div class="wait-link-msg" style="display:${!isEnded ? 'block' : 'none'}; font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic; padding:12px; background:#f4f4f5; border-radius:8px; text-align:center;">⏳ Hệ thống nộp Source sẽ tự mở sau khi kết thúc giờ chụp.</div>
+                `;
+            }
+
+            return `<div class="${isMe ? 'staff-modal-staffonly' : ''}" style="padding:16px; background:#fff; border:1px solid var(--line); border-radius:16px; margin-bottom:12px; font-size:14px; box-shadow:var(--shadow-sm)">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <b style="color:var(--text); font-size:15px;">${escapeHtml(s.name)}</b> 
+                        <span style="color:var(--muted)">(${escapeHtml(s.role)})</span>
+                        <span style="font-weight:700;color:var(--text)">${taskText}</span>
+                    </div>
+                    ${myCostHtml}
+                </div>
+                ${myLinkHtml}
+            </div>`;
+        }).join('') || '<div style="font-size:13px;color:var(--muted); padding:10px;">Chưa xếp nhân sự</div>';
+        return;
+    }
+
+    evStaffEl.innerHTML = data.staff.length
+      ? data.staff.map(s => {
+          const a = currentEventAssignments.find(x => x.id === s.id);
+          const isChecked = !!a; const savedLink = a?.link || '';
+          
+          const isBlackout = evDate ? data.blackouts.some(b => b.staffId === s.id && b.date === evDate) : false;
+          const blackoutBadge = isBlackout ? `<span style="color:#ef4444;font-size:10px;font-weight:800;border:1px solid #fca5a5;background:#fef2f2;padding:2px 6px;border-radius:6px;margin-left:8px;">⛔ Nghỉ phép</span>` : '';
+
+          let locDropdownHtml = '';
+          if (isRuocDau) {
+              let bgCol = a?.locType === 'Nhà gái' ? '#fce7f3' : '#e0f2fe';
+              let borderCol = a?.locType === 'Nhà gái' ? '#fbcfe8' : '#7dd3fc';
+              let textCol = a?.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
+              
+              locDropdownHtml = `
+              <select id="evt-loc-${s.id}" onchange="this.style.backgroundColor=this.value==='Nhà gái'?'#fce7f3':'#e0f2fe'; this.style.borderColor=this.value==='Nhà gái'?'#fbcfe8':'#7dd3fc'; this.style.color=this.value==='Nhà gái'?'#be185d':'#0369a1';" style="background:${bgCol}; border:1px solid ${borderCol}; padding:10px; border-radius:12px; outline:0; font-size:13px; font-weight:800; color:${textCol}; min-width:110px;">
+                  <option value="Nhà trai" ${a?.locType==='Nhà trai'?'selected':''}>Nhà trai</option>
+                  <option value="Nhà gái" ${a?.locType==='Nhà gái'?'selected':''}>Nhà gái</option>
+              </select>`;
+          }
+
+          return `<div class="staff-modal-item" data-role="${s.role}" style="border:1px solid transparent; border-bottom-color:var(--line); padding:16px 0; background:transparent;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                <label style="display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700;cursor:pointer;color:var(--text); flex:1; min-width:180px;">
+                  <input type="checkbox" class="staff-check" value="${s.id}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.nextElementSibling.style.display=this.checked?'flex':'none'; window.updateModalVisibility();" style="accent-color:var(--primary);width:20px;height:20px">
+                  ${escapeHtml(s.name)} <span style="color:var(--muted);font-weight:500;font-size:12px">— ${escapeHtml(s.role)}</span>
+                  ${blackoutBadge}
+                  <span id="busy-info-${s.id}"></span>
+                </label>
+                
+                <div style="display:${isChecked ? 'flex' : 'none'}; gap:10px; align-items:center; flex:1.5; justify-content:flex-end; min-width:300px; flex-wrap:wrap;">
+                  ${locDropdownHtml}
+                  
+                  <div style="flex:1; min-width:160px; position:relative;">
+                      <input type="text" id="evt-task-${s.id}" list="task-options-${s.id}" value="${escapeHtml(a?.task || 'Chụp truyền thống')}" style="width:100%; background:#f1f5f9; border:1px solid #e2e8f0; padding:10px 14px; border-radius:12px; outline:0; font-size:13.5px; font-weight:600; color:var(--text);">
+                      <datalist id="task-options-${s.id}">
+                        <option value="Chụp truyền thống">
+                        <option value="Chụp phóng sự">
+                        <option value="Chụp Concept">
+                        <option value="Quay truyền thống">
+                        <option value="Quay phóng sự">
+                        <option value="Chụp & Quay">
+                        <option value="Makeup">
+                        <option value="Khác">
+                      </datalist>
+                  </div>
+
+                  <div class="currency-wrap" style="width:140px; min-width:140px;">
+                     <input type="text" inputmode="numeric" id="evt-cost-${s.id}" placeholder="0" value="${a?.cost ? money(a.cost/1000) : ''}" oninput="window.formatMoneyInput(this)" style="background:#f1f5f9;border:1px solid #e2e8f0;padding:10px 14px;border-radius:12px;outline:0;font-size:14px;font-weight:700;color:var(--text);">
+                  </div>
+                </div>
+            </div>
+
+            <div class="staff-link-container" style="display:${isEnded && isChecked ? 'flex' : 'none'}; gap: 10px; align-items:center; background:#f8fafc; padding:12px 16px; border-radius:14px; border: 1px solid var(--line); margin-top: 16px; margin-left: 32px;">
+                 <div id="evt-link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
+                     <a id="evt-link-tag-${s.id}" href="${safeUrl(savedLink)}" target="_blank" rel="noopener noreferrer" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
+                        🔗 Bấm xem Source
+                     </a>
+                     <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px; border:1px solid #cbd5e1;" onclick="copyText(document.getElementById('evt-link-in-${s.id}').value)">📋 Copy</button>
+                     <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px; border:1px solid #cbd5e1;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa</button>
+                 </div>
+                 <div id="evt-link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
+                     <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link Google Drive/Fshare..." style="flex:1; background:#fff; border:1px solid #cbd5e1; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; min-width:150px;">
+                     <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu</button>
+                 </div>
+            </div>
+            <div class="wait-link-msg" style="display:${!isEnded && isChecked ? 'block' : 'none'}; font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic; margin-left:32px;">⏳ Hệ thống nộp Link Source sẽ mở cho thợ sau khi lịch kết thúc.</div>
+          </div>`;
+        }).join('')
+      : '<div style="font-size:13.5px;color:var(--muted);padding:10px;">Chưa có nhân sự. Vào “Đội ngũ” để thêm.</div>';
+
+    window.filterStaffModal();
+    window.checkConflict();
+}
+
+window.runSmartPaste = function() {
+    const txt = document.getElementById('smartPasteInput').value;
+    if(!txt) return;
+
+    window.openEventModal({});
+
+    const lowerTxt = txt.toLowerCase();
+
+    const phoneMatch = txt.match(/0\d{9}/);
+    if(phoneMatch) setSafeValue('eventPhone', phoneMatch[0]);
+
+    const dateMatch = txt.match(/(\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{4}|\d{2}))?/);
+    if (dateMatch) {
+        let d = pad(dateMatch[1]);
+        let m = pad(dateMatch[2]);
+        let y = dateMatch[3] ? (dateMatch[3].length===2 ? '20'+dateMatch[3] : dateMatch[3]) : current.getFullYear();
+        setSafeValue('eventDate', `${y}-${m}-${d}`);
+    }
+
+    const timeMatch = txt.match(/(\d{1,2})(?:[:h]| giờ)(\d{2})?/i);
+    if (timeMatch) {
+        let hh = pad(timeMatch[1]);
+        let mm = timeMatch[2] ? pad(timeMatch[2]) : '00';
+        setSafeValue('eventStart', `${hh}:${mm}`);
+        setSafeValue('eventStartTrai', `${hh}:${mm}`);
+        setSafeValue('eventStartGai', `${hh}:${mm}`);
+    }
+
+    const priceMatch = txt.match(/giá\s*(\d+)\s*(tr|triệu|k)/i) || txt.match(/(\d+)\s*(tr|triệu)/i);
+    if (priceMatch) {
+        let val = parseInt(priceMatch[1]);
+        if(priceMatch[2].toLowerCase().startsWith('tr')) val = val * 1000;
+        setSafeValue('eventPrice', money(val));
+    }
+    const depMatch = txt.match(/cọc\s*(\d+)\s*(tr|triệu|k)/i);
+    if (depMatch) {
+        let val = parseInt(depMatch[1]);
+        if(depMatch[2].toLowerCase().startsWith('tr')) val = val * 1000;
+        setSafeValue('eventDeposit', money(val));
+    }
+
+    if(lowerTxt.includes('phóng sự') || lowerTxt.includes('ps')) setSafeValue('eventType', 'Phóng sự');
+    else if(lowerTxt.includes('pre') || lowerTxt.includes('cổng')) setSafeValue('eventType', 'Pre-wedding');
+    else if(lowerTxt.includes('em bé') || lowerTxt.includes('thôi nôi')) setSafeValue('eventType', 'Em bé');
+    else if(lowerTxt.includes('tiệc') || lowerTxt.includes('sự kiện')) setSafeValue('eventType', 'Sự kiện');
+
+    if(lowerTxt.includes('nhà trai') || lowerTxt.includes('nhà gái') || lowerTxt.includes('rước dâu') || lowerTxt.includes('xuất giá')) {
+        document.getElementById('eventIsRuocDau').value = 'true';
+    }
+
+    let nameGuess = txt.split(/ngày|lúc|sđt|giá|cọc/i)[0].replace(/chụp|đám cưới|đặt lịch|chốt|rước dâu|xuất giá|vu quy/ig, '').trim();
+    if(nameGuess) setSafeValue('eventName', nameGuess.substring(0,40));
+
+    window.updateModalVisibility();
+    window.checkConflict();
+    showToast('⚡ Đã điền tự động! Vui lòng kiểm tra lại.');
+    document.getElementById('smartPasteInput').value = '';
+    window.smoothClose('smartPasteModal');
+}
+
+window.openChooseTypeModal = function(date = '') {
+    window.tempPrefillDate = date || isoDate(current);
+    document.getElementById('mainTypeGrid').style.display='grid';
+    document.getElementById('weddingSubGrid').style.display='none';
+    window.smoothOpen('chooseTypeModal');
+}
+
+window.proceedWithEventType = function(type, subtype) {
+    window.smoothClose('chooseTypeModal');
+    let prefill = { date: window.tempPrefillDate };
+    window.tempPrefillType = type;
+    window.tempPrefillSubType = subtype;
+    setTimeout(() => { window.openEventModal(prefill); }, 300);
+}
+
+window.openEventModal = function(prefill={}){
+  if (currentUserRole === 'guest') return; 
+  if (currentUserRole !== 'admin' && !prefill.id) return; 
+
+  window.smoothOpen('eventModal');
+  const e=prefill.id?data.events.find(x=>x.id===prefill.id):null;
+  const et = document.getElementById('eventModalTitle');
+  
+  const isAdmin = currentUserRole === 'admin';
+  if(et) et.textContent= e ? (isAdmin ? 'Chỉnh sửa lịch' : 'Chi tiết lịch') : 'Thêm lịch';
+  
+  setSafeValue('eventId', e?.id||'');
+  setSafeValue('eventDate', e?.date||prefill.date||isoDate(current));
+
+  if (!prefill.id && window.tempPrefillType) {
+      setSafeValue('eventType', window.tempPrefillType);
+      const sub = window.tempPrefillSubType;
+      if (sub) {
+          if (sub === 'Rước Dâu') {
+              setSafeValue('eventName', 'Rước Dâu ');
+              document.getElementById('eventIsRuocDau').value = 'true';
+              setSafeValue('eventStart', '08:00');
+              setSafeValue('eventEnd', '12:00');
+          } else if (sub === 'Xuất Giá') {
+              setSafeValue('eventName', 'Xuất Giá ');
+              document.getElementById('eventIsRuocDau').value = 'false';
+              setSafeValue('eventStart', '16:00');
+              setSafeValue('eventEnd', '22:00');
+          } else {
+              setSafeValue('eventName', sub + ' ');
+              document.getElementById('eventIsRuocDau').value = 'false';
+              setSafeValue('eventStart', '08:00');
+              setSafeValue('eventEnd', '12:00');
+          }
+      } else {
+          setSafeValue('eventName', '');
+          document.getElementById('eventIsRuocDau').value = 'false';
+          setSafeValue('eventStart', '08:00');
+          setSafeValue('eventEnd', '12:00');
+      }
+      window.tempPrefillType = null;
+      window.tempPrefillSubType = null;
+  } else {
+      setSafeValue('eventName', e?.name||'');
+      setSafeValue('eventType', e?.eventType||'Cưới');
+      document.getElementById('eventIsRuocDau').value = e?.isRuocDau ? 'true' : 'false';
+      setSafeValue('eventStart', e?.start||'08:00');
+      setSafeValue('eventEnd', e?.end||'12:00');
+  }
+
+  setSafeValue('eventStartTrai', e?.startTrai||'07:00');
+  setSafeValue('eventStartGai', e?.startGai||'06:00');
+  
+  setSafeValue('eventLocation', e?.location||'');
+  setSafeValue('eventLocationTrai', e?.locTrai||'');
+  setSafeValue('eventLocationGai', e?.locGai||'');
+  
+  setSafeValue('eventStatus', e?.status||'pending');
+  setSafeValue('eventPhone', e?.phone||'');
+  setSafeValue('eventPhoneTrai', e?.phoneTrai||'');
+  setSafeValue('eventPhoneGai', e?.phoneGai||'');
+  
+  const pE = document.getElementById('eventPrice'); if(pE) pE.value = e?.price ? money(e.price/1000) : '';
+  const dE = document.getElementById('eventDeposit'); if(dE) dE.value = e?.deposit ? money(e.deposit/1000) : '';
+  
+  setSafeValue('eventNote', e?.note||'');
+  
+  const ff = document.getElementById('freelanceForm'); if(ff) ff.style.display='none';
+  
+  const es = document.getElementById('eventStaff'); if(es) es.innerHTML = '';
+  const ep = document.getElementById('eventProductsList'); if(ep) ep.innerHTML = '';
+  
+  currentEventAssignments = e?.assignments ? JSON.parse(JSON.stringify(e.assignments)) : [];
+  window.updateModalVisibility(); 
+  window.renderEventStaffList();
+  
+  if (e && e.products && e.products.length > 0) e.products.forEach(p => window.addProductRow(p.name, p.url, !isAdmin)); 
+
+  window.updateDepositLabel();
+  
+  const de = document.getElementById('deleteEvent'); if (de) de.style.display = (isAdmin && e) ? 'inline-flex' : 'none';
+  const fp = document.getElementById('fullPaidBtn'); if (fp) fp.style.display = isAdmin ? 'block' : 'none';
+  const se = document.getElementById('saveEvent'); if (se) se.style.display = isAdmin ? 'block' : 'none';
+  const bap = document.getElementById('btnAddProduct'); if (bap) bap.style.display = isAdmin ? 'inline-flex' : 'none';
+  const btnShowFree = document.getElementById('btnShowFreelance'); if (btnShowFree) btnShowFree.style.display = isAdmin ? 'block' : 'none';
+  
+  const guestLabel = document.getElementById('guestStaffLabel'); const adminLabel = document.getElementById('adminStaffLabel');
+  if (guestLabel) guestLabel.style.display = isAdmin ? 'none' : 'block';
+  if (adminLabel) adminLabel.style.display = isAdmin ? 'flex' : 'none';
+
+  const sFilters = document.getElementById('staffFiltersContainer'); if (sFilters) sFilters.style.display = isAdmin ? 'flex' : 'none';
+
+  document.querySelectorAll('#eventForm input, #eventForm select, #eventForm textarea').forEach(el => {
+      if (el.id.includes('evt-link-in')) return; 
+      if (!isAdmin) {
+          el.setAttribute('readonly', 'true');
+          if(el.tagName === 'SELECT' || el.type === 'checkbox') el.disabled = true;
+      } else { el.removeAttribute('readonly'); el.disabled = false; }
+  });
+
+  const btnCancel = document.getElementById('cancelEvent'); if(btnCancel) btnCancel.textContent = isAdmin ? 'Hủy' : 'Đóng';
+}
+
+function getAssignmentStart(event, assignment) {
+    if (!event) return '';
+    if (!event.isRuocDau) return event.start || '';
+    if (assignment?.locType === 'Nhà gái') return event.startGai || '';
+    if (assignment?.locType === 'Nhà trai') return event.startTrai || '';
+    return event.startTrai || event.startGai || '';
+}
+
+function timeRangesOverlap(startA, endA, startB, endB) {
+    if (!startA || !endA || !startB || !endB) return false;
+    if (endA <= startA || endB <= startB) return false;
+    return startA < endB && endA > startB;
+}
+
+function findEventConflicts(candidate) {
+    if (!candidate?.date || candidate.status === 'cancelled') return [];
+    const conflicts = [];
+    (candidate.assignments || []).forEach(a => {
+        const myStart = getAssignmentStart(candidate, a);
+        if (!myStart || !candidate.end || candidate.end <= myStart) return;
+        data.events.forEach(e => {
+            if (e.id === candidate.id || e.status === 'cancelled' || e.date !== candidate.date) return;
+            const other = (e.assignments || []).find(x => x.id === a.id);
+            if (!other) return;
+            const otherStart = getAssignmentStart(e, other);
+            if (timeRangesOverlap(myStart, candidate.end, otherStart, e.end)) {
+                const staff = data.staff.find(s => s.id === a.id);
+                conflicts.push({
+                    staffId: a.id,
+                    staffName: staff?.name || a.id,
+                    mine: `${myStart}-${candidate.end}`,
+                    other: `${otherStart}-${e.end}`,
+                    eventName: e.name || 'Lịch khác',
+                    locType: a.locType || ''
+                });
+            }
+        });
+    });
+    return conflicts;
+}
+
+window.checkConflict = function(){
+  if (currentUserRole !== 'admin') return;
+  const date=document.getElementById('eventDate')?.value; 
+  const id=document.getElementById('eventId')?.value;
+  const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
+  const end = document.getElementById('eventEnd')?.value;
+  
+  data.staff.forEach(s => {
+     const infoSpan = document.getElementById('busy-info-' + s.id); if(!infoSpan) return;
+     const sEvents = data.events.filter(e => e.id !== id && e.status !== 'cancelled' && e.date === date && e.assignments.some(a => a.id === s.id));
+     if(sEvents.length === 0) { infoSpan.innerHTML = ''; return; }
+
+     const intervals = sEvents.map(e => {
+         const a = e.assignments.find(x => x.id === s.id);
+         return { s: getAssignmentStart(e, a), e: e.end || '' };
+     }).filter(iv => iv.s && iv.e);
+
+     const text = intervals.map(iv => `${iv.s}-${iv.e}`).join(', ');
+     const locTeam = document.getElementById('evt-loc-'+s.id)?.value || '';
+     const myStart = isRuocDau
+         ? (locTeam === 'Nhà gái' ? (document.getElementById('eventStartGai')?.value || '') : (document.getElementById('eventStartTrai')?.value || ''))
+         : (document.getElementById('eventStart')?.value || '');
+
+     const overlap = timeRangesOverlap(myStart, end, intervals[0]?.s, intervals[0]?.e) ||
+         intervals.some(iv => timeRangesOverlap(myStart, end, iv.s, iv.e));
+
+     if(overlap) infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
+     else infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
+  });
+}
+
+window.saveEvent = function(){
+  if (currentUserRole !== 'admin') return;
+  const id=document.getElementById('eventId')?.value;
+  const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
+  const previousEvent = id ? JSON.parse(JSON.stringify(data.events.find(e => e.id === id) || null)) : null;
+  
+  const obj={
+    id:id||uid(),
+    isRuocDau: isRuocDau,
+    eventType: document.getElementById('eventType')?.value || 'Cưới',
+    name:document.getElementById('eventName')?.value.trim()||'',
+    date:document.getElementById('eventDate')?.value||'',
+    start: isRuocDau ? '' : (document.getElementById('eventStart')?.value||''),
+    startTrai: isRuocDau ? (document.getElementById('eventStartTrai')?.value||'') : '',
+    startGai: isRuocDau ? (document.getElementById('eventStartGai')?.value||'') : '',
+    end:document.getElementById('eventEnd')?.value||'',
+    location: isRuocDau ? '' : (document.getElementById('eventLocation')?.value.trim()||''),
+    locTrai: isRuocDau ? (document.getElementById('eventLocationTrai')?.value.trim()||'') : '',
+    locGai: isRuocDau ? (document.getElementById('eventLocationGai')?.value.trim()||'') : '',
+    phone: isRuocDau ? '' : (document.getElementById('eventPhone')?.value.trim()||''),
+    phoneTrai: isRuocDau ? (document.getElementById('eventPhoneTrai')?.value.trim()||'') : '',
+    phoneGai: isRuocDau ? (document.getElementById('eventPhoneGai')?.value.trim()||'') : '',
+    assignments:[...document.querySelectorAll('#eventStaff input[type="checkbox"]:checked')].map(cb=>{
+       const sId = cb.value;
+       return {
+         id: sId,
+         task: document.getElementById('evt-task-'+sId)?.value||'',
+         locType: isRuocDau ? (document.getElementById('evt-loc-'+sId)?.value||'') : '',
+         cost: parseMoney(document.getElementById('evt-cost-'+sId)?.value) * 1000,
+         link: document.getElementById('evt-link-in-'+sId)?.value.trim() || ''
+       };
+    }),
+    products:[...document.querySelectorAll('.product-row')].map(row => ({
+       name: row.querySelector('.prod-name')?.value.trim()||'',
+       url: row.querySelector('.prod-url')?.value.trim()||''
+    })).filter(p => p.url),
+    status:document.getElementById('eventStatus')?.value||'pending',
+    price: parseMoney(document.getElementById('eventPrice')?.value) * 1000,
+    deposit: parseMoney(document.getElementById('eventDeposit')?.value) * 1000,
+    note:document.getElementById('eventNote')?.value.trim()||''
+  };
+  
+  if(!obj.name||!obj.date||!obj.end){showToast('Vui lòng điền đủ Tên, Ngày và Giờ kết thúc');return}
+  if(isRuocDau && (!obj.startTrai || !obj.startGai)) { showToast('Vui lòng điền đủ Giờ nhà trai và Giờ nhà gái'); return;}
+  if(!isRuocDau && !obj.start) { showToast('Vui lòng điền Giờ bắt đầu'); return;}
+  
+  const starts = isRuocDau ? [obj.startTrai, obj.startGai].filter(Boolean) : [obj.start].filter(Boolean);
+  const earliestStart = starts.sort()[0];
+  if(earliestStart && obj.end <= earliestStart){
+      if(!confirm('Giờ kết thúc đang nhỏ hơn hoặc bằng giờ bắt đầu (Có thể do ca làm đêm qua ngày). Bạn có chắc chắn muốn lưu?')) return;
+  }
+
+  const conflicts = findEventConflicts(obj);
+  if(conflicts.length) {
+      const first = conflicts[0];
+      const more = conflicts.length > 1 ? ` (+${conflicts.length - 1} xung đột khác)` : '';
+      if(!confirm(`⚠️ Thợ ${first.staffName} bị trùng lịch với: ${first.eventName} (Giờ: ${first.other}). Bạn có chắc chắn muốn lưu đè?${more}`)) return;
+  }
+  
+  const idx=data.events.findIndex(e=>e.id===id);
+  if(idx>=0)data.events[idx]=obj; else data.events.push(obj);
+  
+  dbSet(`events/${obj.id}`, obj);
+
+  const newStaffIds = staffIdsFromAssignments(obj.assignments).filter(sid => !(previousEvent?.assignments || []).some(a => a.id === sid));
+  const removedStaffIds = (previousEvent?.assignments || []).map(a => a.id).filter(sid => !staffIdsFromAssignments(obj.assignments).includes(sid));
+  const coworkersForNew = staffIdsFromAssignments(obj.assignments).filter(sid => !newStaffIds.includes(sid));
+
+  if(!previousEvent) {
+      const targetStaffIds = staffIdsFromAssignments(obj.assignments);
+      writeAuditLog('EVENT_CREATED', {
+          severity:'info', category:'booking', targetType:'event', targetId:obj.id, targetStaffIds,
+          eventName:obj.name, eventDate:obj.date,
+          message:`Admin tạo lịch ${obj.name} ngày ${obj.date}`,
+          metadata:{createdStaffIds:targetStaffIds}
+      });
+  } else {
+      newStaffIds.forEach(affectedId => {
+          const targetStaffIds = Array.from(new Set([affectedId, ...staffIdsFromAssignments(obj.assignments).filter(id => id !== affectedId)]));
+          writeAuditLog('STAFF_ASSIGNED', {
+              severity:'warning', category:'staff', targetType:'event', targetId:obj.id, targetStaffIds,
+              eventName:obj.name, eventDate:obj.date,
+              message:`Thêm ${staffNameById(affectedId)} vào lịch ${obj.name} ngày ${obj.date}`,
+              metadata:{affectedStaffId:affectedId, coworkerIds:coworkersForNew.filter(id => id !== affectedId)}
+          });
+      });
+      removedStaffIds.forEach(affectedId => {
+          const targetStaffIds = Array.from(new Set([affectedId, ...staffIdsFromAssignments(previousEvent.assignments)]));
+          writeAuditLog('STAFF_REMOVED', {
+              severity:'danger', category:'staff', targetType:'event', targetId:obj.id, targetStaffIds,
+              eventName:previousEvent.name || obj.name, eventDate:previousEvent.date || obj.date,
+              message:`Gỡ ${staffNameById(affectedId)} khỏi lịch ${previousEvent.name || obj.name} ngày ${previousEvent.date || obj.date}`,
+              metadata:{affectedStaffId:affectedId, coworkerIds:staffIdsFromAssignments(previousEvent.assignments).filter(id => id !== affectedId)}
+          });
+      });
+      const changeTargetIds = staffIdsFromAssignments(obj.assignments).filter(sid => !newStaffIds.includes(sid)).filter(sid => eventRelevantChanges(previousEvent, obj, sid).length);
+      if(changeTargetIds.length || JSON.stringify(previousEvent) !== JSON.stringify(obj)) {
+          const detailParts = [];
+          if((previousEvent.date||'') !== (obj.date||'')) detailParts.push(`ngày ${formatDate(previousEvent.date)} → ${formatDate(obj.date)}`);
+          if((previousEvent.end||'') !== (obj.end||'')) detailParts.push(`giờ kết thúc ${previousEvent.end || '—'} → ${obj.end || '—'}`);
+          if((previousEvent.name||'') !== (obj.name||'')) detailParts.push('tên lịch');
+          if(JSON.stringify(previousEvent.assignments||[]) !== JSON.stringify(obj.assignments||[])) detailParts.push('phân công');
+          if((previousEvent.location||'') !== (obj.location||'') || (previousEvent.locTrai||'') !== (obj.locTrai||'') || (previousEvent.locGai||'') !== (obj.locGai||'')) detailParts.push('địa điểm');
+          if((previousEvent.eventType||'') !== (obj.eventType||'')) detailParts.push('gói chụp');
+          const detail = detailParts.join(', ') || 'thông tin booking';
+          writeAuditLog('EVENT_UPDATED', {
+              severity: changeTargetIds.length ? 'warning' : 'info', category:'booking', targetType:'event', targetId:obj.id,
+              targetStaffIds: changeTargetIds, eventName:obj.name, eventDate:obj.date,
+              message:`Cập nhật lịch ${obj.name} ngày ${obj.date}`,
+              metadata:{details:detail, previousDate:previousEvent.date || '', newDate:obj.date || ''},
+              changes:{detail}
+          });
+      }
+  }
+  
+  window.smoothClose('eventModal'); render(); showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
+}
+
+window.deleteEvent = function(){
+  if (currentUserRole !== 'admin') return;
+  const id=document.getElementById('eventId')?.value;if(!id)return;
+  const e=data.events.find(x=>x.id===id); if(!e)return;
+  if(!confirm(`Xóa lịch "${e.name}"?`))return;
+  
+  const targetStaffIds = staffIdsFromAssignments(e.assignments);
+  writeAuditLog('EVENT_DELETED', {
+      severity:'danger', category:'booking', targetType:'event', targetId:id, targetStaffIds,
+      eventName:e.name, eventDate:e.date,
+      message:`Admin vừa xoá lịch ${e.name} ngày ${e.date}`,
+      metadata:{deletedStaffIds:targetStaffIds, deletedEventSnapshot:{name:e.name, date:e.date, status:e.status}}
+  });
+  
+  data.events=data.events.filter(x=>x.id!==id);
+  dbRemove(`events/${id}`);
+  
+  window.smoothClose('eventModal'); render(); showToast('Đã xóa lịch');
+}
+
+window.openSettings = function(){ window.smoothOpen('settingsModal'); }
+window.openStaff = function(){ window.smoothOpen('staffModal'); renderStaffManage(); }
+window.copyStaffLink = function(id) {
+    const url = window.location.origin + window.location.pathname + '?staff=' + id;
+    window.copyText(url);
+}
+
+function renderStaffManage(){
+  const sl = document.getElementById('staffManageList'); if(!sl) return;
+  sl.innerHTML=data.staff.map(s=>`<div class="mini-item">
+    <div class="staff-left"><div class="avatar">${initials(s.name)}</div><div class="staff-info"><div class="mini-title">${escapeHtml(s.name)}</div><div class="mini-sub">${escapeHtml(s.role)}</div></div></div>
+    <div style="display:flex; gap:8px;">
+        <button class="btn ghost" style="padding:8px 16px;font-size:13.5px; border:1px solid var(--line)" onclick="window.copyStaffLink('${s.id}')">🔗 Copy Link</button>
+        <button class="btn danger" style="padding:8px 14px;font-size:13.5px" data-delstaff="${s.id}">Xóa</button>
+    </div>
+    </div>`).join('');
+    
+  document.querySelectorAll('[data-delstaff]').forEach(b=>b.addEventListener('click', ()=>{
+    const id=b.dataset.delstaff;
+    if(data.events.some(e=>e.assignments.some(a=>a.id===id))&&!confirm('Nhân sự này đang được gắn vào lịch. Xóa nhân sự sẽ bỏ gán khỏi các lịch. Tiếp tục?'))return;
+    
+    const deletedStaff = data.staff.find(s=>s.id===id);
+    data.staff=data.staff.filter(s=>s.id!==id);
+    writeAuditLog('STAFF_DELETED', {
+        severity:'danger', category:'staff', targetType:'staff', targetId:id, targetStaffIds:[id],
+        message:`Xóa nhân sự ${deletedStaff?.name || id}`, metadata:{staffId:id, staffName:deletedStaff?.name || ''}
+    });
+    dbRemove(`staff/${id}`);
+    
+    renderStaffManage();
+  }));
+}
+
+window.addStaff = function(){
+  if (currentUserRole !== 'admin') return;
+  const name=document.getElementById('staffName')?.value.trim(); 
+  const roles = [...document.querySelectorAll('#staffRoleChecks input:checked')].map(cb => cb.value).join(', ');
+  
+  if(!name){showToast('Nhập tên nhân sự');return}
+  if(!roles){showToast('Chọn ít nhất 1 vai trò');return}
+  
+  const newStaff = {id:uid(),name,role: roles};
+  
+  data.staff.push(newStaff);
+  dbSet(`staff/${newStaff.id}`, newStaff);
+  writeAuditLog('STAFF_ADDED', {
+      severity:'info', category:'staff', targetType:'staff', targetId:newStaff.id, targetStaffIds:[newStaff.id],
+      message:`Thêm nhân sự ${newStaff.name}`, metadata:{staffId:newStaff.id, staffName:newStaff.name, role:newStaff.role}
+  });
+  
+  setSafeValue('staffName','');
+  document.querySelectorAll('#staffRoleChecks input').forEach(cb => cb.checked = false);
+  renderStaffManage();showToast('Đã thêm nhân sự');
 }
 
 let searchTimeout;
