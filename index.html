@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#ffffff">
 
 <link rel="icon" href="logo.png" type="image/png">
+<!-- Phông chữ cao cấp Plus Jakarta Sans -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -454,6 +455,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
               </select>
           </div>
           
+          <!-- THỜI GIAN ĐỘNG -->
           <div class="form-group normal-time"><label for="eventStart">Giờ bắt đầu</label><input id="eventStart" type="time" onchange="window.checkConflict();"></div>
           
           <div class="form-group full ruocdau-time" style="display:none;">
@@ -497,7 +499,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_chup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">📷 Chụp</label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_quay" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">🎥 Quay</label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_makeup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">💄 Makeup</label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_khac" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">⚙️️ Khác/Free</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_khac" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">⚙ Khác/Free</label>
             </div>
             
             <div id="eventStaff" class="staff-picker" style="padding:0; border:none; background:transparent;"></div>
@@ -545,6 +547,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; }
             </div>
           </div>
           
+          <!-- NHÓM TIỀN BẠC NẰM CHUNG HÀNG -->
           <div class="form-group full step3-item" style="display:none" id="financeGroup">
             <div style="display:flex; gap:24px; flex-wrap:wrap;">
                 <div style="flex:1; min-width:200px;">
@@ -767,7 +770,7 @@ const staffViewId = urlParams.get('staff');
 
 let currentUserRole = 'guest'; 
 
-// FIX AUTH: Thay vì check LocalStorage, dùng Firebase Auth để phân quyền an toàn
+// FIX AUTH: Phân quyền an toàn
 function applyRoleUI() {
     document.body.className = `role-${currentUserRole}`;
     
@@ -782,7 +785,6 @@ function applyRoleUI() {
     });
 }
 
-// FIX AUTH: Hàm Login bằng Firebase Email/Password thực tế
 window.loginAdmin = function() {
     const email = prompt("Nhập Email Admin:");
     if(!email) return;
@@ -792,7 +794,6 @@ window.loginAdmin = function() {
     firebase.auth().signInWithEmailAndPassword(email, pass)
         .then((userCredential) => {
             showToast("Đăng nhập thành công!");
-            // Observer sẽ tự động cập nhật Role
         })
         .catch((error) => {
             showToast("Sai tài khoản hoặc mật khẩu!");
@@ -853,6 +854,12 @@ window.copyText = function(txt) {
     navigator.clipboard.writeText(txt).then(() => showToast('Đã copy!')).catch(() => showToast('Lỗi copy!'));
 }
 
+// BỔ SUNG HÀM BỊ THIẾU TỪ BẢN TRƯỚC (QUAN TRỌNG ĐỂ LƯU/XÓA)
+function staffIdsFromAssignments(assignments) {
+    if (!Array.isArray(assignments)) return [];
+    return assignments.map(a => a.id).filter(Boolean);
+}
+
 function defaultData(){ return { staff: [], payroll: {}, events: [], auditLogs: [] } }
 
 function normalizeCollection(value) {
@@ -878,7 +885,6 @@ function sanitizeData(d) {
         if(!Array.isArray(e.assignments)) e.assignments = normalizeCollection(e.assignments);
         if(!Array.isArray(e.products)) e.products = normalizeCollection(e.products);
         if(!e.date) e.date = isoDate(new Date());
-        // Rước dâu có 2 giờ riêng, không tự chèn 08:00 vào e.start.
         if(!e.isRuocDau && !e.start) e.start = '08:00';
         if(e.isRuocDau && e.start === undefined) e.start = '';
         if(!e.end) e.end = '12:00';
@@ -1205,7 +1211,6 @@ function getOldDebt(staffId, targetY, targetM) {
     return debt;
 }
 
-// FIX: MỞ RỘNG SCOPE TÌM KIẾM
 function eventMatches(e){
   const q = document.getElementById('searchInput')?.value.trim().toLowerCase() || '';
   const sf = document.getElementById('staffFilter')?.value || '';
@@ -1792,9 +1797,6 @@ window.updateDepositLabel = function() {
   else { label.textContent = 'Đã cọc'; label.style.color = 'inherit'; }
 }
 
-// ----------------------------------------------------
-// UI TỪNG BƯỚC FORM LỊCH & THỜI GIAN THỰC
-// ----------------------------------------------------
 window.updateModalVisibility = function() {
     const isRuocDau = document.getElementById('eventIsRuocDau')?.checked;
     const nameVal = document.getElementById('eventName')?.value.trim() || '';
@@ -1866,7 +1868,6 @@ window.saveStaffLinkLocally = function(sId, sName) {
             const aIdx = data.events[idx].assignments.findIndex(a => a.id === sId);
             if(aIdx >= 0) {
                 data.events[idx].assignments[aIdx].link = urlInput;
-                // FIX FIREBASE WRITE: Chỉ cập nhật Node link
                 dbSet(`events/${evId}/assignments/${aIdx}/link`, urlInput);
             }
         }
@@ -1952,7 +1953,6 @@ window.renderEventStaffList = function() {
     const evStaffEl = document.getElementById('eventStaff'); if(!evStaffEl) return;
 
     if (!isAdmin) {
-        // GÓC NHÌN THỢ TRONG MODAL CHI TIẾT
         evStaffEl.innerHTML = currentEventAssignments.map(a => {
             const s = data.staff.find(x => x.id === a.id); if(!s) return '';
             let taskText = a.task ? ` - ${escapeHtml(a.task)}` : '';
@@ -2077,7 +2077,6 @@ window.saveFreelanceQuick = function() {
     const displayName = `${name} (${skillLabel})`;
     const newStaff = { id: uid(), name: displayName, role: 'Freelance' };
     
-    // FIX FIREBASE WRITE: Ghi thẳng vào node Staff
     data.staff.push(newStaff); 
     dbSet(`staff/${newStaff.id}`, newStaff);
 
@@ -2154,7 +2153,6 @@ window.openEventModal = function(prefill={}){
 
   const sFilters = document.getElementById('staffFiltersContainer'); if (sFilters) sFilters.style.display = isAdmin ? 'flex' : 'none';
 
-  // Khóa Input nếu không phải Admin
   document.querySelectorAll('#eventForm input, #eventForm select, #eventForm textarea').forEach(el => {
       if (el.id.includes('evt-link-in')) return; 
       if (!isAdmin) {
@@ -2212,7 +2210,6 @@ window.checkConflict = function(){
   if (currentUserRole !== 'admin') return;
   const date=document.getElementById('eventDate')?.value; 
   const id=document.getElementById('eventId')?.value;
-  const previousEvent = id ? JSON.parse(JSON.stringify(data.events.find(e => e.id === id) || null)) : null;
   const isRuocDau = document.getElementById('eventIsRuocDau')?.checked;
   const end = document.getElementById('eventEnd')?.value;
   
@@ -2244,6 +2241,7 @@ window.saveEvent = function(){
   if (currentUserRole !== 'admin') return;
   const id=document.getElementById('eventId')?.value;
   const isRuocDau = document.getElementById('eventIsRuocDau')?.checked;
+  const previousEvent = id ? JSON.parse(JSON.stringify(data.events.find(e => e.id === id) || null)) : null;
   
   const obj={
     id:id||uid(),
@@ -2284,24 +2282,22 @@ window.saveEvent = function(){
   if(isRuocDau && (!obj.startTrai || !obj.startGai)) { showToast('Vui lòng điền đủ Giờ nhà trai và Giờ nhà gái'); return;}
   if(!isRuocDau && !obj.start) { showToast('Vui lòng điền Giờ bắt đầu'); return;}
   
-  const starts = isRuocDau ? [obj.startTrai, obj.startGai] : [obj.start];
-  if(starts.some(t => !t || obj.end <= t)){
-      showToast(isRuocDau ? 'Giờ kết thúc phải sau cả giờ Nhà Trai và Nhà Gái' : 'Giờ kết thúc phải sau giờ bắt đầu');
-      return;
+  const starts = isRuocDau ? [obj.startTrai, obj.startGai].filter(Boolean) : [obj.start].filter(Boolean);
+  const earliestStart = starts.sort()[0];
+  if(earliestStart && obj.end <= earliestStart){
+      if(!confirm('Giờ kết thúc đang nhỏ hơn hoặc bằng giờ bắt đầu (Có thể do ca làm đêm qua ngày). Bạn có chắc chắn muốn lưu?')) return;
   }
 
   const conflicts = findEventConflicts(obj);
   if(conflicts.length) {
       const first = conflicts[0];
       const more = conflicts.length > 1 ? ` (+${conflicts.length - 1} xung đột khác)` : '';
-      showToast(`⚠️ ${first.staffName} trùng ${first.eventName} ${first.other}${more}`);
-      return;
+      if(!confirm(`⚠️ Thợ ${first.staffName} bị trùng lịch với: ${first.eventName} (Giờ: ${first.other}). Bạn có chắc chắn muốn lưu đè?${more}`)) return;
   }
   
-  // FIX FIREBASE WRITE: Chỉ cập nhật Node Events
   const idx=data.events.findIndex(e=>e.id===id);
   if(idx>=0)data.events[idx]=obj; else data.events.push(obj);
-  persistLocal();
+  
   dbSet(`events/${obj.id}`, obj);
 
   const newStaffIds = staffIdsFromAssignments(obj.assignments).filter(sid => !(previousEvent?.assignments || []).some(a => a.id === sid));
@@ -2344,10 +2340,9 @@ window.saveEvent = function(){
           if(JSON.stringify(previousEvent.assignments||[]) !== JSON.stringify(obj.assignments||[])) detailParts.push('phân công');
           if((previousEvent.location||'') !== (obj.location||'') || (previousEvent.locTrai||'') !== (obj.locTrai||'') || (previousEvent.locGai||'') !== (obj.locGai||'')) detailParts.push('địa điểm');
           const detail = detailParts.join(', ') || 'thông tin booking';
-          const targetStaffIds = changeTargetIds;
           writeAuditLog('EVENT_UPDATED', {
-              severity: targetStaffIds.length ? 'warning' : 'info', category:'booking', targetType:'event', targetId:obj.id,
-              targetStaffIds, eventName:obj.name, eventDate:obj.date,
+              severity: changeTargetIds.length ? 'warning' : 'info', category:'booking', targetType:'event', targetId:obj.id,
+              targetStaffIds: changeTargetIds, eventName:obj.name, eventDate:obj.date,
               message:`Cập nhật lịch ${obj.name} ngày ${obj.date}`,
               metadata:{details:detail, previousDate:previousEvent.date || '', newDate:obj.date || ''},
               changes:{detail}
@@ -2363,6 +2358,7 @@ window.deleteEvent = function(){
   const id=document.getElementById('eventId')?.value;if(!id)return;
   const e=data.events.find(x=>x.id===id); if(!e)return;
   if(!confirm(`Xóa lịch "${e.name}"?`))return;
+  
   const targetStaffIds = staffIdsFromAssignments(e.assignments);
   writeAuditLog('EVENT_DELETED', {
       severity:'danger', category:'booking', targetType:'event', targetId:id, targetStaffIds,
@@ -2372,7 +2368,6 @@ window.deleteEvent = function(){
   });
   
   data.events=data.events.filter(x=>x.id!==id);
-  // FIX FIREBASE WRITE
   dbRemove(`events/${id}`);
   
   window.smoothClose('eventModal'); render(); showToast('Đã xóa lịch');
