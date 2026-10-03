@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -231,7 +231,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 1000; backdrop-filter: blur(6px); opacity: 0; transition: opacity 0.3s ease; }
 .modal-backdrop.show { display: flex; opacity: 1; }
 .modal-backdrop.closing { opacity: 0; pointer-events: none; }
-.modal { width: min(850px, 100%); max-height: 90vh; overflow-y: auto; background: #ffffff; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; transform: translateY(30px) scale(0.98); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.modal { width: min(850px, 100%); max-height: 90vh; overflow-y: auto; background: #ffffff; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; transform: translateY(30px) scale(0.98); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); overscroll-behavior: contain; }
 .modal-backdrop.show .modal { transform: translateY(0) scale(1); opacity: 1; }
 .modal-backdrop.closing .modal { transform: translateY(30px) scale(0.98); opacity: 0; }
 .modal-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 24px 32px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); z-index: 10; }
@@ -299,39 +299,51 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.96); } }
 
-/* RESPONSIVE MOBILE TỐI ƯU */
+/* CSS FIX MOBILE RESPONSIVE HOÀN THIỆN */
 @media(max-width: 900px){ 
   .layout { display: flex; flex-direction: column; } 
   .side-panel { order: -1; } 
 }
 @media(max-width: 768px){
-  .app { grid-template-columns: 1fr !important; padding-bottom: 80px; } 
-  .sidebar { position: fixed; bottom: 0; left: 0; right: 0; top: auto; height: 75px !important; flex-direction: row; padding: 0 !important; z-index: 99; background: #ffffff; border-top: 1px solid var(--line); border-right: none; box-shadow: 0 -10px 25px rgba(0,0,0,0.1); }
+  .app { grid-template-columns: 1fr !important; padding-bottom: 90px; } 
+  .sidebar { position: fixed; bottom: 0; left: 0; right: 0; top: auto; height: calc(70px + env(safe-area-inset-bottom)) !important; flex-direction: row; padding: 0 10px env(safe-area-inset-bottom) !important; z-index: 100; background: rgba(255,255,255,0.98); backdrop-filter: blur(10px); border-top: 1px solid var(--line); border-right: none; box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
   .brand, .sidebar-bottom { display: none !important; }
-  .side-nav { display: flex; width: 100%; justify-content: space-around; align-items: center; padding: 0 10px; gap: 0; }
-  .nav-btn { flex-direction: column; gap: 4px; padding: 10px 0 !important; width: 70px; color: var(--muted); border-radius: 12px; justify-content: center; font-size: 11px; background: transparent !important; box-shadow: none !important; }
+  .side-nav { display: flex; width: 100%; justify-content: space-around; align-items: center; gap: 0; height: 70px; }
+  .nav-btn { flex-direction: column; gap: 4px; padding: 0 !important; width: 65px; height: 100%; color: var(--muted); border-radius: 0; justify-content: center; font-size: 11px; background: transparent !important; box-shadow: none !important; }
   .nav-btn.active { color: var(--blue) !important; font-weight: 700; background: transparent !important; box-shadow: none !important;}
-  .nav-btn.active b { transform: scale(1.15); opacity: 1; color: var(--blue); }
-  .nav-btn b { font-size: 22px; margin: 0 !important; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+  .nav-btn b { font-size: 22px; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); margin: 0 !important;}
+  .nav-btn.active b { transform: scale(1.2); opacity: 1; color: var(--blue); }
   body.sidebar-closed .nav-btn span { display: block !important; }
   #sidebarToggleBtn { display: none !important; }
   
-  .main { padding: 24px 16px 40px; }
-  .topbar { flex-direction: column; align-items: flex-start; gap: 16px; margin-bottom: 24px; }
-  .actions { width: 100%; justify-content: flex-start; }
+  .main { padding: 20px 16px 40px; }
+  .topbar { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
+  .actions { width: 100%; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 10px; padding-bottom: 5px; scrollbar-width: none; }
+  .actions::-webkit-scrollbar { display: none; }
+  .actions .btn { flex-shrink: 0; white-space: nowrap; }
+
   .grid-stats { grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
   .stat { padding: 16px; }
-  .stat-num { font-size: 24px; }
-  .filters .field { flex: 1; min-width: 140px; }
+  .stat-num { font-size: 26px; }
+
+  .calendar-head { padding: 16px; flex-direction: column; align-items: flex-start; gap: 16px; }
+  .month-title { text-align: left; }
+  
+  .filters { flex-direction: column; align-items: stretch; padding: 16px; border-radius: 20px 20px 0 0; }
+  .filters .field { width: 100%; min-width: unset; }
   
   .modal-backdrop { align-items: flex-end; padding: 0; }
-  .modal { width: 100%; border-radius: 28px 28px 0 0; max-height: 92vh; margin: 0; }
+  .modal { width: 100%; border-radius: 28px 28px 0 0; max-height: 92vh; margin: 0; margin-top: auto; }
   .modal-head { padding: 20px 24px; border-radius: 28px 28px 0 0; }
   .modal-head::before { content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: #cbd5e1; border-radius: 10px; }
   .modal-body { padding: 24px; }
   .form-grid { grid-template-columns: 1fr; gap: 20px; }
   .modal-foot { flex-wrap: wrap; padding: 20px 24px; padding-bottom: max(20px, env(safe-area-inset-bottom)); border-radius: 0; }
   .modal-foot > div { width: 100%; justify-content: flex-end; margin-top: 12px; }
+
+  .toast { bottom: 100px; right: 16px; left: 16px; text-align: center; }
+  #aiMicBtn { bottom: 100px !important; }
+  #aiStatus { bottom: 170px !important; }
 }
 </style>
 </head>
@@ -374,11 +386,11 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
       <div class="topbar-left" style="display:flex; align-items:center; gap:16px;">
         <div><h2 class="title">Bảng điều khiển</h2><div class="subtitle" id="todayText"></div></div>
       </div>
-      <div class="actions" style="display:flex; gap:10px;">
+      <div class="actions">
         <button class="btn ghost admin-only" style="border: 1px solid var(--blue); color: var(--blue);" onclick="window.smoothOpen('smartPasteModal')">⚡ Nhập nhanh</button>
         <button class="btn primary admin-only" id="addBtn">＋ Thêm lịch</button>
-        <button class="btn guest-only login-btn-ui" style="font-weight:700; display:none;" onclick="window.loginAdmin()">Đăng nhập Admin</button>
-        <button class="btn danger admin-only logout-btn-ui" style="font-weight:700; display:none;" onclick="window.logoutAdmin()">Đăng xuất</button>
+        <button class="btn ghost guest-only login-btn-ui" style="font-weight:700; display:none;" onclick="window.loginAdmin()">🔑 Đăng nhập Admin</button>
+        <button class="btn ghost danger admin-only logout-btn-ui" style="font-weight:700; display:none;" onclick="window.logoutAdmin()">🚪 Đăng xuất</button>
       </div>
     </div>
 
@@ -565,7 +577,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
               <label for="eventType">Gói Dịch Vụ</label>
               <select id="eventType" onchange="window.updateModalVisibility(); window.renderEventStaffList();">
                   <option value="Cưới">💍 Cưới (Hỏi, Vu Quy, Rước Dâu...)</option>
-                  <option value="Pre-wedding">🖼️ Chụp cổng - Prewedding</option>
+                  <option value="Pre-wedding">🖼️️ Chụp cổng - Prewedding</option>
                   <option value="Tốt nghiệp">🎓 Tốt nghiệp</option>
                   <option value="Concept">✨ Concept</option>
                   <option value="Sự kiện">🎉 Sự kiện / Tiệc</option>
@@ -778,10 +790,10 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
     <div class="modal-head"><div class="modal-title">Cài đặt</div><button type="button" class="icon-btn" onclick="window.smoothClose('settingsModal')" style="border:0;background:#f4f4f5;border-radius:50%">✕</button></div>
     <div class="modal-body">
       
-      <!-- PHẦN NHẬP API KEY BẢO MẬT -->
+      <!-- PHẦN NHẬP API KEY BẢO MẬT ĐÃ ĐƯỢC CHUYỂN QUA FIREBASE -->
       <div style="margin-bottom:32px; padding-bottom:24px; border-bottom:1px solid var(--line);">
         <h3 style="margin:0;font-size:17px;font-weight:800;">Tích hợp Trợ lý AI</h3>
-        <div style="font-size:12.5px;color:var(--muted);margin-top:5px;font-weight:600;margin-bottom:12px;">Nhập Google Gemini API Key để bật tính năng điều khiển bằng giọng nói. Key chỉ lưu trên máy này.</div>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:5px;font-weight:600;margin-bottom:12px;">Nhập Google Gemini API Key để bật tính năng điều khiển bằng giọng nói. Key sẽ được đồng bộ cho tất cả Admin sử dụng.</div>
         <div style="display:flex; gap:10px;">
             <input type="password" id="geminiApiKeyInput" class="field" placeholder="Nhập API Key (AIza...)" style="flex:1;">
             <button type="button" class="btn primary" onclick="window.saveGeminiKey()">Lưu Key</button>
@@ -899,7 +911,7 @@ const STATUS_LABEL = {
     'pending': 'Chờ xác nhận', 'confirmed': 'Đã chốt', 'done': 'Hoàn thành', 'cancelled': 'Đã hủy'
 };
 
-let data = { staff: [], events: [], payroll: {}, blackouts: [], auditLogs: [] };
+let data = { staff: [], events: [], payroll: {}, blackouts: [], auditLogs: [], settings: { geminiApiKey: '' } };
 let current = new Date(); current.setHours(0,0,0,0);
 let currentView = 'month'; let isFirstLoad = true;
 
@@ -995,7 +1007,7 @@ function staffIdsFromAssignments(assignments) {
     return assignments.map(a => a.id).filter(Boolean);
 }
 
-function defaultData(){ return { staff: [], payroll: {}, events: [], blackouts: [], auditLogs: [] } }
+function defaultData(){ return { staff: [], payroll: {}, events: [], blackouts: [], auditLogs: [], settings: { geminiApiKey: '' } } }
 
 function normalizeCollection(value) {
     if (Array.isArray(value)) return value.filter(Boolean);
@@ -1030,6 +1042,8 @@ function sanitizeData(d) {
     d.blackouts = normalizeCollection(d.blackouts);
     if(!d.payroll || typeof d.payroll !== 'object' || Array.isArray(d.payroll)) d.payroll = {};
     d.auditLogs = normalizeCollection(d.auditLogs);
+    if(!d.settings) d.settings = { geminiApiKey: '' };
+    if(!d.settings.geminiApiKey) d.settings.geminiApiKey = '';
     
     d.events.forEach(e => {
         if(e.isRuocDau === undefined) e.isRuocDau = false;
@@ -2768,20 +2782,18 @@ window.deleteEvent = function(){
 // BẬT MODAL CÀI ĐẶT
 window.openSettings = function(){ 
     window.smoothOpen('settingsModal'); 
-    const savedKey = localStorage.getItem('GEMINI_API_KEY') || '';
+    const savedKey = data.settings?.geminiApiKey || '';
     const keyInput = document.getElementById('geminiApiKeyInput');
     if(keyInput) keyInput.value = savedKey;
 }
 
 window.saveGeminiKey = function() {
     const key = document.getElementById('geminiApiKeyInput').value.trim();
-    if(key) {
-        localStorage.setItem('GEMINI_API_KEY', key);
-        showToast('Đã lưu API Key Trợ lý AI!');
-    } else {
-        localStorage.removeItem('GEMINI_API_KEY');
-        showToast('Đã xóa API Key!');
-    }
+    if(!data.settings) data.settings = {};
+    data.settings.geminiApiKey = key;
+    dbSet(`settings/geminiApiKey`, key);
+    showToast('Đã đồng bộ API Key AI cho tất cả thiết bị!');
+    window.smoothClose('settingsModal');
 };
 
 window.openStaff = function(){ window.smoothOpen('staffModal'); renderStaffManage(); }
@@ -2864,7 +2876,7 @@ document.getElementById('fullPaidBtn')?.addEventListener('click', () => {
 document.getElementById('clearAll')?.addEventListener('click', ()=>{
     if(confirm('Xóa toàn bộ dữ liệu lịch, nhân sự và lương? Nhật ký hoạt động sẽ được giữ lại.')){
         const keptLogs = data.auditLogs || [];
-        data={staff:[],events:[],payroll:{},blackouts:[],auditLogs:keptLogs};
+        data={staff:[],events:[],payroll:{},blackouts:[],auditLogs:keptLogs, settings: data.settings || {}};
         writeAuditLog('SYSTEM_CLEAR', { severity:'danger', category:'system', targetType:'system', message:'Admin làm sạch dữ liệu lịch / nhân sự / lương' });
         if(window.dbRef) window.dbRef.set(data).catch(err => console.error('Clear DB error:', err));
         else persistLocal();
@@ -2946,8 +2958,8 @@ if (SpeechRecognition) {
 aiMicBtn.addEventListener('click', () => {
     if(!SpeechRecognition) return alert("Trình duyệt của bạn không hỗ trợ nhận diện giọng nói. Hãy dùng Chrome hoặc Safari.");
     
-    // Kiểm tra xem đã có API Key trong LocalStorage chưa
-    const apiKey = localStorage.getItem('GEMINI_API_KEY');
+    // Kiểm tra xem đã có API Key trong Firebase data.settings chưa
+    let apiKey = data.settings?.geminiApiKey;
     if(!apiKey) {
         alert("Vui lòng vào phần 'Cài đặt' (⚙) ở thanh Menu bên trái để nhập Google Gemini API Key trước khi sử dụng trợ lý AI.");
         return window.openSettings(); // Tự động mở bảng Cài đặt
@@ -2972,8 +2984,7 @@ function speak(text, onEndCallback) {
 }
 
 async function processWithGemini(userText) {
-    // Chỉ lấy API Key từ LocalStorage (Đảm bảo an toàn không đẩy lên Github)
-    let apiKey = localStorage.getItem('GEMINI_API_KEY');
+    let apiKey = data.settings?.geminiApiKey;
     if(!apiKey) {
         aiStatus.textContent = "Thiếu API Key!";
         setTimeout(() => aiStatus.style.display = 'none', 2000);
