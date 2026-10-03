@@ -1359,14 +1359,18 @@ function initApp() {
             firebase.initializeApp(firebaseConfig);
             
             firebase.auth().onAuthStateChanged((user) => {
-                if (user) {
-                    currentUserRole = 'admin';
-                } else {
-                    currentUserRole = staffViewId ? 'staff' : 'guest';
-                }
-                applyRoleUI();
-                render();
-            });
+            // FIX: Ưu tiên kiểm tra URL trước. Nếu có param ?staff= thì ép về giao diện thợ
+            if (staffViewId) {
+                currentUserRole = 'staff';
+            } else if (user) {
+                // Nếu không có link thợ và đã đăng nhập, cho phép hiển thị Admin
+                currentUserRole = 'admin';
+            } else {
+                currentUserRole = 'guest';
+            }
+            applyRoleUI();
+            render();
+        });
 
             window.dbRef = firebase.database().ref('studioPlanner_v1');
             window.dbRef.on('value', (snapshot) => {
