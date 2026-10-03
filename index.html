@@ -152,6 +152,13 @@ body.sidebar-closed #sidebarToggleBtn { margin: 0 auto; margin-top: -10px; }
 .daynum { font-size: 13.5px; font-weight: 700; min-width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; border-radius: 8px; margin-bottom: 8px; color: var(--muted); transition: all 0.2s; }
 .day.today .daynum { background: var(--blue); color: #fff; font-weight: 800; border-radius: 50%; width: 30px; height: 30px; padding: 0; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4); }
 
+/* HIỆU ỨNG CẢNH BÁO NHẤP NHÁY DÀNH CHO ADMIN */
+@keyframes urgentBlink { 
+  0%, 100% { opacity: 1; } 
+  50% { opacity: 0.4; } 
+}
+.blink-warning { animation: urgentBlink 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
 /* EVENT CHIPS & PHÂN LỚP MÀU DỊCH VỤ */
 .event-chip { padding: 8px 10px; border-radius: 10px; margin: 5px 0; display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; line-height: 1.3; background: #f4f4f5; transition: all 0.2s; cursor: pointer; border: 1px solid transparent; border-left-width: 5px !important; border-left-style: solid !important; }
 body.role-guest .event-chip { cursor: default; }
@@ -512,11 +519,11 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
              <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; color:var(--muted); font-weight:700; cursor:pointer;" onclick="document.getElementById('weddingSubGrid').style.display='none'; document.getElementById('mainTypeGrid').style.display='grid';">
                  ‹ Quay lại
              </div>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fdf2f8; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Dạm Ngõ')">Dạm Ngõ</button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fdf2f8; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Đám Nối')">Đám Nối</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#991b1b; background:#fef2f2; border-color:#fecaca;" onclick="window.proceedWithEventType('Cưới', 'Dạm Ngõ')">Dạm Ngõ</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#92400e; background:#fffbeb; border-color:#fde68a;" onclick="window.proceedWithEventType('Cưới', 'Đám Nối')">Đám Nối</button>
              <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fdf2f8; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Vu Quy')">Vu Quy</button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fdf2f8; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Rước Dâu')">Rước Dâu (Thành hôn)</button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fdf2f8; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Xuất Giá')">Xuất Giá (16h - 22h)</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#1e40af; background:#eff6ff; border-color:#bfdbfe;" onclick="window.proceedWithEventType('Cưới', 'Rước Dâu')">Rước Dâu (Thành hôn)</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#5b21b6; background:#f5f3ff; border-color:#ddd6fe;" onclick="window.proceedWithEventType('Cưới', 'Xuất Giá')">Xuất Giá (16h - 22h)</button>
          </div>
      </div>
   </div>
@@ -556,7 +563,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
           
           <div class="form-group">
               <label for="eventType">Gói Dịch Vụ</label>
-              <select id="eventType" onchange="window.updateModalVisibility()">
+              <select id="eventType" onchange="window.updateModalVisibility(); window.renderEventStaffList();">
                   <option value="Cưới">💍 Cưới (Hỏi, Vu Quy, Rước Dâu...)</option>
                   <option value="Pre-wedding">🖼️ Chụp cổng - Prewedding</option>
                   <option value="Tốt nghiệp">🎓 Tốt nghiệp</option>
@@ -1270,6 +1277,7 @@ function initApp() {
     } catch(e) { data = defaultData(); }
     
     setupDefaultFilters();
+    window.setupLocationAutocomplete();
 
     const hideLoading = () => {
         if (!isFirstLoad) return;
@@ -1496,7 +1504,6 @@ function chip(e){
   else if(e.eventType === 'Sự kiện') typeClass = 'type-sukien';
   else if(e.eventType === 'Truyền thống' || e.eventType === 'Cưới') {
       typeClass = 'type-cuoi';
-      
       const lowerName = (e.name || '').toLowerCase();
       if(lowerName.includes('dạm ngõ')) typeClass = 'type-damngo';
       else if(lowerName.includes('đám nối')) typeClass = 'type-damnoi';
@@ -1505,7 +1512,20 @@ function chip(e){
       else if(lowerName.includes('xuất giá')) typeClass = 'type-xuatgia';
   }
 
-  return `<div class="event-chip ${status} ${typeClass}" data-id="${e.id}" title="${escapeHtml(e.name)}${staffNames ? ` (${escapeHtml(staffNames)})` : ''}">
+  // Cảnh báo nhấp nháy cho Admin (Lịch dưới 7 ngày mà chưa chốt)
+  let extraClass = '';
+  if (currentUserRole === 'admin' && e.status !== 'confirmed' && e.status !== 'done' && e.status !== 'cancelled') {
+      const evDate = parseDate(e.date);
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const diffTime = evDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays >= 0 && diffDays <= 7) {
+          extraClass = ' blink-warning';
+      }
+  }
+
+  return `<div class="event-chip ${status} ${typeClass}${extraClass}" data-id="${e.id}" title="${escapeHtml(e.name)}${staffNames ? ` (${escapeHtml(staffNames)})` : ''}">
     <div style="min-width:0; overflow:hidden">
       <div class="time">${chipTime}</div> 
       <div class="name">${escapeHtml(e.name)}</div>
@@ -1962,6 +1982,16 @@ function render(){
   renderUpcoming(); renderStaffActivityLog(); renderStaffMonthList(); renderMonthSummary(); renderAuditLog();
   const options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
   const tt = document.getElementById('todayText'); if(tt) tt.textContent=`Hôm nay · ${new Date().toLocaleDateString('vi-VN', options)}`;
+  
+  // Dynamic Document Title
+  if (currentUserRole === 'admin') {
+      document.title = "Amorri Studio - Quản Lí";
+  } else if (currentUserRole === 'staff') {
+      const sName = data.staff.find(s => s.id === staffViewId)?.name || 'Thợ';
+      document.title = `Amorri Studio - ${sName}`;
+  } else {
+      document.title = "Amorri Studio — Lịch Quay & Chụp";
+  }
 }
 
 function setView(v){
@@ -2202,6 +2232,8 @@ window.renderEventStaffList = function() {
         return;
     }
 
+    const currentEventType = document.getElementById('eventType')?.value || 'Cưới';
+
     evStaffEl.innerHTML = data.staff.length
       ? data.staff.map(s => {
           const a = currentEventAssignments.find(x => x.id === s.id);
@@ -2223,6 +2255,33 @@ window.renderEventStaffList = function() {
               </select>`;
           }
 
+          // Lọc Nhiệm vụ theo Type Sự Kiện & Role Thợ
+          let taskOptions = [];
+          const roleLower = (s.role || '').toLowerCase();
+          const isChup = roleLower.includes('chụp') || roleLower.includes('photo');
+          const isQuay = roleLower.includes('quay') || roleLower.includes('video');
+          const isMakeup = roleLower.includes('makeup');
+          
+          if (currentEventType === 'Cưới' || currentEventType === 'Phóng sự') {
+              if (isChup) taskOptions.push('Chụp truyền thống', 'Chụp phóng sự');
+              if (isQuay) taskOptions.push('Quay truyền thống', 'Quay phóng sự');
+          } else {
+              if (isChup) taskOptions.push('Chụp');
+              if (isQuay) taskOptions.push('Quay');
+          }
+          if (isMakeup) taskOptions.push('Makeup');
+          if (taskOptions.length === 0 || roleLower.includes('khác') || roleLower.includes('freelance') || roleLower.includes('editor') || roleLower.includes('assistant')) {
+              taskOptions.push('Khác');
+          }
+          taskOptions = [...new Set(taskOptions)];
+          const taskOptsHtml = taskOptions.map(opt => `<option value="${opt}" ${a?.task === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join('');
+
+          const taskDropdownHtml = `
+            <select id="evt-task-${s.id}" style="width:100%; background:#f1f5f9; border:1px solid #e2e8f0; padding:10px 14px; border-radius:12px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); cursor:pointer; appearance:auto;">
+              ${taskOptsHtml}
+            </select>
+          `;
+
           return `<div class="staff-modal-item" data-role="${s.role}" style="border:1px solid transparent; border-bottom-color:var(--line); padding:16px 0; background:transparent;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
                 <label style="display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700;cursor:pointer;color:var(--text); flex:1; min-width:180px;">
@@ -2236,17 +2295,7 @@ window.renderEventStaffList = function() {
                   ${locDropdownHtml}
                   
                   <div style="flex:1; min-width:160px; position:relative;">
-                      <input type="text" id="evt-task-${s.id}" list="task-options-${s.id}" value="${escapeHtml(a?.task || 'Chụp truyền thống')}" style="width:100%; background:#f1f5f9; border:1px solid #e2e8f0; padding:10px 14px; border-radius:12px; outline:0; font-size:13.5px; font-weight:600; color:var(--text);">
-                      <datalist id="task-options-${s.id}">
-                        <option value="Chụp truyền thống">
-                        <option value="Chụp phóng sự">
-                        <option value="Chụp Concept">
-                        <option value="Quay truyền thống">
-                        <option value="Quay phóng sự">
-                        <option value="Chụp & Quay">
-                        <option value="Makeup">
-                        <option value="Khác">
-                      </datalist>
+                      ${taskDropdownHtml}
                   </div>
 
                   <div class="currency-wrap" style="width:140px; min-width:140px;">
