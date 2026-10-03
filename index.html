@@ -2029,7 +2029,15 @@ window.updateDepositLabel = function() {
 }
 
 window.updateModalVisibility = function() {
-    const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
+    const evType = document.getElementById('eventType')?.value;
+    let isRuocDauInput = document.getElementById('eventIsRuocDau');
+    
+    // Auto reset logic: Nếu không phải Cưới, tự động reset Rước Dâu về false để ẩn Nhà Trai / Nhà Gái
+    if(evType !== 'Cưới' && isRuocDauInput?.value === 'true') {
+        isRuocDauInput.value = 'false';
+    }
+    
+    const isRuocDau = isRuocDauInput?.value === 'true';
     const nameVal = document.getElementById('eventName')?.value.trim() || '';
     
     let hasLoc = false;
@@ -2184,7 +2192,23 @@ window.renderEventStaffList = function() {
     const isAdmin = currentUserRole === 'admin';
     const evStaffEl = document.getElementById('eventStaff'); if(!evStaffEl) return;
 
+    // Logic Sắp xếp theo Chức Vụ (Chụp -> Quay -> Make -> Khác)
+    const getPriority = (roleStr) => {
+        const r = (roleStr || '').toLowerCase();
+        let p = 99;
+        if (r.includes('chụp') || r.includes('photo')) p = Math.min(p, 1);
+        if (r.includes('quay') || r.includes('video')) p = Math.min(p, 2);
+        if (r.includes('makeup')) p = Math.min(p, 3);
+        return p;
+    };
+
     if (!isAdmin) {
+        currentEventAssignments.sort((a, b) => {
+            const sa = data.staff.find(x => x.id === a.id);
+            const sb = data.staff.find(x => x.id === b.id);
+            return getPriority(sa?.role) - getPriority(sb?.role);
+        });
+
         evStaffEl.innerHTML = currentEventAssignments.map(a => {
             const s = data.staff.find(x => x.id === a.id); if(!s) return '';
             let taskText = a.task ? ` - ${escapeHtml(a.task)}` : '';
@@ -2233,9 +2257,10 @@ window.renderEventStaffList = function() {
     }
 
     const currentEventType = document.getElementById('eventType')?.value || 'Cưới';
+    const sortedStaff = [...data.staff].sort((a, b) => getPriority(a.role) - getPriority(b.role));
 
-    evStaffEl.innerHTML = data.staff.length
-      ? data.staff.map(s => {
+    evStaffEl.innerHTML = sortedStaff.length
+      ? sortedStaff.map(s => {
           const a = currentEventAssignments.find(x => x.id === s.id);
           const isChecked = !!a; const savedLink = a?.link || '';
           
@@ -2274,7 +2299,16 @@ window.renderEventStaffList = function() {
               taskOptions.push('Khác');
           }
           taskOptions = [...new Set(taskOptions)];
-          const taskOptsHtml = taskOptions.map(opt => `<option value="${opt}" ${a?.task === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join('');
+          
+          let savedTask = a?.task || '';
+          if (savedTask && !taskOptions.includes(savedTask)) {
+              if (savedTask === 'Chụp' && currentEventType === 'Cưới') savedTask = 'Chụp truyền thống';
+              else if (savedTask === 'Quay' && currentEventType === 'Cưới') savedTask = 'Quay truyền thống';
+              else if (savedTask.includes('Chụp') && currentEventType !== 'Cưới') savedTask = 'Chụp';
+              else if (savedTask.includes('Quay') && currentEventType !== 'Cưới') savedTask = 'Quay';
+          }
+
+          const taskOptsHtml = taskOptions.map(opt => `<option value="${opt}" ${savedTask === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join('');
 
           const taskDropdownHtml = `
             <select id="evt-task-${s.id}" style="width:100%; background:#f1f5f9; border:1px solid #e2e8f0; padding:10px 14px; border-radius:12px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); cursor:pointer; appearance:auto;">
@@ -2374,6 +2408,7 @@ window.runSmartPaste = function() {
 
     if(lowerTxt.includes('nhà trai') || lowerTxt.includes('nhà gái') || lowerTxt.includes('rước dâu') || lowerTxt.includes('xuất giá')) {
         document.getElementById('eventIsRuocDau').value = 'true';
+        setSafeValue('eventType', 'Cưới');
     }
 
     let nameGuess = txt.split(/ngày|lúc|sđt|giá|cọc/i)[0].replace(/chụp|đám cưới|đặt lịch|chốt|rước dâu|xuất giá|vu quy/ig, '').trim();
@@ -2404,6 +2439,10 @@ window.proceedWithEventType = function(type, subtype) {
 window.openEventModal = function(prefill={}){
   if (currentUserRole === 'guest') return; 
   if (currentUserRole !== 'admin' && !prefill.id) return; 
+
+  // Xóa bộ nhớ Checkbox Lọc Nhân Sự để hiện toàn bộ list thợ mới
+  const sFiltersInputs = document.querySelectorAll('#staffFiltersContainer input[type="checkbox"]');
+  sFiltersInputs.forEach(cb => cb.checked = false);
 
   window.smoothOpen('eventModal');
   const e=prefill.id?data.events.find(x=>x.id===prefill.id):null;
@@ -2475,7 +2514,7 @@ window.openEventModal = function(prefill={}){
   
   currentEventAssignments = e?.assignments ? JSON.parse(JSON.stringify(e.assignments)) : [];
   window.updateModalVisibility(); 
-  window.renderEventStaffList();
+  window.renderEventStaffList(); // Hàm này giờ có tự động gọi filterStaffModal bên trong
   
   if (e && e.products && e.products.length > 0) e.products.forEach(p => window.addProductRow(p.name, p.url, !isAdmin)); 
 
