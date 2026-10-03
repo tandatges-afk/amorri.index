@@ -577,7 +577,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
               <label for="eventType">Gói Dịch Vụ</label>
               <select id="eventType" onchange="window.updateModalVisibility(); window.renderEventStaffList();">
                   <option value="Cưới">💍 Cưới (Hỏi, Vu Quy, Rước Dâu...)</option>
-                  <option value="Pre-wedding">🖼️️ Chụp cổng - Prewedding</option>
+                  <option value="Pre-wedding">🖼 Chụp cổng - Prewedding</option>
                   <option value="Tốt nghiệp">🎓 Tốt nghiệp</option>
                   <option value="Concept">✨ Concept</option>
                   <option value="Sự kiện">🎉 Sự kiện / Tiệc</option>
@@ -3018,7 +3018,7 @@ async function processWithGemini(userText) {
     "}";
 
     try {
-        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey, {
+        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
