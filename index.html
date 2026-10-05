@@ -347,21 +347,24 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
     letter-spacing: 0.3px;
 }
 
-#panda-mascot {
+#panda-mascot-container {
     position: fixed;
     bottom: 20px;
     left: 20px;
     width: 90px;
-    height: auto;
+    height: 90px;
     z-index: 9999;
     pointer-events: none;
-    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15));
-    animation: floatPanda 3.5s ease-in-out infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-@keyframes floatPanda {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
+#panda-mascot {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15));
+    transition: transform 0.1s ease-out; /* Smooth follow effect */
 }
 
 /* CSS FIX MOBILE RESPONSIVE HOÀN THIỆN */
@@ -412,7 +415,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 
   /* Đẩy Panda & Badge lên khỏi thanh menu dưới ở Mobile */
   .copyright-badge { bottom: 90px; right: 16px; font-size: 11px; padding: 6px 12px; }
-  #panda-mascot { bottom: 85px; left: 16px; width: 65px; }
+  #panda-mascot-container { bottom: 85px; left: 16px; width: 65px; height: 65px;}
 }
 </style>
 </head>
@@ -423,9 +426,10 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
     <span style="font-size: 16px;">©</span> Design by AmorriStudio
 </div>
 
-<!-- PANDA MASCOT: Bạn chỉ cần bỏ ảnh panda-reactions.webp (hoặc panda-directions.webp) vào chung folder "mascots" -->
-<img id="panda-mascot" src="mascots/panda-reactions.webp" alt="Panda Mascot" onerror="this.style.display='none'">
-
+<!-- PANDA MASCOT: Đổi src lại thành file ảnh thực tế của bạn -->
+<div id="panda-mascot-container">
+    <img id="panda-mascot" src="panda.png" alt="Panda Mascot" onerror="this.style.display='none'">
+</div>
 
 <div id="loadingOverlay">
     <div class="loading-logo"><img src="logo.png" alt="Amorri" onerror="this.style.display='none'"></div>
@@ -863,7 +867,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
   </div>
 </div>
 
-<!-- Modal Cài đặt (Đã được làm gọn) -->
+<!-- Modal Cài đặt -->
 <div class="modal-backdrop" id="settingsModal">
   <div class="modal" style="width:min(500px,100%)">
     <div class="modal-head"><div class="modal-title">Cài đặt</div><button type="button" class="icon-btn" aria-label="Đóng" onclick="window.smoothClose('settingsModal')" style="border:0;background:#f4f4f5;border-radius:50%">✕</button></div>
@@ -932,9 +936,58 @@ if (!isDevMode) {
     console.log("%c🛠️ DEV MODE KÍCH HOẠT", "color: #10b981; font-size: 24px; font-weight: bold;");
     console.log("Tất cả các lớp bảo mật F12/Chuột phải đã được tắt để bạn thoải mái làm việc.");
 }
+
 // ==========================================
-// KẾT THÚC MODULE BẢO VỆ
+// SCRIPT: PANDA NHÌN THEO CHUỘT
 // ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    const pandaContainer = document.getElementById('panda-mascot-container');
+    const pandaImg = document.getElementById('panda-mascot');
+
+    if (pandaContainer && pandaImg) {
+        document.addEventListener('mousemove', (e) => {
+            const rect = pandaContainer.getBoundingClientRect();
+            // Lấy tọa độ tâm của bé Panda
+            const pandaX = rect.left + rect.width / 2;
+            const pandaY = rect.top + rect.height / 2;
+            
+            // Tính toán khoảng cách từ chuột đến Panda
+            const dx = e.clientX - pandaX;
+            const dy = e.clientY - pandaY;
+
+            // Tính góc xoay (giới hạn góc quay nhẹ nhàng hơn)
+            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+            
+            // Tính khoảng cách dịch chuyển (translate) nhỏ để tạo cảm giác di chuyển nhẹ
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const moveX = (dx / dist) * 10; // Dịch tối đa 10px
+            const moveY = (dy / dist) * 10;
+            
+            // Góc xoay giới hạn nhẹ (-15 độ đến 15 độ) để không bị lật ngược
+            let rotateAngle = angle;
+            if (rotateAngle > 90 || rotateAngle < -90) {
+                 // Nếu chuột ở bên trái Panda
+                 rotateAngle = Math.max(-15, Math.min(15, (rotateAngle > 0 ? 180 - rotateAngle : -180 - rotateAngle) * -1));
+                 // Lật ngược ảnh để Panda quay mặt sang trái
+                 pandaImg.style.transform = `translate(${moveX}px, ${moveY}px) scaleX(-1) rotate(${rotateAngle}deg)`;
+            } else {
+                 // Nếu chuột ở bên phải Panda
+                 rotateAngle = Math.max(-15, Math.min(15, rotateAngle));
+                 // Để ảnh bình thường
+                 pandaImg.style.transform = `translate(${moveX}px, ${moveY}px) scaleX(1) rotate(${rotateAngle}deg)`;
+            }
+        });
+        
+        // Reset về vị trí ban đầu khi chuột rời khỏi màn hình
+        document.addEventListener('mouseleave', () => {
+            pandaImg.style.transform = `translate(0px, 0px) scaleX(1) rotate(0deg)`;
+        });
+    }
+});
+// ==========================================
+// KẾT THÚC SCRIPT PANDA
+// ==========================================
+
 
 window.onerror = function(msg, url, lineNo, columnNo, error) {
     const overlay = document.getElementById('loadingOverlay');
