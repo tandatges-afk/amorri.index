@@ -354,17 +354,19 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
     width: 90px;
     height: 90px;
     z-index: 9999;
-    pointer-events: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    pointer-events: auto; /* Cho phép click để hiện reaction */
+    cursor: pointer;
 }
 
 #panda-mascot {
     width: 100%;
-    height: auto;
+    height: 100%;
+    background-image: url('panda-directions.webp');
+    background-size: 300% 300%;
+    background-position: 50% 50%; /* Khởi tạo nhìn thẳng ở giữa */
+    background-repeat: no-repeat;
     filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15));
-    transition: transform 0.1s ease-out; /* Smooth follow effect */
+    animation: floatPanda 3.5s ease-in-out infinite;
 }
 
 /* CSS FIX MOBILE RESPONSIVE HOÀN THIỆN */
@@ -426,9 +428,9 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
     <span style="font-size: 16px;">©</span> Design by AmorriStudio
 </div>
 
-<!-- PANDA MASCOT: Đổi src lại thành file ảnh thực tế của bạn -->
+<!-- PANDA MASCOT SPRITE SHEET -->
 <div id="panda-mascot-container">
-    <img id="panda-mascot" src="panda.png" alt="Panda Mascot" onerror="this.style.display='none'">
+    <div id="panda-mascot"></div>
 </div>
 
 <div id="loadingOverlay">
@@ -905,6 +907,71 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 
 <script>
 // ==========================================
+// SCRIPT: PANDA SPRITE SHEET NHÌN THEO CHUỘT
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    const pandaMascot = document.getElementById('panda-mascot');
+    let isReacting = false; // Biến chặn đổi hướng khi đang hiện biểu cảm
+
+    if (pandaMascot) {
+        document.addEventListener('mousemove', (e) => {
+            if (isReacting) return; // Không nhìn theo chuột nếu đang click
+
+            const rect = pandaMascot.getBoundingClientRect();
+            const pandaX = rect.left + rect.width / 2;
+            const pandaY = rect.top + rect.height / 2;
+            
+            const dx = e.clientX - pandaX;
+            const dy = e.clientY - pandaY;
+
+            // Ngưỡng dead-zone: Chuột cách xa bao nhiêu px thì mới liếc mắt
+            const threshold = 50; 
+
+            let posX = 50; // Giữa (50%)
+            let posY = 50; // Giữa (50%)
+
+            // Tính toán trục X (Cắt ảnh: 0% Trái, 50% Giữa, 100% Phải)
+            if (dx < -threshold) posX = 0;      
+            else if (dx > threshold) posX = 100; 
+
+            // Tính toán trục Y (Cắt ảnh: 0% Trên, 50% Giữa, 100% Dưới)
+            if (dy < -threshold) posY = 0;      
+            else if (dy > threshold) posY = 100; 
+
+            pandaMascot.style.backgroundPosition = `${posX}% ${posY}%`;
+        });
+        
+        // Khi chuột ra ngoài màn hình
+        document.addEventListener('mouseleave', () => {
+            if (!isReacting) pandaMascot.style.backgroundPosition = `50% 50%`;
+        });
+
+        // Hiệu ứng biểu cảm khi click
+        pandaMascot.addEventListener('click', () => {
+            if (isReacting) return;
+            isReacting = true;
+            
+            // Đổi sang file reactions
+            pandaMascot.style.backgroundImage = "url('panda-reactions.webp')";
+            
+            // Chọn ngẫu nhiên 1 tọa độ trong lưới 3x3 (0, 50, 100)
+            const grid = [0, 50, 100];
+            const randomX = grid[Math.floor(Math.random() * 3)];
+            const randomY = grid[Math.floor(Math.random() * 3)];
+            
+            pandaMascot.style.backgroundPosition = `${randomX}% ${randomY}%`;
+
+            // Trả về trạng thái bình thường sau 1.5 giây
+            setTimeout(() => {
+                pandaMascot.style.backgroundImage = "url('panda-directions.webp')";
+                pandaMascot.style.backgroundPosition = `50% 50%`;
+                isReacting = false;
+            }, 1500);
+        });
+    }
+});
+
+// ==========================================
 // MODULE BẢO VỆ MÃ NGUỒN & DEV MODE
 // ==========================================
 const urlParams = new URLSearchParams(window.location.search);
@@ -936,58 +1003,6 @@ if (!isDevMode) {
     console.log("%c🛠️ DEV MODE KÍCH HOẠT", "color: #10b981; font-size: 24px; font-weight: bold;");
     console.log("Tất cả các lớp bảo mật F12/Chuột phải đã được tắt để bạn thoải mái làm việc.");
 }
-
-// ==========================================
-// SCRIPT: PANDA NHÌN THEO CHUỘT
-// ==========================================
-document.addEventListener("DOMContentLoaded", () => {
-    const pandaContainer = document.getElementById('panda-mascot-container');
-    const pandaImg = document.getElementById('panda-mascot');
-
-    if (pandaContainer && pandaImg) {
-        document.addEventListener('mousemove', (e) => {
-            const rect = pandaContainer.getBoundingClientRect();
-            // Lấy tọa độ tâm của bé Panda
-            const pandaX = rect.left + rect.width / 2;
-            const pandaY = rect.top + rect.height / 2;
-            
-            // Tính toán khoảng cách từ chuột đến Panda
-            const dx = e.clientX - pandaX;
-            const dy = e.clientY - pandaY;
-
-            // Tính góc xoay (giới hạn góc quay nhẹ nhàng hơn)
-            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-            
-            // Tính khoảng cách dịch chuyển (translate) nhỏ để tạo cảm giác di chuyển nhẹ
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            const moveX = (dx / dist) * 10; // Dịch tối đa 10px
-            const moveY = (dy / dist) * 10;
-            
-            // Góc xoay giới hạn nhẹ (-15 độ đến 15 độ) để không bị lật ngược
-            let rotateAngle = angle;
-            if (rotateAngle > 90 || rotateAngle < -90) {
-                 // Nếu chuột ở bên trái Panda
-                 rotateAngle = Math.max(-15, Math.min(15, (rotateAngle > 0 ? 180 - rotateAngle : -180 - rotateAngle) * -1));
-                 // Lật ngược ảnh để Panda quay mặt sang trái
-                 pandaImg.style.transform = `translate(${moveX}px, ${moveY}px) scaleX(-1) rotate(${rotateAngle}deg)`;
-            } else {
-                 // Nếu chuột ở bên phải Panda
-                 rotateAngle = Math.max(-15, Math.min(15, rotateAngle));
-                 // Để ảnh bình thường
-                 pandaImg.style.transform = `translate(${moveX}px, ${moveY}px) scaleX(1) rotate(${rotateAngle}deg)`;
-            }
-        });
-        
-        // Reset về vị trí ban đầu khi chuột rời khỏi màn hình
-        document.addEventListener('mouseleave', () => {
-            pandaImg.style.transform = `translate(0px, 0px) scaleX(1) rotate(0deg)`;
-        });
-    }
-});
-// ==========================================
-// KẾT THÚC SCRIPT PANDA
-// ==========================================
-
 
 window.onerror = function(msg, url, lineNo, columnNo, error) {
     const overlay = document.getElementById('loadingOverlay');
@@ -1363,7 +1378,7 @@ function renderStaffActivityLog() {
     if(badge) { badge.style.display = alertCount ? 'inline-flex' : 'none'; badge.textContent = alertCount ? `${alertCount} lưu ý` : ''; }
     el.innerHTML = logs.length ? logs.map(log => {
         const sev = ['danger','warning','success','info'].includes(log.severity) ? log.severity : 'info';
-        const label = sev === 'danger' ? '⚠️ Quan trọng' : sev === 'warning' ? '🔔 Cập nhật' : sev === 'success' ? '✓ Đã ghi nhận' : 'ℹ Thông báo';
+        const label = sev === 'danger' ? '⚠️️ Quan trọng' : sev === 'warning' ? '🔔 Cập nhật' : sev === 'success' ? '✓ Đã ghi nhận' : 'ℹ Thông báo';
         return `<div class="staff-activity-item ${sev}">
           <div class="audit-dot"></div>
           <div class="audit-main">
