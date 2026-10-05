@@ -43,8 +43,27 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text); background: var(--bg); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+
+/* CSS CHỐNG BÔI ĐEN COPY TEXT TOÀN TRANG */
+body { 
+  margin: 0; 
+  font-family: 'Plus Jakarta Sans', sans-serif; 
+  color: var(--text); 
+  background: var(--bg); 
+  overflow-x: hidden; 
+  -webkit-font-smoothing: antialiased; 
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
 body.modal-open { overflow: hidden; }
+
+/* Trả lại quyền copy/nhập liệu cho các ô Input, Textarea */
+input, textarea, select {
+  -webkit-user-select: auto !important;
+  -ms-user-select: auto !important;
+  user-select: auto !important;
+}
 
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; border: none; outline: none; }
@@ -104,6 +123,11 @@ body.sidebar-closed #sidebarToggleBtn { margin: 0 auto; margin-top: -10px; }
 .topbar { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 32px; flex-wrap: wrap; }
 .title { font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: var(--text); }
 .subtitle { font-size: 14px; color: var(--muted); margin-top: 6px; font-weight: 600; }
+
+/* FIX LỖI BUTTON HÀNG NGANG */
+.actions { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.actions::-webkit-scrollbar { display: none; }
+.actions .btn { flex-shrink: 0; white-space: nowrap; }
 
 .btn { background: #fff; border: 1px solid var(--line); color: var(--text); padding: 12px 20px; border-radius: 12px; font-weight: 700; font-size: 13.5px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm); cursor: pointer; }
 .btn:hover { background: #f8fafc; transform: translateY(-1px); box-shadow: var(--shadow-md); border-color: #cbd5e1; }
@@ -193,10 +217,10 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 .type-xuatgia .time, .type-xuatgia .name { color: #5b21b6 !important; }
 
 /* BORDER-LEFT-COLOR ĐỂ PHÂN BIỆT TRẠNG THÁI BOOKING */
-.status-pending { border-left-color: var(--orange) !important; } /* Chờ xác nhận - Cam */
-.status-confirmed { border-left-color: var(--blue) !important; } /* Đã chốt - Xanh dương */
-.status-done { border-left-color: var(--green) !important; opacity: 0.85; } /* Hoàn thành - Xanh lá */
-.status-cancelled { border-left-color: var(--muted) !important; text-decoration:line-through; opacity: 0.5; filter: grayscale(1); } /* Đã hủy - Xám */
+.status-pending { border-left-color: var(--orange) !important; }
+.status-confirmed { border-left-color: var(--blue) !important; }
+.status-done { border-left-color: var(--green) !important; opacity: 0.85; }
+.status-cancelled { border-left-color: var(--muted) !important; text-decoration:line-through; opacity: 0.5; filter: grayscale(1); }
 
 /* Báo bận */
 .blackout-chip { padding: 4px 8px; border-radius: 6px; margin: 3px 0; background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; font-size: 11px; font-weight: 800; cursor: pointer; text-align: center; }
@@ -299,6 +323,47 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.96); } }
 
+/* ==================================
+   PANDA MASCOT & COPYRIGHT BADGE 
+================================== */
+.copyright-badge {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 8px 16px;
+    border-radius: 99px;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    z-index: 9998;
+    pointer-events: none;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.3px;
+}
+
+#panda-mascot {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 90px;
+    height: auto;
+    z-index: 9999;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15));
+    animation: floatPanda 3.5s ease-in-out infinite;
+}
+
+@keyframes floatPanda {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
 /* CSS FIX MOBILE RESPONSIVE HOÀN THIỆN */
 @media(max-width: 900px){ 
   .layout { display: flex; flex-direction: column; } 
@@ -318,7 +383,9 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
   
   .main { padding: 20px 16px 40px; }
   .topbar { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
-  .actions { width: 100%; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 10px; padding-bottom: 5px; scrollbar-width: none; }
+  
+  /* Giữ hàng ngang nút Action trên Mobile */
+  .actions { width: 100%; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 10px; padding-bottom: 5px; scrollbar-width: none; -webkit-overflow-scrolling: touch;}
   .actions::-webkit-scrollbar { display: none; }
   .actions .btn { flex-shrink: 0; white-space: nowrap; }
 
@@ -342,10 +409,23 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
   .modal-foot > div { width: 100%; justify-content: flex-end; margin-top: 12px; }
 
   .toast { bottom: 100px; right: 16px; left: 16px; text-align: center; }
+
+  /* Đẩy Panda & Badge lên khỏi thanh menu dưới ở Mobile */
+  .copyright-badge { bottom: 90px; right: 16px; font-size: 11px; padding: 6px 12px; }
+  #panda-mascot { bottom: 85px; left: 16px; width: 65px; }
 }
 </style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
+
+<!-- BADGE CHỐNG COPY -->
+<div class="copyright-badge">
+    <span style="font-size: 16px;">©</span> Design by AmorriStudio
+</div>
+
+<!-- PANDA MASCOT: Bạn chỉ cần bỏ ảnh panda-reactions.webp (hoặc panda-directions.webp) vào chung folder "mascots" -->
+<img id="panda-mascot" src="mascots/panda-reactions.webp" alt="Panda Mascot" onerror="this.style.display='none'">
+
 
 <div id="loadingOverlay">
     <div class="loading-logo"><img src="logo.png" alt="Amorri" onerror="this.style.display='none'"></div>
@@ -362,7 +442,6 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
         <button id="sidebarToggleBtn" title="Thu gọn/Mở rộng menu" aria-label="Thu gọn Menu"><b>≡</b></button>
     </div>
     
-    <!-- Sắp xếp lại thứ tự Menu cho logic hơn -->
     <nav class="side-nav">
       <button class="nav-btn active" data-view="month"><b>▦</b><span class="sb-text">Lịch tháng</span></button>
       <button class="nav-btn admin-only" data-view="agenda"><b>💰</b><span class="sb-text">Lương thợ</span></button>
@@ -372,7 +451,6 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
       <button class="nav-btn admin-only" id="settingsBtn"><b>⚙</b><span class="sb-text">Cài đặt</span></button>
     </nav>
     <div class="sidebar-bottom">
-      <!-- Nút hành động nhanh trên Sidebar được dọn dẹp để không trùng lặp khó chịu với topbar -->
     </div>
   </aside>
 
@@ -381,7 +459,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
       <div class="topbar-left" style="display:flex; align-items:center; gap:16px;">
         <div><h2 class="title">Bảng điều khiển</h2><div class="subtitle" id="todayText"></div></div>
       </div>
-      <!-- Sắp xếp nút điều hướng phía trên gọn gàng và phân nhóm rõ rệt -->
+      <!-- CỤM BUTTON ĐƯỢC CHỈNH LẠI HÀNG NGANG -->
       <div class="actions">
         <button class="btn ghost admin-only" style="border: 1px solid var(--blue); color: var(--blue);" onclick="window.smoothOpen('smartPasteModal')">⚡ Nhập nhanh</button>
         <button class="btn primary admin-only" id="addBtn">＋ Thêm lịch</button>
@@ -715,8 +793,6 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
         </div>
       </form>
     </div>
-    
-    <!-- FIX BUG: Sắp xếp lại trật tự khu vực Footer Modal Event gọn gàng và phân tách Rõ ràng -->
     <div class="modal-foot" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
       <div style="display: flex; gap: 10px;">
           <button type="button" class="btn danger admin-only admin-only-flex" id="deleteEvent" style="display:none;">Xóa lịch</button>
@@ -787,7 +863,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
   </div>
 </div>
 
-<!-- Modal Cài đặt (Đã được làm gọn sau khi gỡ bỏ AI) -->
+<!-- Modal Cài đặt (Đã được làm gọn) -->
 <div class="modal-backdrop" id="settingsModal">
   <div class="modal" style="width:min(500px,100%)">
     <div class="modal-head"><div class="modal-title">Cài đặt</div><button type="button" class="icon-btn" aria-label="Đóng" onclick="window.smoothClose('settingsModal')" style="border:0;background:#f4f4f5;border-radius:50%">✕</button></div>
@@ -844,12 +920,12 @@ if (!isDevMode) {
         }
     };
 
-    // 3. Bẫy Debugger (Làm đơ trình duyệt nếu kẻ gian cố tình dùng extension ép mở DevTools)
+    // 3. Bẫy Debugger
     setInterval(function() {
         (function (a) { return (function (a) { return (Function('Function(arguments[0]+"' + a + '")()')) })(a) })('bugger')('de');
     }, 1000);
     
-    // 4. Lời cảnh báo hiển thị trong Console
+    // 4. Lời cảnh báo
     console.log("%c⚠️ Dừng lại!", "color: red; font-size: 40px; font-weight: bold; -webkit-text-stroke: 1px black;");
     console.log("%cĐây là tính năng của trình duyệt dành cho nhà phát triển. Việc cố tình can thiệp hoặc dán mã lạ vào đây có thể khiến bạn bị đánh cắp dữ liệu.", "font-size: 16px;");
 } else {
@@ -867,7 +943,6 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
     return false;
 };
 
-// ĐƯA CÁC HÀM CƠ BẢN LÊN ĐẦU ĐỂ KHÔNG BỊ UNDEFINED
 function setSafeValue(id, val) {
     const el = document.getElementById(id);
     if(el) {
@@ -962,7 +1037,6 @@ function applyRoleUI() {
     logoutBtns.forEach(b => { b.style.display = (currentUserRole === 'admin') ? 'flex' : 'none'; });
 }
 
-// TOGGLE SIDEBAR LOGIC
 document.getElementById('sidebarToggleBtn')?.addEventListener('click', () => {
     document.body.classList.toggle('sidebar-closed');
     localStorage.setItem('sidebar_closed', document.body.classList.contains('sidebar-closed'));
@@ -1622,7 +1696,7 @@ function renderMonth(){
     const warnings = getOutageWarnings(ds);
     if(warnings.length) {
       warningsHtml = `<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px">
-        ${warnings.map(w => `<span style="background:#fee2e2;color:#991b1b;font-size:10.5px;padding:4px 6px;border-radius:6px;font-weight:800;line-height:1.2;">⚠️️ ${w}</span>`).join('')}
+        ${warnings.map(w => `<span style="background:#fee2e2;color:#991b1b;font-size:10.5px;padding:4px 6px;border-radius:6px;font-weight:800;line-height:1.2;">⚠ ${w}</span>`).join('')}
       </div>`;
     }
 
@@ -2086,7 +2160,7 @@ window.updateModalVisibility = function() {
     const evType = document.getElementById('eventType')?.value;
     let isRuocDauInput = document.getElementById('eventIsRuocDau');
     
-    // Auto reset logic: Nếu không phải Cưới, tự động reset Rước Dâu về false để ẩn Nhà Trai / Nhà Gái
+    // Auto reset logic
     if(evType !== 'Cưới' && isRuocDauInput?.value === 'true') {
         isRuocDauInput.value = 'false';
     }
@@ -2248,7 +2322,6 @@ window.renderEventStaffList = function() {
     const isAdmin = currentUserRole === 'admin';
     const evStaffEl = document.getElementById('eventStaff'); if(!evStaffEl) return;
 
-    // Logic Sắp xếp theo Chức Vụ (Chụp -> Quay -> Make -> Khác)
     const getPriority = (roleStr) => {
         const r = (roleStr || '').toLowerCase();
         let p = 99;
@@ -2338,7 +2411,6 @@ window.renderEventStaffList = function() {
               </select>`;
           }
 
-          // Lọc Nhiệm vụ theo Type Sự Kiện & Role Thợ
           let taskOptions = [];
           const roleLower = (s.role || '').toLowerCase();
           const isChup = roleLower.includes('chụp') || roleLower.includes('photo');
@@ -2501,7 +2573,6 @@ window.openEventModal = function(prefill={}){
   if (currentUserRole === 'guest') return; 
   if (currentUserRole !== 'admin' && !prefill.id) return; 
 
-  // Xóa bộ nhớ Checkbox Lọc Nhân Sự để hiện toàn bộ list thợ mới
   const sFiltersInputs = document.querySelectorAll('#staffFiltersContainer input[type="checkbox"]');
   sFiltersInputs.forEach(cb => cb.checked = false);
 
