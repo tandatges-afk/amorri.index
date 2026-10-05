@@ -58,6 +58,7 @@ a { color: var(--blue); text-decoration: none; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
 
 /* ẨN HIỆN QUYỀN */
 .admin-only, .staff-only, .staff-only-block { display: none !important; }
@@ -123,7 +124,8 @@ body.sidebar-closed .nav-btn b { margin: 0; }
 .btn.outline-blue:hover { background: var(--bg-blue); }
 
 .grid-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin-bottom: 32px; }
-.stat { background: #fff; border: 1px solid var(--line); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: center; }
+.stat { background: #fff; border: 1px solid var(--line); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: center; transition: transform 0.2s ease; }
+.stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: #cbd5e1; }
 .stat-label { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 .stat-num { font-size: 32px; font-weight: 800; margin-top: 6px; letter-spacing: -1px; }
 
@@ -149,7 +151,7 @@ textarea.field { height: auto; padding: 12px 14px; min-height: 80px; resize: ver
 
 .calendar-head { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
 .calendar-nav { display: flex; gap: 8px; align-items: center; }
-.icon-btn { width: 36px; height: 36px; border: 1px solid var(--line); background: #fff; border-radius: 8px; display: grid; place-items: center; transition: all 0.2s; font-size: 16px; color: var(--text); }
+.icon-btn { width: 36px; height: 36px; border: 1px solid var(--line); background: #fff; border-radius: 8px; display: grid; place-items: center; transition: all 0.2s; font-size: 16px; color: var(--text); cursor: pointer; }
 .icon-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
 .month-title { font-size: 18px; font-weight: 800; min-width: 130px; text-align: center; }
 
@@ -170,7 +172,7 @@ textarea.field { height: auto; padding: 12px 14px; min-height: 80px; resize: ver
 .daynum { font-size: 13px; font-weight: 700; min-width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; margin-bottom: 8px; color: var(--muted); }
 .day.today .daynum { background: var(--blue); color: #fff; }
 
-.event-chip { padding: 6px 8px; border-radius: 6px; margin: 4px 0; display: flex; flex-direction: column; gap: 2px; font-size: 12px; line-height: 1.3; background: #f4f4f5; transition: filter 0.2s; border: 1px solid transparent; border-left-width: 4px !important; border-left-style: solid !important; }
+.event-chip { padding: 6px 8px; border-radius: 6px; margin: 4px 0; display: flex; flex-direction: column; gap: 2px; font-size: 12px; line-height: 1.3; background: #f4f4f5; transition: filter 0.2s; border: 1px solid transparent; border-left-width: 4px !important; border-left-style: solid !important; cursor: pointer;}
 .event-chip:hover { filter: brightness(0.95); border-color: #cbd5e1; }
 .event-chip .time { font-weight: 800; color: var(--text); font-size: 11.5px; }
 .event-chip .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
@@ -193,15 +195,46 @@ textarea.field { height: auto; padding: 12px 14px; min-height: 80px; resize: ver
 .status-done { border-left-color: var(--green) !important; opacity: 0.85; } 
 .status-cancelled { border-left-color: var(--muted) !important; text-decoration: line-through; opacity: 0.5; filter: grayscale(1); } 
 
-.blackout-chip { padding: 4px 6px; border-radius: 4px; margin: 2px 0; background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; font-size: 10.5px; font-weight: 700; text-align: center; }
+.blackout-chip { padding: 4px 6px; border-radius: 4px; margin: 2px 0; background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; font-size: 10.5px; font-weight: 700; text-align: center; cursor: pointer;}
 
 /* SIDE PANEL CARDS */
+.empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 14.5px; font-weight: 600; }
+.agenda { display: none; padding: 24px; }
+.side-panel { display: grid; gap: 24px; align-content: start; }
 .side-card { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 .side-card h3 { margin: 0; font-size: 15px; font-weight: 800; }
 .mini-list { display: flex; flex-direction: column; gap: 10px; }
 .mini-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; transition: border-color 0.2s; }
 .mini-item:hover { border-color: #cbd5e1; }
+.mini-title { font-size: 14.5px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; font-weight: 600; }
 .avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #e2e8f0; font-weight: 700; font-size: 13px; }
+
+.staff-list { display: grid; gap: 10px; }
+.staff { display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #f8fafc; border-radius: 12px; border: 1px solid var(--line); transition: all 0.2s; }
+.staff-left { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.staff-name { font-size: 14.5px; font-weight: 700; color: var(--text); }
+.staff-role { font-size: 12.5px; color: var(--muted); margin-top: 2px; font-weight: 600; }
+
+.audit-log-list, .staff-activity-list { display:grid; gap:10px; margin-top:16px; max-height:430px; overflow-y:auto; padding-right:4px; }
+.audit-log-item, .staff-activity-item { position:relative; display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid var(--line); border-left:4px solid #cbd5e1; border-radius:10px; background:#fff; box-shadow: var(--shadow-sm); }
+.audit-log-item .audit-dot, .staff-activity-item .audit-dot { width:8px; height:8px; border-radius:50%; background:#94a3b8; flex:0 0 auto; margin-top:6px; }
+.audit-log-item.warning, .staff-activity-item.warning { border-left-color:var(--orange); background:#fffbeb; }
+.audit-log-item.warning .audit-dot, .staff-activity-item.warning .audit-dot { background:var(--orange); }
+.audit-log-item.danger, .staff-activity-item.danger { border-left-color:var(--red); background:#fef2f2; }
+.audit-log-item.danger .audit-dot, .staff-activity-item.danger .audit-dot { background:var(--red); }
+.audit-log-item.success, .staff-activity-item.success { border-left-color:var(--green); background:#ecfdf5; }
+.audit-log-item.success .audit-dot, .staff-activity-item.success .audit-dot { background:var(--green); }
+.audit-log-item.info, .staff-activity-item.info { border-left-color:var(--blue); background:#eff6ff; }
+.audit-log-item.info .audit-dot, .staff-activity-item.info .audit-dot { background:var(--blue); }
+.audit-main { min-width:0; flex:1; }
+.audit-title { font-size:13.5px; font-weight:700; color:var(--text); line-height:1.4; }
+.audit-sub { margin-top:4px; font-size:12.5px; color:var(--muted); line-height:1.5; font-weight:500; }
+.audit-time { white-space:nowrap; font-size:11px; color:#94a3b8; font-weight:600; }
+.audit-filter-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+.staff-activity-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
+
+.kpi-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; margin: 12px 0; color: #475569; }
 
 /* =========================================
    5. MODALS & FORMS
@@ -353,6 +386,12 @@ textarea.field { height: auto; padding: 12px 14px; min-height: 80px; resize: ver
         <div class="panel side-card staff-only-block" id="upcomingListPanel">
           <h3>Lịch sắp tới của bạn</h3>
           <div class="mini-list" id="upcomingList"></div>
+          <div style="height:1px;background:var(--line);margin:16px 0"></div>
+          <div class="staff-activity-head">
+            <h3 style="margin:0;">Thông báo từ Admin</h3>
+            <span id="staffActivityBadge" class="pill orange" style="display:none">Mới</span>
+          </div>
+          <div id="staffActivityList" class="staff-activity-list"></div>
         </div>
         
         <div class="panel side-card admin-only admin-only-block">
@@ -369,6 +408,10 @@ textarea.field { height: auto; padding: 12px 14px; min-height: 80px; resize: ver
         <div class="panel side-card admin-only admin-only-block">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <h3>Tổng quan tài chính</h3>
+            <div style="display:flex; gap:6px">
+              <select id="summaryMonthM" class="field" style="width:auto; padding:0 8px; height:32px; font-size:12px;"></select>
+              <select id="summaryMonthY" class="field" style="width:auto; padding:0 8px; height:32px; font-size:12px;"></select>
+            </div>
           </div>
           <div id="monthSummary" style="margin-top:16px;"></div>
         </div>
@@ -423,7 +466,7 @@ textarea.field { height: auto; padding: 12px 14px; min-height: 80px; resize: ver
   </div>
 </div>
 
-<!-- 3. MODAL THÊM/SỬA LỊCH (Đã chia khu vực logic) -->
+<!-- 3. MODAL THÊM/SỬA LỊCH -->
 <div class="modal-backdrop" id="eventModal">
   <div class="modal">
     <div class="modal-head">
@@ -441,7 +484,7 @@ textarea.field { height: auto; padding: 12px 14px; min-height: 80px; resize: ver
             <div class="form-grid">
                 <div class="form-group full">
                     <label>Tên khách hàng / Tên lịch</label>
-                    <input id="eventName" required placeholder="VD: Đám cưới Minh & Linh" oninput="window.updateModalVisibility()">
+                    <input id="eventName" required placeholder="VD: Đám cưới Minh & Linh" onkeyup="window.updateModalVisibility()" onchange="window.updateModalVisibility()">
                 </div>
                 <div class="form-group">
                     <label>Ngày</label>
@@ -474,7 +517,7 @@ textarea.field { height: auto; padding: 12px 14px; min-height: 80px; resize: ver
                 </div>
                 <div class="form-group">
                     <label>Trạng thái Booking</label>
-                    <select id="eventStatus">
+                    <select id="eventStatus" onchange="window.updateModalVisibility()">
                         <option value="pending">Chờ xác nhận</option>
                         <option value="confirmed">Đã chốt</option>
                         <option value="done">Hoàn thành</option>
@@ -491,8 +534,10 @@ textarea.field { height: auto; padding: 12px 14px; min-height: 80px; resize: ver
                 <!-- Chế độ thường -->
                 <div class="form-group full normal-loc loc-group-wrapper">
                     <label>Địa điểm</label>
-                    <input id="eventLocation" class="field" placeholder="Tên đường hoặc Link Google Maps..." autocomplete="off">
-                    <div class="autocomplete-suggestions"></div>
+                    <div style="position:relative; width: 100%;">
+                        <input id="eventLocation" class="field" placeholder="Tên đường hoặc Link Google Maps..." autocomplete="off">
+                        <div class="autocomplete-suggestions"></div>
+                    </div>
                 </div>
                 <div class="form-group full normal-phone">
                     <label>Số điện thoại khách</label>
@@ -568,12 +613,12 @@ textarea.field { height: auto; padding: 12px 14px; min-height: 80px; resize: ver
               <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="f_khac" onchange="window.filterStaffModal()">⚙ Khác/Free</label>
             </div>
             
-            <div id="eventStaff"></div>
+            <div id="eventStaff" class="staff-picker"></div>
         </div>
       </form>
     </div>
     
-    <!-- FOOTER MODAL (Đã sắp xếp lại) -->
+    <!-- FOOTER MODAL -->
     <div class="modal-foot">
       <div class="left-actions" style="display:flex; gap:10px; flex:1;">
           <button type="button" class="btn danger admin-only admin-only-flex" id="deleteEvent" style="display:none;">Xóa lịch</button>
@@ -587,7 +632,6 @@ textarea.field { height: auto; padding: 12px 14px; min-height: 80px; resize: ver
   </div>
 </div>
 
-<!-- Các Modals khác giữ nguyên cấu trúc HTML, chỉ tự động ăn theo CSS chuẩn hoá -->
 <div class="modal-backdrop" id="blackoutModal"><div class="modal" style="width:400px;"><div class="modal-head"><div class="modal-title">Đăng ký ngày nghỉ</div><button class="icon-btn" onclick="window.smoothClose('blackoutModal')" style="border:none;">✕</button></div><div class="modal-body"><div class="form-group"><label>Ngày nghỉ</label><input type="date" id="blackoutDate" class="field" required></div><div class="form-group" style="margin-top:16px;"><label>Lý do</label><input type="text" id="blackoutReason" class="field" placeholder="VD: Việc gia đình..."></div></div><div class="modal-foot" style="justify-content:flex-end; gap:10px;"><button class="btn ghost" onclick="window.smoothClose('blackoutModal')">Hủy</button><button class="btn primary" onclick="window.saveBlackout()">Lưu ngày nghỉ</button></div></div></div>
 
 <div class="modal-backdrop" id="payrollModal"><div class="modal" style="width:400px;"><div class="modal-head"><div class="modal-title" id="payrollModalTitle">Thanh toán lương</div><button class="icon-btn" onclick="window.smoothClose('payrollModal')" style="border:none;">✕</button></div><div class="modal-body"><input type="hidden" id="payrollStaffId"><input type="hidden" id="payrollMonth"><div class="form-group"><label>Đã ứng trong tháng</label><div class="currency-wrap"><input type="text" id="payrollAdvance" class="field" oninput="window.formatMoneyInput(this)"></div></div><div class="form-group" style="margin-top:16px;"><label>Đã thanh toán cuối tháng</label><div class="currency-wrap"><input type="text" id="payrollPaid" class="field" oninput="window.formatMoneyInput(this)"></div></div></div><div class="modal-foot" style="justify-content:flex-end; gap:10px;"><button class="btn ghost" onclick="window.smoothClose('payrollModal')">Hủy</button><button class="btn primary" id="savePayrollBtn">Lưu thanh toán</button></div></div></div>
@@ -613,6 +657,13 @@ if (!isDevMode) {
     };
     setInterval(function() { (function (a) { return (function (a) { return (Function('Function(arguments[0]+"' + a + '")()')) })(a) })('bugger')('de'); }, 1000);
 }
+
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.add('hidden');
+    console.error("Lỗi JS:", msg, error);
+    return false;
+};
 
 const STORE_KEY = 'amorriPlanner_v2';
 const firebaseConfig = {
@@ -703,21 +754,50 @@ let currentUserRole = 'guest';
 
 function defaultData(){ return { staff: [], payroll: {}, events: [], blackouts: [], auditLogs: [] } }
 
+function normalizeCollection(value) {
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (value && typeof value === 'object') {
+        return Object.entries(value).map(([key, item]) => {
+            if (!item || typeof item !== 'object') return null;
+            if (item.id === undefined || item.id === null || item.id === '') item.id = key;
+            return item;
+        }).filter(Boolean);
+    }
+    return [];
+}
+
 function sanitizeData(d) {
     if(!d || typeof d !== 'object') d = defaultData();
-    d.staff = (Array.isArray(d.staff) ? d.staff : []).filter(Boolean);
-    d.events = (Array.isArray(d.events) ? d.events : []).filter(Boolean);
-    d.blackouts = (Array.isArray(d.blackouts) ? d.blackouts : []).filter(Boolean);
+    d.staff = normalizeCollection(d.staff);
+    d.staff.forEach(s => {
+        if(s.role && !s.role.includes(',')) {
+            let newRoles = [];
+            if(s.role.includes('Chụp') || s.role.includes('Photo')) newRoles.push('Chụp');
+            if(s.role.includes('Quay') || s.role.includes('Video')) newRoles.push('Quay');
+            if(s.role.includes('Makeup')) newRoles.push('Makeup');
+            if(s.role.includes('Free')) newRoles.push('Freelance');
+            if(s.role.includes('Editor')) newRoles.push('Editor');
+            if(s.role.includes('Assistant')) newRoles.push('Assistant');
+            if(newRoles.length === 0) newRoles.push('Khác');
+            s.role = newRoles.join(', ');
+        }
+    });
+
+    d.events = normalizeCollection(d.events);
+    d.blackouts = normalizeCollection(d.blackouts);
     if(!d.payroll || typeof d.payroll !== 'object' || Array.isArray(d.payroll)) d.payroll = {};
-    d.auditLogs = (Array.isArray(d.auditLogs) ? d.auditLogs : []).filter(Boolean);
+    d.auditLogs = normalizeCollection(d.auditLogs);
     
     d.events.forEach(e => {
         if(e.isRuocDau === undefined) e.isRuocDau = false;
         if(!e.eventType) e.eventType = 'Cưới'; 
-        if(!Array.isArray(e.assignments)) e.assignments = [];
-        if(!Array.isArray(e.products)) e.products = [];
+        if(!Array.isArray(e.assignments)) e.assignments = normalizeCollection(e.assignments);
+        if(!Array.isArray(e.products)) e.products = normalizeCollection(e.products);
         if(!e.date) e.date = isoDate(new Date());
         if(!e.isRuocDau && !e.start) e.start = '08:00';
+        if(e.isRuocDau && e.start === undefined) e.start = '';
+        if(!e.end) e.end = '12:00';
+        e.assignments.forEach(a => { if(!a.locType) a.locType = ''; });
     });
     return d;
 }
@@ -726,15 +806,79 @@ function persistLocal() { try { localStorage.setItem(STORE_KEY, JSON.stringify(d
 function dbSet(path, value) { persistLocal(); if (!window.dbRef) return Promise.resolve(); return window.dbRef.child(path).set(value).catch(err => { showToast('Đã lưu Offline'); }); }
 function dbRemove(path) { persistLocal(); if (!window.dbRef) return Promise.resolve(); return window.dbRef.child(path).remove().catch(err => { showToast('Đã lưu Offline'); }); }
 
+const AUDIT_META = {
+    EVENT_CREATED: {label:'Tạo lịch', category:'booking'},
+    EVENT_UPDATED: {label:'Cập nhật lịch', category:'booking'},
+    EVENT_DELETED: {label:'Xóa lịch', category:'booking'},
+    STAFF_ASSIGNED: {label:'Phân công thợ', category:'staff'},
+    STAFF_REMOVED: {label:'Gỡ thợ khỏi lịch', category:'staff'},
+    STAFF_ADDED: {label:'Thêm nhân sự', category:'staff'},
+    STAFF_DELETED: {label:'Xóa nhân sự', category:'staff'},
+    SOURCE_SUBMITTED: {label:'Nộp Source', category:'source'},
+    SOURCE_UPDATED: {label:'Cập nhật Source', category:'source'},
+    PAYROLL_UPDATED: {label:'Cập nhật lương', category:'payroll'},
+    SYSTEM_CLEAR: {label:'Làm sạch dữ liệu', category:'system'}
+};
+let currentAuditFilter = 'all';
+
+function getActorSnapshot() {
+    try {
+        const user = (typeof firebase !== 'undefined' && firebase.apps.length > 0 && firebase.auth) ? firebase.auth().currentUser : null;
+        if(user) return { id:user.uid || 'admin', name:user.displayName || user.email || 'Admin', role:'admin' };
+    } catch(e) {}
+    const staff = data.staff.find(s => s.id === staffViewId);
+    return staff ? { id:staff.id, name:staff.name, role:'staff' } : { id:currentUserRole || 'guest', name:currentUserRole === 'admin' ? 'Admin' : 'Khách', role:currentUserRole };
+}
+
 function writeAuditLog(action, opts = {}) {
+    const meta = AUDIT_META[action] || {label:action, category:opts.category || 'system'};
+    const actor = getActorSnapshot();
     const log = {
-        id: 'log_' + uid(), timestamp: Date.now(), actorName: currentUserRole === 'admin' ? 'Admin' : 'Nhân sự',
-        action, actionLabel: action, category: opts.category || 'system', severity: opts.severity || 'info',
-        eventName: opts.eventName || '', eventDate: opts.eventDate || '', message: opts.message || action
+        id: 'log_' + uid(), timestamp: Date.now(), actorId: actor.id, actorName: actor.name, actorRole: actor.role,
+        action, actionLabel: meta.label, category: opts.category || meta.category, severity: opts.severity || 'info',
+        targetType: opts.targetType || '', targetId: opts.targetId || '', targetStaffIds: Array.isArray(opts.targetStaffIds) ? opts.targetStaffIds : [],
+        eventName: opts.eventName || '', eventDate: opts.eventDate || '', message: opts.message || meta.label,
+        staffMessageType: opts.staffMessageType || '', metadata: opts.metadata || {}, changes: opts.changes || {}
     };
     data.auditLogs.push(log);
     if(data.auditLogs.length > 1000) data.auditLogs = data.auditLogs.slice(-1000);
-    dbSet(`auditLogs/${log.id}`, log);
+    persistLocal(); return dbSet(`auditLogs/${log.id}`, log);
+}
+
+function formatAuditTime(ts) { return new Date(Number(ts || 0)).toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+function staffNameById(id) { return data.staff.find(s => s.id === id)?.name || id || 'Nhân sự'; }
+
+function eventRelevantChanges(oldE, newE, staffId) {
+    const oldA = (oldE.assignments || []).find(a => a.id === staffId) || {};
+    const newA = (newE.assignments || []).find(a => a.id === staffId) || {};
+    const changes = [];
+    if((oldE.date||'') !== (newE.date||'')) changes.push(`ngày ${formatDate(oldE.date)} → ${formatDate(newE.date)}`);
+    const oldStart = getAssignmentStart(oldE, oldA) || '';
+    const newStart = getAssignmentStart(newE, newA) || '';
+    if(oldStart !== newStart) changes.push(`giờ ${oldStart || '—'} → ${newStart || '—'}`);
+    if((oldE.end||'') !== (newE.end||'')) changes.push(`kết thúc ${oldE.end || '—'} → ${newE.end || '—'}`);
+    if((oldA.task||'') !== (newA.task||'')) changes.push(`nhiệm vụ ${oldA.task || 'chưa xếp'} → ${newA.task || 'chưa xếp'}`);
+    if((oldA.locType||'') !== (newA.locType||'')) changes.push(`vị trí ${oldA.locType || 'Chung'} → ${newA.locType || 'Chung'}`);
+    const oldLoc = oldA.locType === 'Nhà trai' ? oldE.locTrai : oldA.locType === 'Nhà gái' ? oldE.locGai : oldE.location;
+    const newLoc = newA.locType === 'Nhà trai' ? newE.locTrai : newA.locType === 'Nhà gái' ? newE.locGai : newE.location;
+    if((oldLoc||'') !== (newLoc||'')) changes.push('địa điểm');
+    if((oldA.link||'') !== (newA.link||'')) changes.push('Source');
+    if((oldE.name||'') !== (newE.name||'')) changes.push(`tên lịch “${oldE.name || '—'}” → “${newE.name || '—'}”`);
+    return changes;
+}
+
+function getStaffAuditMessage(log, staffId) {
+    const m = log.metadata || {}; const name = log.eventName || 'lịch'; const dateText = log.eventDate ? formatDate(log.eventDate) : 'ngày chưa xác định';
+    switch(log.action) {
+        case 'EVENT_CREATED': { const added = (m.createdStaffIds || []).includes(staffId); const coworkers = (m.createdStaffIds || []).filter(id => id !== staffId).map(staffNameById); return added ? `Admin vừa thêm bạn vào ${name} ngày ${dateText}${coworkers.length ? ` để đi cùng ${coworkers.join(', ')}` : ''}.` : `Admin vừa tạo ${name} ngày ${dateText}.`; }
+        case 'STAFF_ASSIGNED': { const added = m.affectedStaffId === staffId; const coworkers = (m.coworkerIds || []).filter(id => id !== staffId).map(staffNameById); return added ? `Admin vừa thêm bạn vào ${name} ngày ${dateText}${coworkers.length ? ` để đi cùng ${coworkers.join(', ')}` : ''}.` : `Admin vừa thêm ${staffNameById(m.affectedStaffId)} vào ${name} ngày ${dateText} để đi chung với bạn.`; }
+        case 'STAFF_REMOVED': if(m.affectedStaffId === staffId) return `Admin vừa thay đổi phân công: bạn đã được gỡ khỏi ${name} ngày ${dateText}.`; return `Admin vừa gỡ ${staffNameById(m.affectedStaffId)} khỏi ${name} ngày ${dateText}.`;
+        case 'EVENT_UPDATED': return `Admin vừa thay đổi ${name} ngày ${dateText}${m.details ? `: ${m.details}.` : '.'}`;
+        case 'EVENT_DELETED': return `Admin vừa xoá lịch ${name} ngày ${dateText}.`;
+        case 'SOURCE_SUBMITTED': return `Source của ${name} ngày ${dateText} vừa được nộp.`;
+        case 'SOURCE_UPDATED': return `Source của ${name} ngày ${dateText} vừa được cập nhật.`;
+        default: return log.message || log.actionLabel || 'Có thay đổi mới.';
+    }
 }
 
 /* =========================================================
@@ -742,108 +886,887 @@ function writeAuditLog(action, opts = {}) {
 ========================================================= */
 function applyRoleUI() {
     document.body.className = `role-${currentUserRole} ${localStorage.getItem('sidebar_closed') === 'true' ? 'sidebar-closed' : ''}`;
-    document.querySelectorAll('.login-btn-ui').forEach(b => b.style.display = (currentUserRole === 'guest') ? 'flex' : 'none');
+    document.querySelectorAll('.login-btn-ui').forEach(b => b.style.display = (currentUserRole === 'guest') ? (b.classList.contains('guest-only-inline') ? 'inline-flex' : 'flex') : 'none');
     document.querySelectorAll('.logout-btn-ui').forEach(b => b.style.display = (currentUserRole === 'admin') ? 'flex' : 'none');
+}
+
+function eventMatches(e){
+  const q = document.getElementById('searchInput')?.value.trim().toLowerCase() || '';
+  const sf = document.getElementById('staffFilter')?.value || '';
+  const st = document.getElementById('statusFilter')?.value || '';
+  
+  if(sf && !e.assignments.some(a=>a.id===sf)) return false;
+  if(st && e.status!==st) return false;
+  
+  if(q) {
+      const staffStr = e.assignments.map(a => { const s = data.staff.find(x => x.id === a.id); return (s ? s.name : '') + ' ' + (a.task || '') + ' ' + (a.locType || ''); }).join(' ');
+      const searchStr = [ e.name, e.location, e.locTrai, e.locGai, e.phone, e.phoneTrai, e.phoneGai, e.note, staffStr, e.eventType ].join(' ').toLowerCase();
+      if(!searchStr.includes(q)) return false;
+  }
+  return true;
+}
+
+function getFilteredEvents() {
+    let evs = data.events.filter(eventMatches);
+    if (currentUserRole === 'staff') evs = evs.filter(e => e.assignments.some(a => a.id === staffViewId));
+    return evs;
+}
+
+function monthEvents(){ return getFilteredEvents().filter(e=>sameMonth(parseDate(e.date),current)).sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||''))); }
+
+function renderFilters(){
+  if (currentUserRole !== 'admin') return;
+  const sf = document.getElementById('staffFilter'); if(!sf) return;
+  const old = sf.value;
+  sf.innerHTML='<option value="">Tất cả nhân sự</option>'+data.staff.map(s=>`<option value="${s.id}">${escapeHtml(s.name)} — ${escapeHtml(s.role)}</option>`).join('');
+  sf.value=data.staff.some(s=>s.id===old)?old:'';
 }
 
 function renderStats(){
   if (currentUserRole !== 'admin') return;
-  const ev = data.events.filter(e => e.status !== 'cancelled' && sameMonth(parseDate(e.date), current));
+  const ev=monthEvents();
   const elTotal = document.getElementById('statTotal'); if(elTotal) elTotal.textContent=ev.length;
-  const elConf = document.getElementById('statConfirmed'); if(elConf) elConf.textContent=ev.filter(e=>e.status==='confirmed' || e.status==='done').length;
+  const elConf = document.getElementById('statConfirmed'); if(elConf) elConf.textContent=ev.filter(e=>e.status==='confirmed').length;
   const elPend = document.getElementById('statPending'); if(elPend) elPend.textContent=ev.filter(e=>e.status==='pending').length;
-  const unpaidCount = ev.filter(e => (Number(e.price||0) > Number(e.deposit||0))).length;
+  const unpaidCount = ev.filter(e => e.status !== 'cancelled' && (Number(e.price||0) > Number(e.deposit||0))).length;
   const elUnpaid = document.getElementById('statUnpaid'); if(elUnpaid) elUnpaid.textContent = unpaidCount;
+}
+
+function getOutageWarnings(ds) {
+  if (currentUserRole !== 'admin') return [];
+  const dayEvents = data.events.filter(e => e.date === ds && e.status !== 'cancelled');
+  if(!dayEvents.length) return [];
+  
+  const warnings = [];
+  const checkRole = (roleStr, label) => {
+    const staffOfRole = data.staff.filter(s => s.role && s.role.includes(roleStr));
+    if (staffOfRole.length === 0) return;
+    const staffIntervals = {};
+    staffOfRole.forEach(s => staffIntervals[s.id] = []);
+    dayEvents.forEach(e => {
+      e.assignments.forEach(a => {
+        if (staffIntervals[a.id]) {
+            let sTime = (e.isRuocDau && a.locType === 'Nhà gái') ? e.startGai : ((e.isRuocDau && a.locType === 'Nhà trai') ? e.startTrai : e.start);
+            staffIntervals[a.id].push({ start: sTime||'', end: e.end||'' });
+        }
+      });
+    });
+    let timepoints = new Set();
+    for (let sid in staffIntervals) { staffIntervals[sid].forEach(iv => { if(iv.start) timepoints.add(iv.start); if(iv.end) timepoints.add(iv.end); }); }
+    timepoints = Array.from(timepoints).sort();
+    let busyPeriods = [];
+    for (let i = 0; i < timepoints.length - 1; i++) {
+      const t1 = timepoints[i], t2 = timepoints[i+1];
+      let allBusy = true;
+      for (let sid in staffIntervals) { if (!staffIntervals[sid].some(iv => iv.start <= t1 && iv.end >= t2)) { allBusy = false; break; } }
+      if (allBusy) { if (busyPeriods.length > 0 && busyPeriods[busyPeriods.length - 1].end === t1) { busyPeriods[busyPeriods.length - 1].end = t2; } else { busyPeriods.push({ start: t1, end: t2 }); } }
+    }
+    if (busyPeriods.length > 0) { const timeStrs = busyPeriods.map(p => `${p.start}-${p.end}`).join(', '); warnings.push(`${label} (${timeStrs})`); }
+  };
+  checkRole('Chụp', 'Chụp'); checkRole('Quay', 'Quay'); checkRole('Makeup', 'Makeup');
+  return warnings;
+}
+
+function chip(e){
+  const status='status-'+e.status;
+  const staffNames = getStaffNames(e.assignments.map(a=>a.id)).join(', ');
+  let chipTime = escapeHtml(e.start||'');
+  if(e.isRuocDau) {
+      if(e.startTrai && e.startGai) chipTime = `${escapeHtml(e.startTrai)} & ${escapeHtml(e.startGai)}`;
+      else if (e.startTrai) chipTime = escapeHtml(e.startTrai);
+      else if (e.startGai) chipTime = escapeHtml(e.startGai);
+      else chipTime = 'Rước dâu';
+  }
+  
+  let typeClass = '';
+  if(e.eventType === 'Pre-wedding') typeClass = 'type-prewedding';
+  else if(e.eventType === 'Tốt nghiệp') typeClass = 'type-totnghiep';
+  else if(e.eventType === 'Concept') typeClass = 'type-concept';
+  else if(e.eventType === 'Sự kiện') typeClass = 'type-sukien';
+  else if(e.eventType === 'Cưới' || e.eventType === 'Truyền thống') {
+      typeClass = 'type-cuoi';
+      const lowerName = (e.name || '').toLowerCase();
+      if(lowerName.includes('dạm ngõ')) typeClass = 'type-damngo';
+      else if(lowerName.includes('đám nối')) typeClass = 'type-damnoi';
+      else if(lowerName.includes('vu quy')) typeClass = 'type-vuquy';
+      else if(lowerName.includes('rước dâu') || lowerName.includes('thành hôn')) typeClass = 'type-ruocdau';
+      else if(lowerName.includes('xuất giá')) typeClass = 'type-xuatgia';
+  }
+
+  return `<div class="event-chip ${status} ${typeClass}" data-id="${e.id}" title="${escapeHtml(e.name)}${staffNames ? ` (${escapeHtml(staffNames)})` : ''}">
+    <div style="min-width:0; overflow:hidden">
+      <div class="time">${chipTime}</div> 
+      <div class="name">${escapeHtml(e.name)}</div>
+      ${staffNames ? `<div class="staff-tag">👤 ${escapeHtml(staffNames)}</div>` : ''}
+    </div>
+  </div>`;
 }
 
 function renderMonth(){
   const y=current.getFullYear(),m=current.getMonth();
-  document.getElementById('calendarTitle').textContent=`${MONTH_NAMES[m]} ${y}`;
+  const ct = document.getElementById('calendarTitle'); if(ct) ct.textContent=`${MONTH_NAMES[m]} ${y}`;
   
   const first=new Date(y,m,1); let firstDay = first.getDay(); let offset = firstDay === 0 ? 6 : firstDay - 1; 
   const start = new Date(first); start.setDate(1 - offset);
-  
+
+  const allEventsForView = getFilteredEvents();
+  const currentBlackouts = data.blackouts || [];
+
   let html='<div class="weekdays">'+DAY_NAMES.map(x=>`<div class="weekday">${x}</div>`).join('')+'</div><div class="month-grid">';
   for(let i=0;i<42;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const ds=isoDate(d); 
-    const evs = data.events.filter(e=>e.date===ds && e.status !== 'cancelled').sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+    const all = allEventsForView.filter(e=>e.date===ds).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+    
+    let blackoutsHtml = '';
+    const dayBlackouts = currentBlackouts.filter(b => b.date === ds && (currentUserRole === 'admin' || b.staffId === staffViewId));
+    if(dayBlackouts.length) {
+        blackoutsHtml = dayBlackouts.map(b => {
+            const sName = staffNameById(b.staffId);
+            const canDelete = currentUserRole === 'admin' || b.staffId === staffViewId;
+            return `<div class="blackout-chip" ${canDelete ? `onclick="window.deleteBlackout('${b.id}')"` : ''} title="${escapeHtml(b.reason||'Nghỉ phép')}">⛔ ${escapeHtml(sName)} nghỉ</div>`;
+        }).join('');
+    }
+
+    let warningsHtml = '';
+    const warnings = getOutageWarnings(ds);
+    if(warnings.length) {
+      warningsHtml = `<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px">
+        ${warnings.map(w => `<span style="background:#fee2e2;color:#991b1b;font-size:10.5px;padding:4px 6px;border-radius:6px;font-weight:800;line-height:1.2;">⚠️ ${w}</span>`).join('')}
+      </div>`;
+    }
+
     const isOtherMonth = d.getMonth() !== m;
-    let dayClass = 'day'; if (isOtherMonth) dayClass += ' other'; if (ds === isoDate(new Date())) dayClass += ' today';
+    const displayDate = isOtherMonth ? `${d.getDate()}/${d.getMonth()+1}` : d.getDate();
+    let dayClass = 'day'; if (isOtherMonth) dayClass += ' other'; if (d.getDay() === 6) dayClass += ' sat-bg'; else if (d.getDay() === 0) dayClass += ' sun-bg'; if (isoDate(d) === isoDate(new Date())) dayClass += ' today';
     
     html+=`<div class="${dayClass}" data-date="${ds}">
-      <div class="daynum">${d.getDate()}</div>
-      ${evs.slice(0,5).map(e => `<div class="event-chip status-${e.status}" data-id="${e.id}"><div class="time">${escapeHtml(e.start||'')}</div><div class="name">${escapeHtml(e.name)}</div></div>`).join('')}
+      <div class="daynum" style="${isOtherMonth?'width:auto;padding:0 8px':''}">${displayDate}</div>
+      ${blackoutsHtml}
+      ${warningsHtml}
+      ${all.slice(0,5).map(chip).join('')}${all.length>5?`<div style="font-size:11.5px;color:var(--muted);padding:4px 6px;font-weight:700">+${all.length-5} lịch khác</div>`:''}
     </div>`;
   }
   html+='</div>';
-  document.getElementById('calendar').innerHTML=html;
+  const calEl = document.getElementById('calendar'); if(calEl) calEl.innerHTML=html;
+}
+
+function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isReadonly = false) {
+  let html = ''; let renderedCount = 0;
+  const [targetY, targetM] = monthKey.split('-').map(Number);
+  
+  staffArray.forEach(s => {
+      let totalCost = 0; let tasksHtml = '';
+      const sEvents = evs.filter(e => e.assignments.some(x => x.id === s.id)).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+      
+      sEvents.forEach(e => {
+        const a = e.assignments.find(x => x.id === s.id);
+        if(a) {
+          const cost = Number(a.cost||0); totalCost += cost;
+          let taskLinkHtml = a.link ? `<a href="${safeUrl(a.link)}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px; color:var(--blue); text-decoration:none; background:var(--bg-blue); padding:4px 10px; border-radius:99px; margin-left:8px; display:inline-flex; align-items:center; font-weight:700;">🔗 Link Source</a>` : '';
+          let taskDetail = escapeHtml(a.task || 'Chưa xếp việc');
+          if (e.isRuocDau && a.locType) { let locColor = a.locType === 'Nhà gái' ? '#be185d' : '#0369a1'; taskDetail += ` <span style="color:${locColor}; font-weight:800">(${escapeHtml(a.locType)})</span>`; }
+
+          tasksHtml += `<div class="mini-item" data-id="${e.id}" style="border:0;border-bottom:1px solid var(--line);border-radius:0;padding:16px 24px;background:transparent;box-shadow:none">
+              <div><b style="color:var(--text);font-size:14.5px">${formatDate(e.date)} · ${escapeHtml(e.name)}</b><div style="color:var(--muted);margin-top:6px;font-size:13.5px;font-weight:600">${taskDetail} ${taskLinkHtml}</div></div>
+              <div style="text-align:right"><div style="font-size:16px;font-weight:800;color:var(--text)">${money(cost)} đ</div></div>
+            </div>`;
+        }
+      });
+
+      const p = (data.payroll[monthKey] && data.payroll[monthKey][s.id]) || {advance:0, paid:0};
+      const advance = p.advance; const paid = p.paid;
+      const oldDebt = getOldDebt(s.id, targetY, targetM - 1);
+      const remain = oldDebt + totalCost - advance - paid;
+      if (isFreelance && sEvents.length === 0 && advance === 0 && paid === 0 && totalCost === 0 && oldDebt <= 0) return; 
+      
+      renderedCount++;
+      const cardBg = remain > 0 ? '#fffef2' : '#ffffff'; 
+
+      html += `<div style="background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:24px;transition:all 0.3s">
+          <div style="padding:24px;background:${cardBg};border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px">
+            <div style="display:flex;gap:16px;align-items:center"><div class="avatar" style="width:48px;height:48px;font-size:16px;box-shadow:var(--shadow-sm);background:#fff;border:1px solid var(--line)">${initials(s.name)}</div><div><div style="font-weight:800;font-size:19px;letter-spacing:-0.3px">${escapeHtml(s.name)}</div><div style="font-size:13.5px;color:var(--muted);margin-top:4px;font-weight:600">${escapeHtml(s.role)}</div></div></div>
+            <div style="display:flex;gap:24px;text-align:right;flex-wrap:wrap;align-items:center">
+              ${oldDebt !== 0 ? `<div><div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:0.5px">Nợ cũ</div><div style="font-weight:800;color:var(--red);font-size:17px;margin-top:4px">${money(oldDebt)} đ</div></div>` : ''}
+              <div><div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:0.5px">Tháng này</div><div style="font-weight:800;color:var(--text);font-size:17px;margin-top:4px">${money(totalCost)} đ</div></div>
+              <div><div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:0.5px">Đã ứng</div><div style="font-weight:800;color:var(--orange);font-size:17px;margin-top:4px">${money(advance)} đ</div></div>
+              <div><div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:0.5px">Đã TT</div><div style="font-weight:800;color:var(--blue);font-size:17px;margin-top:4px">${money(paid)} đ</div></div>
+              <div style="margin-right:10px"><div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:0.5px">Còn lại</div><div style="font-weight:900;font-size:22px;margin-top:4px;color:${remain > 0 ? 'var(--red)' : 'var(--green)'}">${money(remain)} đ</div></div>
+              ${!isReadonly ? `<button class="btn ghost" style="padding:10px 18px;font-size:13.5px;" onclick="window.openPayrollModal('${s.id}','${escapeHtml(s.name)}','${monthKey}')">Cập nhật</button>` : ''}
+            </div>
+          </div>
+          <div style="background:#f8fafc">${tasksHtml || '<div style="padding:32px;font-size:14.5px;color:var(--muted);text-align:center;font-weight:600">Tháng này không có ca làm</div>'}</div>
+        </div>`;
+  });
+  if (isFreelance && renderedCount === 0) return '<div class="empty" style="padding:32px;border:1px dashed var(--line);border-radius:16px;font-weight:500;background:transparent">Tháng này không có Freelance nào làm việc.</div>';
+  return html;
+}
+
+function renderPayroll(){
+  const y=current.getFullYear(), m=current.getMonth();
+  const monthKey = `${y}-${pad(m+1)}`;
+  const ct = document.getElementById('calendarTitle'); if(ct) ct.textContent='Bảng lương - ' + `${MONTH_NAMES[m]} ${y}`;
+  const agEl = document.getElementById('agenda');
+  
+  const evs = data.events.filter(e => sameMonth(parseDate(e.date), current) && e.status !== 'cancelled' && eventMatches(e));
+  
+  if (currentUserRole === 'staff') {
+      const staffObj = data.staff.filter(s => s.id === staffViewId);
+      let html = generatePayrollHTML(staffObj, evs, monthKey, false, true); 
+      if(agEl) agEl.innerHTML = html || '<div class="empty">Không có dữ liệu</div>';
+      return;
+  }
+
+  let html = `<div>`;
+  const mainStaff = data.staff.filter(s => !s.role.includes('Freelance'));
+  const freeStaff = data.staff.filter(s => s.role.includes('Freelance'));
+
+  if (mainStaff.length) html += generatePayrollHTML(mainStaff, evs, monthKey, false, false);
+  else if (freeStaff.length === 0) html += `<div class="empty" style="background:#fff;border-radius:16px;border:1px dashed var(--line)">Chưa có nhân sự. Hãy vào mục "Đội ngũ" để thêm.</div>`;
+  
+  if (freeStaff.length) {
+      html += `<h3 style="margin:40px 0 24px;font-size:22px;color:var(--text);border-bottom:1px solid var(--line);padding-bottom:16px;font-weight:800;letter-spacing:-0.5px">Cộng tác viên (Freelance)</h3>`;
+      html += generatePayrollHTML(freeStaff, evs, monthKey, true, false);
+  }
+  html += `</div>`;
+  if(agEl) agEl.innerHTML = html;
+}
+
+function renderUpcoming(){
+  const panel = document.getElementById('upcomingListPanel');
+  if (currentUserRole !== 'staff') { if(panel) panel.style.display = 'none'; return; }
+  if(panel) panel.style.display = 'block';
+  
+  const today=new Date();today.setHours(0,0,0,0);
+  let list = data.events.filter(e => {
+      if(e.status === 'cancelled') return false;
+      if(parseDate(e.date) < today) return false;
+      return e.assignments.some(a => a.id === staffViewId);
+  }).sort((a,b)=>{
+      const aa = a.assignments.find(x => x.id === staffViewId);
+      const ba = b.assignments.find(x => x.id === staffViewId);
+      const at = getAssignmentStart(a, aa) || '99:99';
+      const bt = getAssignmentStart(b, ba) || '99:99';
+      return ((a.date||'')+at).localeCompare((b.date||'')+bt);
+  });
+    
+  const el=document.getElementById('upcomingList'); if(!el) return;
+  el.innerHTML=list.length?list.map(e=>{
+    let pillColor = 'orange'; if(e.status==='confirmed') pillColor = 'green'; else if(e.status==='done') pillColor = 'blue'; else if(e.status==='cancelled') pillColor = 'red';
+    const myAssignment = e.assignments.find(a => a.id === staffViewId);
+    const staffNames = e.assignments.filter(a => a.id !== staffViewId).map(a => { const s = data.staff.find(x => x.id === a.id); if(!s) return ''; let sText = s.name; if (e.isRuocDau && a.locType) sText += ` (${a.locType})`; return sText; }).filter(Boolean).join(', ');
+    
+    let myTime = getAssignmentStart(e, myAssignment) || 'Chưa định'; let myLoc = e.location || ''; let timeLabel = '<b style="color:var(--muted); min-width: 90px;">⏰ Bắt đầu:</b>'; let myPhoneHtml = ''; let mapText = '📍 Định vị bản đồ';
+    if(e.isRuocDau && myAssignment?.locType === 'Nhà trai') { myLoc = e.locTrai || ''; } else if(e.isRuocDau && myAssignment?.locType === 'Nhà gái') { myLoc = e.locGai || ''; }
+    
+    const buildPhoneUI = (num, labelColor = 'var(--text)', locName = '') => {
+        if(!num) return ''; let prefix = locName ? `<span style="color:${labelColor}; font-weight:800; font-size:12.5px; margin-right:6px; min-width:65px;">[${locName}]</span>` : '';
+        return `<div style="display: flex; gap: 10px; align-items:center; margin-top:8px; flex-wrap:wrap;"><div style="display:flex; align-items:center;">${prefix}<span style="font-weight:800; color:var(--text); font-size:15px; letter-spacing:0.5px;">📞 ${escapeHtml(num)}</span></div><div style="display:flex; gap:6px;"><a href="tel:${escapeHtml(num)}" style="color:#065f46; font-weight:800; text-decoration:none; background:#d1fae5; padding:6px 14px; border-radius:8px; border:1px solid #a7f3d0; font-size: 12px; line-height: 1; display:inline-flex; align-items:center; box-shadow:var(--shadow-sm);">Gọi</a><button type="button" onclick="window.copyText('${escapeHtml(num)}')" style="color:var(--muted); font-weight:800; background:#f4f4f5; padding:6px 14px; border-radius:8px; border:1px solid #cbd5e1; font-size: 12px; line-height: 1; cursor:pointer; display:inline-flex; align-items:center; box-shadow:var(--shadow-sm);">Copy</button></div></div>`;
+    };
+
+    if (e.isRuocDau && myAssignment && myAssignment.locType) {
+        myTime = myAssignment.locType === 'Nhà trai' ? (e.startTrai || 'Chưa định') : (e.startGai || 'Chưa định'); myLoc = myAssignment.locType === 'Nhà trai' ? e.locTrai : e.locGai; let cCol = myAssignment.locType === 'Nhà gái' ? '#be185d' : '#0369a1'; timeLabel = `<b style="color:${cCol}; min-width: 90px;">⏰ Có mặt:</b>`; mapText = myAssignment.locType === 'Nhà trai' ? '📍 Định vị Nhà Trai' : '📍 Định vị Nhà Gái'; let pStr = myAssignment.locType === 'Nhà trai' ? e.phoneTrai : e.phoneGai; myPhoneHtml = buildPhoneUI(pStr, cCol, '');
+    } else { if (e.isRuocDau) { myPhoneHtml += buildPhoneUI(e.phoneTrai, '#0369a1', 'Nhà Trai'); myPhoneHtml += buildPhoneUI(e.phoneGai, '#be185d', 'Nhà Gái'); } else { myPhoneHtml = buildPhoneUI(e.phone, 'var(--text)', ''); } }
+
+    const mapHref = makeMapLink(myLoc); let myLocHtml = '';
+    if (myLoc) {
+        let locColor = '#eff6ff'; let locBorder = '#bfdbfe'; let locTextCol = '#1d4ed8';
+        if (e.isRuocDau && myAssignment && myAssignment.locType === 'Nhà gái') { locColor = '#fdf2f8'; locBorder = '#fbcfe8'; locTextCol = '#be185d'; } else if (e.isRuocDau && myAssignment && myAssignment.locType === 'Nhà trai') { locColor = '#f0f9ff'; locBorder = '#bae6fd'; locTextCol = '#0369a1'; }
+        myLocHtml = `<div style="margin-top:16px;"><a href="${mapHref}" target="_blank" style="display:inline-flex; align-items:center; color:${locTextCol}; font-weight:800; text-decoration:none; background: ${locColor}; padding: 10px 16px; border-radius: 12px; border: 1px solid ${locBorder}; font-size: 13.5px; transition:all 0.2s; box-shadow:var(--shadow-sm);">${mapText}</a></div>`;
+    }
+    
+    let coWorkerHtml = ''; if (staffNames) { coWorkerHtml = `<div style="display: flex; gap: 8px; margin-bottom:8px;"><b style="color:var(--muted); min-width: 90px;">👥 Đi cùng:</b> <span style="font-weight:600; color:var(--muted);">${escapeHtml(staffNames)}</span></div>`; }
+
+    return `<div class="mini-item" data-id="${e.id}" style="flex-direction:column; align-items:flex-start; gap:8px; padding: 20px;">
+        <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start; margin-bottom:4px;">
+            <div style="font-size: 16px; font-weight: 800; color: var(--primary); white-space:normal; line-height:1.4;">${escapeHtml(e.name)} ${e.isRuocDau ? '<span style="color:var(--orange);font-size:12px;margin-left:6px;vertical-align:middle;">(Rước dâu)</span>' : ''}<span class="pill ghost" style="font-size:10px; border:1px solid #cbd5e1; padding:2px 6px; margin-left:6px;">${escapeHtml(e.eventType||'')}</span></div><span class="pill ${pillColor}">${STATUS_LABEL[e.status]}</span>
+        </div>
+        <div style="font-size: 13.5px; color: var(--text); line-height: 1.6; width: 100%;">
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 90px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
+            <div style="display: flex; gap: 8px; ${staffNames ? '' : 'margin-bottom:8px;'}">${timeLabel} <span style="font-weight:800; color:var(--primary); font-size:14.5px;">${escapeHtml(myTime)}</span></div>
+            ${coWorkerHtml} <div style="margin-top:4px;">${myPhoneHtml}</div> ${myLocHtml}
+            ${e.note ? `<div style="margin-top: 16px; padding: 12px; background: #fefce8; border: 1px dashed #fde047; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú chung:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
+        </div>
+    </div>`;
+  }).join('') : '<div class="empty" style="padding:24px;background:#ffffff;border-radius:16px; border: 1px solid var(--line);">Bạn chưa có lịch sắp tới.</div>';
+}
+
+function renderStaffMonthList(){
+  if (currentUserRole !== 'admin') return;
+  const smM = document.getElementById('staffMonthM'); const smY = document.getElementById('staffMonthY');
+  let m = smM?.value ? Number(smM.value) : current.getMonth() + 1; let y = smY?.value ? Number(smY.value) : current.getFullYear();
+  
+  const staffDays = {}; const staffToRender = data.staff.filter(s => !s.role.includes('Freelance')); 
+  staffToRender.forEach(s => staffDays[s.id] = new Set());
+  
+  data.events.filter(e => e.status !== 'cancelled').forEach(e => {
+    const ed = parseDate(e.date);
+    if(ed.getFullYear() === y && ed.getMonth() === m - 1) { e.assignments.forEach(a => { if(staffDays[a.id]) staffDays[a.id].add(ed.getDate()); }); }
+  });
+  
+  const el = document.getElementById('staffMonthList'); if(!el) return;
+  el.innerHTML = staffToRender.map(s => {
+    const daysArr = Array.from(staffDays[s.id]).sort((a,b)=>a-b); const daysStr = daysArr.join(', ');
+    return `<div class="staff" style="flex-direction:column;gap:12px;box-shadow:none"><div class="staff-left"><div class="avatar" style="background:#fff; border:1px solid var(--line);">${initials(s.name)}</div><div class="staff-info"><div class="staff-name">${escapeHtml(s.name)}</div></div></div><div style="font-size:13px;color:var(--text);background:#fff;padding:12px 14px;border-radius:12px;border:1px solid transparent;box-shadow:var(--shadow-sm)">${daysStr ? `<b style="color:var(--muted)">Ngày bận:</b> <span style="font-weight:700">${daysStr}</span>` : '<span style="color:var(--muted);font-weight:600">Trống lịch</span>'}</div></div>`;
+  }).join('');
+}
+
+function renderMonthSummary(){
+  if (currentUserRole !== 'admin') return;
+  const sM = document.getElementById('summaryMonthM'); const sY = document.getElementById('summaryMonthY');
+  let m = sM?.value ? Number(sM.value) - 1 : current.getMonth(); let y = sY?.value ? Number(sY.value) : current.getFullYear();
+  
+  const ev = data.events.filter(e => { const ed = parseDate(e.date); return ed.getFullYear() === y && ed.getMonth() === m && eventMatches(e) && e.status !== 'cancelled'; });
+  
+  const total = ev.length; let revenue = 0, paidFull = 0, depositOnly = 0, staffCost = 0;
+  
+  ev.forEach(e => {
+      const p = Number(e.price||0); const d = Number(e.deposit||0); revenue += p;
+      if (p > 0 && d >= p) paidFull += p; else depositOnly += d; 
+      staffCost += e.assignments.reduce((sum,a)=>sum+Number(a.cost||0),0);
+  });
+  const missing = revenue - paidFull - depositOnly;
+
+  const monthKey = `${y}-${pad(m+1)}`; let totalAdvance = 0, totalPaid = 0;
+  data.staff.forEach(s => {
+      const p = (data.payroll[monthKey] && data.payroll[monthKey][s.id]) || {advance:0, paid:0};
+      totalAdvance += p.advance; totalPaid += p.paid;
+  });
+  const sumStaffPaid = totalAdvance + totalPaid; const sumStaffUnpaid = staffCost - sumStaffPaid;
+
+  const ms = document.getElementById('monthSummary'); if(!ms) return;
+  ms.innerHTML=`
+    <div class="kpi-row"><span style="font-weight:700">Tổng ca chụp</span><b style="color:var(--text);font-size:14.5px">${total}</b></div>
+    <div style="height:1px;background:var(--line);margin:16px 0"></div>
+    <div class="kpi-row"><span style="font-weight:700">Doanh thu</span><b style="color:var(--text);font-size:14.5px">${money(revenue)} đ</b></div>
+    <div class="kpi-row"><span style="font-weight:700">Đã thu (Full)</span><b style="color:var(--green);font-size:14.5px">${money(paidFull)} đ</b></div>
+    <div class="kpi-row"><span style="font-weight:700">Đã thu (Cọc)</span><b style="color:var(--text);font-size:14.5px">${money(depositOnly)} đ</b></div>
+    <div class="kpi-row"><span style="font-weight:700">Khách nợ</span><b style="color:var(--orange);font-size:14.5px">${money(missing)} đ</b></div>
+    <div style="height:1px;background:var(--line);margin:16px 0"></div>
+    <div class="kpi-row"><span style="font-weight:700">Chi phí thợ</span><b style="color:var(--text);font-size:14.5px">${money(staffCost)} đ</b></div>
+    <div class="kpi-row"><span style="font-weight:700">Đã trả thợ</span><b style="color:var(--blue);font-size:14.5px">${money(sumStaffPaid)} đ</b></div>
+    <div class="kpi-row"><span style="font-weight:700">Nợ thợ</span><b style="font-size:14.5px;color:${sumStaffUnpaid>0?'var(--red)':'var(--green)'}">${money(sumStaffUnpaid)} đ</b></div>
+    <div style="height:1px;background:var(--line);margin:16px 0"></div>
+    <div class="kpi-row" style="font-size:14.5px;font-weight:800"><span style="font-weight:800;text-transform:uppercase">Lợi nhuận</span><b style="color:var(--green);font-size:19px;letter-spacing:-0.5px">${money(revenue - staffCost)} đ</b></div>
+  `;
+}
+
+function renderAuditLog() {
+    const el = document.getElementById('auditLogList'); if(!el || currentUserRole !== 'admin') return;
+    const q = (document.getElementById('auditSearchInput')?.value || '').trim().toLowerCase();
+    const logs = data.auditLogs.slice().sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).filter(log => {
+        if(currentAuditFilter !== 'all' && log.category !== currentAuditFilter) return false;
+        if(q) { const hay = [log.actorName, log.actionLabel, log.message, log.eventName, log.eventDate, log.metadata?.details].join(' ').toLowerCase(); if(!hay.includes(q)) return false; }
+        return true;
+    }).slice(0,150);
+    el.innerHTML = logs.length ? logs.map(log => {
+        const sev = ['danger','warning','success','info'].includes(log.severity) ? log.severity : 'info';
+        const staffText = (log.targetStaffIds||[]).map(staffNameById).join(', ');
+        const targetText = log.eventName ? `${log.eventName}${log.eventDate ? ` · ${formatDate(log.eventDate)}` : ''}` : (staffText || 'Hệ thống');
+        return `<div class="audit-log-item ${sev}"><div class="audit-dot"></div><div class="audit-main"><div class="audit-title">${escapeHtml(log.actionLabel || log.action)} · ${escapeHtml(log.actorName || 'Người dùng')}</div><div class="audit-sub">${escapeHtml(log.message || '')}${targetText ? ` · ${escapeHtml(targetText)}` : ''}${staffText ? ` · Thợ: ${escapeHtml(staffText)}` : ''}</div></div><div class="audit-time">${escapeHtml(formatAuditTime(log.timestamp))}</div></div>`;
+    }).join('') : '<div class="empty" style="padding:24px;background:#f8fafc;border-radius:14px">Chưa có nhật ký hoạt động.</div>';
+}
+
+function renderStaffActivityLog() {
+    const el = document.getElementById('staffActivityList'); if(!el || currentUserRole !== 'staff') return;
+    const staffVisibleActions = new Set(['EVENT_CREATED','STAFF_ASSIGNED','STAFF_REMOVED','EVENT_UPDATED','EVENT_DELETED','SOURCE_SUBMITTED','SOURCE_UPDATED']);
+    const logs = data.auditLogs.filter(l => staffVisibleActions.has(l.action)).filter(l => Array.isArray(l.targetStaffIds) && l.targetStaffIds.includes(staffViewId)).sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,50);
+    const badge = document.getElementById('staffActivityBadge'); const alertCount = logs.filter(l => ['danger','warning'].includes(l.severity)).length;
+    if(badge) { badge.style.display = alertCount ? 'inline-flex' : 'none'; badge.textContent = alertCount ? `${alertCount} lưu ý` : ''; }
+    el.innerHTML = logs.length ? logs.map(log => {
+        const sev = ['danger','warning','success','info'].includes(log.severity) ? log.severity : 'info';
+        const label = sev === 'danger' ? '⚠️ Quan trọng' : sev === 'warning' ? '🔔 Cập nhật' : sev === 'success' ? '✓ Đã ghi nhận' : 'ℹ Thông báo';
+        return `<div class="staff-activity-item ${sev}"><div class="audit-dot"></div><div class="audit-main"><div class="staff-activity-head"><div class="audit-title">${escapeHtml(getStaffAuditMessage(log, staffViewId))}</div><span class="badge">${label}</span></div><div class="audit-sub">${escapeHtml(log.actorName || 'Admin')} · ${escapeHtml(formatAuditTime(log.timestamp))}</div></div></div>`;
+    }).join('') : '<div class="empty" style="padding:18px;background:#f8fafc;border-radius:14px">Chưa có thông báo hoạt động.</div>';
+}
+
+function render() {
+    renderFilters();
+    renderStats();
+    if(currentView === 'month') {
+        document.getElementById('calendar').style.display='block';
+        document.getElementById('agenda').style.display='none';
+        renderMonth();
+        const mf = document.getElementById('mainFilters'); if(mf) mf.style.display = 'flex';
+    } else {
+        document.getElementById('calendar').style.display='none';
+        document.getElementById('agenda').style.display='block';
+        renderPayroll();
+        const mf = document.getElementById('mainFilters'); if(mf) mf.style.display = 'none';
+    }
+    renderUpcoming();
+    renderStaffActivityLog();
+    renderStaffMonthList();
+    renderMonthSummary();
+    renderAuditLog();
+
+    const options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
+    const tt = document.getElementById('todayText'); if(tt) tt.textContent=`Hôm nay · ${new Date().toLocaleDateString('vi-VN', options)}`;
+    
+    if (currentUserRole === 'admin') document.title = "Amorri Studio - Quản Lí";
+    else if (currentUserRole === 'staff') document.title = `Amorri Studio - ${data.staff.find(s => s.id === staffViewId)?.name || 'Thợ'}`;
+    else document.title = "Amorri Studio — Lịch Quay & Chụp";
 }
 
 /* =========================================================
    5. BUSINESS LOGIC & ACTIONS
 ========================================================= */
 window.updateModalVisibility = function() {
-    const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
+    const evType = document.getElementById('eventType')?.value;
+    let isRuocDauInput = document.getElementById('eventIsRuocDau');
+    if(evType !== 'Cưới' && isRuocDauInput?.value === 'true') isRuocDauInput.value = 'false';
+    const isRuocDau = isRuocDauInput?.value === 'true';
     const nameVal = document.getElementById('eventName')?.value.trim() || '';
     
+    let hasLoc = false;
+    if(isRuocDau) hasLoc = (document.getElementById('eventLocationTrai')?.value.trim() || document.getElementById('eventLocationGai')?.value.trim());
+    else hasLoc = document.getElementById('eventLocation')?.value.trim();
+
     document.querySelectorAll('.normal-time').forEach(el => el.style.display = isRuocDau ? 'none' : 'block');
     document.querySelectorAll('.ruocdau-time').forEach(el => el.style.display = isRuocDau ? 'block' : 'none');
     
-    document.querySelectorAll('.step2-item').forEach(el => el.style.display = nameVal ? 'block' : 'none');
+    document.querySelectorAll('.normal-loc').forEach(el => el.style.display = (!isRuocDau && nameVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none');
+    document.querySelectorAll('.ruocdau-loc').forEach(el => el.style.display = (isRuocDau && nameVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none');
+    document.querySelectorAll('.normal-phone').forEach(el => el.style.display = (!isRuocDau && nameVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none');
+    document.querySelectorAll('.ruocdau-phone').forEach(el => el.style.display = (isRuocDau && nameVal) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none');
+
+    document.querySelectorAll('.step2-item:not(.normal-loc):not(.ruocdau-loc):not(.normal-phone):not(.ruocdau-phone)').forEach(el => { el.style.display = nameVal ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; });
     
-    let hasLoc = document.getElementById('eventLocation')?.value.trim() || document.getElementById('eventLocationTrai')?.value.trim();
-    document.querySelectorAll('.step3-item').forEach(el => el.style.display = (nameVal && hasLoc) ? 'block' : 'none');
+    const financeGroup = document.getElementById('financeGroup'); if(financeGroup) financeGroup.style.display = (nameVal && hasLoc) ? 'flex' : 'none';
+    document.querySelectorAll('.step3-item:not(#financeGroup)').forEach(el => { el.style.display = (nameVal && hasLoc) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; });
     
-    document.querySelectorAll('.normal-loc, .normal-phone').forEach(el => el.style.display = (!isRuocDau && nameVal) ? 'block' : 'none');
-    document.querySelectorAll('.ruocdau-loc, .ruocdau-phone').forEach(el => el.style.display = (isRuocDau && nameVal) ? 'block' : 'none');
+    const evDate = document.getElementById('eventDate')?.value; const evEnd = document.getElementById('eventEnd')?.value;
+    let isEnded = false; if(evDate && evEnd) isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
+
+    document.querySelectorAll('.staff-modal-item, .staff-modal-staffonly').forEach(el => {
+        const isChecked = el.querySelector('.staff-check')?.checked || (currentUserRole === 'staff');
+        const linkCont = el.querySelector('.staff-link-container'); if(linkCont) linkCont.style.display = (isEnded && isChecked) ? 'flex' : 'none';
+        const waitMsg = el.querySelector('.wait-link-msg'); if(waitMsg) waitMsg.style.display = (!isEnded && isChecked) ? 'block' : 'none';
+    });
 }
 
+let currentEventAssignments = [];
+
 window.openEventModal = function(prefill={}){
+  if (currentUserRole === 'guest') return; 
+  if (currentUserRole !== 'admin' && !prefill.id) return; 
+
+  const sFiltersInputs = document.querySelectorAll('#staffFiltersContainer input[type="checkbox"]');
+  sFiltersInputs.forEach(cb => cb.checked = false);
+
   window.smoothOpen('eventModal');
-  const e = prefill.id ? data.events.find(x=>x.id===prefill.id) : null;
-  setSafeValue('eventId', e?.id||'');
-  setSafeValue('eventName', e?.name||'');
-  setSafeValue('eventDate', e?.date||prefill.date||isoDate(current));
-  document.getElementById('eventIsRuocDau').value = e?.isRuocDau ? 'true' : 'false';
-  
-  window.updateModalVisibility();
-  
+  const e=prefill.id?data.events.find(x=>x.id===prefill.id):null;
+  const et = document.getElementById('eventModalTitle');
   const isAdmin = currentUserRole === 'admin';
-  document.getElementById('deleteEvent').style.display = (isAdmin && e) ? 'block' : 'none';
-  document.getElementById('saveEvent').style.display = isAdmin ? 'block' : 'none';
+  if(et) et.textContent= e ? (isAdmin ? 'Chỉnh sửa lịch' : 'Chi tiết lịch') : 'Thêm lịch';
+  
+  setSafeValue('eventId', e?.id||'');
+  setSafeValue('eventDate', e?.date||prefill.date||isoDate(current));
+
+  if (!prefill.id && window.tempPrefillType) {
+      setSafeValue('eventType', window.tempPrefillType); const sub = window.tempPrefillSubType;
+      if (sub) {
+          if (sub === 'Rước Dâu') { setSafeValue('eventName', 'Rước Dâu '); document.getElementById('eventIsRuocDau').value = 'true'; setSafeValue('eventStart', '08:00'); setSafeValue('eventEnd', '12:00'); } 
+          else if (sub === 'Xuất Giá') { setSafeValue('eventName', 'Xuất Giá '); document.getElementById('eventIsRuocDau').value = 'false'; setSafeValue('eventStart', '16:00'); setSafeValue('eventEnd', '22:00'); } 
+          else { setSafeValue('eventName', sub + ' '); document.getElementById('eventIsRuocDau').value = 'false'; setSafeValue('eventStart', '08:00'); setSafeValue('eventEnd', '12:00'); }
+      } else { setSafeValue('eventName', ''); document.getElementById('eventIsRuocDau').value = 'false'; setSafeValue('eventStart', '08:00'); setSafeValue('eventEnd', '12:00'); }
+      window.tempPrefillType = null; window.tempPrefillSubType = null;
+  } else {
+      setSafeValue('eventName', e?.name||''); setSafeValue('eventType', e?.eventType||'Cưới');
+      document.getElementById('eventIsRuocDau').value = e?.isRuocDau ? 'true' : 'false';
+      setSafeValue('eventStart', e?.start||'08:00'); setSafeValue('eventEnd', e?.end||'12:00');
+  }
+
+  setSafeValue('eventStartTrai', e?.startTrai||'07:00'); setSafeValue('eventStartGai', e?.startGai||'06:00');
+  setSafeValue('eventLocation', e?.location||''); setSafeValue('eventLocationTrai', e?.locTrai||''); setSafeValue('eventLocationGai', e?.locGai||'');
+  setSafeValue('eventStatus', e?.status||'pending'); setSafeValue('eventPhone', e?.phone||''); setSafeValue('eventPhoneTrai', e?.phoneTrai||''); setSafeValue('eventPhoneGai', e?.phoneGai||'');
+  
+  const pE = document.getElementById('eventPrice'); if(pE) pE.value = e?.price ? money(e.price/1000) : '';
+  const dE = document.getElementById('eventDeposit'); if(dE) dE.value = e?.deposit ? money(e.deposit/1000) : '';
+  setSafeValue('eventNote', e?.note||'');
+  
+  const ff = document.getElementById('freelanceForm'); if(ff) ff.style.display='none';
+  const es = document.getElementById('eventStaff'); if(es) es.innerHTML = '';
+  const ep = document.getElementById('eventProductsList'); if(ep) ep.innerHTML = '';
+  
+  currentEventAssignments = e?.assignments ? JSON.parse(JSON.stringify(e.assignments)) : [];
+  window.updateModalVisibility(); 
+  window.renderEventStaffList(); 
+  
+  if (e && e.products && e.products.length > 0) e.products.forEach(p => window.addProductRow(p.name, p.url, !isAdmin)); 
+  window.updateDepositLabel();
+  
+  document.getElementById('deleteEvent').style.display = (isAdmin && e) ? 'inline-flex' : 'none';
   document.getElementById('fullPaidBtn').style.display = isAdmin ? 'block' : 'none';
+  document.getElementById('saveEvent').style.display = isAdmin ? 'block' : 'none';
+  const bap = document.getElementById('btnAddProduct'); if (bap) bap.style.display = isAdmin ? 'inline-flex' : 'none';
+  const guestLabel = document.getElementById('guestStaffLabel'); const adminLabel = document.getElementById('adminStaffLabel');
+  if (guestLabel) guestLabel.style.display = isAdmin ? 'none' : 'block'; if (adminLabel) adminLabel.style.display = isAdmin ? 'flex' : 'none';
+
+  document.querySelectorAll('#eventForm input, #eventForm select, #eventForm textarea').forEach(el => {
+      if (el.id.includes('evt-link-in')) return; 
+      if (!isAdmin) { el.setAttribute('readonly', 'true'); if(el.tagName === 'SELECT' || el.type === 'checkbox') el.disabled = true; } else { el.removeAttribute('readonly'); el.disabled = false; }
+  });
+  const btnCancel = document.getElementById('cancelEvent'); if(btnCancel) btnCancel.textContent = isAdmin ? 'Hủy' : 'Đóng';
+}
+
+function getAssignmentStart(event, assignment) {
+    if (!event) return '';
+    if (!event.isRuocDau) return event.start || '';
+    if (assignment?.locType === 'Nhà gái') return event.startGai || '';
+    if (assignment?.locType === 'Nhà trai') return event.startTrai || '';
+    return event.startTrai || event.startGai || '';
+}
+
+function timeRangesOverlap(startA, endA, startB, endB) {
+    if (!startA || !endA || !startB || !endB) return false;
+    if (endA <= startA || endB <= startB) return false;
+    return startA < endB && endA > startB;
+}
+
+function findEventConflicts(candidate) {
+    if (!candidate?.date || candidate.status === 'cancelled') return [];
+    const conflicts = [];
+    (candidate.assignments || []).forEach(a => {
+        const myStart = getAssignmentStart(candidate, a);
+        if (!myStart || !candidate.end || candidate.end <= myStart) return;
+        data.events.forEach(e => {
+            if (e.id === candidate.id || e.status === 'cancelled' || e.date !== candidate.date) return;
+            const other = (e.assignments || []).find(x => x.id === a.id); if (!other) return;
+            const otherStart = getAssignmentStart(e, other);
+            if (timeRangesOverlap(myStart, candidate.end, otherStart, e.end)) {
+                const staff = data.staff.find(s => s.id === a.id);
+                conflicts.push({ staffId: a.id, staffName: staff?.name || a.id, mine: `${myStart}-${candidate.end}`, other: `${otherStart}-${e.end}`, eventName: e.name || 'Lịch khác', locType: a.locType || '' });
+            }
+        });
+    });
+    return conflicts;
+}
+
+window.checkConflict = function(){
+  if (currentUserRole !== 'admin') return;
+  const date=document.getElementById('eventDate')?.value; const id=document.getElementById('eventId')?.value;
+  const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true'; const end = document.getElementById('eventEnd')?.value;
+  
+  data.staff.forEach(s => {
+     const infoSpan = document.getElementById('busy-info-' + s.id); if(!infoSpan) return;
+     const sEvents = data.events.filter(e => e.id !== id && e.status !== 'cancelled' && e.date === date && e.assignments.some(a => a.id === s.id));
+     if(sEvents.length === 0) { infoSpan.innerHTML = ''; return; }
+
+     const intervals = sEvents.map(e => { const a = e.assignments.find(x => x.id === s.id); return { s: getAssignmentStart(e, a), e: e.end || '' }; }).filter(iv => iv.s && iv.e);
+     const text = intervals.map(iv => `${iv.s}-${iv.e}`).join(', '); const locTeam = document.getElementById('evt-loc-'+s.id)?.value || '';
+     const myStart = isRuocDau ? (locTeam === 'Nhà gái' ? (document.getElementById('eventStartGai')?.value || '') : (document.getElementById('eventStartTrai')?.value || '')) : (document.getElementById('eventStart')?.value || '');
+
+     const overlap = timeRangesOverlap(myStart, end, intervals[0]?.s, intervals[0]?.e) || intervals.some(iv => timeRangesOverlap(myStart, end, iv.s, iv.e));
+     if(overlap) infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
+     else infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
+  });
+}
+
+window.renderEventStaffList = function() {
+    const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
+    const evDate = document.getElementById('eventDate')?.value;
+    
+    const existingChecks = document.querySelectorAll('#eventStaff .staff-check');
+    if (existingChecks.length > 0) {
+        currentEventAssignments = [...existingChecks].filter(cb => cb.checked).map(cb => {
+            const sId = cb.value;
+            return { id: sId, task: document.getElementById('evt-task-'+sId)?.value || '', locType: isRuocDau ? (document.getElementById('evt-loc-'+sId)?.value || '') : '', cost: parseMoney(document.getElementById('evt-cost-'+sId)?.value) * 1000, link: document.getElementById('evt-link-in-'+sId)?.value.trim() || '' };
+        });
+    }
+    
+    const evEnd = document.getElementById('eventEnd')?.value; let isEnded = false; if(evDate && evEnd) isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
+    const isAdmin = currentUserRole === 'admin'; const evStaffEl = document.getElementById('eventStaff'); if(!evStaffEl) return;
+
+    const getPriority = (roleStr) => {
+        const r = (roleStr || '').toLowerCase(); let p = 99;
+        if (r.includes('chụp') || r.includes('photo')) p = Math.min(p, 1);
+        if (r.includes('quay') || r.includes('video')) p = Math.min(p, 2);
+        if (r.includes('makeup')) p = Math.min(p, 3);
+        return p;
+    };
+
+    if (!isAdmin) {
+        currentEventAssignments.sort((a, b) => { const sa = data.staff.find(x => x.id === a.id); const sb = data.staff.find(x => x.id === b.id); return getPriority(sa?.role) - getPriority(sb?.role); });
+        evStaffEl.innerHTML = currentEventAssignments.map(a => {
+            const s = data.staff.find(x => x.id === a.id); if(!s) return '';
+            let taskText = a.task ? ` - ${escapeHtml(a.task)}` : '';
+            if (isRuocDau && a.locType) { let locColor = a.locType === 'Nhà gái' ? '#be185d' : '#0369a1'; taskText += ` <span style="color:${locColor}; font-weight:800">(${escapeHtml(a.locType)})</span>`; }
+
+            const isMe = (s.id === staffViewId); let myCostHtml = ''; let myLinkHtml = '';
+            if (isMe) {
+                const costVal = a.cost ? money(a.cost) + ' đ' : '0 đ'; myCostHtml = `<span style="font-weight:800; color:var(--green); float:right; background: var(--bg-green); padding: 6px 12px; border-radius: 99px;">${costVal}</span>`;
+                const savedLink = a.link || '';
+                myLinkHtml = `
+                <div class="staff-link-container" style="display:${isEnded ? 'flex' : 'none'}; gap: 8px; align-items:center; background:#fafafa; padding:12px 16px; border-radius:12px; border: 1px solid var(--line); margin-top: 16px;">
+                    <div id="evt-link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
+                        <a id="evt-link-tag-${s.id}" href="${safeUrl(savedLink)}" target="_blank" rel="noopener noreferrer" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">🔗 Bấm xem Source</a>
+                        <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa Link</button>
+                    </div>
+                    <div id="evt-link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
+                        <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link tải Source (Drive/Fshare...)" style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
+                        <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Nộp Source</button>
+                    </div>
+                </div>
+                <div class="wait-link-msg" style="display:${!isEnded ? 'block' : 'none'}; font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic; padding:12px; background:#f4f4f5; border-radius:8px; text-align:center;">⏳ Hệ thống nộp Source sẽ tự mở sau khi kết thúc giờ chụp.</div>`;
+            }
+            return `<div class="${isMe ? 'staff-modal-staffonly' : ''}" style="padding:16px; background:#fff; border:1px solid var(--line); border-radius:16px; margin-bottom:12px; font-size:14px; box-shadow:var(--shadow-sm)"><div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;"><div><b style="color:var(--text); font-size:15px;">${escapeHtml(s.name)}</b> <span style="color:var(--muted)">(${escapeHtml(s.role)})</span><span style="font-weight:700;color:var(--text)">${taskText}</span></div>${myCostHtml}</div>${myLinkHtml}</div>`;
+        }).join('') || '<div style="font-size:13px;color:var(--muted); padding:10px;">Chưa xếp nhân sự</div>';
+        return;
+    }
+
+    const currentEventType = document.getElementById('eventType')?.value || 'Cưới';
+    const sortedStaff = [...data.staff].sort((a, b) => getPriority(a.role) - getPriority(b.role));
+
+    evStaffEl.innerHTML = sortedStaff.length ? sortedStaff.map(s => {
+          const a = currentEventAssignments.find(x => x.id === s.id);
+          const isChecked = !!a; const savedLink = a?.link || '';
+          const isBlackout = evDate ? data.blackouts.some(b => b.staffId === s.id && b.date === evDate) : false;
+          const blackoutBadge = isBlackout ? `<span style="color:#ef4444;font-size:10px;font-weight:800;border:1px solid #fca5a5;background:#fef2f2;padding:2px 6px;border-radius:6px;margin-left:8px;">⛔ Nghỉ phép</span>` : '';
+
+          let locDropdownHtml = '';
+          if (isRuocDau) {
+              let bgCol = a?.locType === 'Nhà gái' ? '#fce7f3' : '#e0f2fe'; let borderCol = a?.locType === 'Nhà gái' ? '#fbcfe8' : '#7dd3fc'; let textCol = a?.locType === 'Nhà gái' ? '#be185d' : '#0369a1';
+              locDropdownHtml = `<select id="evt-loc-${s.id}" onchange="this.style.backgroundColor=this.value==='Nhà gái'?'#fce7f3':'#e0f2fe'; this.style.borderColor=this.value==='Nhà gái'?'#fbcfe8':'#7dd3fc'; this.style.color=this.value==='Nhà gái'?'#be185d':'#0369a1';" style="background:${bgCol}; border:1px solid ${borderCol}; padding:10px; border-radius:12px; outline:0; font-size:13px; font-weight:800; color:${textCol}; min-width:110px;"><option value="Nhà trai" ${a?.locType==='Nhà trai'?'selected':''}>Nhà trai</option><option value="Nhà gái" ${a?.locType==='Nhà gái'?'selected':''}>Nhà gái</option></select>`;
+          }
+
+          let taskOptions = []; const roleLower = (s.role || '').toLowerCase();
+          const isChup = roleLower.includes('chụp') || roleLower.includes('photo'); const isQuay = roleLower.includes('quay') || roleLower.includes('video'); const isMakeup = roleLower.includes('makeup');
+          if (currentEventType === 'Cưới' || currentEventType === 'Phóng sự') { if (isChup) taskOptions.push('Chụp truyền thống', 'Chụp phóng sự'); if (isQuay) taskOptions.push('Quay truyền thống', 'Quay phóng sự'); } else { if (isChup) taskOptions.push('Chụp'); if (isQuay) taskOptions.push('Quay'); }
+          if (isMakeup) taskOptions.push('Makeup');
+          if (taskOptions.length === 0 || roleLower.includes('khác') || roleLower.includes('freelance') || roleLower.includes('editor') || roleLower.includes('assistant')) { taskOptions.push('Khác'); }
+          taskOptions = [...new Set(taskOptions)];
+          
+          let savedTask = a?.task || '';
+          if (savedTask && !taskOptions.includes(savedTask)) {
+              if (savedTask === 'Chụp' && currentEventType === 'Cưới') savedTask = 'Chụp truyền thống'; else if (savedTask === 'Quay' && currentEventType === 'Cưới') savedTask = 'Quay truyền thống'; else if (savedTask.includes('Chụp') && currentEventType !== 'Cưới') savedTask = 'Chụp'; else if (savedTask.includes('Quay') && currentEventType !== 'Cưới') savedTask = 'Quay';
+          }
+          const taskOptsHtml = taskOptions.map(opt => `<option value="${opt}" ${savedTask === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join('');
+          const taskDropdownHtml = `<select id="evt-task-${s.id}" style="width:100%; background:#f1f5f9; border:1px solid #e2e8f0; padding:10px 14px; border-radius:12px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); cursor:pointer; appearance:auto;">${taskOptsHtml}</select>`;
+
+          return `<div class="staff-modal-item" data-role="${s.role}" style="border:1px solid transparent; border-bottom-color:var(--line); padding:16px 0; background:transparent;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                <label for="staff-check-${s.id}" style="display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700;cursor:pointer;color:var(--text); flex:1; min-width:180px;">
+                  <input type="checkbox" id="staff-check-${s.id}" class="staff-check" value="${s.id}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.nextElementSibling.style.display=this.checked?'flex':'none'; window.updateModalVisibility();" style="accent-color:var(--primary);width:20px;height:20px">
+                  ${escapeHtml(s.name)} <span style="color:var(--muted);font-weight:500;font-size:12px">— ${escapeHtml(s.role)}</span>${blackoutBadge}<span id="busy-info-${s.id}"></span>
+                </label>
+                <div style="display:${isChecked ? 'flex' : 'none'}; gap:10px; align-items:center; flex:1.5; justify-content:flex-end; min-width:300px; flex-wrap:wrap;">
+                  ${locDropdownHtml}
+                  <div style="flex:1; min-width:160px; position:relative;">${taskDropdownHtml}</div>
+                  <div class="currency-wrap" style="width:140px; min-width:140px;">
+                     <input type="text" inputmode="numeric" id="evt-cost-${s.id}" placeholder="0" value="${a?.cost ? money(a.cost/1000) : ''}" oninput="window.formatMoneyInput(this)" style="background:#f1f5f9;border:1px solid #e2e8f0;padding:10px 14px;border-radius:12px;outline:0;font-size:14px;font-weight:700;color:var(--text);">
+                  </div>
+                </div>
+            </div>
+            <div class="staff-link-container" style="display:${isEnded && isChecked ? 'flex' : 'none'}; gap: 10px; align-items:center; background:#f8fafc; padding:12px 16px; border-radius:14px; border: 1px solid var(--line); margin-top: 16px; margin-left: 32px;">
+                 <div id="evt-link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
+                     <a id="evt-link-tag-${s.id}" href="${safeUrl(savedLink)}" target="_blank" rel="noopener noreferrer" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">🔗 Bấm xem Source</a>
+                     <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px; border:1px solid #cbd5e1;" onclick="copyText(document.getElementById('evt-link-in-${s.id}').value)">📋 Copy</button>
+                     <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px; border:1px solid #cbd5e1;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa</button>
+                 </div>
+                 <div id="evt-link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
+                     <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link Google Drive/Fshare..." style="flex:1; background:#fff; border:1px solid #cbd5e1; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; min-width:150px;">
+                     <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu</button>
+                 </div>
+            </div>
+            <div class="wait-link-msg" style="display:${!isEnded && isChecked ? 'block' : 'none'}; font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic; margin-left:32px;">⏳ Hệ thống nộp Link Source sẽ mở cho thợ sau khi lịch kết thúc.</div>
+          </div>`;
+        }).join('')
+      : '<div style="font-size:13.5px;color:var(--muted);padding:10px;">Chưa có nhân sự. Vào “Đội ngũ” để thêm.</div>';
+
+    window.filterStaffModal();
+    window.checkConflict();
 }
 
 window.saveEvent = function(){
   if (currentUserRole !== 'admin') return;
-  const id = document.getElementById('eventId')?.value || uid();
-  const obj = {
-    id: id,
-    isRuocDau: document.getElementById('eventIsRuocDau')?.value === 'true',
+  const id=document.getElementById('eventId')?.value;
+  const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
+  const previousEvent = id ? JSON.parse(JSON.stringify(data.events.find(e => e.id === id) || null)) : null;
+  
+  const obj={
+    id:id||uid(),
+    isRuocDau: isRuocDau,
     eventType: document.getElementById('eventType')?.value || 'Cưới',
-    name: document.getElementById('eventName')?.value.trim(),
-    date: document.getElementById('eventDate')?.value,
-    status: document.getElementById('eventStatus')?.value || 'pending'
-    // Lược bỏ bớt code chi tiết lấy value form để focus vào structure... (Tham khảo full code bên trên)
+    name:document.getElementById('eventName')?.value.trim()||'',
+    date:document.getElementById('eventDate')?.value||'',
+    start: isRuocDau ? '' : (document.getElementById('eventStart')?.value||''),
+    startTrai: isRuocDau ? (document.getElementById('eventStartTrai')?.value||'') : '',
+    startGai: isRuocDau ? (document.getElementById('eventStartGai')?.value||'') : '',
+    end:document.getElementById('eventEnd')?.value||'',
+    location: isRuocDau ? '' : (document.getElementById('eventLocation')?.value.trim()||''),
+    locTrai: isRuocDau ? (document.getElementById('eventLocationTrai')?.value.trim()||'') : '',
+    locGai: isRuocDau ? (document.getElementById('eventLocationGai')?.value.trim()||'') : '',
+    phone: isRuocDau ? '' : (document.getElementById('eventPhone')?.value.trim()||''),
+    phoneTrai: isRuocDau ? (document.getElementById('eventPhoneTrai')?.value.trim()||'') : '',
+    phoneGai: isRuocDau ? (document.getElementById('eventPhoneGai')?.value.trim()||'') : '',
+    assignments:[...document.querySelectorAll('#eventStaff input[type="checkbox"]:checked')].map(cb=>{
+       const sId = cb.value;
+       return { id: sId, task: document.getElementById('evt-task-'+sId)?.value||'', locType: isRuocDau ? (document.getElementById('evt-loc-'+sId)?.value||'') : '', cost: parseMoney(document.getElementById('evt-cost-'+sId)?.value) * 1000, link: document.getElementById('evt-link-in-'+sId)?.value.trim() || '' };
+    }),
+    products:[...document.querySelectorAll('.product-row')].map(row => ({ name: row.querySelector('.prod-name')?.value.trim()||'', url: row.querySelector('.prod-url')?.value.trim()||'' })).filter(p => p.url),
+    status:document.getElementById('eventStatus')?.value||'pending',
+    price: parseMoney(document.getElementById('eventPrice')?.value) * 1000,
+    deposit: parseMoney(document.getElementById('eventDeposit')?.value) * 1000,
+    note:document.getElementById('eventNote')?.value.trim()||''
   };
   
-  const idx = data.events.findIndex(e=>e.id===id);
-  if(idx>=0) data.events[idx]=obj; else data.events.push(obj);
+  if(!obj.name||!obj.date||!obj.end){showToast('Vui lòng điền đủ Tên, Ngày và Giờ kết thúc');return}
+  if(isRuocDau && (!obj.startTrai || !obj.startGai)) { showToast('Vui lòng điền đủ Giờ nhà trai và Giờ nhà gái'); return;}
+  if(!isRuocDau && !obj.start) { showToast('Vui lòng điền Giờ bắt đầu'); return;}
+  
+  const starts = isRuocDau ? [obj.startTrai, obj.startGai].filter(Boolean) : [obj.start].filter(Boolean);
+  const earliestStart = starts.sort()[0];
+  if(earliestStart && obj.end <= earliestStart){ if(!confirm('Giờ kết thúc đang nhỏ hoặc bằng giờ bắt đầu (Có thể ca đêm). Tiếp tục lưu?')) return; }
+
+  const conflicts = findEventConflicts(obj);
+  if(conflicts.length) {
+      const first = conflicts[0]; const more = conflicts.length > 1 ? ` (+${conflicts.length - 1} xung đột khác)` : '';
+      if(!confirm(`⚠️ Thợ ${first.staffName} bị trùng lịch với: ${first.eventName} (Giờ: ${first.other}). Bạn có chắc chắn muốn lưu đè?${more}`)) return;
+  }
+  
+  const idx=data.events.findIndex(e=>e.id===id);
+  if(idx>=0)data.events[idx]=obj; else data.events.push(obj);
   
   dbSet(`events/${obj.id}`, obj);
-  writeAuditLog(idx>=0 ? 'EVENT_UPDATED' : 'EVENT_CREATED', { eventName: obj.name, eventDate: obj.date });
+
+  const newStaffIds = staffIdsFromAssignments(obj.assignments).filter(sid => !(previousEvent?.assignments || []).some(a => a.id === sid));
+  const removedStaffIds = (previousEvent?.assignments || []).map(a => a.id).filter(sid => !staffIdsFromAssignments(obj.assignments).includes(sid));
+  const coworkersForNew = staffIdsFromAssignments(obj.assignments).filter(sid => !newStaffIds.includes(sid));
+
+  if(!previousEvent) {
+      const targetStaffIds = staffIdsFromAssignments(obj.assignments);
+      writeAuditLog('EVENT_CREATED', { severity:'info', category:'booking', targetType:'event', targetId:obj.id, targetStaffIds, eventName:obj.name, eventDate:obj.date, message:`Admin tạo lịch ${obj.name} ngày ${obj.date}`, metadata:{createdStaffIds:targetStaffIds} });
+  } else {
+      newStaffIds.forEach(affectedId => {
+          const targetStaffIds = Array.from(new Set([affectedId, ...staffIdsFromAssignments(obj.assignments).filter(id => id !== affectedId)]));
+          writeAuditLog('STAFF_ASSIGNED', { severity:'warning', category:'staff', targetType:'event', targetId:obj.id, targetStaffIds, eventName:obj.name, eventDate:obj.date, message:`Thêm ${staffNameById(affectedId)} vào lịch ${obj.name} ngày ${obj.date}`, metadata:{affectedStaffId:affectedId, coworkerIds:coworkersForNew.filter(id => id !== affectedId)} });
+      });
+      removedStaffIds.forEach(affectedId => {
+          const targetStaffIds = Array.from(new Set([affectedId, ...staffIdsFromAssignments(previousEvent.assignments)]));
+          writeAuditLog('STAFF_REMOVED', { severity:'danger', category:'staff', targetType:'event', targetId:obj.id, targetStaffIds, eventName:previousEvent.name || obj.name, eventDate:previousEvent.date || obj.date, message:`Gỡ ${staffNameById(affectedId)} khỏi lịch ${previousEvent.name || obj.name} ngày ${previousEvent.date || obj.date}`, metadata:{affectedStaffId:affectedId, coworkerIds:staffIdsFromAssignments(previousEvent.assignments).filter(id => id !== affectedId)} });
+      });
+      const changeTargetIds = staffIdsFromAssignments(obj.assignments).filter(sid => !newStaffIds.includes(sid)).filter(sid => eventRelevantChanges(previousEvent, obj, sid).length);
+      if(changeTargetIds.length || JSON.stringify(previousEvent) !== JSON.stringify(obj)) {
+          const detailParts = [];
+          if((previousEvent.date||'') !== (obj.date||'')) detailParts.push(`ngày ${formatDate(previousEvent.date)} → ${formatDate(obj.date)}`);
+          if((previousEvent.end||'') !== (obj.end||'')) detailParts.push(`giờ kết thúc ${previousEvent.end || '—'} → ${obj.end || '—'}`);
+          if((previousEvent.name||'') !== (obj.name||'')) detailParts.push('tên lịch');
+          if(JSON.stringify(previousEvent.assignments||[]) !== JSON.stringify(obj.assignments||[])) detailParts.push('phân công');
+          if((previousEvent.location||'') !== (obj.location||'') || (previousEvent.locTrai||'') !== (obj.locTrai||'') || (previousEvent.locGai||'') !== (obj.locGai||'')) detailParts.push('địa điểm');
+          if((previousEvent.eventType||'') !== (obj.eventType||'')) detailParts.push('gói chụp');
+          const detail = detailParts.join(', ') || 'thông tin booking';
+          writeAuditLog('EVENT_UPDATED', { severity: changeTargetIds.length ? 'warning' : 'info', category:'booking', targetType:'event', targetId:obj.id, targetStaffIds: changeTargetIds, eventName:obj.name, eventDate:obj.date, message:`Cập nhật lịch ${obj.name} ngày ${obj.date}`, metadata:{details:detail, previousDate:previousEvent.date || '', newDate:obj.date || ''}, changes:{detail} });
+      }
+  }
   
-  window.smoothClose('eventModal'); render(); showToast('Lưu thành công');
+  window.smoothClose('eventModal'); render(); showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
 }
 
-function render() {
-    renderStats();
-    if(currentView === 'month') { document.getElementById('calendar').style.display='block'; renderMonth(); }
+window.deleteEvent = function(){
+  if (currentUserRole !== 'admin') return;
+  const id=document.getElementById('eventId')?.value;if(!id)return;
+  const e=data.events.find(x=>x.id===id); if(!e)return;
+  if(!confirm(`Xóa lịch "${e.name}"?`))return;
+  
+  const targetStaffIds = staffIdsFromAssignments(e.assignments);
+  writeAuditLog('EVENT_DELETED', { severity:'danger', category:'booking', targetType:'event', targetId:id, targetStaffIds, eventName:e.name, eventDate:e.date, message:`Admin vừa xoá lịch ${e.name} ngày ${e.date}`, metadata:{deletedStaffIds:targetStaffIds, deletedEventSnapshot:{name:e.name, date:e.date, status:e.status}} });
+  
+  data.events=data.events.filter(x=>x.id!==id);
+  dbRemove(`events/${id}`);
+  
+  window.smoothClose('eventModal'); render(); showToast('Đã xóa lịch');
+}
+
+window.saveStaffLinkLocally = function(sId, sName) {
+    const urlInput = document.getElementById('evt-link-in-'+sId)?.value.trim();
+    if(!urlInput) { showToast('Vui lòng dán link'); return; }
+    const validatedUrl = safeUrl(urlInput);
+    if(validatedUrl === '#') { showToast('Link không hợp lệ. Chỉ chấp nhận http/https'); return; }
     
-    // Set dynamic Date string
-    const options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
-    document.getElementById('todayText').textContent = `Hôm nay · ${new Date().toLocaleDateString('vi-VN', options)}`;
+    const evId = document.getElementById('eventId')?.value;
+    if(evId) {
+        const idx = data.events.findIndex(e => e.id === evId);
+        if(idx >= 0) {
+            const aIdx = data.events[idx].assignments.findIndex(a => a.id === sId);
+            if(aIdx >= 0) { data.events[idx].assignments[aIdx].link = urlInput; dbSet(`events/${evId}/assignments/${aIdx}/link`, urlInput); }
+        }
+    }
+    const tag = document.getElementById('evt-link-tag-'+sId); if(tag) { tag.href = urlInput; tag.innerHTML = `🔗 Bấm xem Source`; }
+    document.getElementById('evt-link-edit-'+sId).style.display = 'none'; document.getElementById('evt-link-view-'+sId).style.display = 'flex';
+    const currentEvent = evId ? data.events.find(e => e.id === evId) : null;
+    writeAuditLog('SOURCE_SUBMITTED', { severity:'success', category:'source', targetType:'assignment', targetId:`${evId || ''}_${sId}`, targetStaffIds:[sId], eventName:currentEvent?.name || 'lịch', eventDate:currentEvent?.date || '', message:`${sName || staffNameById(sId)} vừa nộp Source`, staffMessageType:'source' });
+    showToast('Đã nộp Source thành công!');
+}
+
+window.toggleEditLink = function(sId) {
+    document.getElementById('evt-link-view-'+sId).style.display = 'none'; document.getElementById('evt-link-edit-'+sId).style.display = 'flex';
+}
+
+window.addProductRow = function(name='', url='', isReadonly=false) {
+    const container = document.getElementById('eventProductsList'); if(!container) return;
+    const div = document.createElement('div'); div.className = 'product-row'; div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#f8fafc; padding:12px; border-radius:10px; border:1px solid var(--line)';
+    if (isReadonly) return;
+    const isSaved = url !== '';
+    div.innerHTML = `<div class="prod-view" style="display:${isSaved ? 'flex' : 'none'}; gap: 10px; align-items:center; flex-wrap:wrap"><a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" class="prod-view-link" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; flex:1; min-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">🔗 <span class="prod-view-name">${escapeHtml(name || 'Link Bàn Giao')}</span></a><button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="copyText(this.parentElement.parentElement.querySelector('.prod-url').value)">📋 Copy</button><button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'">✏️ Sửa</button></div><div class="prod-edit admin-only-flex" style="display:${isSaved ? 'none' : 'flex'}; gap: 10px; flex-wrap:wrap; align-items:center"><input type="text" class="prod-name field" value="${escapeHtml(name)}" placeholder="Tên SP (Ảnh gốc...)" style="flex:1; min-width:120px;"><input type="url" class="prod-url field" value="${escapeHtml(url)}" placeholder="🔗 Dán link..." style="flex:2; min-width:150px;"><button type="button" class="btn primary" style="padding:8px 14px; font-size:13px;" onclick="window.saveProductRow(this)">Lưu</button><button type="button" class="btn danger ghost" style="padding:8px 12px; font-size:13px;" onclick="this.parentElement.parentElement.remove()">✕</button></div>`;
+    container.appendChild(div);
+}
+
+window.saveProductRow = function(btn) {
+    const row = btn.closest('.product-row'); const nameInput = row.querySelector('.prod-name').value.trim(); const urlInput = row.querySelector('.prod-url').value.trim();
+    if(!urlInput) { showToast('Vui lòng dán link URL'); return; } const validatedUrl = safeUrl(urlInput); if(validatedUrl === '#') { showToast('Link không hợp lệ. Chỉ chấp nhận http/https'); return; }
+    row.querySelector('.prod-view-link').href = urlInput; row.querySelector('.prod-view-name').textContent = nameInput || 'Link sản phẩm';
+    row.querySelector('.prod-edit').style.display = 'none'; row.querySelector('.prod-view').style.display = 'flex';
+}
+
+window.filterStaffModal = function() {
+  const cChup = document.getElementById('f_chup')?.checked; const cQuay = document.getElementById('f_quay')?.checked; const cMakeup = document.getElementById('f_makeup')?.checked; const cKhac = document.getElementById('f_khac')?.checked;
+  document.querySelectorAll('.staff-modal-item').forEach(el => {
+     const role = el.dataset.role || ''; let show = false;
+     if (!cChup && !cQuay && !cMakeup && !cKhac) { show = false; } else {
+         if(cChup && role.includes('Chụp')) show = true; if(cQuay && role.includes('Quay')) show = true; if(cMakeup && role.includes('Makeup')) show = true; if(cKhac && (role.includes('Khác') || role.includes('Freelance') || role.includes('Editor') || role.includes('Assistant'))) show = true;
+     }
+     const cb = el.querySelector('.staff-check'); if(cb && cb.checked) show = true; 
+     el.style.display = show ? 'block' : 'none';
+  });
+}
+
+window.updateDepositLabel = function() {
+  const price = parseMoney(document.getElementById('eventPrice')?.value) * 1000; const dep = parseMoney(document.getElementById('eventDeposit')?.value) * 1000; const label = document.getElementById('depositLabel'); if(!label) return;
+  if (price > 0 && dep >= price) { label.textContent = 'Đã thanh toán đủ'; label.style.color = 'var(--green)'; } else { label.textContent = 'Đã cọc'; label.style.color = 'inherit'; }
+}
+
+window.runSmartPaste = function() {
+    const txt = document.getElementById('smartPasteInput').value; if(!txt) return;
+    window.openEventModal({});
+    const lowerTxt = txt.toLowerCase();
+    const phoneMatch = txt.match(/0\d{9}/); if(phoneMatch) setSafeValue('eventPhone', phoneMatch[0]);
+    const dateMatch = txt.match(/(\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{4}|\d{2}))?/);
+    if (dateMatch) { let d = pad(dateMatch[1]); let m = pad(dateMatch[2]); let y = dateMatch[3] ? (dateMatch[3].length===2 ? '20'+dateMatch[3] : dateMatch[3]) : current.getFullYear(); setSafeValue('eventDate', `${y}-${m}-${d}`); }
+    const timeMatch = txt.match(/(\d{1,2})(?:[:h]| giờ)(\d{2})?/i);
+    if (timeMatch) { let hh = pad(timeMatch[1]); let mm = timeMatch[2] ? pad(timeMatch[2]) : '00'; setSafeValue('eventStart', `${hh}:${mm}`); setSafeValue('eventStartTrai', `${hh}:${mm}`); setSafeValue('eventStartGai', `${hh}:${mm}`); }
+    const priceMatch = txt.match(/giá\s*(\d+)\s*(tr|triệu|k)/i) || txt.match(/(\d+)\s*(tr|triệu)/i);
+    if (priceMatch) { let val = parseInt(priceMatch[1]); if(priceMatch[2].toLowerCase().startsWith('tr')) val = val * 1000; setSafeValue('eventPrice', money(val)); }
+    const depMatch = txt.match(/cọc\s*(\d+)\s*(tr|triệu|k)/i);
+    if (depMatch) { let val = parseInt(depMatch[1]); if(depMatch[2].toLowerCase().startsWith('tr')) val = val * 1000; setSafeValue('eventDeposit', money(val)); }
+
+    if(lowerTxt.includes('phóng sự') || lowerTxt.includes('ps')) setSafeValue('eventType', 'Phóng sự');
+    else if(lowerTxt.includes('pre') || lowerTxt.includes('cổng')) setSafeValue('eventType', 'Pre-wedding');
+    else if(lowerTxt.includes('em bé') || lowerTxt.includes('thôi nôi')) setSafeValue('eventType', 'Em bé');
+    else if(lowerTxt.includes('tiệc') || lowerTxt.includes('sự kiện')) setSafeValue('eventType', 'Sự kiện');
+    if(lowerTxt.includes('nhà trai') || lowerTxt.includes('nhà gái') || lowerTxt.includes('rước dâu') || lowerTxt.includes('xuất giá')) { document.getElementById('eventIsRuocDau').value = 'true'; setSafeValue('eventType', 'Cưới'); }
+    let nameGuess = txt.split(/ngày|lúc|sđt|giá|cọc/i)[0].replace(/chụp|đám cưới|đặt lịch|chốt|rước dâu|xuất giá|vu quy/ig, '').trim();
+    if(nameGuess) setSafeValue('eventName', nameGuess.substring(0,40));
+
+    window.updateModalVisibility(); window.checkConflict(); showToast('⚡ Đã điền tự động! Vui lòng kiểm tra lại.'); document.getElementById('smartPasteInput').value = ''; window.smoothClose('smartPasteModal');
+}
+
+window.openChooseTypeModal = function(date = '') {
+    window.tempPrefillDate = date || isoDate(current); document.getElementById('mainTypeGrid').style.display='grid'; document.getElementById('weddingSubGrid').style.display='none'; window.smoothOpen('chooseTypeModal');
+}
+
+window.proceedWithEventType = function(type, subtype) {
+    window.smoothClose('chooseTypeModal'); let prefill = { date: window.tempPrefillDate }; window.tempPrefillType = type; window.tempPrefillSubType = subtype; setTimeout(() => { window.openEventModal(prefill); }, 300);
 }
 
 /* =========================================================
@@ -856,6 +1779,7 @@ function initApp() {
     ['staffMonthM', 'summaryMonthM'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = MONTH_NAMES.map((n,i)=>`<option value="${i+1}">${n}</option>`).join(''); setSafeValue(id, mm); });
     ['staffMonthY', 'summaryMonthY'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = [2024,2025,2026,2027].map(y=>`<option value="${y}">${y}</option>`).join(''); setSafeValue(id, yy); });
 
+    window.setupLocationAutocomplete();
     setTimeout(() => { document.getElementById('loadingOverlay').classList.add('hidden'); }, 1500);
 
     if (typeof firebase !== 'undefined' && !firebase.apps.length) {
@@ -874,12 +1798,65 @@ function initApp() {
     }
 }
 
+// Lắng nghe sự kiện
 document.querySelectorAll('.modal-backdrop').forEach(backdrop => { backdrop.addEventListener('click', (e) => { if(e.target === backdrop) window.smoothClose(backdrop.id); }); });
 document.getElementById('prevBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()-1);render()});
 document.getElementById('nextBtn')?.addEventListener('click', ()=>{current.setMonth(current.getMonth()+1);render()});
 document.getElementById('addBtn')?.addEventListener('click', ()=>window.smoothOpen('chooseTypeModal'));
 document.getElementById('settingsBtn')?.addEventListener('click', ()=>window.smoothOpen('settingsModal'));
 document.getElementById('openStaffBtn')?.addEventListener('click', ()=>window.smoothOpen('staffModal'));
+
+// Xử lý Double Click mở Add Lịch & Click vào Event
+document.addEventListener('dblclick', (e) => {
+    if (currentUserRole !== 'admin') return;
+    if (e.target.closest('.event-chip') || e.target.closest('.blackout-chip') || e.target.closest('button') || e.target.closest('a')) return;
+    const dayEl = e.target.closest('.day');
+    if (dayEl && dayEl.dataset.date) { window.openChooseTypeModal(dayEl.dataset.date); }
+});
+
+document.addEventListener('click', e => {
+  if(e.target.closest('a') || e.target.closest('button') || e.target.closest('.blackout-chip')) return;
+  const chip = e.target.closest('[data-id]'); 
+  if(chip) {
+      if (chip.classList.contains('mini-item')) return;
+      if (chip.classList.contains('event-chip') || chip.classList.contains('agenda-event')) {
+          if (currentUserRole === 'guest') return; 
+          window.openEventModal({id:chip.dataset.id});
+      }
+  }
+});
+
+let searchTimeout;
+document.getElementById('searchInput')?.addEventListener('input', () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(render, 150); });
+['staffFilter','statusFilter'].forEach(id=>document.getElementById(id)?.addEventListener('input',render));
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click', ()=>setView(b.dataset.view)));
+document.getElementById('eventStartTrai')?.addEventListener('input', window.checkConflict);
+document.getElementById('eventStartGai')?.addEventListener('input', window.checkConflict);
+document.getElementById('staffMonthM')?.addEventListener('change', renderStaffMonthList);
+document.getElementById('staffMonthY')?.addEventListener('change', renderStaffMonthList);
+document.getElementById('summaryMonthM')?.addEventListener('change', renderMonthSummary);
+document.getElementById('summaryMonthY')?.addEventListener('change', renderMonthSummary);
+
+document.querySelectorAll('[data-audit-filter]').forEach(btn => btn.addEventListener('click', () => { currentAuditFilter = btn.dataset.auditFilter || 'all'; renderAuditLog(); }));
+document.getElementById('auditSearchInput')?.addEventListener('input', renderAuditLog);
+
+function setView(v){ currentView=v; document.querySelectorAll('[data-view],[data-switch]').forEach(x=>x.classList.toggle('active',x.dataset.view===v)); render(); }
+
+document.getElementById('fullPaidBtn')?.addEventListener('click', () => {
+   if(currentUserRole !== 'admin') return;
+   const priceEl = document.getElementById('eventPrice'); const price = parseMoney(priceEl?.value);
+   if(price && price > 0) { setSafeValue('eventDeposit', money(price)); window.updateDepositLabel(); }
+});
+
+document.getElementById('clearAll')?.addEventListener('click', ()=>{
+    if(confirm('Xóa toàn bộ dữ liệu lịch, nhân sự và lương? Nhật ký hoạt động sẽ được giữ lại.')){
+        const keptLogs = data.auditLogs || [];
+        data={staff:[],events:[],payroll:{},blackouts:[],auditLogs:keptLogs};
+        writeAuditLog('SYSTEM_CLEAR', { severity:'danger', category:'system', targetType:'system', message:'Admin làm sạch dữ liệu lịch / nhân sự / lương' });
+        if(window.dbRef) window.dbRef.set(data).catch(err => console.error('Clear DB error:', err)); else persistLocal();
+        render(); window.smoothClose('settingsModal'); showToast('Đã dọn dữ liệu, giữ Audit Log');
+    }
+});
 
 initApp();
 </script>
