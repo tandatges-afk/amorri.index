@@ -22,9 +22,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
 
 <style>
-/* FONT & CƠ BẢN (GIAO DIỆN PREMIUM SAAS) */
+/* FONT & CƠ BẢN (GIAO DIỆN TỐI GIẢN - LOGIC) */
 :root {
-  --bg: #f1f5f9; 
+  --bg: #f8fafc; 
   --panel: #ffffff; 
   --text: #0f172a; 
   --muted: #64748b; 
@@ -36,10 +36,11 @@
   --blue: #3b82f6; --bg-blue: #dbeafe;
   --red: #ef4444; --bg-red: #fef2f2;
   
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
-  --shadow-lg: 0 15px 35px -5px rgba(0, 0, 0, 0.07), 0 10px 15px -6px rgba(0, 0, 0, 0.03);
-  --radius: 20px;
+  /* Bóng đổ được làm dịu lại, bớt hỗn loạn */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+  --radius: 16px; /* Chuẩn hoá bo góc */
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -74,7 +75,7 @@ body.role-guest .guest-only-inline { display: inline-flex !important; }
 /* SIDEBAR DARK THEME + NÚT TOGGLE */
 .sidebar { background: #0f172a; color: #f8fafc; padding: 32px 20px; display: flex; flex-direction: column; gap: 32px; position: sticky; top: 0; height: 100vh; height: 100dvh; z-index: 40; transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; }
 .brand { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; white-space: nowrap; }
-.brand-mark { width: 44px; height: 44px; min-width: 44px; border-radius: 12px; background: linear-gradient(135deg, #ffffff, #e2e8f0); display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+.brand-mark { width: 44px; height: 44px; min-width: 44px; border-radius: 12px; background: linear-gradient(135deg, #ffffff, #e2e8f0); display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 .brand-mark img { width: 100%; height: 100%; object-fit: cover; }
 .brand h1 { font-size: 17px; margin: 0; font-weight: 800; letter-spacing: -0.3px; color: #fff; }
 .brand small { color: #94a3b8; font-size: 12px; font-weight: 500; }
@@ -83,9 +84,9 @@ body.role-guest .guest-only-inline { display: inline-flex !important; }
 #sidebarToggleBtn:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
 .side-nav { display: grid; gap: 6px; }
-.nav-btn { background: transparent; color: #94a3b8; padding: 12px 16px; border-radius: 12px; text-align: left; display: flex; gap: 12px; align-items: center; font-weight: 600; font-size: 14.5px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; border: 1px solid transparent; overflow: hidden; }
+.nav-btn { background: transparent; color: #94a3b8; padding: 12px 16px; border-radius: 10px; text-align: left; display: flex; gap: 12px; align-items: center; font-weight: 600; font-size: 14.5px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; border: 1px solid transparent; overflow: hidden; }
 .nav-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
-.nav-btn.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 700; box-shadow: inset 3px 0 0 var(--blue); border-radius: 10px; }
+.nav-btn.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 700; box-shadow: inset 3px 0 0 var(--blue); }
 .nav-btn b { font-size: 18px; font-weight: normal; opacity: 0.8; transition: transform 0.2s; min-width: 24px; text-align: center; }
 .nav-btn.active b { transform: scale(1.1); opacity: 1; color: var(--blue); }
 .sidebar-bottom { margin-top: auto; display: grid; gap: 10px; }
@@ -105,65 +106,59 @@ body.sidebar-closed #sidebarToggleBtn { margin: 0 auto; margin-top: -10px; }
 .title { font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: var(--text); }
 .subtitle { font-size: 14px; color: var(--muted); margin-top: 6px; font-weight: 600; }
 
-.btn { background: #fff; border: 1px solid var(--line); color: var(--text); padding: 12px 20px; border-radius: 12px; font-weight: 700; font-size: 13.5px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm); cursor: pointer; }
-.btn:hover { background: #f8fafc; transform: translateY(-1px); box-shadow: var(--shadow-md); border-color: #cbd5e1; }
+.btn { background: #fff; border: 1px solid var(--line); color: var(--text); padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 13.5px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease; box-shadow: var(--shadow-sm); cursor: pointer; }
+.btn:hover { background: #f8fafc; border-color: #cbd5e1; }
 .btn:active { transform: translateY(1px); box-shadow: none; }
-.btn.primary { border-color: transparent; background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15); }
-.btn.primary:hover { background: var(--primary-hover); box-shadow: 0 6px 16px rgba(15, 23, 42, 0.2); border-color: transparent;}
+.btn.primary { border-color: transparent; background: var(--primary); color: #fff; box-shadow: 0 4px 6px rgba(15, 23, 42, 0.1); }
+.btn.primary:hover { background: var(--primary-hover); border-color: transparent;}
 .btn.danger { color: #b91c1c; border-color: transparent; background: #fef2f2; box-shadow: none; }
 .btn.danger:hover { background: #fee2e2; border-color: transparent;}
 .btn.ghost { background: transparent; border-color: transparent; box-shadow: none; }
 .btn.ghost:hover { background: #f1f5f9; border-color: transparent;}
 
 .grid-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin-bottom: 32px; }
-.stat { background: #ffffff; border: none; padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow-md); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-.stat:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.stat { background: #ffffff; border: 1px solid var(--line); padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow-sm); transition: transform 0.2s ease; }
+/* Sửa lỗi hover làm móp méo bố cục */
+.stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: #cbd5e1; }
 .stat-label { color: var(--muted); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 .stat-num { font-size: 34px; font-weight: 800; margin-top: 8px; color: var(--text); letter-spacing: -1px; }
 .stat-meta { font-size: 13px; color: var(--muted); margin-top: 4px; font-weight: 600; }
 
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 24px; }
-.panel { background: var(--panel); border: none; border-radius: var(--radius); box-shadow: var(--shadow-md); overflow: hidden; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
 
 .calendar-head { padding: 24px; border-bottom: none; display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; background: transparent; }
 .calendar-nav { display: flex; gap: 8px; align-items: center; }
-.icon-btn { width: 38px; height: 38px; border: 1px solid var(--line); background: #fff; border-radius: 50%; display: grid; place-items: center; transition: all 0.2s; font-size: 16px; color: var(--text); box-shadow: var(--shadow-sm); cursor: pointer;}
-.icon-btn:hover { background: #f8fafc; transform: scale(1.05); border-color: #cbd5e1; }
-.month-title { font-size: 19px; font-weight: 800; min-width: 140px; text-align: center; color: var(--text); }
+.icon-btn { width: 36px; height: 36px; border: 1px solid var(--line); background: #fff; border-radius: 8px; display: grid; place-items: center; transition: all 0.2s; font-size: 16px; color: var(--text); box-shadow: var(--shadow-sm); cursor: pointer;}
+.icon-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+.month-title { font-size: 18px; font-weight: 800; min-width: 140px; text-align: center; color: var(--text); }
 
-.filters { padding: 16px 24px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; flex-wrap: wrap; background: #ffffff; border-radius: 24px 24px 0 0; }
-.field { border: 1px solid #cbd5e1; background: #fff; border-radius: 12px; padding: 10px 16px; outline: none; font-size: 13.5px; transition: all 0.2s; color: var(--text); font-weight: 600; font-family: inherit; }
+.filters { padding: 16px 24px; border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); display: flex; gap: 12px; flex-wrap: wrap; background: #fafbfc; }
+.field { border: 1px solid #cbd5e1; background: #fff; border-radius: 10px; padding: 10px 16px; outline: none; font-size: 13.5px; transition: all 0.2s; color: var(--text); font-weight: 600; font-family: inherit; }
 .field:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
 
 .calendar-wrap { overflow-x: auto; }
-.calendar { min-width: 900px; background: #fff; border-top: none; border-radius: 0 0 24px 24px;}
+.calendar { min-width: 900px; background: #fff; border-top: none;}
 .weekdays, .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
-.weekday { padding: 16px 10px; border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); color: #64748b; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; background: #f8fafc; }
+.weekday { padding: 14px 10px; border-bottom: 1px solid var(--line); color: #64748b; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; background: #f8fafc; }
 
 .day { min-height: 140px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 12px; background: #fff; transition: background 0.2s; cursor: pointer; position: relative; }
 .day.sat-bg { background-color: #fafafb; } 
-.day.sun-bg { background-color: #f1f5f9; } 
+.day.sun-bg { background-color: #f8fafc; } 
 .day.other .daynum { color: #cbd5e1; font-weight: 600; } 
 .day.other { background-color: #fff; opacity: 0.6; }
 .day.other.sat-bg { background-color: #fafafb; }
-.day.other.sun-bg { background-color: #f1f5f9; }
+.day.other.sun-bg { background-color: #f8fafc; }
 .day:nth-child(7n) { border-right: 0; }
-.day:hover { background: #f8fafc; }
+.day:hover { background: #f1f5f9; }
 .daynum { font-size: 13.5px; font-weight: 700; min-width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; border-radius: 8px; margin-bottom: 8px; color: var(--muted); transition: all 0.2s; }
-.day.today .daynum { background: var(--blue); color: #fff; font-weight: 800; border-radius: 50%; width: 30px; height: 30px; padding: 0; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4); }
+.day.today .daynum { background: var(--blue); color: #fff; font-weight: 800; border-radius: 50%; width: 30px; height: 30px; padding: 0; }
 
-/* HIỆU ỨNG CẢNH BÁO NHẤP NHÁY DÀNH CHO ADMIN */
-@keyframes urgentBlink { 
-  0%, 100% { opacity: 1; } 
-  50% { opacity: 0.4; } 
-}
-.blink-warning { animation: urgentBlink 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-
-/* EVENT CHIPS & PHÂN LỚP MÀU DỊCH VỤ */
-.event-chip { padding: 8px 10px; border-radius: 10px; margin: 5px 0; display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; line-height: 1.3; background: #f4f4f5; transition: all 0.2s; cursor: pointer; border: 1px solid transparent; border-left-width: 5px !important; border-left-style: solid !important; }
+/* EVENT CHIPS - Loại bỏ scale hover gây giật khung hình */
+.event-chip { padding: 8px 10px; border-radius: 8px; margin: 5px 0; display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; line-height: 1.3; background: #f4f4f5; transition: all 0.2s ease; cursor: pointer; border: 1px solid transparent; border-left-width: 4px !important; border-left-style: solid !important; }
 body.role-guest .event-chip { cursor: default; }
-.event-chip:hover { transform: scale(1.02); box-shadow: var(--shadow-sm); z-index: 1; position: relative; border-color: var(--line); }
-body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-color: transparent;}
+.event-chip:hover { filter: brightness(0.96); border-color: #cbd5e1; }
+body.role-guest .event-chip:hover { filter: none; border-color: transparent;}
 .event-chip .time { font-weight: 800; color: var(--text); font-size: 12px; }
 .event-chip .name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 13.5px;}
 .event-chip .staff-tag { font-size:11.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px; color: var(--muted); }
@@ -180,7 +175,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 .type-sukien { background: #f0fdf4 !important; border-color: #bbf7d0; }
 .type-sukien .time, .type-sukien .name { color: #064e3b !important; }
 
-/* BẢNG MÀU CHI TIẾT CHO LỊCH CƯỚI (Nhận diện theo tên) */
+/* BẢNG MÀU CHI TIẾT CHO LỊCH CƯỚI */
 .type-damngo { background: #fef2f2 !important; border-color: #fecaca; }
 .type-damngo .time, .type-damngo .name { color: #991b1b !important; }
 .type-damnoi { background: #fffbeb !important; border-color: #fde68a; }
@@ -193,10 +188,10 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 .type-xuatgia .time, .type-xuatgia .name { color: #5b21b6 !important; }
 
 /* BORDER-LEFT-COLOR ĐỂ PHÂN BIỆT TRẠNG THÁI BOOKING */
-.status-pending { border-left-color: var(--orange) !important; } /* Chờ xác nhận - Cam */
-.status-confirmed { border-left-color: var(--blue) !important; } /* Đã chốt - Xanh dương */
-.status-done { border-left-color: var(--green) !important; opacity: 0.85; } /* Hoàn thành - Xanh lá */
-.status-cancelled { border-left-color: var(--muted) !important; text-decoration:line-through; opacity: 0.5; filter: grayscale(1); } /* Đã hủy - Xám */
+.status-pending { border-left-color: var(--orange) !important; } 
+.status-confirmed { border-left-color: var(--blue) !important; } 
+.status-done { border-left-color: var(--green) !important; opacity: 0.85; } 
+.status-cancelled { border-left-color: var(--muted) !important; text-decoration:line-through; opacity: 0.5; filter: grayscale(1); } 
 
 /* Báo bận */
 .blackout-chip { padding: 4px 8px; border-radius: 6px; margin: 3px 0; background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; font-size: 11px; font-weight: 800; cursor: pointer; text-align: center; }
@@ -205,72 +200,70 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 .agenda { display: none; padding: 24px; }
 .side-panel { display: grid; gap: 24px; align-content: start; }
 .side-card { padding: 24px; border-radius: var(--radius); }
-.side-card h3 { margin: 0; font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+.side-card h3 { margin: 0; font-size: 16px; font-weight: 800; color: var(--text); }
 .mini-list { display: grid; gap: 10px; margin-top: 16px; }
-.mini-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); background: #fff; box-shadow: var(--shadow-sm); }
-.mini-item:hover { border-color: #cbd5e1; box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.mini-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; transition: all 0.2s ease; background: #fff; }
+.mini-item:hover { border-color: #cbd5e1; box-shadow: var(--shadow-sm); transform: translateY(-1px); }
 .mini-main { min-width: 0; width: 100%; }
 .mini-title { font-size: 14.5px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini-sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; font-weight: 600; }
 
-.pill { font-size: 11.5px; padding: 4px 10px; border-radius: 99px; font-weight: 700; white-space: nowrap; border: 1px solid transparent; }
-.pill.green { background: var(--bg-green); color: #047857; }
-.pill.orange { background: var(--bg-orange); color: #b45309; }
-.pill.blue { background: var(--bg-blue); color: #1d4ed8; }
-.pill.red { background: var(--bg-red); color: #b91c1c; }
+.pill { font-size: 11.5px; padding: 4px 10px; border-radius: 6px; font-weight: 700; white-space: nowrap; border: 1px solid transparent; }
+.pill.green { background: var(--bg-green); color: #047857; border-color: #a7f3d0;}
+.pill.orange { background: var(--bg-orange); color: #b45309; border-color: #fde68a;}
+.pill.blue { background: var(--bg-blue); color: #1d4ed8; border-color: #bfdbfe;}
+.pill.red { background: var(--bg-red); color: #b91c1c; border-color: #fecaca;}
 
-.staff-list { display: grid; gap: 12px; margin-top: 16px; }
-.staff { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: #f8fafc; border-radius: 16px; border: 1px solid var(--line); transition: all 0.2s; }
+.staff-list { display: grid; gap: 10px; margin-top: 16px; }
+.staff { display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #f8fafc; border-radius: 12px; border: 1px solid var(--line); transition: all 0.2s; }
 .staff:hover { border-color: #cbd5e1; }
-.avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: #e2e8f0; color: var(--text); font-weight: 800; font-size: 15px; letter-spacing: 0.5px; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: #e2e8f0; color: var(--text); font-weight: 800; font-size: 14px; }
 .staff-left { display: flex; gap: 12px; align-items: center; min-width: 0; }
-.staff-name { font-size: 15px; font-weight: 700; color: var(--text); }
+.staff-name { font-size: 14.5px; font-weight: 700; color: var(--text); }
 .staff-role { font-size: 12.5px; color: var(--muted); margin-top: 2px; font-weight: 600; }
 
-/* MODALS - GLASSMORPHISM */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 1000; backdrop-filter: blur(6px); opacity: 0; transition: opacity 0.3s ease; }
+/* MODALS - Đã làm dịu hiệu ứng bật */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 1000; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.2s ease; }
 .modal-backdrop.show { display: flex; opacity: 1; }
 .modal-backdrop.closing { opacity: 0; pointer-events: none; }
-.modal { width: min(850px, 100%); max-height: 90vh; overflow-y: auto; background: #ffffff; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; transform: translateY(30px) scale(0.98); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); overscroll-behavior: contain; }
-.modal-backdrop.show .modal { transform: translateY(0) scale(1); opacity: 1; }
-.modal-backdrop.closing .modal { transform: translateY(30px) scale(0.98); opacity: 0; }
-.modal-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 24px 32px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); z-index: 10; }
-.modal-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
-.modal-body { padding: 32px; flex: 1; overflow-y: auto; }
-.modal-foot { display: flex; align-items: center; padding: 20px 32px; border-top: 1px solid var(--line); background: #f8fafc; position: sticky; bottom: 0; z-index: 10; border-radius: 0 0 24px 24px; }
+.modal { width: min(850px, 100%); max-height: 90vh; overflow-y: auto; background: #ffffff; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); display: flex; flex-direction: column; transform: translateY(15px); opacity: 0; transition: all 0.2s ease; }
+.modal-backdrop.show .modal { transform: translateY(0); opacity: 1; }
+.modal-backdrop.closing .modal { transform: translateY(15px); opacity: 0; }
+.modal-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: #fff; z-index: 10; }
+.modal-title { font-size: 18px; font-weight: 800; color: var(--text); }
+.modal-body { padding: 24px; flex: 1; overflow-y: auto; }
+.modal-foot { display: flex; align-items: center; padding: 16px 24px; border-top: 1px solid var(--line); background: #f8fafc; position: sticky; bottom: 0; z-index: 10; border-radius: 0 0 20px 20px; }
 
-/* FORM NÂNG CẤP */
-.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+/* FORM */
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .full { grid-column: 1 / -1; }
 .form-group { display: grid; gap: 8px; }
 .form-group label { font-size: 13.5px; font-weight: 700; color: #475569; }
-.form-group input, .form-group select, .form-group textarea { width: 100%; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 14px 18px; border-radius: 12px; outline: none; font-size: 14.5px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-weight: 600; color: var(--text); font-family: inherit; }
-.form-group input:hover, .form-group select:hover, .form-group textarea:hover { background: #e2e8f0; }
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus { background: #fff; border-color: var(--blue); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
+.form-group input, .form-group select, .form-group textarea { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 14px; border-radius: 10px; outline: none; font-size: 14px; transition: all 0.2s ease; font-weight: 500; color: var(--text); font-family: inherit; }
+.form-group input:hover, .form-group select:hover, .form-group textarea:hover { background: #f1f5f9; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { background: #fff; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
 .form-group textarea { min-height: 100px; resize: vertical; line-height: 1.5; }
-.form-group input[readonly], .form-group textarea[readonly], .form-group select[disabled] { background: #f8fafc; color: #94a3b8; cursor: not-allowed; opacity: 0.8; }
+.form-group input[readonly], .form-group textarea[readonly], .form-group select[disabled] { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
 
 .currency-wrap { position: relative; width: 100%; display: flex; align-items: center; }
 .currency-wrap input { width: 100%; padding-right: 68px !important; text-align: right; }
-.currency-wrap::after { content: '.000 đ'; position: absolute; right: 16px; color: #94a3b8; font-weight: 800; font-size: 14.5px; pointer-events: none; }
+.currency-wrap::after { content: '.000 đ'; position: absolute; right: 14px; color: #94a3b8; font-weight: 700; font-size: 14px; pointer-events: none; }
 
 .loc-group-wrapper { position: relative; z-index: 50; }
-.autocomplete-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-lg); z-index: 1050; max-height: 250px; overflow-y: auto; display: none; margin-top: 4px; padding: 6px; }
-.suggest-item { padding: 12px 16px; font-size: 13.5px; font-weight: 500; cursor: pointer; border-radius: 10px; color: var(--text); display: flex; gap: 8px; align-items: center; transition: all 0.2s; }
+.autocomplete-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-md); z-index: 1050; max-height: 200px; overflow-y: auto; display: none; margin-top: 4px; padding: 6px; }
+.suggest-item { padding: 10px 14px; font-size: 13.5px; font-weight: 500; cursor: pointer; border-radius: 6px; color: var(--text); display: flex; gap: 8px; align-items: center; transition: background 0.2s; }
 .suggest-item:hover { background: #f1f5f9; color: var(--primary); font-weight: 700; }
 
-@keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-.toast { position: fixed; right: 24px; bottom: 24px; background: #0f172a; color: #fff; padding: 16px 28px; border-radius: 99px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-size: 14.5px; font-weight: 600; letter-spacing: 0.3px; z-index: 9999; opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
+.toast { position: fixed; right: 24px; bottom: 24px; background: #0f172a; color: #fff; padding: 14px 24px; border-radius: 8px; box-shadow: var(--shadow-md); font-size: 14px; font-weight: 600; z-index: 9999; opacity: 0; transform: translateY(20px); transition: all 0.3s ease; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 
-.kpi-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; margin: 14px 0; color: #475569; }
-.staff-picker { border-radius: 14px; max-height: 400px; overflow-y: auto; }
+.kpi-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; margin: 12px 0; color: #475569; }
+.staff-picker { border-radius: 12px; max-height: 400px; overflow-y: auto; }
 
 /* AUDIT LOG + STAFF ACTIVITY FEED */
 .audit-log-list, .staff-activity-list { display:grid; gap:10px; margin-top:16px; max-height:430px; overflow-y:auto; padding-right:4px; }
-.audit-log-item, .staff-activity-item { position:relative; display:flex; gap:12px; align-items:flex-start; padding:14px 16px; border:1px solid var(--line); border-left:4px solid #cbd5e1; border-radius:14px; background:#fff; box-shadow: var(--shadow-sm); }
-.audit-log-item .audit-dot, .staff-activity-item .audit-dot { width:10px; height:10px; border-radius:50%; background:#94a3b8; flex:0 0 auto; margin-top:5px; }
+.audit-log-item, .staff-activity-item { position:relative; display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid var(--line); border-left:4px solid #cbd5e1; border-radius:10px; background:#fff; box-shadow: var(--shadow-sm); }
+.audit-log-item .audit-dot, .staff-activity-item .audit-dot { width:8px; height:8px; border-radius:50%; background:#94a3b8; flex:0 0 auto; margin-top:6px; }
 .audit-log-item.warning, .staff-activity-item.warning { border-left-color:var(--orange); background:#fffbeb; }
 .audit-log-item.warning .audit-dot, .staff-activity-item.warning .audit-dot { background:var(--orange); }
 .audit-log-item.danger, .staff-activity-item.danger { border-left-color:var(--red); background:#fef2f2; }
@@ -280,24 +273,20 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 .audit-log-item.info, .staff-activity-item.info { border-left-color:var(--blue); background:#eff6ff; }
 .audit-log-item.info .audit-dot, .staff-activity-item.info .audit-dot { background:var(--blue); }
 .audit-main { min-width:0; flex:1; }
-.audit-title { font-size:13.5px; font-weight:800; color:var(--text); line-height:1.45; }
-.audit-sub { margin-top:4px; font-size:12px; color:var(--muted); line-height:1.5; font-weight:600; }
-.audit-time { white-space:nowrap; font-size:11px; color:#94a3b8; font-weight:700; }
+.audit-title { font-size:13.5px; font-weight:700; color:var(--text); line-height:1.4; }
+.audit-sub { margin-top:4px; font-size:12.5px; color:var(--muted); line-height:1.5; font-weight:500; }
+.audit-time { white-space:nowrap; font-size:11px; color:#94a3b8; font-weight:600; }
 .audit-filter-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
-.audit-filter-row .btn { padding:7px 12px; font-size:12px; }
+.audit-filter-row .btn { padding:6px 12px; font-size:12.5px; border-radius:6px; }
 .staff-activity-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
-.staff-activity-head .badge { font-size:10.5px; padding:3px 8px; border-radius:99px; font-weight:800; border:1px solid transparent; }
-.staff-activity-item.warning .badge { background:#fef3c7; color:#92400e; border-color:#fde68a; }
-.staff-activity-item.danger .badge { background:#fee2e2; color:#991b1b; border-color:#fecaca; }
-.staff-activity-item.info .badge { background:#dbeafe; color:#1d4ed8; border-color:#bfdbfe; }
-.staff-activity-item.success .badge { background:#d1fae5; color:#047857; border-color:#a7f3d0; }
+.staff-activity-head .badge { font-size:10.5px; padding:2px 6px; border-radius:4px; font-weight:700; border:1px solid transparent; }
 
-#loadingOverlay { position: fixed; inset: 0; background: rgba(248, 250, 252, 0.95); backdrop-filter: blur(10px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s; }
+#loadingOverlay { position: fixed; inset: 0; background: rgba(248, 250, 252, 0.95); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s ease, visibility 0.3s; }
 #loadingOverlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-.loading-logo { width: 80px; height: 80px; border-radius: 20px; background: #fff; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; box-shadow: var(--shadow-md); overflow: hidden; border: 1px solid var(--line); }
+.loading-logo { width: 70px; height: 70px; border-radius: 16px; background: #fff; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; animation: pulse 2s ease infinite; box-shadow: var(--shadow-sm); overflow: hidden; border: 1px solid var(--line); }
 .loading-logo img { width: 100%; height: 100%; object-fit: cover; }
 
-@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.96); } }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(0.98); } }
 
 /* CSS FIX MOBILE RESPONSIVE HOÀN THIỆN */
 @media(max-width: 900px){ 
@@ -306,13 +295,13 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 }
 @media(max-width: 768px){
   .app { grid-template-columns: 1fr !important; padding-bottom: 90px; } 
-  .sidebar { position: fixed; bottom: 0; left: 0; right: 0; top: auto; height: calc(70px + env(safe-area-inset-bottom)) !important; flex-direction: row; padding: 0 10px env(safe-area-inset-bottom) !important; z-index: 100; background: rgba(255,255,255,0.98); backdrop-filter: blur(10px); border-top: 1px solid var(--line); border-right: none; box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+  .sidebar { position: fixed; bottom: 0; left: 0; right: 0; top: auto; height: calc(65px + env(safe-area-inset-bottom)) !important; flex-direction: row; padding: 0 10px env(safe-area-inset-bottom) !important; z-index: 100; background: #ffffff; border-top: 1px solid var(--line); box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
   .brand, .sidebar-bottom { display: none !important; }
-  .side-nav { display: flex; width: 100%; justify-content: space-around; align-items: center; gap: 0; height: 70px; }
-  .nav-btn { flex-direction: column; gap: 4px; padding: 0 !important; width: 65px; height: 100%; color: var(--muted); border-radius: 0; justify-content: center; font-size: 11px; background: transparent !important; box-shadow: none !important; }
+  .side-nav { display: flex; width: 100%; justify-content: space-around; align-items: center; gap: 0; height: 65px; }
+  .nav-btn { flex-direction: column; gap: 4px; padding: 0 !important; width: 60px; height: 100%; color: var(--muted); border-radius: 0; justify-content: center; font-size: 11px; background: transparent !important; box-shadow: none !important; border:none !important;}
   .nav-btn.active { color: var(--blue) !important; font-weight: 700; background: transparent !important; box-shadow: none !important;}
-  .nav-btn b { font-size: 22px; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); margin: 0 !important;}
-  .nav-btn.active b { transform: scale(1.2); opacity: 1; color: var(--blue); }
+  .nav-btn b { font-size: 20px; transition: transform 0.2s ease; margin: 0 !important;}
+  .nav-btn.active b { transform: scale(1.15); opacity: 1; color: var(--blue); }
   body.sidebar-closed .nav-btn span { display: block !important; }
   #sidebarToggleBtn { display: none !important; }
   
@@ -329,21 +318,20 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
   .calendar-head { padding: 16px; flex-direction: column; align-items: flex-start; gap: 16px; }
   .month-title { text-align: left; }
   
-  .filters { flex-direction: column; align-items: stretch; padding: 16px; border-radius: 20px 20px 0 0; }
+  .filters { flex-direction: column; align-items: stretch; padding: 16px; border-radius: 16px 16px 0 0; }
   .filters .field { width: 100%; min-width: unset; }
   
   .modal-backdrop { align-items: flex-end; padding: 0; }
-  .modal { width: 100%; border-radius: 28px 28px 0 0; max-height: 92vh; margin: 0; margin-top: auto; }
-  .modal-head { padding: 20px 24px; border-radius: 28px 28px 0 0; }
-  .modal-head::before { content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: #cbd5e1; border-radius: 10px; }
-  .modal-body { padding: 24px; }
-  .form-grid { grid-template-columns: 1fr; gap: 20px; }
-  .modal-foot { flex-wrap: wrap; padding: 20px 24px; padding-bottom: max(20px, env(safe-area-inset-bottom)); border-radius: 0; }
+  .modal { width: 100%; border-radius: 20px 20px 0 0; max-height: 90vh; margin: 0; margin-top: auto; transform: translateY(100%); }
+  .modal-backdrop.closing .modal { transform: translateY(100%); opacity: 0; }
+  .modal-head { padding: 16px 20px; border-radius: 20px 20px 0 0; }
+  .modal-head::before { content: ''; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 36px; height: 4px; background: #cbd5e1; border-radius: 4px; }
+  .modal-body { padding: 20px; }
+  .form-grid { grid-template-columns: 1fr; gap: 16px; }
+  .modal-foot { flex-wrap: wrap; padding: 16px 20px; padding-bottom: max(16px, env(safe-area-inset-bottom)); border-radius: 0; }
   .modal-foot > div { width: 100%; justify-content: flex-end; margin-top: 12px; }
 
-  .toast { bottom: 100px; right: 16px; left: 16px; text-align: center; }
-  #aiMicBtn { bottom: 100px !important; }
-  #aiStatus { bottom: 170px !important; }
+  .toast { bottom: 85px; right: 16px; left: 16px; text-align: center; }
 }
 </style>
 </head>
@@ -351,7 +339,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 
 <div id="loadingOverlay">
     <div class="loading-logo"><img src="logo.png" alt="Amorri" onerror="this.style.display='none'"></div>
-    <div style="font-weight:700; color:var(--text); font-size: 15px; letter-spacing: 0.5px; margin-top:10px;">Đang đồng bộ dữ liệu...</div>
+    <div style="font-weight:700; color:var(--text); font-size: 14px; letter-spacing: 0.5px; margin-top:10px;">Đang đồng bộ dữ liệu...</div>
 </div>
 
 <div class="app">
@@ -373,7 +361,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
       <button class="nav-btn admin-only" id="settingsBtn"><b>⚙</b><span class="sb-text">Cài đặt</span></button>
     </nav>
     <div class="sidebar-bottom">
-      <button class="btn primary admin-only admin-only-block" id="sideAdd" style="padding:16px; font-size:14.5px; width: 100%; background:#fff; color:#0f172a;">
+      <button class="btn primary admin-only admin-only-block" id="sideAdd" style="padding:14px; font-size:14px; width: 100%; background:#fff; color:#0f172a;">
           <b style="font-size:16px; margin-right:4px;">＋</b> <span class="sb-text">Thêm lịch mới</span>
       </button>
       <button class="btn guest-only login-btn-ui" style="margin-top:12px; width:100%; justify-content:center; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff;" onclick="window.loginAdmin()"><span class="sb-text">Đăng nhập Admin</span><b class="guest-only" style="display:none; font-size:18px;">🔑</b></button>
@@ -442,7 +430,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
           <div class="mini-list" id="upcomingList"></div>
           <div style="height:1px;background:var(--line);margin:24px 0 20px"></div>
           <div class="staff-activity-head">
-            <h3 style="margin:0;font-size:16px;">Thông báo từ Admin</h3>
+            <h3 style="margin:0;font-size:15px;">Thông báo từ Admin</h3>
             <span id="staffActivityBadge" class="pill orange" style="display:none">Mới</span>
           </div>
           <div id="staffActivityList" class="staff-activity-list"></div>
@@ -450,7 +438,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
         
         <div class="panel side-card admin-only admin-only-block">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-            <h3 style="margin:0;font-size:16px;">Lịch thợ</h3>
+            <h3 style="margin:0;font-size:15px;">Lịch thợ</h3>
             <div style="display:flex;gap:6px">
               <select id="staffMonthM" class="field" aria-label="Chọn tháng" style="padding:6px 10px;font-size:12.5px;min-height:0">
                 <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option><option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option><option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option><option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
@@ -465,7 +453,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
         
         <div class="panel side-card admin-only admin-only-block">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-            <h3 style="margin:0;font-size:16px;">Tổng quan</h3>
+            <h3 style="margin:0;font-size:15px;">Tổng quan</h3>
             <div style="display:flex;gap:6px">
               <select id="summaryMonthM" class="field" aria-label="Chọn tháng tổng quan" style="padding:6px 10px;font-size:12.5px;min-height:0">
                 <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option><option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option><option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option><option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
@@ -518,24 +506,24 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
      </div>
      <div class="modal-body" style="padding: 24px;">
          <div id="mainTypeGrid" style="display:grid; gap:12px;">
-             <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:15px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Tốt nghiệp', '')">🎓 Tốt nghiệp</button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:15px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Concept', '')">✨ Concept</button>
-             <button class="btn ghost" style="justify-content:space-between; padding:16px; font-size:15px; border:1px solid var(--line)" onclick="document.getElementById('mainTypeGrid').style.display='none'; document.getElementById('weddingSubGrid').style.display='grid';">
+             <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:14.5px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Tốt nghiệp', '')">🎓 Tốt nghiệp</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:14.5px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Concept', '')">✨ Concept</button>
+             <button class="btn ghost" style="justify-content:space-between; padding:16px; font-size:14.5px; border:1px solid var(--line)" onclick="document.getElementById('mainTypeGrid').style.display='none'; document.getElementById('weddingSubGrid').style.display='grid';">
                  <span>💍 Cưới</span> <span>›</span>
              </button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:15px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Pre-wedding', '')">🖼️ Chụp cổng - Prewedding</button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:15px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Sự kiện', '')">🎉 Sự kiện</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:14.5px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Pre-wedding', '')">🖼️ Chụp cổng - Prewedding</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:14.5px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Sự kiện', '')">🎉 Sự kiện</button>
          </div>
          
          <div id="weddingSubGrid" style="display:none; gap:12px;">
              <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; color:var(--muted); font-weight:700; cursor:pointer;" onclick="document.getElementById('weddingSubGrid').style.display='none'; document.getElementById('mainTypeGrid').style.display='grid';">
                  ‹ Quay lại
              </div>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#991b1b; background:#fef2f2; border-color:#fecaca;" onclick="window.proceedWithEventType('Cưới', 'Dạm Ngõ')">Dạm Ngõ</button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#92400e; background:#fffbeb; border-color:#fde68a;" onclick="window.proceedWithEventType('Cưới', 'Đám Nối')">Đám Nối</button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#9d174d; background:#fdf2f8; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Vu Quy')">Vu Quy</button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#1e40af; background:#eff6ff; border-color:#bfdbfe;" onclick="window.proceedWithEventType('Cưới', 'Rước Dâu')">Rước Dâu (Thành hôn)</button>
-             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14.5px; border:1px solid var(--line); color:#5b21b6; background:#f5f3ff; border-color:#ddd6fe;" onclick="window.proceedWithEventType('Cưới', 'Xuất Giá')">Xuất Giá (16h - 22h)</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14px; border:1px solid var(--line); color:#991b1b; background:#fef2f2; border-color:#fecaca;" onclick="window.proceedWithEventType('Cưới', 'Dạm Ngõ')">Dạm Ngõ</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14px; border:1px solid var(--line); color:#92400e; background:#fffbeb; border-color:#fde68a;" onclick="window.proceedWithEventType('Cưới', 'Đám Nối')">Đám Nối</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14px; border:1px solid var(--line); color:#9d174d; background:#fdf2f8; border-color:#fbcfe8;" onclick="window.proceedWithEventType('Cưới', 'Vu Quy')">Vu Quy</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14px; border:1px solid var(--line); color:#1e40af; background:#eff6ff; border-color:#bfdbfe;" onclick="window.proceedWithEventType('Cưới', 'Rước Dâu')">Rước Dâu (Thành hôn)</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:14px; font-size:14px; border:1px solid var(--line); color:#5b21b6; background:#f5f3ff; border-color:#ddd6fe;" onclick="window.proceedWithEventType('Cưới', 'Xuất Giá')">Xuất Giá (16h - 22h)</button>
          </div>
      </div>
   </div>
@@ -545,14 +533,14 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 <div class="modal-backdrop" id="smartPasteModal">
   <div class="modal" style="width:min(500px, 100%)">
     <div class="modal-head">
-      <div class="modal-title" style="display:flex; align-items:center; gap:8px;"><span style="font-size:24px;">⚡</span> Nhập nhanh từ Zalo</div>
+      <div class="modal-title" style="display:flex; align-items:center; gap:8px;"><span style="font-size:20px;">⚡</span> Nhập nhanh từ Zalo</div>
       <button type="button" class="icon-btn" aria-label="Đóng" onclick="window.smoothClose('smartPasteModal')" style="border:0;background:#f4f4f5;border-radius:50%">✕</button>
     </div>
     <div class="modal-body">
       <p style="font-size:13.5px; color:var(--muted); margin-top:0;">Dán nội dung tin nhắn chốt khách vào đây, hệ thống sẽ tự động bóc tách Ngày, Giờ, Tên, Số điện thoại và Tiền bạc.</p>
       <label for="smartPasteInput" style="display:none">Nhập tin nhắn Zalo</label>
-      <textarea id="smartPasteInput" class="field" rows="5" placeholder="VD: Đám cưới Minh Lan ngày 20/11 lúc 7h nhà gái. Sđt 0901234567. Giá 5tr cọc 1tr..." style="width:100%; resize:none; font-weight:normal; line-height:1.6; padding:16px; border: 1px solid var(--line);"></textarea>
-      <button type="button" class="btn primary" style="width:100%; margin-top:20px; padding:16px; font-size:15px; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3); background: var(--blue); color: #fff;" onclick="window.runSmartPaste()">Phân tích & Thêm lịch</button>
+      <textarea id="smartPasteInput" class="field" rows="5" placeholder="VD: Đám cưới Minh Lan ngày 20/11 lúc 7h nhà gái. Sđt 0901234567. Giá 5tr cọc 1tr..." style="width:100%; resize:none; font-weight:normal; line-height:1.6; padding:14px; border: 1px solid var(--line);"></textarea>
+      <button type="button" class="btn primary" style="width:100%; margin-top:20px; padding:14px; font-size:14px;" onclick="window.runSmartPaste()">Phân tích & Thêm lịch</button>
     </div>
   </div>
 </div>
@@ -589,13 +577,13 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
           <div class="form-group normal-time"><label for="eventStart">Giờ bắt đầu</label><input id="eventStart" type="time" onchange="window.checkConflict();"></div>
           
           <div class="form-group full ruocdau-time" style="display:none;">
-              <div style="display:flex; gap:24px; flex-wrap:wrap;">
+              <div style="display:flex; gap:20px; flex-wrap:wrap;">
                   <div style="flex:1; min-width:200px;">
-                      <label for="eventStartTrai" style="color:#0369a1; font-size:14.5px;">⏰ Giờ Nhà Trai</label>
+                      <label for="eventStartTrai" style="color:#0369a1; font-size:13.5px;">⏰ Giờ Nhà Trai</label>
                       <input id="eventStartTrai" type="time" onchange="window.checkConflict();" style="width:100%; margin-top:8px;">
                   </div>
                   <div style="flex:1; min-width:200px;">
-                      <label for="eventStartGai" style="color:#be185d; font-size:14.5px;">⏰ Giờ Nhà Gái</label>
+                      <label for="eventStartGai" style="color:#be185d; font-size:13.5px;">⏰ Giờ Nhà Gái</label>
                       <input id="eventStartGai" type="time" onchange="window.checkConflict();" style="width:100%; margin-top:8px;">
                   </div>
               </div>
@@ -615,12 +603,12 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 
           <div class="form-group full step2-item" style="display:none; padding-top:20px; border-top:1px solid var(--line);">
             <div class="admin-only" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px" id="adminStaffLabel">
-              <label style="font-size:15px; color:#0f172a;">Phân công nhân sự</label>
-              <button type="button" id="btnShowFreelance" class="btn ghost" style="padding:8px 16px; font-size:12.5px; border:1px solid #cbd5e1; color: var(--text)" onclick="document.getElementById('freelanceForm').style.display='flex'">+ Thêm Freelance</button>
+              <label style="font-size:14.5px; color:#0f172a;">Phân công nhân sự</label>
+              <button type="button" id="btnShowFreelance" class="btn ghost" style="padding:6px 14px; font-size:12px; border:1px solid #cbd5e1; color: var(--text)" onclick="document.getElementById('freelanceForm').style.display='flex'">+ Thêm Freelance</button>
             </div>
-            <label id="guestStaffLabel" style="margin-bottom:8px; font-size:14.5px; font-weight:800; color:var(--text); display:none;">Nhân sự tham gia</label>
+            <label id="guestStaffLabel" style="margin-bottom:8px; font-size:14px; font-weight:800; color:var(--text); display:none;">Nhân sự tham gia</label>
             
-            <div id="freelanceForm" style="display:none; gap:10px; margin-bottom:16px; padding:20px; background:#f8fafc; border-radius:20px; align-items:center; font-size:13px; border: 1px solid var(--line); flex-wrap:wrap">
+            <div id="freelanceForm" style="display:none; gap:10px; margin-bottom:16px; padding:16px; background:#f8fafc; border-radius:12px; align-items:center; font-size:13px; border: 1px solid var(--line); flex-wrap:wrap">
               <label for="newFreeName" style="display:none;">Tên Freelance</label>
               <input type="text" id="newFreeName" placeholder="Tên thợ Freelance" style="flex:1; min-width: 140px; background:#fff;">
               <label for="newFreeRole" style="display:none;">Bộ phận</label>
@@ -630,16 +618,16 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
                   <option value="Makeup">Makeup</option>
                   <option value="Khác">Khác</option>
               </select>
-              <button type="button" class="btn primary" style="padding:12px 24px; font-size:13.5px" onclick="window.saveFreelanceQuick()">Thêm</button>
-              <button type="button" class="btn ghost" style="padding:12px 20px; font-size:13.5px;" onclick="document.getElementById('freelanceForm').style.display='none'">Hủy</button>
+              <button type="button" class="btn primary" style="padding:10px 20px; font-size:13px" onclick="window.saveFreelanceQuick()">Thêm</button>
+              <button type="button" class="btn ghost" style="padding:10px 16px; font-size:13px;" onclick="document.getElementById('freelanceForm').style.display='none'">Hủy</button>
             </div>
 
-            <div id="staffFiltersContainer" style="display:flex; gap:16px; margin-bottom:16px; align-items:center; font-size:13.5px; font-weight:600; padding:16px 20px; background:#f8fafc; border-radius:16px; flex-wrap:wrap; border: 1px solid var(--line);">
+            <div id="staffFiltersContainer" style="display:flex; gap:12px; margin-bottom:16px; align-items:center; font-size:13px; font-weight:600; padding:12px 16px; background:#f8fafc; border-radius:12px; flex-wrap:wrap; border: 1px solid var(--line);">
               <span style="color:var(--muted)">Lọc theo Tag Vị trí:</span>
-              <label for="f_chup" style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_chup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">📷 Chụp</label>
-              <label for="f_quay" style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_quay" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">🎥 Quay</label>
-              <label for="f_makeup" style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_makeup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">💄 Makeup</label>
-              <label for="f_khac" style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_khac" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:18px;height:18px">⚙ Khác/Free</label>
+              <label for="f_chup" style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_chup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">📷 Chụp</label>
+              <label for="f_quay" style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_quay" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">🎥 Quay</label>
+              <label for="f_makeup" style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_makeup" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">💄 Makeup</label>
+              <label for="f_khac" style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f_khac" onchange="window.filterStaffModal()" style="accent-color:var(--primary);width:16px;height:16px">⚙ Khác/Free</label>
             </div>
             
             <div id="eventStaff" class="staff-picker" style="padding:0; border:none; background:transparent;"></div>
@@ -655,14 +643,14 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
           </div>
 
           <div class="form-group full step2-item ruocdau-loc loc-group-wrapper" style="display:none">
-            <div style="display:flex; gap:24px; flex-wrap:wrap;">
+            <div style="display:flex; gap:20px; flex-wrap:wrap;">
                 <div style="flex:1; min-width:200px; position:relative;">
-                    <label for="eventLocationTrai" style="color:#0369a1; font-size:14.5px;">📍 Địa điểm Nhà Trai</label>
+                    <label for="eventLocationTrai" style="color:#0369a1; font-size:13.5px;">📍 Địa điểm Nhà Trai</label>
                     <input id="eventLocationTrai" placeholder="Link Map / Tên đường..." autocomplete="off" style="width:100%; margin-top:8px;">
                     <div class="autocomplete-suggestions"></div>
                 </div>
                 <div style="flex:1; min-width:200px; position:relative;">
-                    <label for="eventLocationGai" style="color:#be185d; font-size:14.5px;">📍 Địa điểm Nhà Gái</label>
+                    <label for="eventLocationGai" style="color:#be185d; font-size:13.5px;">📍 Địa điểm Nhà Gái</label>
                     <input id="eventLocationGai" placeholder="Link Map / Tên đường..." autocomplete="off" style="width:100%; margin-top:8px;">
                     <div class="autocomplete-suggestions"></div>
                 </div>
@@ -676,13 +664,13 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
           </div>
 
           <div class="form-group full step2-item ruocdau-phone" style="display:none">
-            <div style="display:flex; gap:24px; flex-wrap:wrap;">
+            <div style="display:flex; gap:20px; flex-wrap:wrap;">
                 <div style="flex:1; min-width:200px;">
-                    <label for="eventPhoneTrai" style="color:#0369a1; font-size:14.5px;">📞 SĐT Nhà Trai</label>
+                    <label for="eventPhoneTrai" style="color:#0369a1; font-size:13.5px;">📞 SĐT Nhà Trai</label>
                     <input id="eventPhoneTrai" placeholder="090..." style="width:100%; margin-top:8px;">
                 </div>
                 <div style="flex:1; min-width:200px;">
-                    <label for="eventPhoneGai" style="color:#be185d; font-size:14.5px;">📞 SĐT Nhà Gái</label>
+                    <label for="eventPhoneGai" style="color:#be185d; font-size:13.5px;">📞 SĐT Nhà Gái</label>
                     <input id="eventPhoneGai" placeholder="090..." style="width:100%; margin-top:8px;">
                 </div>
             </div>
@@ -690,7 +678,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
           
           <!-- NHÓM TIỀN BẠC NẰM CHUNG HÀNG -->
           <div class="form-group full step3-item" style="display:none; padding-top:20px; border-top:1px solid var(--line);" id="financeGroup">
-            <div style="display:flex; gap:24px; flex-wrap:wrap;">
+            <div style="display:flex; gap:20px; flex-wrap:wrap;">
                 <div style="flex:1; min-width:200px;">
                     <label for="eventPrice">Giá trị booking</label>
                     <div class="currency-wrap" style="margin-top:8px;">
@@ -710,8 +698,8 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 
           <div class="form-group full step3-item admin-only admin-only-block" id="productsSection" style="display:none; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 24px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <label style="font-size:15px; color:#0f172a;">📦 Sản Phẩm / Bàn Giao File</label>
-                <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:8px 16px; font-size:13px; border:1px solid #cbd5e1;" onclick="window.addProductRow()">+ Thêm Link</button>
+                <label style="font-size:14.5px; color:#0f172a;">📦 Sản Phẩm / Bàn Giao File</label>
+                <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:6px 12px; font-size:12.5px; border:1px solid #cbd5e1;" onclick="window.addProductRow()">+ Thêm Link</button>
             </div>
             <div id="eventProductsList" style="display:flex; flex-direction:column; gap:12px;"></div>
           </div>
@@ -737,7 +725,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
     <div class="modal-body">
       <input type="hidden" id="payrollStaffId">
       <input type="hidden" id="payrollMonth">
-      <div class="form-grid" style="grid-template-columns:1fr; gap:20px;">
+      <div class="form-grid" style="grid-template-columns:1fr; gap:16px;">
         <div class="form-group">
           <label for="payrollAdvance">Đã ứng trong tháng</label>
           <div class="currency-wrap">
@@ -769,19 +757,19 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
         <div class="form-group full">
             <fieldset style="border:none; padding:0; margin:0;">
                 <legend style="font-size: 13.5px; font-weight: 700; color: #475569; margin-bottom: 8px; padding:0;">Gắn Tag Vai Trò (Có thể chọn nhiều)</legend>
-                <div id="staffRoleChecks" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; background:#f8fafc; padding:16px; border-radius:16px; border: 1px solid #e2e8f0;">
-                    <label for="role_chup" style="display:flex; gap:8px; align-items:center; font-weight:600;"><input id="role_chup" type="checkbox" value="Chụp" style="width:18px;height:18px;accent-color:var(--primary)"> Chụp</label>
-                    <label for="role_quay" style="display:flex; gap:8px; align-items:center; font-weight:600;"><input id="role_quay" type="checkbox" value="Quay" style="width:18px;height:18px;accent-color:var(--primary)"> Quay</label>
-                    <label for="role_makeup" style="display:flex; gap:8px; align-items:center; font-weight:600;"><input id="role_makeup" type="checkbox" value="Makeup" style="width:18px;height:18px;accent-color:var(--primary)"> Makeup</label>
-                    <label for="role_freelance" style="display:flex; gap:8px; align-items:center; font-weight:600;"><input id="role_freelance" type="checkbox" value="Freelance" style="width:18px;height:18px;accent-color:var(--primary)"> Freelance</label>
-                    <label for="role_editor" style="display:flex; gap:8px; align-items:center; font-weight:600;"><input id="role_editor" type="checkbox" value="Editor" style="width:18px;height:18px;accent-color:var(--primary)"> Editor</label>
-                    <label for="role_assistant" style="display:flex; gap:8px; align-items:center; font-weight:600;"><input id="role_assistant" type="checkbox" value="Assistant" style="width:18px;height:18px;accent-color:var(--primary)"> Assistant</label>
+                <div id="staffRoleChecks" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; background:#f8fafc; padding:16px; border-radius:12px; border: 1px solid #e2e8f0;">
+                    <label for="role_chup" style="display:flex; gap:8px; align-items:center; font-weight:600;"><input id="role_chup" type="checkbox" value="Chụp" style="width:16px;height:16px;accent-color:var(--primary)"> Chụp</label>
+                    <label for="role_quay" style="display:flex; gap:8px; align-items:center; font-weight:600;"><input id="role_quay" type="checkbox" value="Quay" style="width:16px;height:16px;accent-color:var(--primary)"> Quay</label>
+                    <label for="role_makeup" style="display:flex; gap:8px; align-items:center; font-weight:600;"><input id="role_makeup" type="checkbox" value="Makeup" style="width:16px;height:16px;accent-color:var(--primary)"> Makeup</label>
+                    <label for="role_freelance" style="display:flex; gap:8px; align-items:center; font-weight:600;"><input id="role_freelance" type="checkbox" value="Freelance" style="width:16px;height:16px;accent-color:var(--primary)"> Freelance</label>
+                    <label for="role_editor" style="display:flex; gap:8px; align-items:center; font-weight:600;"><input id="role_editor" type="checkbox" value="Editor" style="width:16px;height:16px;accent-color:var(--primary)"> Editor</label>
+                    <label for="role_assistant" style="display:flex; gap:8px; align-items:center; font-weight:600;"><input id="role_assistant" type="checkbox" value="Assistant" style="width:16px;height:16px;accent-color:var(--primary)"> Assistant</label>
                 </div>
             </fieldset>
         </div>
         <div class="form-group full"><button type="button" class="btn primary" id="addStaffBtn">＋ Thêm nhân sự</button></div>
       </div>
-      <h4 style="margin:0 0 16px; font-size:16px; font-weight:800; color:var(--text)">Danh sách nhân sự</h4>
+      <h4 style="margin:0 0 16px; font-size:15px; font-weight:800; color:var(--text)">Danh sách nhân sự</h4>
       <div id="staffManageList" class="mini-list" style="margin-top:0"></div>
     </div>
   </div>
@@ -793,24 +781,13 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
     <div class="modal-head"><div class="modal-title">Cài đặt</div><button type="button" class="icon-btn" aria-label="Đóng" onclick="window.smoothClose('settingsModal')" style="border:0;background:#f4f4f5;border-radius:50%">✕</button></div>
     <div class="modal-body">
       
-      <!-- PHẦN NHẬP API KEY BẢO MẬT ĐÃ ĐƯỢC CHUYỂN QUA FIREBASE -->
-      <div style="margin-bottom:32px; padding-bottom:24px; border-bottom:1px solid var(--line);">
-        <h3 style="margin:0;font-size:17px;font-weight:800;">Tích hợp Trợ lý AI</h3>
-        <div style="font-size:12.5px;color:var(--muted);margin-top:5px;font-weight:600;margin-bottom:12px;">Nhập Google Gemini API Key để bật tính năng điều khiển bằng giọng nói. Key sẽ được đồng bộ cho tất cả Admin sử dụng.</div>
-        <div style="display:flex; gap:10px;">
-            <label for="geminiApiKeyInput" style="display:none">API Key</label>
-            <input type="password" id="geminiApiKeyInput" class="field" placeholder="Nhập API Key (AIza... hoặc AQ...)" style="flex:1;">
-            <button type="button" class="btn primary" onclick="window.saveGeminiKey()">Lưu Key</button>
-        </div>
-      </div>
-
-      <p style="font-size:14.5px; color:var(--muted); line-height:1.6; margin-top:0">Hệ thống đồng bộ Thời gian thực. Nếu mất mạng, App tự động chuyển sang chế độ Offline.</p>
+      <p style="font-size:14px; color:var(--muted); line-height:1.6; margin-top:0">Hệ thống đồng bộ Thời gian thực. Nếu mất mạng, App tự động chuyển sang chế độ Offline.</p>
       
-      <div style="margin-top:32px; border-top:1px solid var(--line); padding-top:24px;">
+      <div style="margin-top:24px; border-top:1px solid var(--line); padding-top:24px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
           <div>
-            <h3 style="margin:0;font-size:17px;font-weight:800;">Nhật ký hoạt động</h3>
-            <div style="font-size:12.5px;color:var(--muted);margin-top:5px;font-weight:600;">Theo dõi ai đã thêm, sửa, phân công, xóa hoặc thay đổi dữ liệu.</div>
+            <h3 style="margin:0;font-size:15px;font-weight:800;">Nhật ký hoạt động</h3>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:5px;font-weight:500;">Theo dõi ai đã thêm, sửa, phân công, xóa hoặc thay đổi dữ liệu.</div>
           </div>
           <span class="pill blue">Admin Log</span>
         </div>
@@ -918,7 +895,7 @@ window.smoothClose = function(modalId) {
         if(!document.querySelector('.modal-backdrop.show')) {
             document.body.classList.remove('modal-open');
         }
-    }, 280); 
+    }, 200); 
 };
 
 window.smoothOpen = function(modalId) {
@@ -953,7 +930,7 @@ const STATUS_LABEL = {
     'pending': 'Chờ xác nhận', 'confirmed': 'Đã chốt', 'done': 'Hoàn thành', 'cancelled': 'Đã hủy'
 };
 
-let data = { staff: [], events: [], payroll: {}, blackouts: [], auditLogs: [], settings: { geminiApiKey: '' } };
+let data = { staff: [], events: [], payroll: {}, blackouts: [], auditLogs: [] };
 let current = new Date(); current.setHours(0,0,0,0);
 let currentView = 'month'; let isFirstLoad = true;
 
@@ -1048,7 +1025,7 @@ function staffIdsFromAssignments(assignments) {
     return assignments.map(a => a.id).filter(Boolean);
 }
 
-function defaultData(){ return { staff: [], payroll: {}, events: [], blackouts: [], auditLogs: [], settings: { geminiApiKey: '' } } }
+function defaultData(){ return { staff: [], payroll: {}, events: [], blackouts: [], auditLogs: [] } }
 
 function normalizeCollection(value) {
     if (Array.isArray(value)) return value.filter(Boolean);
@@ -1083,8 +1060,6 @@ function sanitizeData(d) {
     d.blackouts = normalizeCollection(d.blackouts);
     if(!d.payroll || typeof d.payroll !== 'object' || Array.isArray(d.payroll)) d.payroll = {};
     d.auditLogs = normalizeCollection(d.auditLogs);
-    if(!d.settings) d.settings = { geminiApiKey: '' };
-    if(!d.settings.geminiApiKey) d.settings.geminiApiKey = '';
     
     d.events.forEach(e => {
         if(e.isRuocDau === undefined) e.isRuocDau = false;
@@ -1258,7 +1233,7 @@ function renderStaffActivityLog() {
             <div class="audit-sub">${escapeHtml(log.actorName || 'Admin')} · ${escapeHtml(formatAuditTime(log.timestamp))}</div>
           </div>
         </div>`;
-    }).join('') : '<div class="empty" style="padding:18px;background:#f8fafc;border-radius:14px">Chưa có thông báo hoạt động.</div>';
+    }).join('') : '<div class="empty" style="padding:18px;background:#f8fafc;border-radius:12px">Chưa có thông báo hoạt động.</div>';
 }
 
 function renderAuditLog() {
@@ -1285,7 +1260,7 @@ function renderAuditLog() {
           </div>
           <div class="audit-time">${escapeHtml(formatAuditTime(log.timestamp))}</div>
         </div>`;
-    }).join('') : '<div class="empty" style="padding:24px;background:#f8fafc;border-radius:14px">Chưa có nhật ký hoạt động.</div>';
+    }).join('') : '<div class="empty" style="padding:24px;background:#f8fafc;border-radius:12px">Chưa có nhật ký hoạt động.</div>';
 }
 
 const locControllers = {};
@@ -1359,11 +1334,9 @@ function initApp() {
             firebase.initializeApp(firebaseConfig);
             
             firebase.auth().onAuthStateChanged((user) => {
-            // FIX: Ưu tiên kiểm tra URL trước. Nếu có param ?staff= thì ép về giao diện thợ
             if (staffViewId) {
                 currentUserRole = 'staff';
             } else if (user) {
-                // Nếu không có link thợ và đã đăng nhập, cho phép hiển thị Admin
                 currentUserRole = 'admin';
             } else {
                 currentUserRole = 'guest';
@@ -1583,20 +1556,8 @@ function chip(e){
       else if(lowerName.includes('xuất giá')) typeClass = 'type-xuatgia';
   }
 
-  // Cảnh báo nhấp nháy cho Admin (Lịch dưới 7 ngày mà chưa chốt)
-  let extraClass = '';
-  if (currentUserRole === 'admin' && e.status !== 'confirmed' && e.status !== 'done' && e.status !== 'cancelled') {
-      const evDate = parseDate(e.date);
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      const diffTime = evDate - today;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays >= 0 && diffDays <= 7) {
-          extraClass = ' blink-warning';
-      }
-  }
-
-  return `<div class="event-chip ${status} ${typeClass}${extraClass}" data-id="${e.id}" title="${escapeHtml(e.name)}${staffNames ? ` (${escapeHtml(staffNames)})` : ''}">
+  // Loại bỏ CSS giật khung hình khỏi logic - giữ giao diện tĩnh
+  return `<div class="event-chip ${status} ${typeClass}" data-id="${e.id}" title="${escapeHtml(e.name)}${staffNames ? ` (${escapeHtml(staffNames)})` : ''}">
     <div style="min-width:0; overflow:hidden">
       <div class="time">${chipTime}</div> 
       <div class="name">${escapeHtml(e.name)}</div>
@@ -1662,7 +1623,7 @@ function renderMonth(){
   if(calEl) calEl.innerHTML=html;
 }
 
-// FIX: Xử lý Double Click và Single Click ở cấp Document
+// Xử lý Double Click và Single Click ở cấp Document
 document.addEventListener('dblclick', (e) => {
     if (currentUserRole !== 'admin') return;
     if (e.target.closest('.event-chip') || e.target.closest('.blackout-chip') || e.target.closest('button') || e.target.closest('a')) return;
@@ -1685,7 +1646,6 @@ document.addEventListener('click', e => {
   }
 });
 
-
 function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isReadonly = false) {
   let html = ''; let renderedCount = 0;
   const [targetY, targetM] = monthKey.split('-').map(Number);
@@ -1698,7 +1658,7 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isR
         const a = e.assignments.find(x => x.id === s.id);
         if(a) {
           const cost = Number(a.cost||0); totalCost += cost;
-          let taskLinkHtml = a.link ? `<a href="${safeUrl(a.link)}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px; color:var(--blue); text-decoration:none; background:var(--bg-blue); padding:4px 10px; border-radius:99px; margin-left:8px; display:inline-flex; align-items:center; font-weight:700;">🔗 Link Source</a>` : '';
+          let taskLinkHtml = a.link ? `<a href="${safeUrl(a.link)}" target="_blank" rel="noopener noreferrer" style="font-size:11px; color:var(--blue); text-decoration:none; background:var(--bg-blue); padding:4px 8px; border-radius:6px; margin-left:8px; display:inline-flex; align-items:center; font-weight:700;">🔗 Link Source</a>` : '';
           
           let taskDetail = escapeHtml(a.task || 'Chưa xếp việc');
           if (e.isRuocDau && a.locType) {
@@ -1707,15 +1667,15 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isR
           }
 
           tasksHtml += `
-            <div class="mini-item" data-id="${e.id}" style="border:0;border-bottom:1px solid var(--line);border-radius:0;padding:16px 24px;background:transparent;box-shadow:none">
+            <div class="mini-item" data-id="${e.id}" style="border:0;border-bottom:1px solid var(--line);border-radius:0;padding:16px 20px;background:transparent;box-shadow:none">
               <div>
                 <b style="color:var(--text);font-size:14.5px">${formatDate(e.date)} · ${escapeHtml(e.name)}</b>
-                <div style="color:var(--muted);margin-top:6px;font-size:13.5px;font-weight:600">
+                <div style="color:var(--muted);margin-top:4px;font-size:13px;font-weight:500">
                     ${taskDetail} ${taskLinkHtml}
                 </div>
               </div>
               <div style="text-align:right">
-                <div style="font-size:16px;font-weight:800;color:var(--text)">${money(cost)} đ</div>
+                <div style="font-size:15px;font-weight:800;color:var(--text)">${money(cost)} đ</div>
               </div>
             </div>`;
         }
@@ -1732,49 +1692,49 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isR
       const cardBg = remain > 0 ? '#fffef2' : '#ffffff'; 
 
       html += `
-        <div style="background:#fff;border:1px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:24px;transition:all 0.3s">
-          <div style="padding:24px;background:${cardBg};border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px">
+        <div style="background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:20px;transition:all 0.3s">
+          <div style="padding:20px;background:${cardBg};border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px">
             <div style="display:flex;gap:16px;align-items:center">
               <div class="avatar" style="width:48px;height:48px;font-size:16px;box-shadow:var(--shadow-sm);background:#fff;border:1px solid var(--line)">${initials(s.name)}</div>
               <div>
-                <div style="font-weight:800;font-size:19px;letter-spacing:-0.3px">${escapeHtml(s.name)}</div>
-                <div style="font-size:13.5px;color:var(--muted);margin-top:4px;font-weight:600">${escapeHtml(s.role)}</div>
+                <div style="font-weight:800;font-size:17px;letter-spacing:-0.3px">${escapeHtml(s.name)}</div>
+                <div style="font-size:13px;color:var(--muted);margin-top:2px;font-weight:500">${escapeHtml(s.role)}</div>
               </div>
             </div>
             
             <div style="display:flex;gap:24px;text-align:right;flex-wrap:wrap;align-items:center">
               ${oldDebt !== 0 ? `
               <div>
-                <div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:0.5px">Nợ cũ</div>
-                <div style="font-weight:800;color:var(--red);font-size:17px;margin-top:4px">${money(oldDebt)} đ</div>
+                <div style="font-size:11.5px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Nợ cũ</div>
+                <div style="font-weight:800;color:var(--red);font-size:16px;margin-top:2px">${money(oldDebt)} đ</div>
               </div>` : ''}
               <div>
-                <div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:0.5px">Tháng này</div>
-                <div style="font-weight:800;color:var(--text);font-size:17px;margin-top:4px">${money(totalCost)} đ</div>
+                <div style="font-size:11.5px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Tháng này</div>
+                <div style="font-weight:800;color:var(--text);font-size:16px;margin-top:2px">${money(totalCost)} đ</div>
               </div>
               <div>
-                <div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:0.5px">Đã ứng</div>
-                <div style="font-weight:800;color:var(--orange);font-size:17px;margin-top:4px">${money(advance)} đ</div>
+                <div style="font-size:11.5px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Đã ứng</div>
+                <div style="font-weight:800;color:var(--orange);font-size:16px;margin-top:2px">${money(advance)} đ</div>
               </div>
               <div>
-                <div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:0.5px">Đã TT</div>
-                <div style="font-weight:800;color:var(--blue);font-size:17px;margin-top:4px">${money(paid)} đ</div>
+                <div style="font-size:11.5px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Đã TT</div>
+                <div style="font-weight:800;color:var(--blue);font-size:16px;margin-top:2px">${money(paid)} đ</div>
               </div>
               <div style="margin-right:10px">
-                <div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:0.5px">Còn lại</div>
-                <div style="font-weight:900;font-size:22px;margin-top:4px;color:${remain > 0 ? 'var(--red)' : 'var(--green)'}">${money(remain)} đ</div>
+                <div style="font-size:11.5px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Còn lại</div>
+                <div style="font-weight:900;font-size:18px;margin-top:2px;color:${remain > 0 ? 'var(--red)' : 'var(--green)'}">${money(remain)} đ</div>
               </div>
-              ${!isReadonly ? `<button class="btn ghost" style="padding:10px 18px;font-size:13.5px;" onclick="window.openPayrollModal('${s.id}','${escapeHtml(s.name)}','${monthKey}')">Cập nhật</button>` : ''}
+              ${!isReadonly ? `<button class="btn ghost" style="padding:8px 14px;font-size:13px;" onclick="window.openPayrollModal('${s.id}','${escapeHtml(s.name)}','${monthKey}')">Cập nhật</button>` : ''}
             </div>
           </div>
           <div style="background:#f8fafc">
-            ${tasksHtml || '<div style="padding:32px;font-size:14.5px;color:var(--muted);text-align:center;font-weight:600">Tháng này không có ca làm</div>'}
+            ${tasksHtml || '<div style="padding:24px;font-size:14px;color:var(--muted);text-align:center;font-weight:500">Tháng này không có ca làm</div>'}
           </div>
         </div>
       `;
   });
   
-  if (isFreelance && renderedCount === 0) return '<div class="empty" style="padding:32px;border:1px dashed var(--line);border-radius:20px;font-weight:500;background:transparent">Tháng này không có Freelance nào làm việc.</div>';
+  if (isFreelance && renderedCount === 0) return '<div class="empty" style="padding:24px;border:1px dashed var(--line);border-radius:16px;font-weight:500;background:transparent">Tháng này không có Freelance nào làm việc.</div>';
   return html;
 }
 
@@ -1801,10 +1761,10 @@ function renderPayroll(){
   const freeStaff = data.staff.filter(s => s.role.includes('Freelance'));
 
   if (mainStaff.length) html += generatePayrollHTML(mainStaff, evs, monthKey, false, false);
-  else if (freeStaff.length === 0) html += `<div class="empty" style="background:#fff;border-radius:20px;border:1px dashed var(--line)">Chưa có nhân sự. Hãy vào mục "Đội ngũ" để thêm.</div>`;
+  else if (freeStaff.length === 0) html += `<div class="empty" style="background:#fff;border-radius:16px;border:1px dashed var(--line)">Chưa có nhân sự. Hãy vào mục "Đội ngũ" để thêm.</div>`;
   
   if (freeStaff.length) {
-      html += `<h3 style="margin:40px 0 24px;font-size:22px;color:var(--text);border-bottom:1px solid var(--line);padding-bottom:16px;font-weight:800;letter-spacing:-0.5px">Cộng tác viên (Freelance)</h3>`;
+      html += `<h3 style="margin:32px 0 20px;font-size:18px;color:var(--text);border-bottom:1px solid var(--line);padding-bottom:12px;font-weight:800;letter-spacing:-0.5px">Cộng tác viên (Freelance)</h3>`;
       html += generatePayrollHTML(freeStaff, evs, monthKey, true, false);
   }
   html += `</div>`;
@@ -1899,11 +1859,11 @@ function renderUpcoming(){
         <div style="display: flex; gap: 10px; align-items:center; margin-top:8px; flex-wrap:wrap;">
             <div style="display:flex; align-items:center;">
                 ${prefix}
-                <span style="font-weight:800; color:var(--text); font-size:15px; letter-spacing:0.5px;">📞 ${escapeHtml(num)}</span>
+                <span style="font-weight:800; color:var(--text); font-size:14px; letter-spacing:0.5px;">📞 ${escapeHtml(num)}</span>
             </div>
             <div style="display:flex; gap:6px;">
-                <a href="tel:${escapeHtml(num)}" style="color:#065f46; font-weight:800; text-decoration:none; background:#d1fae5; padding:6px 14px; border-radius:8px; border:1px solid #a7f3d0; font-size: 12px; line-height: 1; display:inline-flex; align-items:center; box-shadow:var(--shadow-sm);">Gọi</a>
-                <button type="button" onclick="window.copyText('${escapeHtml(num)}')" style="color:var(--muted); font-weight:800; background:#f4f4f5; padding:6px 14px; border-radius:8px; border:1px solid #cbd5e1; font-size: 12px; line-height: 1; cursor:pointer; display:inline-flex; align-items:center; box-shadow:var(--shadow-sm);">Copy</button>
+                <a href="tel:${escapeHtml(num)}" style="color:#065f46; font-weight:800; text-decoration:none; background:#d1fae5; padding:6px 12px; border-radius:6px; border:1px solid #a7f3d0; font-size: 11.5px; line-height: 1; display:inline-flex; align-items:center; box-shadow:var(--shadow-sm);">Gọi</a>
+                <button type="button" onclick="window.copyText('${escapeHtml(num)}')" style="color:var(--muted); font-weight:800; background:#f4f4f5; padding:6px 12px; border-radius:6px; border:1px solid #cbd5e1; font-size: 11.5px; line-height: 1; cursor:pointer; display:inline-flex; align-items:center; box-shadow:var(--shadow-sm);">Copy</button>
             </div>
         </div>`;
     };
@@ -1933,18 +1893,18 @@ function renderUpcoming(){
         if (e.isRuocDau && myAssignment && myAssignment.locType === 'Nhà gái') { locColor = '#fdf2f8'; locBorder = '#fbcfe8'; locTextCol = '#be185d'; }
         else if (e.isRuocDau && myAssignment && myAssignment.locType === 'Nhà trai') { locColor = '#f0f9ff'; locBorder = '#bae6fd'; locTextCol = '#0369a1'; }
 
-        myLocHtml = `<div style="margin-top:16px;"><a href="${mapHref}" target="_blank" style="display:inline-flex; align-items:center; color:${locTextCol}; font-weight:800; text-decoration:none; background: ${locColor}; padding: 10px 16px; border-radius: 12px; border: 1px solid ${locBorder}; font-size: 13.5px; transition:all 0.2s; box-shadow:var(--shadow-sm);">${mapText}</a></div>`;
+        myLocHtml = `<div style="margin-top:12px;"><a href="${mapHref}" target="_blank" style="display:inline-flex; align-items:center; color:${locTextCol}; font-weight:700; text-decoration:none; background: ${locColor}; padding: 8px 14px; border-radius: 8px; border: 1px solid ${locBorder}; font-size: 13px; transition:all 0.2s; box-shadow:var(--shadow-sm);">${mapText}</a></div>`;
     }
     
     let coWorkerHtml = '';
     if (staffNames) {
-        coWorkerHtml = `<div style="display: flex; gap: 8px; margin-bottom:8px;"><b style="color:var(--muted); min-width: 90px;">👥 Đi cùng:</b> <span style="font-weight:600; color:var(--muted);">${escapeHtml(staffNames)}</span></div>`;
+        coWorkerHtml = `<div style="display: flex; gap: 8px; margin-bottom:8px;"><b style="color:var(--muted); min-width: 90px;">👥 Đi cùng:</b> <span style="font-weight:500; color:var(--text);">${escapeHtml(staffNames)}</span></div>`;
     }
 
     return `
-    <div class="mini-item" data-id="${e.id}" style="flex-direction:column; align-items:flex-start; gap:8px; padding: 20px;">
+    <div class="mini-item" data-id="${e.id}" style="flex-direction:column; align-items:flex-start; gap:8px; padding: 16px;">
         <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start; margin-bottom:4px;">
-            <div style="font-size: 16px; font-weight: 800; color: var(--primary); white-space:normal; line-height:1.4;">
+            <div style="font-size: 15px; font-weight: 800; color: var(--primary); white-space:normal; line-height:1.4;">
                 ${escapeHtml(e.name)} 
                 ${e.isRuocDau ? '<span style="color:var(--orange);font-size:12px;margin-left:6px;vertical-align:middle;">(Rước dâu)</span>' : ''}
                 <span class="pill ghost" style="font-size:10px; border:1px solid #cbd5e1; padding:2px 6px; margin-left:6px;">${escapeHtml(e.eventType||'')}</span>
@@ -1953,17 +1913,17 @@ function renderUpcoming(){
         </div>
         
         <div style="font-size: 13.5px; color: var(--text); line-height: 1.6; width: 100%;">
-            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 90px;">📅 Ngày:</b> <span style="font-weight:700;">${formatDate(e.date)}</span></div>
-            <div style="display: flex; gap: 8px; ${staffNames ? '' : 'margin-bottom:8px;'}">${timeLabel} <span style="font-weight:800; color:var(--primary); font-size:14.5px;">${escapeHtml(myTime)}</span></div>
+            <div style="display: flex; gap: 8px;"><b style="color:var(--muted); min-width: 90px;">📅 Ngày:</b> <span style="font-weight:600;">${formatDate(e.date)}</span></div>
+            <div style="display: flex; gap: 8px; ${staffNames ? '' : 'margin-bottom:8px;'}">${timeLabel} <span style="font-weight:800; color:var(--primary); font-size:14px;">${escapeHtml(myTime)}</span></div>
             ${coWorkerHtml}
             
             <div style="margin-top:4px;">${myPhoneHtml}</div>
             ${myLocHtml}
             
-            ${e.note ? `<div style="margin-top: 16px; padding: 12px; background: #fefce8; border: 1px dashed #fde047; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú chung:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
+            ${e.note ? `<div style="margin-top: 12px; padding: 12px; background: #fefce8; border: 1px dashed #fde047; border-radius: 8px; color: #854d0e;"><b>📝 Ghi chú chung:</b> ${escapeHtml(e.note).replace(/\n/g, '<br>')}</div>` : ''}
         </div>
     </div>`;
-  }).join('') : '<div class="empty" style="padding:24px;background:#ffffff;border-radius:16px; border: 1px solid var(--line);">Bạn chưa có lịch sắp tới.</div>';
+  }).join('') : '<div class="empty" style="padding:20px;background:#ffffff;border-radius:12px; border: 1px solid var(--line);">Bạn chưa có lịch sắp tới.</div>';
 }
 
 function renderStaffMonthList(){
@@ -1986,13 +1946,13 @@ function renderStaffMonthList(){
   el.innerHTML = staffToRender.map(s => {
     const daysArr = Array.from(staffDays[s.id]).sort((a,b)=>a-b);
     const daysStr = daysArr.join(', ');
-    return `<div class="staff" style="flex-direction:column;gap:12px;box-shadow:none">
+    return `<div class="staff" style="flex-direction:column;gap:10px;box-shadow:none">
       <div class="staff-left">
         <div class="avatar" style="background:#fff; border:1px solid var(--line);">${initials(s.name)}</div>
         <div class="staff-info"><div class="staff-name">${escapeHtml(s.name)}</div></div>
       </div>
-      <div style="font-size:13px;color:var(--text);background:#fff;padding:12px 14px;border-radius:12px;border:1px solid transparent;box-shadow:var(--shadow-sm)">
-        ${daysStr ? `<b style="color:var(--muted)">Ngày bận:</b> <span style="font-weight:700">${daysStr}</span>` : '<span style="color:var(--muted);font-weight:600">Trống lịch</span>'}
+      <div style="font-size:12.5px;color:var(--text);background:#fff;padding:10px 12px;border-radius:8px;border:1px solid transparent;box-shadow:var(--shadow-sm)">
+        ${daysStr ? `<b style="color:var(--muted)">Ngày bận:</b> <span style="font-weight:600">${daysStr}</span>` : '<span style="color:var(--muted);font-weight:500">Trống lịch</span>'}
       </div>
     </div>`;
   }).join('');
@@ -2028,18 +1988,18 @@ function renderMonthSummary(){
 
   const ms = document.getElementById('monthSummary'); if(!ms) return;
   ms.innerHTML=`
-    <div class="kpi-row"><span style="font-weight:700">Tổng ca chụp</span><b style="color:var(--text);font-size:14.5px">${total}</b></div>
-    <div style="height:1px;background:var(--line);margin:16px 0"></div>
-    <div class="kpi-row"><span style="font-weight:700">Doanh thu</span><b style="color:var(--text);font-size:14.5px">${money(revenue)} đ</b></div>
-    <div class="kpi-row"><span style="font-weight:700">Đã thu (Full)</span><b style="color:var(--green);font-size:14.5px">${money(paidFull)} đ</b></div>
-    <div class="kpi-row"><span style="font-weight:700">Đã thu (Cọc)</span><b style="color:var(--text);font-size:14.5px">${money(depositOnly)} đ</b></div>
-    <div class="kpi-row"><span style="font-weight:700">Khách nợ</span><b style="color:var(--orange);font-size:14.5px">${money(missing)} đ</b></div>
-    <div style="height:1px;background:var(--line);margin:16px 0"></div>
-    <div class="kpi-row"><span style="font-weight:700">Chi phí thợ</span><b style="color:var(--text);font-size:14.5px">${money(staffCost)} đ</b></div>
-    <div class="kpi-row"><span style="font-weight:700">Đã trả thợ</span><b style="color:var(--blue);font-size:14.5px">${money(sumStaffPaid)} đ</b></div>
-    <div class="kpi-row"><span style="font-weight:700">Nợ thợ</span><b style="font-size:14.5px;color:${sumStaffUnpaid>0?'var(--red)':'var(--green)'}">${money(sumStaffUnpaid)} đ</b></div>
-    <div style="height:1px;background:var(--line);margin:16px 0"></div>
-    <div class="kpi-row" style="font-size:14.5px;font-weight:800"><span style="font-weight:800;text-transform:uppercase">Lợi nhuận</span><b style="color:var(--green);font-size:19px;letter-spacing:-0.5px">${money(revenue - staffCost)} đ</b></div>
+    <div class="kpi-row"><span style="font-weight:600">Tổng ca chụp</span><b style="color:var(--text);font-size:14px">${total}</b></div>
+    <div style="height:1px;background:var(--line);margin:12px 0"></div>
+    <div class="kpi-row"><span style="font-weight:600">Doanh thu</span><b style="color:var(--text);font-size:14px">${money(revenue)} đ</b></div>
+    <div class="kpi-row"><span style="font-weight:600">Đã thu (Full)</span><b style="color:var(--green);font-size:14px">${money(paidFull)} đ</b></div>
+    <div class="kpi-row"><span style="font-weight:600">Đã thu (Cọc)</span><b style="color:var(--text);font-size:14px">${money(depositOnly)} đ</b></div>
+    <div class="kpi-row"><span style="font-weight:600">Khách nợ</span><b style="color:var(--orange);font-size:14px">${money(missing)} đ</b></div>
+    <div style="height:1px;background:var(--line);margin:12px 0"></div>
+    <div class="kpi-row"><span style="font-weight:600">Chi phí thợ</span><b style="color:var(--text);font-size:14px">${money(staffCost)} đ</b></div>
+    <div class="kpi-row"><span style="font-weight:600">Đã trả thợ</span><b style="color:var(--blue);font-size:14px">${money(sumStaffPaid)} đ</b></div>
+    <div class="kpi-row"><span style="font-weight:600">Nợ thợ</span><b style="font-size:14px;color:${sumStaffUnpaid>0?'var(--red)':'var(--green)'}">${money(sumStaffUnpaid)} đ</b></div>
+    <div style="height:1px;background:var(--line);margin:12px 0"></div>
+    <div class="kpi-row" style="font-size:14px;font-weight:800"><span style="font-weight:800;text-transform:uppercase">Lợi nhuận</span><b style="color:var(--green);font-size:18px;letter-spacing:-0.5px">${money(revenue - staffCost)} đ</b></div>
   `;
 }
 
@@ -2054,7 +2014,6 @@ function render(){
   const options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
   const tt = document.getElementById('todayText'); if(tt) tt.textContent=`Hôm nay · ${new Date().toLocaleDateString('vi-VN', options)}`;
   
-  // Dynamic Document Title
   if (currentUserRole === 'admin') {
       document.title = "Amorri Studio - Quản Lí";
   } else if (currentUserRole === 'staff') {
@@ -2103,7 +2062,6 @@ window.updateModalVisibility = function() {
     const evType = document.getElementById('eventType')?.value;
     let isRuocDauInput = document.getElementById('eventIsRuocDau');
     
-    // Auto reset logic: Nếu không phải Cưới, tự động reset Rước Dâu về false để ẩn Nhà Trai / Nhà Gái
     if(evType !== 'Cưới' && isRuocDauInput?.value === 'true') {
         isRuocDauInput.value = 'false';
     }
@@ -2203,7 +2161,7 @@ window.toggleEditLink = function(sId) {
 window.addProductRow = function(name='', url='', isReadonly=false) {
     const container = document.getElementById('eventProductsList'); if(!container) return;
     const div = document.createElement('div');
-    div.className = 'product-row'; div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#f8fafc; padding:16px; border-radius:16px; border:1px solid var(--line)';
+    div.className = 'product-row'; div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#f8fafc; padding:12px; border-radius:10px; border:1px solid var(--line)';
     
     if (isReadonly) return;
     const isSaved = url !== '';
@@ -2212,16 +2170,16 @@ window.addProductRow = function(name='', url='', isReadonly=false) {
            <a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" class="prod-view-link" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; flex:1; min-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
               🔗 <span class="prod-view-name">${escapeHtml(name || 'Link Bàn Giao')}</span>
            </a>
-           <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px; border:1px solid #cbd5e1;" onclick="copyText(this.parentElement.parentElement.querySelector('.prod-url').value)">📋 Copy</button>
-           <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'">✏️ Sửa</button>
+           <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="copyText(this.parentElement.parentElement.querySelector('.prod-url').value)">📋 Copy</button>
+           <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'">✏️ Sửa</button>
        </div>
        <div class="prod-edit admin-only-flex" style="display:${isSaved ? 'none' : 'flex'}; gap: 10px; flex-wrap:wrap; align-items:center">
            <label for="prod-name-new" style="display:none">Tên Sản Phẩm</label>
            <input type="text" id="prod-name-new" aria-label="Tên sản phẩm" class="prod-name field" value="${escapeHtml(name)}" placeholder="Tên SP (Ảnh gốc...)" style="flex:1; min-width:120px;">
            <label for="prod-url-new" style="display:none">Link</label>
            <input type="url" id="prod-url-new" aria-label="Đường dẫn" class="prod-url field" value="${escapeHtml(url)}" placeholder="🔗 Dán link..." style="flex:2; min-width:150px;">
-           <button type="button" class="btn primary" style="padding:10px 16px; font-size:13px;" onclick="window.saveProductRow(this)">Lưu</button>
-           <button type="button" class="btn danger ghost" style="padding:10px 14px; font-size:13px;" onclick="this.parentElement.parentElement.remove()">✕</button>
+           <button type="button" class="btn primary" style="padding:8px 14px; font-size:13px;" onclick="window.saveProductRow(this)">Lưu</button>
+           <button type="button" class="btn danger ghost" style="padding:8px 12px; font-size:13px;" onclick="this.parentElement.parentElement.remove()">✕</button>
        </div>
     `;
     container.appendChild(div);
@@ -2265,7 +2223,6 @@ window.renderEventStaffList = function() {
     const isAdmin = currentUserRole === 'admin';
     const evStaffEl = document.getElementById('eventStaff'); if(!evStaffEl) return;
 
-    // Logic Sắp xếp theo Chức Vụ (Chụp -> Quay -> Make -> Khác)
     const getPriority = (roleStr) => {
         const r = (roleStr || '').toLowerCase();
         let p = 99;
@@ -2295,32 +2252,32 @@ window.renderEventStaffList = function() {
 
             if (isMe) {
                 const costVal = a.cost ? money(a.cost) + ' đ' : '0 đ';
-                myCostHtml = `<span style="font-weight:800; color:var(--green); float:right; background: var(--bg-green); padding: 6px 12px; border-radius: 99px;">${costVal}</span>`;
+                myCostHtml = `<span style="font-weight:800; color:var(--green); float:right; background: var(--bg-green); padding: 4px 10px; border-radius: 6px;">${costVal}</span>`;
                 const savedLink = a.link || '';
                 myLinkHtml = `
-                <div class="staff-link-container" style="display:${isEnded ? 'flex' : 'none'}; gap: 8px; align-items:center; background:#fafafa; padding:12px 16px; border-radius:12px; border: 1px solid var(--line); margin-top: 16px;">
+                <div class="staff-link-container" style="display:${isEnded ? 'flex' : 'none'}; gap: 8px; align-items:center; background:#fafafa; padding:10px 14px; border-radius:10px; border: 1px solid var(--line); margin-top: 16px;">
                     <div id="evt-link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
                         <a id="evt-link-tag-${s.id}" href="${safeUrl(savedLink)}" target="_blank" rel="noopener noreferrer" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
                            🔗 Bấm xem Source
                         </a>
-                        <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa Link</button>
+                        <button type="button" class="btn ghost" style="padding:6px 10px; font-size:12.5px;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa Link</button>
                     </div>
                     <div id="evt-link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
                         <label for="evt-link-in-${s.id}" style="display:none">Link Source</label>
-                        <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link tải Source (Drive/Fshare...)" style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
-                        <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Nộp Source</button>
+                        <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link tải Source (Drive/Fshare...)" style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:8px 12px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
+                        <button type="button" class="btn primary" style="padding:8px 14px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Nộp Source</button>
                     </div>
                 </div>
-                <div class="wait-link-msg" style="display:${!isEnded ? 'block' : 'none'}; font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic; padding:12px; background:#f4f4f5; border-radius:8px; text-align:center;">⏳ Hệ thống nộp Source sẽ tự mở sau khi kết thúc giờ chụp.</div>
+                <div class="wait-link-msg" style="display:${!isEnded ? 'block' : 'none'}; font-size:12px; color:var(--muted); margin-top:10px; font-style:italic; padding:10px; background:#f4f4f5; border-radius:6px; text-align:center;">⏳ Hệ thống nộp Source sẽ tự mở sau khi kết thúc giờ chụp.</div>
                 `;
             }
 
-            return `<div class="${isMe ? 'staff-modal-staffonly' : ''}" style="padding:16px; background:#fff; border:1px solid var(--line); border-radius:16px; margin-bottom:12px; font-size:14px; box-shadow:var(--shadow-sm)">
+            return `<div class="${isMe ? 'staff-modal-staffonly' : ''}" style="padding:14px; background:#fff; border:1px solid var(--line); border-radius:12px; margin-bottom:10px; font-size:13.5px; box-shadow:var(--shadow-sm)">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
-                        <b style="color:var(--text); font-size:15px;">${escapeHtml(s.name)}</b> 
+                        <b style="color:var(--text); font-size:14.5px;">${escapeHtml(s.name)}</b> 
                         <span style="color:var(--muted)">(${escapeHtml(s.role)})</span>
-                        <span style="font-weight:700;color:var(--text)">${taskText}</span>
+                        <span style="font-weight:600;color:var(--text)">${taskText}</span>
                     </div>
                     ${myCostHtml}
                 </div>
@@ -2349,13 +2306,12 @@ window.renderEventStaffList = function() {
               
               locDropdownHtml = `
               <label for="evt-loc-${s.id}" style="display:none">Vị trí nhà trai/gái</label>
-              <select id="evt-loc-${s.id}" onchange="this.style.backgroundColor=this.value==='Nhà gái'?'#fce7f3':'#e0f2fe'; this.style.borderColor=this.value==='Nhà gái'?'#fbcfe8':'#7dd3fc'; this.style.color=this.value==='Nhà gái'?'#be185d':'#0369a1';" style="background:${bgCol}; border:1px solid ${borderCol}; padding:10px; border-radius:12px; outline:0; font-size:13px; font-weight:800; color:${textCol}; min-width:110px;">
+              <select id="evt-loc-${s.id}" onchange="this.style.backgroundColor=this.value==='Nhà gái'?'#fce7f3':'#e0f2fe'; this.style.borderColor=this.value==='Nhà gái'?'#fbcfe8':'#7dd3fc'; this.style.color=this.value==='Nhà gái'?'#be185d':'#0369a1';" style="background:${bgCol}; border:1px solid ${borderCol}; padding:8px 10px; border-radius:8px; outline:0; font-size:13px; font-weight:700; color:${textCol}; min-width:110px;">
                   <option value="Nhà trai" ${a?.locType==='Nhà trai'?'selected':''}>Nhà trai</option>
                   <option value="Nhà gái" ${a?.locType==='Nhà gái'?'selected':''}>Nhà gái</option>
               </select>`;
           }
 
-          // Lọc Nhiệm vụ theo Type Sự Kiện & Role Thợ
           let taskOptions = [];
           const roleLower = (s.role || '').toLowerCase();
           const isChup = roleLower.includes('chụp') || roleLower.includes('photo');
@@ -2387,16 +2343,16 @@ window.renderEventStaffList = function() {
 
           const taskDropdownHtml = `
             <label for="evt-task-${s.id}" style="display:none">Nhiệm vụ</label>
-            <select id="evt-task-${s.id}" style="width:100%; background:#f1f5f9; border:1px solid #e2e8f0; padding:10px 14px; border-radius:12px; outline:0; font-size:13.5px; font-weight:600; color:var(--text); cursor:pointer; appearance:auto;">
+            <select id="evt-task-${s.id}" style="width:100%; background:#f8fafc; border:1px solid #e2e8f0; padding:8px 12px; border-radius:8px; outline:0; font-size:13px; font-weight:500; color:var(--text); cursor:pointer; appearance:auto;">
               ${taskOptsHtml}
             </select>
           `;
 
-          return `<div class="staff-modal-item" data-role="${s.role}" style="border:1px solid transparent; border-bottom-color:var(--line); padding:16px 0; background:transparent;">
+          return `<div class="staff-modal-item" data-role="${s.role}" style="border:1px solid transparent; border-bottom-color:var(--line); padding:12px 0; background:transparent;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-                <label for="staff-check-${s.id}" style="display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700;cursor:pointer;color:var(--text); flex:1; min-width:180px;">
-                  <input type="checkbox" id="staff-check-${s.id}" class="staff-check" value="${s.id}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.nextElementSibling.style.display=this.checked?'flex':'none'; window.updateModalVisibility();" style="accent-color:var(--primary);width:20px;height:20px">
-                  ${escapeHtml(s.name)} <span style="color:var(--muted);font-weight:500;font-size:12px">— ${escapeHtml(s.role)}</span>
+                <label for="staff-check-${s.id}" style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--text); flex:1; min-width:180px;">
+                  <input type="checkbox" id="staff-check-${s.id}" class="staff-check" value="${s.id}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.nextElementSibling.style.display=this.checked?'flex':'none'; window.updateModalVisibility();" style="accent-color:var(--primary);width:18px;height:18px">
+                  ${escapeHtml(s.name)} <span style="color:var(--muted);font-weight:400;font-size:12px">— ${escapeHtml(s.role)}</span>
                   ${blackoutBadge}
                   <span id="busy-info-${s.id}"></span>
                 </label>
@@ -2404,32 +2360,32 @@ window.renderEventStaffList = function() {
                 <div style="display:${isChecked ? 'flex' : 'none'}; gap:10px; align-items:center; flex:1.5; justify-content:flex-end; min-width:300px; flex-wrap:wrap;">
                   ${locDropdownHtml}
                   
-                  <div style="flex:1; min-width:160px; position:relative;">
+                  <div style="flex:1; min-width:140px; position:relative;">
                       ${taskDropdownHtml}
                   </div>
 
-                  <div class="currency-wrap" style="width:140px; min-width:140px;">
+                  <div class="currency-wrap" style="width:120px; min-width:120px;">
                      <label for="evt-cost-${s.id}" style="display:none">Chi phí</label>
-                     <input type="text" inputmode="numeric" id="evt-cost-${s.id}" placeholder="0" value="${a?.cost ? money(a.cost/1000) : ''}" oninput="window.formatMoneyInput(this)" style="background:#f1f5f9;border:1px solid #e2e8f0;padding:10px 14px;border-radius:12px;outline:0;font-size:14px;font-weight:700;color:var(--text);">
+                     <input type="text" inputmode="numeric" id="evt-cost-${s.id}" placeholder="0" value="${a?.cost ? money(a.cost/1000) : ''}" oninput="window.formatMoneyInput(this)" style="background:#f8fafc;border:1px solid #e2e8f0;padding:8px 12px;border-radius:8px;outline:0;font-size:13.5px;font-weight:600;color:var(--text);">
                   </div>
                 </div>
             </div>
 
-            <div class="staff-link-container" style="display:${isEnded && isChecked ? 'flex' : 'none'}; gap: 10px; align-items:center; background:#f8fafc; padding:12px 16px; border-radius:14px; border: 1px solid var(--line); margin-top: 16px; margin-left: 32px;">
+            <div class="staff-link-container" style="display:${isEnded && isChecked ? 'flex' : 'none'}; gap: 10px; align-items:center; background:#f8fafc; padding:10px 14px; border-radius:10px; border: 1px solid var(--line); margin-top: 12px; margin-left: 28px;">
                  <div id="evt-link-view-${s.id}" style="display:${savedLink ? 'flex' : 'none'}; gap: 10px; flex:1; align-items:center; overflow:hidden; flex-wrap:wrap">
-                     <a id="evt-link-tag-${s.id}" href="${safeUrl(savedLink)}" target="_blank" rel="noopener noreferrer" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
+                     <a id="evt-link-tag-${s.id}" href="${safeUrl(savedLink)}" target="_blank" rel="noopener noreferrer" style="font-size:13.5px; font-weight:600; color:var(--blue); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:100px;">
                         🔗 Bấm xem Source
                      </a>
-                     <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px; border:1px solid #cbd5e1;" onclick="copyText(document.getElementById('evt-link-in-${s.id}').value)">📋 Copy</button>
-                     <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12.5px; border:1px solid #cbd5e1;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa</button>
+                     <button type="button" class="btn ghost" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="copyText(document.getElementById('evt-link-in-${s.id}').value)">📋 Copy</button>
+                     <button type="button" class="btn ghost" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="window.toggleEditLink('${s.id}')">✏ Sửa</button>
                  </div>
                  <div id="evt-link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
                      <label for="evt-link-in-${s.id}" style="display:none">Link Source</label>
-                     <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link Google Drive/Fshare..." style="flex:1; background:#fff; border:1px solid #cbd5e1; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; min-width:150px;">
-                     <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu</button>
+                     <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link Google Drive/Fshare..." style="flex:1; background:#fff; border:1px solid #cbd5e1; padding:8px 12px; border-radius:8px; outline:0; font-size:13px; min-width:150px;">
+                     <button type="button" class="btn primary" style="padding:8px 14px; font-size:13px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu</button>
                  </div>
             </div>
-            <div class="wait-link-msg" style="display:${!isEnded && isChecked ? 'block' : 'none'}; font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic; margin-left:32px;">⏳ Hệ thống nộp Link Source sẽ mở cho thợ sau khi lịch kết thúc.</div>
+            <div class="wait-link-msg" style="display:${!isEnded && isChecked ? 'block' : 'none'}; font-size:12px; color:var(--muted); margin-top:10px; font-style:italic; margin-left:28px;">⏳ Hệ thống nộp Link Source sẽ mở cho thợ sau khi lịch kết thúc.</div>
           </div>`;
         }).join('')
       : '<div style="font-size:13.5px;color:var(--muted);padding:10px;">Chưa có nhân sự. Vào “Đội ngũ” để thêm.</div>';
@@ -2518,7 +2474,6 @@ window.openEventModal = function(prefill={}){
   if (currentUserRole === 'guest') return; 
   if (currentUserRole !== 'admin' && !prefill.id) return; 
 
-  // Xóa bộ nhớ Checkbox Lọc Nhân Sự để hiện toàn bộ list thợ mới
   const sFiltersInputs = document.querySelectorAll('#staffFiltersContainer input[type="checkbox"]');
   sFiltersInputs.forEach(cb => cb.checked = false);
 
@@ -2688,8 +2643,8 @@ window.checkConflict = function(){
      const overlap = timeRangesOverlap(myStart, end, intervals[0]?.s, intervals[0]?.e) ||
          intervals.some(iv => timeRangesOverlap(myStart, end, iv.s, iv.e));
 
-     if(overlap) infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
-     else infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
+     if(overlap) infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
+     else infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:700;margin-left:8px;font-size:11px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
   });
 }
 
@@ -2831,22 +2786,7 @@ window.deleteEvent = function(){
   window.smoothClose('eventModal'); render(); showToast('Đã xóa lịch');
 }
 
-// BẬT MODAL CÀI ĐẶT
-window.openSettings = function(){ 
-    window.smoothOpen('settingsModal'); 
-    const savedKey = data.settings?.geminiApiKey || '';
-    const keyInput = document.getElementById('geminiApiKeyInput');
-    if(keyInput) keyInput.value = savedKey;
-}
-
-window.saveGeminiKey = function() {
-    const key = document.getElementById('geminiApiKeyInput').value.trim();
-    if(!data.settings) data.settings = {};
-    data.settings.geminiApiKey = key;
-    dbSet(`settings/geminiApiKey`, key);
-    showToast('Đã đồng bộ API Key AI cho tất cả thiết bị!');
-    window.smoothClose('settingsModal');
-};
+window.openSettings = function(){ window.smoothOpen('settingsModal'); }
 
 window.openStaff = function(){ window.smoothOpen('staffModal'); renderStaffManage(); }
 window.copyStaffLink = function(id) {
@@ -2859,8 +2799,8 @@ function renderStaffManage(){
   sl.innerHTML=data.staff.map(s=>`<div class="mini-item">
     <div class="staff-left"><div class="avatar">${initials(s.name)}</div><div class="staff-info"><div class="mini-title">${escapeHtml(s.name)}</div><div class="mini-sub">${escapeHtml(s.role)}</div></div></div>
     <div style="display:flex; gap:8px;">
-        <button class="btn ghost" style="padding:8px 16px;font-size:13.5px; border:1px solid var(--line)" onclick="window.copyStaffLink('${s.id}')">🔗 Copy Link</button>
-        <button class="btn danger" style="padding:8px 14px;font-size:13.5px" data-delstaff="${s.id}">Xóa</button>
+        <button class="btn ghost" style="padding:6px 12px;font-size:12.5px; border:1px solid var(--line)" onclick="window.copyStaffLink('${s.id}')">🔗 Copy Link</button>
+        <button class="btn danger" style="padding:6px 12px;font-size:12.5px" data-delstaff="${s.id}">Xóa</button>
     </div>
     </div>`).join('');
     
@@ -2928,7 +2868,7 @@ document.getElementById('fullPaidBtn')?.addEventListener('click', () => {
 document.getElementById('clearAll')?.addEventListener('click', ()=>{
     if(confirm('Xóa toàn bộ dữ liệu lịch, nhân sự và lương? Nhật ký hoạt động sẽ được giữ lại.')){
         const keptLogs = data.auditLogs || [];
-        data={staff:[],events:[],payroll:{},blackouts:[],auditLogs:keptLogs, settings: data.settings || {}};
+        data={staff:[],events:[],payroll:{},blackouts:[],auditLogs:keptLogs};
         writeAuditLog('SYSTEM_CLEAR', { severity:'danger', category:'system', targetType:'system', message:'Admin làm sạch dữ liệu lịch / nhân sự / lương' });
         if(window.dbRef) window.dbRef.set(data).catch(err => console.error('Clear DB error:', err));
         else persistLocal();
@@ -2954,192 +2894,6 @@ document.querySelectorAll('[data-audit-filter]').forEach(btn => btn.addEventList
 document.getElementById('auditSearchInput')?.addEventListener('input', renderAuditLog);
 
 initApp();
-
-/* ============================================================
-   MODULE: TRỢ LÝ ẢO AMORRI AI (VOICE AGENT)
-============================================================ */
-document.body.insertAdjacentHTML('beforeend', 
-'<button id="aiMicBtn" class="admin-only admin-only-flex" title="Trợ lý AI Amorri" style="position:fixed; bottom:30px; left:50%; transform:translateX(-50%); width:60px; height:60px; border-radius:50%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color:#fff; border:none; box-shadow: 0 10px 25px rgba(59,130,246,0.4); font-size:24px; cursor:pointer; z-index:9999; display:none; align-items:center; justify-content:center; transition:all 0.3s;">' +
-'  🎙️' +
-'</button>' +
-'<div id="aiStatus" style="position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.85); color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:600; display:none; z-index:9999; backdrop-filter:blur(10px);">Trợ lý đang nghe...</div>'
-);
-
-let aiChatHistory = []; 
-
-const aiMicBtn = document.getElementById('aiMicBtn');
-const aiStatus = document.getElementById('aiStatus');
-let isListening = false;
-
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition;
-if (SpeechRecognition) {
-    recognition = new SpeechRecognition();
-    recognition.lang = 'vi-VN';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onstart = function() {
-        isListening = true;
-        aiMicBtn.style.animation = "pulse 1s infinite";
-        aiStatus.textContent = "Đang nghe..."; aiStatus.style.display = 'block';
-    };
-
-    recognition.onresult = function(event) {
-        const transcript = event.results[0][0].transcript;
-        aiStatus.textContent = "Đang suy nghĩ...";
-        processWithGemini(transcript);
-    };
-
-    recognition.onerror = function(event) {
-        aiStatus.textContent = "Lỗi Micro. Thử lại!";
-        setTimeout(() => aiStatus.style.display = 'none', 2000);
-        aiMicBtn.style.animation = "none";
-        isListening = false;
-    };
-
-    recognition.onend = function() {
-        if(aiStatus.textContent === "Đang nghe...") {
-            aiStatus.style.display = 'none';
-        }
-        aiMicBtn.style.animation = "none";
-        isListening = false;
-    };
-}
-
-aiMicBtn.addEventListener('click', () => {
-    if(!SpeechRecognition) return alert("Trình duyệt của bạn không hỗ trợ nhận diện giọng nói. Hãy dùng Chrome hoặc Safari.");
-    
-    // Kiểm tra xem đã có API Key trong Firebase data.settings chưa
-    let apiKey = data.settings?.geminiApiKey;
-    if(!apiKey) {
-        alert("Vui lòng vào phần 'Cài đặt' (⚙) ở thanh Menu bên trái để nhập Google Gemini API Key trước khi sử dụng trợ lý AI.");
-        return window.openSettings(); // Tự động mở bảng Cài đặt
-    }
-
-    if(isListening) { recognition.stop(); } 
-    else { recognition.start(); }
-});
-
-function speak(text, onEndCallback) {
-    if(!text) {
-        if(onEndCallback) onEndCallback();
-        return;
-    }
-    
-    // 1. Hủy các giọng đọc đang bị kẹt trong hàng đợi của trình duyệt
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'vi-VN';
-    utterance.rate = 1.1; // Tốc độ đọc
-    
-    // 2. Ép trình duyệt tìm và sử dụng giọng Tiếng Việt
-    const voices = window.speechSynthesis.getVoices();
-    const viVoice = voices.find(v => v.lang === 'vi-VN' || v.lang.includes('vi'));
-    if (viVoice) {
-        utterance.voice = viVoice;
-    }
-
-    utterance.onend = () => {
-        if(onEndCallback) onEndCallback();
-    };
-    
-    // 3. Xử lý lỗi nếu trình duyệt chặn âm thanh
-    utterance.onerror = (e) => {
-        console.error("Trình duyệt chặn hoặc lỗi phát giọng nói:", e);
-        if(onEndCallback) onEndCallback();
-    };
-
-    window.speechSynthesis.speak(utterance);
-}
-
-async function processWithGemini(userText) {
-    let apiKey = data.settings?.geminiApiKey;
-    if(!apiKey) {
-        aiStatus.textContent = "Thiếu API Key!";
-        setTimeout(() => aiStatus.style.display = 'none', 2000);
-        return window.openSettings();
-    }
-
-    // Tự động dọn dẹp khoảng trắng thừa trong API Key
-    apiKey = apiKey.trim();
-
-    aiChatHistory.push({ role: "user", parts: [{ text: userText }] });
-
-    const currentDate = new Date().toLocaleDateString('vi-VN');
-    
-    const staffDataStr = JSON.stringify(data.staff.map(s => ({id:s.id, name:s.name, role:s.role})));
-    const eventDataStr = JSON.stringify(data.events.map(e => ({id:e.id, name:e.name, date:e.date, status:e.status, eventType: e.eventType, staffIds: e.assignments.map(a=>a.id)})));
-
-    const systemPrompt = "Bạn là Trợ lý Lễ tân AI của Amorri Studio. Bạn đang giao tiếp bằng GIỌNG NÓI với Admin. Hôm nay là " + currentDate + ".\n\n" +
-    "DỮ LIỆU HIỆN TẠI:\n" +
-    "- Nhân sự: " + staffDataStr + "\n" +
-    "- Lịch: " + eventDataStr + "\n\n" +
-    "NHIỆM VỤ CỦA BẠN:\n" +
-    "1. Trả lời câu hỏi tra cứu lịch trình.\n" +
-    "2. TẠO LỊCH MỚI: Thu thập ĐỦ 5 thông tin: Tên khách, Loại dịch vụ, Ngày, Giờ bắt đầu, Giá tiền. Thiếu thì 'ask'. Đủ thì 'create' (Ngày YYYY-MM-DD, Giờ HH:mm).\n" +
-    "3. SỬA LỊCH: Dùng action 'update' truyền ID lịch.\n" +
-    "4. LUÔN HỎI THÊM: 'Anh có muốn thêm lịch nào khác hay cần hỗ trợ gì thêm không ạ?'.\n\n" +
-    "QUY TẮC QUAN TRỌNG: CÂU TRẢ LỜI CỦA BẠN (phần 'reply') PHẢI THẬT NGẮN GỌN, DƯỚI 20 TỪ ĐỂ PHẢN HỒI NHANH NHẤT.\n\n" +
-    "CHỈ TRẢ VỀ JSON. Cấu trúc:\n" +
-    "{\n  \"reply\": \"Câu trả lời (Dưới 20 từ)\",\n  \"action\": \"ask|create|update\",\n  \"actionData\": {}\n}";
-
-    try {
-        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                system_instruction: { parts: [{ text: systemPrompt }] },
-                contents: aiChatHistory,
-                generationConfig: { response_mime_type: "application/json" }
-            })
-        });
-
-        if(!response.ok) {
-            const errorText = await response.text();
-            console.error("LỖI TỪ GOOGLE API:", errorText);
-            alert("Lỗi kết nối Google AI (" + response.status + "):\n\n" + errorText);
-            throw new Error('API Error: ' + response.status);
-        }
-
-        const result = await response.json();
-        const aiResponseText = result.candidates[0].content.parts[0].text;
-        aiChatHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
-        
-        let parsed = { reply: "Lỗi phản hồi", action: "ask" };
-        try { parsed = JSON.parse(aiResponseText); } catch(e) { console.error("Lỗi JSON AI:", aiResponseText); }
-        
-        aiStatus.textContent = parsed.reply;
-        
-        if (parsed.action === "create" && parsed.actionData) {
-            window.openEventModal({});
-            if(parsed.actionData.eventName) setSafeValue('eventName', parsed.actionData.eventName);
-            if(parsed.actionData.date) setSafeValue('eventDate', parsed.actionData.date);
-            if(parsed.actionData.eventType) setSafeValue('eventType', parsed.actionData.eventType);
-            if(parsed.actionData.start) setSafeValue('eventStart', parsed.actionData.start);
-            if(parsed.actionData.price) setSafeValue('eventPrice', money(parsed.actionData.price));
-            window.updateModalVisibility();
-            parsed.reply += " Em đã mở form điền sẵn, anh kiểm tra và bấm lưu nhé.";
-        } else if (parsed.action === "update" && parsed.actionData && parsed.actionData.eventId) {
-            window.openEventModal({id: parsed.actionData.eventId});
-            parsed.reply += " Em đã mở lịch đó lên rồi ạ.";
-        }
-
-        speak(parsed.reply, () => {
-            setTimeout(() => { aiStatus.style.display = 'none'; }, 2000);
-            if(parsed.action === 'ask' || parsed.reply.includes('hỗ trợ gì thêm')) {
-                recognition.start(); 
-            }
-        });
-
-    } catch (error) {
-        console.error(error);
-        aiStatus.textContent = "Lỗi kết nối AI.";
-        speak("Đang có lỗi kết nối với máy chủ AI, anh kiểm tra lại nhé.");
-        setTimeout(() => aiStatus.style.display = 'none', 2000);
-    }
-}
 </script>
 </body>
 </html>
