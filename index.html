@@ -1378,7 +1378,7 @@ function renderStaffActivityLog() {
     if(badge) { badge.style.display = alertCount ? 'inline-flex' : 'none'; badge.textContent = alertCount ? `${alertCount} lưu ý` : ''; }
     el.innerHTML = logs.length ? logs.map(log => {
         const sev = ['danger','warning','success','info'].includes(log.severity) ? log.severity : 'info';
-        const label = sev === 'danger' ? '⚠️️ Quan trọng' : sev === 'warning' ? '🔔 Cập nhật' : sev === 'success' ? '✓ Đã ghi nhận' : 'ℹ Thông báo';
+        const label = sev === 'danger' ? '⚠ Quan trọng' : sev === 'warning' ? '🔔 Cập nhật' : sev === 'success' ? '✓ Đã ghi nhận' : 'ℹ Thông báo';
         return `<div class="staff-activity-item ${sev}">
           <div class="audit-dot"></div>
           <div class="audit-main">
@@ -1547,8 +1547,13 @@ window.saveBlackout = function() {
 
 window.deleteBlackout = function(bId) {
     if(!confirm('Hủy ngày nghỉ này?')) return;
+    
     data.blackouts = data.blackouts.filter(b => b.id !== bId);
-    dbRemove(`blackouts/${bId}`);
+    
+    const blackoutsObj = {};
+    data.blackouts.forEach(b => { blackoutsObj[b.id] = b; });
+    dbSet('blackouts', blackoutsObj);
+    
     showToast('Đã hủy ngày nghỉ');
     render();
 }
@@ -2947,8 +2952,10 @@ window.deleteEvent = function(){
       metadata:{deletedStaffIds:targetStaffIds, deletedEventSnapshot:{name:e.name, date:e.date, status:e.status}}
   });
   
-  data.events=data.events.filter(x=>x.id!==id);
-  dbRemove(`events/${id}`);
+  data.events = data.events.filter(x => x.id !== id);
+  const eventsObj = {};
+  data.events.forEach(ev => { eventsObj[ev.id] = ev; });
+  dbSet('events', eventsObj);
   
   window.smoothClose('eventModal'); render(); showToast('Đã xóa lịch');
 }
@@ -2983,7 +2990,10 @@ function renderStaffManage(){
         severity:'danger', category:'staff', targetType:'staff', targetId:id, targetStaffIds:[id],
         message:`Xóa nhân sự ${deletedStaff?.name || id}`, metadata:{staffId:id, staffName:deletedStaff?.name || ''}
     });
-    dbRemove(`staff/${id}`);
+
+    const staffObj = {};
+    data.staff.forEach(st => { staffObj[st.id] = st; });
+    dbSet('staff', staffObj);
     
     renderStaffManage();
   }));
