@@ -324,14 +324,15 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.96); } }
 
 #panda-mascot-container {
-    position: fixed;
-    bottom: 22px;
-    right: 24px;
-    width: 72px;
-    height: 72px;
-    z-index: 9999;
+    position: relative;
+    right: 0px;
+    bottom: -25px;
+    width: 18px;
+    height: 100px;
+    flex: 0 0 100px;
     pointer-events: auto;
     cursor: pointer;
+    transform: translateY(1px);
 }
 
 #panda-mascot {
