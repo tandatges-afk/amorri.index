@@ -419,6 +419,57 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
   .copyright-badge { bottom: 90px; right: 16px; font-size: 11px; padding: 6px 12px; }
   #panda-mascot-container { bottom: 85px; left: 16px; width: 65px; height: 65px;}
 }
+
+/* =========================================
+   GIAO DIỆN PHÒNG CHỌN ẢNH KHÁCH HÀNG (SHOTPIK STYLE)
+========================================= */
+#clientGalleryView {
+    display: none; 
+    background: #ffffff; 
+    min-height: 100vh; 
+    padding-bottom: 100px;
+}
+.gallery-cover {
+    width: 100%; height: 35vh; min-height: 300px;
+    background: linear-gradient(to bottom, rgba(15,23,42,0.2), rgba(15,23,42,0.8)), url('https://images.unsplash.com/photo-1511285560929-80b456fea0bc?q=80&w=2069&auto=format&fit=crop') center/cover;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 20px;
+}
+.gallery-cover h1 { font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
+.gallery-cover p { font-size: 15px; font-weight: 500; opacity: 0.9; margin-top: 10px; max-width: 600px; }
+
+.gallery-container { max-width: 1200px; margin: -40px auto 0; padding: 0 20px; position: relative; z-index: 10; }
+
+.client-video-card {
+    background: #fff; padding: 24px; border-radius: 20px; box-shadow: var(--shadow-lg); text-align: center; margin-bottom: 40px; border: 1px solid var(--line);
+}
+.photo-grid-client {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;
+}
+.client-photo-card {
+    position: relative; border-radius: 16px; overflow: hidden; cursor: pointer; aspect-ratio: 2/3; background: #f1f5f9; box-shadow: var(--shadow-sm); transition: transform 0.3s;
+}
+.client-photo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s, opacity 0.3s; }
+.client-photo-card:hover img { transform: scale(1.05); }
+
+/* Nút thả tim */
+.heart-btn {
+    position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #94a3b8; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2; border: 1px solid rgba(255,255,255,0.5);
+}
+.client-photo-card.selected .heart-btn { background: #fff; color: #ef4444; transform: scale(1.15); border-color: #fca5a5; }
+.client-photo-card.selected img { opacity: 0.85; filter: brightness(0.9); }
+.client-photo-card.selected::after {
+    content: ''; position: absolute; inset: 0; border: 4px solid #ef4444; border-radius: 16px; pointer-events: none; z-index: 1;
+}
+.photo-filename {
+    position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.7)); color: #fff; padding: 20px 12px 10px; font-size: 12px; font-weight: 600; z-index: 2; pointer-events: none;
+}
+
+/* Thanh chốt ảnh nổi bên dưới */
+.client-bottom-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); padding: 16px 24px; box-shadow: 0 -10px 40px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 100; border-top: 1px solid var(--line);
+}
+.client-bottom-bar .count-info { font-size: 15px; font-weight: 700; color: var(--text); }
+.client-bottom-bar .count-info span { color: #ef4444; font-size: 20px; font-weight: 800; margin: 0 6px; }
 </style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
@@ -436,6 +487,34 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 <div id="loadingOverlay">
     <div class="loading-logo"><img src="logo.png" alt="Amorri" onerror="this.style.display='none'"></div>
     <div style="font-weight:700; color:var(--text); font-size: 15px; letter-spacing: 0.5px; margin-top:10px;">Đang đồng bộ dữ liệu...</div>
+</div>
+
+<!-- =========================================
+     GIAO DIỆN PHÒNG CHỌN ẢNH (CLIENT GALLERY)
+========================================== -->
+<div id="clientGalleryView">
+    <div class="gallery-cover">
+        <h1 id="cgTitle">Loading...</h1>
+        <p>Phòng xem video và chọn lọc hình ảnh. Bạn vui lòng bấm vào biểu tượng trái tim (♥) trên những bức ảnh ưng ý để Studio tiến hành chỉnh sửa nhé.</p>
+    </div>
+    
+    <div class="gallery-container">
+        <!-- Khung Video (Sẽ hiện nếu Admin có điền link video) -->
+        <div id="cgVideoContainer" class="client-video-card" style="display:none;">
+            <h3 style="margin-top:0; font-size:20px; font-weight:800;">🎥 Video Bàn Giao</h3>
+            <p style="color:var(--muted); font-size:14px; margin-bottom: 20px;">Bấm vào nút bên dưới để xem hoặc tải video chất lượng cao.</p>
+            <a id="cgVideoLink" href="#" target="_blank" class="btn primary" style="font-size:15px; padding: 14px 32px; box-shadow: 0 10px 25px rgba(15,23,42,0.2);">Xem Video Final</a>
+        </div>
+
+        <!-- Lưới Ảnh -->
+        <div class="photo-grid-client" id="cgPhotoGrid"></div>
+    </div>
+
+    <!-- Thanh chốt ảnh -->
+    <div class="client-bottom-bar">
+        <div class="count-info">Đã yêu thích: <span id="cgSelectedCount">0</span> ảnh</div>
+        <button class="btn primary" style="background:#ef4444; color:#fff; box-shadow:0 4px 15px rgba(239,68,68,0.3);" onclick="window.submitClientFavorites()">Gửi Studio Chỉnh Sửa</button>
+    </div>
 </div>
 
 <div class="app">
@@ -789,10 +868,22 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
           <div class="form-group full step3-item" style="display:none"><label for="eventNote">Ghi chú chung / Yêu cầu</label><textarea id="eventNote" placeholder="Trang phục, concept, thiết bị, thời gian di chuyển..."></textarea></div>
 
           <div class="form-group full step3-item admin-only admin-only-block" id="productsSection" style="display:none; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 24px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <label style="font-size:15px; color:#0f172a;">📦 Sản Phẩm / Bàn Giao File</label>
-                <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:8px 16px; font-size:13px; border:1px solid #cbd5e1;" onclick="window.addProductRow()">+ Thêm Link</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap: wrap; gap: 10px;">
+                <label style="font-size:15px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                    📦 Link Bàn Giao & Chọn Ảnh 
+                </label>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" class="btn ghost admin-only admin-only-flex" style="padding:8px 16px; font-size:12.5px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateClientLink()">🔗 Tạo Link Gửi Khách</button>
+                    <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:8px 16px; font-size:13px; border:1px solid #cbd5e1;" onclick="window.addProductRow()">+ Thêm Link Phụ</button>
+                </div>
             </div>
+          
+            <!-- Thông báo số ảnh khách đã chọn -->
+            <div id="adminClientFavStats" style="display:none; background:#f0fdf4; border:1px dashed #4ade80; padding:12px 16px; border-radius:12px; margin-bottom:16px; align-items:center; justify-content:space-between;">
+                <div style="font-size:13.5px; color:#166534; font-weight:600;">❤️ Khách đã chốt chọn <b id="adminFavCount" style="font-size:16px;">0</b> ảnh.</div>
+                <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12px; border:1px solid #86efac; color:#15803d; background:#fff;" onclick="window.copyFavoriteList()">Copy Tên Ảnh</button>
+            </div>
+          
             <div id="eventProductsList" style="display:flex; flex-direction:column; gap:12px;"></div>
           </div>
 
@@ -1090,6 +1181,119 @@ let currentView = 'month'; let isFirstLoad = true;
 
 const staffViewId = urlParams.get('staff');
 let currentUserRole = 'guest'; 
+
+// ==========================================
+// LOGIC PHÒNG CHỌN ẢNH (CLIENT GALLERY)
+// ==========================================
+const clientIdParam = urlParams.get('client_gallery');
+let isClientMode = !!clientIdParam;
+let clientSelectedPhotos = new Set();
+let currentClientEvent = null;
+
+if (isClientMode) {
+    document.querySelector('.app').style.display = 'none'; // Ẩn Dashboard
+    document.getElementById('clientGalleryView').style.display = 'block'; // Hiện Gallery
+    document.body.style.background = '#f1f5f9';
+}
+
+function initClientGallery() {
+    if(!isClientMode) return;
+    currentClientEvent = data.events.find(e => e.id === clientIdParam);
+    
+    if(!currentClientEvent) {
+        document.getElementById('cgTitle').textContent = "Không tìm thấy bộ ảnh!";
+        return;
+    }
+
+    document.getElementById('cgTitle').textContent = currentClientEvent.name || "Album Kỷ Niệm";
+    document.title = (currentClientEvent.name || "Album") + " - Chọn Ảnh";
+
+    // Khôi phục danh sách ảnh đã thả tim từ Firebase
+    clientSelectedPhotos = new Set(currentClientEvent.favoritePhotos || []);
+    
+    // Tìm link Video trong mảng products (nếu tên chứa chữ 'video')
+    const videoLink = (currentClientEvent.products || []).find(p => p.name.toLowerCase().includes('video'));
+    if(videoLink && videoLink.url) {
+        document.getElementById('cgVideoContainer').style.display = 'block';
+        document.getElementById('cgVideoLink').href = safeUrl(videoLink.url);
+    }
+
+    // TẠO DỮ LIỆU ẢNH DEMO (Vì web không có backend upload file, ta sẽ mô phỏng lưới ảnh)
+    // Trong thực tế, Admin sẽ upload 1 mảng link ảnh vào Firebase. Ở đây ta tạo 12 ảnh giả lập.
+    if(!currentClientEvent.galleryPhotos || currentClientEvent.galleryPhotos.length === 0) {
+        currentClientEvent.galleryPhotos = Array.from({length: 16}).map((_, i) => ({
+            id: `IMG_${pad(i+1)}.JPG`,
+            url: `https://picsum.photos/seed/${clientIdParam}_${i}/600/900` 
+        }));
+    }
+
+    renderClientGrid();
+}
+
+function renderClientGrid() {
+    const grid = document.getElementById('cgPhotoGrid');
+    grid.innerHTML = currentClientEvent.galleryPhotos.map(p => `
+        <div class="client-photo-card ${clientSelectedPhotos.has(p.id) ? 'selected' : ''}" onclick="window.toggleClientPhoto('${p.id}')" id="cp_${p.id}">
+            <img src="${p.url}" loading="lazy" alt="${p.id}">
+            <div class="heart-btn">♥</div>
+            <div class="photo-filename">${p.id}</div>
+        </div>
+    `).join('');
+    updateClientBottomBar();
+}
+
+window.toggleClientPhoto = function(photoId) {
+    if(clientSelectedPhotos.has(photoId)) clientSelectedPhotos.delete(photoId);
+    else clientSelectedPhotos.add(photoId);
+
+    const card = document.getElementById('cp_' + photoId);
+    if(card) card.classList.toggle('selected', clientSelectedPhotos.has(photoId));
+    updateClientBottomBar();
+};
+
+function updateClientBottomBar() {
+    document.getElementById('cgSelectedCount').textContent = clientSelectedPhotos.size;
+}
+
+window.submitClientFavorites = function() {
+    if(!currentClientEvent) return;
+    const favArr = Array.from(clientSelectedPhotos);
+    
+    // Cập nhật vào mảng data local
+    currentClientEvent.favoritePhotos = favArr;
+    
+    // Bắn thẳng dữ liệu lên Firebase
+    dbSet(`events/${currentClientEvent.id}/favoritePhotos`, favArr).then(() => {
+        alert(`Cảm ơn bạn! Đã gửi thành công ${favArr.length} ảnh yêu thích cho Studio.`);
+    });
+};
+
+// ==========================================
+// TÍNH NĂNG TẠO LINK BÊN ADMIN
+// ==========================================
+window.generateClientLink = function() {
+    const evId = document.getElementById('eventId').value;
+    if(!evId) { showToast('⚠️ Vui lòng LƯU LỊCH trước khi tạo link!'); return; }
+    
+    // Nếu chưa có mảng link Drive/Video, nhắc nhẹ
+    const productsEl = document.getElementById('eventProductsList');
+    if(productsEl.children.length === 0) {
+        alert("Gợi ý: Nhấn 'Thêm Link Phụ' để dán link Video, khách sẽ thấy nút tải Video trong phòng chọn ảnh nhé.");
+    }
+
+    const clientLink = window.location.origin + window.location.pathname + '?client_gallery=' + evId;
+    window.copyText(clientLink);
+    showToast('✅ Đã copy Link Phòng Chọn Ảnh gửi khách!');
+};
+
+window.copyFavoriteList = function() {
+    const evId = document.getElementById('eventId').value;
+    const ev = data.events.find(e => e.id === evId);
+    if(ev && ev.favoritePhotos && ev.favoritePhotos.length > 0) {
+        window.copyText(ev.favoritePhotos.join(', '));
+        showToast('Đã copy danh sách tên file!');
+    }
+}
 
 function setupDefaultFilters() {
     const mm = String(current.getMonth() + 1); const yy = String(current.getFullYear());
@@ -1505,10 +1709,12 @@ function initApp() {
                     data = sanitizeData(val);
                     persistLocal();
                     try { render(); } catch(e) { console.error('Render realtime error:', e); }
+                    if (isClientMode) { initClientGallery(); }
                 } else {
                     data = defaultData();
                     persistLocal();
                     try { render(); } catch(e) {}
+                    if (isClientMode) { initClientGallery(); }
                 }
                 hideLoading();
             }, (error) => {
@@ -2746,6 +2952,16 @@ window.openEventModal = function(prefill={}){
   });
 
   const btnCancel = document.getElementById('cancelEvent'); if(btnCancel) btnCancel.textContent = isAdmin ? 'Hủy' : 'Đóng';
+
+  const favStats = document.getElementById('adminClientFavStats');
+  if (favStats) {
+      if (e && e.favoritePhotos && e.favoritePhotos.length > 0) {
+          favStats.style.display = 'flex';
+          document.getElementById('adminFavCount').textContent = e.favoritePhotos.length;
+      } else {
+          favStats.style.display = 'none';
+      }
+  }
 }
 
 function getAssignmentStart(event, assignment) {
@@ -2859,7 +3075,8 @@ window.saveEvent = function(){
     status:document.getElementById('eventStatus')?.value||'pending',
     price: parseMoney(document.getElementById('eventPrice')?.value) * 1000,
     deposit: parseMoney(document.getElementById('eventDeposit')?.value) * 1000,
-    note:document.getElementById('eventNote')?.value.trim()||''
+    note:document.getElementById('eventNote')?.value.trim()||'',
+    favoritePhotos: previousEvent?.favoritePhotos || [] // Giữ lại ảnh khách đã chọn
   };
   
   if(!obj.name||!obj.date||!obj.end){showToast('Vui lòng điền đủ Tên, Ngày và Giờ kết thúc');return}
