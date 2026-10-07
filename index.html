@@ -842,6 +842,7 @@ body[data-client-gallery="true"] .studio-credit {
 
 </style>
 
+<style id="amorri-luxury-redesign">
 /* =========================================================
    AMORRI LUXURY REDESIGN — VISUAL SYSTEM 2026
    UX/UI only: preserve existing functionality/logic.
@@ -1593,6 +1594,7 @@ body.sidebar-closed .nav-btn.active { box-shadow: inset 0 -2px 0 var(--champagne
     scroll-behavior: auto !important;
   }
 }
+</style>
 
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
@@ -2180,33 +2182,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ==========================================
-// MODULE BẢO VỆ MÃ NGUỒN & DEV MODE
+// APP RUNTIME / URL STATE
+// Anti-debug đã được loại bỏ: không tạo bảo mật thực tế và gây tốn CPU.
 // ==========================================
 const urlParams = new URLSearchParams(window.location.search);
-const DEV_KEY = 'amorri2026';
-const isDevMode = urlParams.get('dev') === DEV_KEY;
-
-if (!isDevMode) {
-    document.addEventListener('contextmenu', event => event.preventDefault());
-
-    document.onkeydown = function (e) {
-        if (e.keyCode == 123 || 
-           (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) ||
-           (e.ctrlKey && e.keyCode == 85)) {
-            return false;
-        }
-    };
-
-    setInterval(function() {
-        (function (a) { return (function (a) { return (Function('Function(arguments[0]+"' + a + '")()')) })(a) })('bugger')('de');
-    }, 1000);
-    
-    console.log("%c⚠️ Dừng lại!", "color: red; font-size: 40px; font-weight: bold; -webkit-text-stroke: 1px black;");
-    console.log("%cĐây là tính năng của trình duyệt dành cho nhà phát triển. Việc cố tình can thiệp hoặc dán mã lạ vào đây có thể khiến bạn bị đánh cắp dữ liệu.", "font-size: 16px;");
-} else {
-    console.log("%c🛠️ DEV MODE KÍCH HOẠT", "color: #10b981; font-size: 24px; font-weight: bold;");
-    console.log("Tất cả các lớp bảo mật F12/Chuột phải đã được tắt để bạn thoải mái làm việc.");
-}
 
 window.onerror = function(msg, url, lineNo, columnNo, error) {
     const overlay = document.getElementById('loadingOverlay');
@@ -2293,7 +2272,25 @@ let current = new Date(); current.setHours(0,0,0,0);
 let currentView = 'month'; let isFirstLoad = true;
 
 const staffViewId = urlParams.get('staff');
-let currentUserRole = 'guest'; 
+let currentUserRole = 'guest';
+let currentAuthUser = null;
+let invalidStaffLinkNotified = false;
+
+function resolveCurrentUserRole() {
+    if (staffViewId) {
+        const validStaff = data.staff.some(s => String(s.id) === String(staffViewId));
+        currentUserRole = validStaff ? 'staff' : 'guest';
+        return currentUserRole;
+    }
+    currentUserRole = currentAuthUser ? 'admin' : 'guest';
+    return currentUserRole;
+}
+
+function notifyInvalidStaffLinkIfNeeded() {
+    if (!staffViewId || currentUserRole === 'staff' || invalidStaffLinkNotified || isFirstLoad) return;
+    invalidStaffLinkNotified = true;
+    showToast('Link nhân sự không hợp lệ hoặc nhân sự đã bị xóa.');
+}
 
 // ==========================================
 // LOGIC PHÒNG CHỌN ẢNH (CLIENT GALLERY)
@@ -2770,6 +2767,9 @@ function persistLocal() {
     } catch(e) {}
 }
 
+// ==========================================
+// DATA ACCESS LAYER — LOCAL CACHE + FIREBASE
+// ==========================================
 const FIREBASE_WRITE_TIMEOUT = 5000;
 
 async function withFirebaseTimeout(promise, timeout = FIREBASE_WRITE_TIMEOUT) {
@@ -3070,16 +3070,12 @@ function initApp() {
             firebase.initializeApp(firebaseConfig);
             
             firebase.auth().onAuthStateChanged((user) => {
-            if (staffViewId) {
-                currentUserRole = 'staff';
-            } else if (user) {
-                currentUserRole = 'admin';
-            } else {
-                currentUserRole = 'guest';
-            }
-            applyRoleUI();
-            render();
-        });
+                currentAuthUser = user || null;
+                resolveCurrentUserRole();
+                applyRoleUI();
+                render();
+                notifyInvalidStaffLinkIfNeeded();
+            });
 
             window.dbRef = firebase.database().ref('studioPlanner_v1');
             window.dbRef.on('value', (snapshot) => {
@@ -3087,7 +3083,10 @@ function initApp() {
                 if (val) {
                     data = sanitizeData(val);
                     persistLocal();
+                    resolveCurrentUserRole();
+                    applyRoleUI();
                     try { render(); } catch(e) { console.error('Render realtime error:', e); }
+                    notifyInvalidStaffLinkIfNeeded();
                     if (isClientMode) { initClientGallery(); }
                     else if (document.getElementById('eventModal')?.classList.contains('show')) {
                         window.refreshOpenEventProductActions?.();
@@ -3095,7 +3094,10 @@ function initApp() {
                 } else {
                     data = defaultData();
                     persistLocal();
+                    resolveCurrentUserRole();
+                    applyRoleUI();
                     try { render(); } catch(e) {}
+                    notifyInvalidStaffLinkIfNeeded();
                     if (isClientMode) { initClientGallery(); }
                     else if (document.getElementById('eventModal')?.classList.contains('show')) {
                         window.refreshOpenEventProductActions?.();
@@ -3116,12 +3118,20 @@ window.openBlackoutModal = function() {
     setSafeValue('blackoutReason', '');
 }
 
-window.saveBlackout = function() {
-    const date = document.getElementById('blackoutDate').value;
-    const reason = document.getElementById('blackoutReason').value.trim();
+window.saveBlackout = async function() {
+    if (currentUserRole !== 'staff' || !staffViewId || !data.staff.some(s => String(s.id) === String(staffViewId))) {
+        showToast('Không xác định được nhân sự hiện tại.');
+        return;
+    }
+
+    const date = document.getElementById('blackoutDate')?.value || '';
+    const reason = document.getElementById('blackoutReason')?.value.trim() || '';
     if(!date) { showToast('Vui lòng chọn ngày nghỉ'); return; }
-    
-    const isOverlap = data.events.some(e => e.date === date && e.status !== 'cancelled' && e.assignments.some(a => a.id === staffViewId));
+
+    const isDuplicate = data.blackouts.some(b => b.staffId === staffViewId && b.date === date);
+    if(isDuplicate) { showToast('Ngày này đã được báo nghỉ trước đó.'); return; }
+
+    const isOverlap = data.events.some(e => e.date === date && e.status !== 'cancelled' && (e.assignments || []).some(a => a.id === staffViewId));
     if(isOverlap) {
         alert('Bạn đang có lịch xếp vào ngày này. Vui lòng báo Admin gỡ lịch trước khi đăng ký nghỉ.');
         return;
@@ -3130,22 +3140,24 @@ window.saveBlackout = function() {
     const bId = uid();
     const newB = { id: bId, staffId: staffViewId, date, reason };
     data.blackouts.push(newB);
-    dbSet(`blackouts/${bId}`, newB);
-    showToast('Đã ghi nhận lịch nghỉ!');
+    const saved = await dbSet(`blackouts/${bId}`, newB);
+    showToast(saved || !window.dbRef ? 'Đã ghi nhận lịch nghỉ!' : 'Đã lưu trên máy, chưa đồng bộ máy chủ.');
     window.smoothClose('blackoutModal');
     render();
 }
 
-window.deleteBlackout = function(bId) {
+window.deleteBlackout = async function(bId) {
+    const blackout = data.blackouts.find(b => b.id === bId);
+    if(!blackout) return;
+
+    const canDelete = currentUserRole === 'admin' ||
+        (currentUserRole === 'staff' && blackout.staffId === staffViewId);
+    if(!canDelete) { showToast('Bạn không có quyền hủy ngày nghỉ này.'); return; }
     if(!confirm('Hủy ngày nghỉ này?')) return;
-    
+
     data.blackouts = data.blackouts.filter(b => b.id !== bId);
-    
-    const blackoutsObj = {};
-    data.blackouts.forEach(b => { blackoutsObj[b.id] = b; });
-    dbSet('blackouts', blackoutsObj);
-    
-    showToast('Đã hủy ngày nghỉ');
+    const removed = await dbRemove(`blackouts/${bId}`);
+    showToast(removed || !window.dbRef ? 'Đã hủy ngày nghỉ' : 'Đã xóa trên máy, chưa đồng bộ máy chủ.');
     render();
 }
 
@@ -3388,9 +3400,8 @@ document.addEventListener('dblclick', (e) => {
     if (e.target.closest('.event-chip') || e.target.closest('.blackout-chip') || e.target.closest('button') || e.target.closest('a')) return;
     
     const dayEl = e.target.closest('.day');
-    if (dayEl && dayEl.dataset.date) {
-        window.openChooseTypeModal(dayEl.dataset.date);
-    }
+    if (!dayEl || !dayEl.dataset.date || dayEl.classList.contains('other')) return;
+    window.openChooseTypeModal(dayEl.dataset.date);
 });
 
 document.addEventListener('click', e => {
@@ -3669,7 +3680,7 @@ function renderUpcoming(){
                 ${e.isRuocDau ? '<span style="color:var(--orange);font-size:12px;margin-left:6px;vertical-align:middle;">(Rước dâu)</span>' : ''}
                 <span class="pill ghost" style="font-size:10px; border:1px solid #cbd5e1; padding:2px 6px; margin-left:6px;">${escapeHtml(e.eventType||'')}</span>
             </div>
-            <span class="pill ${pillColor}">${STATUS_LABEL[e.status]}</span>
+            <span class="pill ${pillColor}">${escapeHtml(STATUS_LABEL[e.status] || e.status || 'Chưa rõ')}</span>
         </div>
         
         <div style="font-size: 13.5px; color: var(--text); line-height: 1.6; width: 100%;">
@@ -3883,7 +3894,10 @@ window.updateModalVisibility = function() {
 
 let currentEventAssignments = [];
 
-window.saveStaffLinkLocally = function(sId, sName) {
+window.saveStaffLinkLocally = async function(sId, sName) {
+    const canWrite = currentUserRole === 'admin' || (currentUserRole === 'staff' && String(sId) === String(staffViewId));
+    if(!canWrite) { showToast('Bạn không có quyền cập nhật Source của nhân sự này.'); return; }
+
     const urlInput = document.getElementById('evt-link-in-'+sId)?.value.trim();
     if(!urlInput) { showToast('Vui lòng dán link'); return; }
     const validatedUrl = safeUrl(urlInput);
@@ -3896,12 +3910,12 @@ window.saveStaffLinkLocally = function(sId, sName) {
             const aIdx = data.events[idx].assignments.findIndex(a => a.id === sId);
             if(aIdx >= 0) {
                 data.events[idx].assignments[aIdx].link = urlInput;
-                dbSet(`events/${evId}/assignments/${aIdx}/link`, urlInput);
+                await dbSet(`events/${evId}/assignments/${aIdx}/link`, urlInput);
             }
         }
     }
     const tag = document.getElementById('evt-link-tag-'+sId);
-    if(tag) { tag.href = urlInput; tag.innerHTML = `🔗 Bấm xem Source`; }
+    if(tag) { tag.href = validatedUrl; tag.innerHTML = `🔗 Bấm xem Source`; }
     document.getElementById('evt-link-edit-'+sId).style.display = 'none';
     document.getElementById('evt-link-view-'+sId).style.display = 'flex';
     const currentEvent = evId ? data.events.find(e => e.id === evId) : null;
@@ -4921,12 +4935,12 @@ window.saveEvent = async function(){
   window.smoothClose('eventModal'); render(); showToast(savedToServer || !window.dbRef ? (idx>=0?'Đã cập nhật lịch':'Đã thêm lịch') : 'Đã lưu trên máy, chưa đồng bộ máy chủ.');
 }
 
-window.deleteEvent = function(){
+window.deleteEvent = async function(){
   if (currentUserRole !== 'admin') return;
   const id=document.getElementById('eventId')?.value;if(!id)return;
   const e=data.events.find(x=>x.id===id); if(!e)return;
   if(!confirm(`Xóa lịch "${e.name}"?`))return;
-  
+
   const targetStaffIds = staffIdsFromAssignments(e.assignments);
   writeAuditLog('EVENT_DELETED', {
       severity:'danger', category:'booking', targetType:'event', targetId:id, targetStaffIds,
@@ -4934,13 +4948,13 @@ window.deleteEvent = function(){
       message:`Admin vừa xoá lịch ${e.name} ngày ${e.date}`,
       metadata:{deletedStaffIds:targetStaffIds, deletedEventSnapshot:{name:e.name, date:e.date, status:e.status}}
   });
-  
+
   data.events = data.events.filter(x => x.id !== id);
-  const eventsObj = {};
-  data.events.forEach(ev => { eventsObj[ev.id] = ev; });
-  dbSet('events', eventsObj);
-  
-  window.smoothClose('eventModal'); render(); showToast('Đã xóa lịch');
+  const removed = await dbRemove(`events/${id}`);
+
+  window.smoothClose('eventModal');
+  render();
+  showToast(removed || !window.dbRef ? 'Đã xóa lịch' : 'Đã xóa trên máy, chưa đồng bộ máy chủ.');
 }
 
 window.openSettings = function(){ 
@@ -4949,7 +4963,8 @@ window.openSettings = function(){
 
 window.openStaff = function(){ window.smoothOpen('staffModal'); renderStaffManage(); }
 window.copyStaffLink = function(id) {
-    const url = window.location.origin + window.location.pathname + '?staff=' + id;
+    if (currentUserRole !== 'admin') return;
+    const url = window.location.origin + window.location.pathname + '?staff=' + encodeURIComponent(id);
     window.copyText(url);
 }
 
@@ -4963,26 +4978,37 @@ function renderStaffManage(){
     </div>
     </div>`).join('');
     
-  document.querySelectorAll('[data-delstaff]').forEach(b=>b.addEventListener('click', ()=>{
+  document.querySelectorAll('[data-delstaff]').forEach(b=>b.addEventListener('click', async ()=>{
+    if (currentUserRole !== 'admin') return;
     const id=b.dataset.delstaff;
-    if(data.events.some(e=>e.assignments.some(a=>a.id===id))&&!confirm('Nhân sự này đang được gắn vào lịch. Xóa nhân sự sẽ bỏ gán khỏi các lịch. Tiếp tục?'))return;
-    
+    const affectedEvents = data.events.filter(e => (e.assignments || []).some(a => a.id === id));
+    if(affectedEvents.length && !confirm('Nhân sự này đang được gắn vào lịch. Xóa nhân sự sẽ bỏ gán khỏi các lịch. Tiếp tục?')) return;
+
     const deletedStaff = data.staff.find(s=>s.id===id);
+    if(!deletedStaff) return;
+
     data.staff=data.staff.filter(s=>s.id!==id);
-    writeAuditLog('STAFF_DELETED', {
-        severity:'danger', category:'staff', targetType:'staff', targetId:id, targetStaffIds:[id],
-        message:`Xóa nhân sự ${deletedStaff?.name || id}`, metadata:{staffId:id, staffName:deletedStaff?.name || ''}
+    affectedEvents.forEach(e => {
+        e.assignments = (e.assignments || []).filter(a => a.id !== id);
     });
 
-    const staffObj = {};
-    data.staff.forEach(st => { staffObj[st.id] = st; });
-    dbSet('staff', staffObj);
-    
+    writeAuditLog('STAFF_DELETED', {
+        severity:'danger', category:'staff', targetType:'staff', targetId:id, targetStaffIds:[id],
+        message:`Xóa nhân sự ${deletedStaff?.name || id}`,
+        metadata:{staffId:id, staffName:deletedStaff?.name || '', affectedEventIds:affectedEvents.map(e => e.id)}
+    });
+
+    const writes = [dbRemove(`staff/${id}`)];
+    affectedEvents.forEach(e => writes.push(dbSet(`events/${e.id}/assignments`, e.assignments)));
+    const results = await Promise.all(writes);
+
     renderStaffManage();
+    render();
+    showToast(results.every(Boolean) || !window.dbRef ? 'Đã xóa nhân sự và gỡ khỏi lịch' : 'Đã cập nhật trên máy, còn dữ liệu chưa đồng bộ.');
   }));
 }
 
-window.addStaff = function(){
+window.addStaff = async function(){
   if (currentUserRole !== 'admin') return;
   const name=document.getElementById('staffName')?.value.trim(); 
   const roles = [...document.querySelectorAll('#staffRoleChecks input:checked')].map(cb => cb.value).join(', ');
@@ -4993,15 +5019,17 @@ window.addStaff = function(){
   const newStaff = {id:uid(),name,role: roles};
   
   data.staff.push(newStaff);
-  dbSet(`staff/${newStaff.id}`, newStaff);
+  const savedToServer = await dbSet(`staff/${newStaff.id}`, newStaff);
   writeAuditLog('STAFF_ADDED', {
       severity:'info', category:'staff', targetType:'staff', targetId:newStaff.id, targetStaffIds:[newStaff.id],
       message:`Thêm nhân sự ${newStaff.name}`, metadata:{staffId:newStaff.id, staffName:newStaff.name, role:newStaff.role}
   });
-  
+
   setSafeValue('staffName','');
   document.querySelectorAll('#staffRoleChecks input').forEach(cb => cb.checked = false);
-  renderStaffManage(); savedToServer.then(ok => showToast(ok || !window.dbRef ? 'Đã thêm nhân sự' : 'Đã thêm nhân sự trên máy, chưa đồng bộ máy chủ.'));
+  renderStaffManage();
+  render();
+  showToast(savedToServer || !window.dbRef ? 'Đã thêm nhân sự' : 'Đã thêm nhân sự trên máy, chưa đồng bộ máy chủ.');
 }
 
 let searchTimeout;
@@ -5028,6 +5056,7 @@ document.getElementById('fullPaidBtn')?.addEventListener('click', () => {
 });
 
 document.getElementById('clearAll')?.addEventListener('click', ()=>{
+    if(currentUserRole !== 'admin') return;
     if(confirm('Xóa toàn bộ dữ liệu lịch, nhân sự và lương? Nhật ký hoạt động sẽ được giữ lại.')){
         const keptLogs = data.auditLogs || [];
         data={staff:[],events:[],payroll:{},blackouts:[],auditLogs:keptLogs };
