@@ -2834,41 +2834,44 @@ function openRawToolProtocol(payload) {
 
     const uri = `${RAW_TOOL_PROTOCOL}${encoded}`;
 
-    // Dùng iframe để không rời khỏi trang Admin.
-    const frame = document.createElement('iframe');
-    frame.style.display = 'none';
-    frame.src = uri;
-    document.body.appendChild(frame);
-
-    setTimeout(() => frame.remove(), 3000);
+    // Phải phát lệnh từ chính user gesture của nút bấm.
+    // Hidden iframe có thể bị Chrome/Edge chặn nên không dùng nữa.
+    const link = document.createElement('a');
+    link.href = uri;
+    link.style.display = 'none';
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => link.remove(), 1500);
     return true;
 }
 
 async function sendSelectionToRawTool(payload, successMessage) {
-    // 1) Ưu tiên local API nếu browser cho phép.
+    // QUAN TRỌNG: gọi custom protocol NGAY trong click event.
+    // Không đợi fetch/await trước, nếu không browser có thể mất user gesture
+    // và sẽ im lặng chặn hộp thoại "Open Amorri Studio".
+    try {
+        openRawToolProtocol(payload);
+        showToast('🖥 Đang mở Amorri Studio để nhận danh sách ảnh...');
+    } catch (protocolErr) {
+        console.error('RAW protocol bridge error:', protocolErr);
+        showToast('Không mở được Amorri Studio. Hãy chạy locanh-bridge.py một lần để đăng ký kết nối.');
+        return false;
+    }
+
+    // Gửi thêm qua local API khi app đang chạy; đây là đường truyền ổn định
+    // cho trường hợp trình duyệt đã cho phép local network.
     try {
         await rawToolFetch('/api/import-selection', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
-        showToast(successMessage);
-        return true;
     } catch (httpErr) {
-        console.warn('Local HTTP bridge unavailable, switching to amorri://', httpErr);
-
-        // 2) Fallback thật sự: OS protocol -> Python.
-        try {
-            openRawToolProtocol(payload);
-            showToast('🖥 Đã gửi trực tiếp sang Tool RAW. Lần đầu có thể cần bấm "Mở Amorri Studio".');
-            return true;
-        } catch (protocolErr) {
-            console.error('RAW protocol bridge error:', protocolErr);
-            showToast('Không kết nối được Tool RAW. Hãy mở locanh.py và đăng ký giao thức Amorri.');
-            return false;
-        }
+        console.warn('Local HTTP sync unavailable:', httpErr);
     }
+
+    return true;
 }
 
 window.sendProductFavoritesToRawTool = async function(prodId) {
