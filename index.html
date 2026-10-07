@@ -1181,7 +1181,7 @@ if (isClientMode) {
     document.body.style.background = '#f1f5f9';
 }
 
-function initClientGallery() {
+async function initClientGallery() {
     if(!isClientMode) return;
     currentClientEvent = data.events.find(e => e.id === clientIdParam);
     
@@ -1202,6 +1202,8 @@ function initClientGallery() {
         targetProducts = targetProducts.filter(p => p.id === prodIdParam);
     }
     
+    let driveFolderUrlToFetch = null;
+
     if (targetProducts.length > 0) {
         productsContainer.style.display = 'block';
         productsContainer.style.background = 'transparent';
@@ -1230,6 +1232,17 @@ function initClientGallery() {
             else if (lowerUrl.match(/\.(jpeg|jpg|gif|png|webp)$/)) {
                 viewHtml = `<img src="${safeUrl(rawUrl)}" style="width:100%; border-radius:16px; box-shadow:var(--shadow-lg);" alt="Sản phẩm">`;
             }
+            else if (lowerUrl.includes('drive.google.com/drive/folders/') || lowerUrl.includes('drive.google.com/folderview')) {
+                if (!driveFolderUrlToFetch) {
+                    driveFolderUrlToFetch = rawUrl;
+                }
+                viewHtml = `<div class="client-video-card">
+                    <div style="font-size:48px; margin-bottom:16px;">☁️</div>
+                    <h3 style="margin:0 0 10px; font-size:20px; font-weight:800;">${escapeHtml(p.name)}</h3>
+                    <p style="color:var(--muted); font-size:14px; margin-bottom: 24px;">Hệ thống đang tải ảnh để bạn chọn lọc bên dưới. Bạn cũng có thể truy cập thư mục gốc.</p>
+                    <a href="${safeUrl(rawUrl)}" target="_blank" class="btn primary" style="font-size:15px; padding: 14px 32px;">Truy Cập Thư Mục Gốc</a>
+                </div>`;
+            }
             else {
                 let icon = lowerUrl.includes('drive.google.com') ? '☁️' : '🔗';
                 let btnText = lowerUrl.includes('drive.google.com') ? 'Truy Cập Thư Mục Drive' : 'Mở Link Bàn Giao';
@@ -1250,39 +1263,62 @@ function initClientGallery() {
          productsContainer.style.display = 'none';
     }
 
-    if (prodIdParam) {
+    if (driveFolderUrlToFetch && (!prodIdParam || targetProducts.some(p => p.url === driveFolderUrlToFetch))) {
+        photoGrid.style.display = 'grid';
+        document.querySelector('.client-bottom-bar').style.display = 'flex';
+        
+        photoGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px; color: var(--muted); font-weight:600;">Đang tải dữ liệu hình ảnh từ Google Drive, vui lòng đợi...</div>`;
+        
+        try {
+            const response = await fetch(`/api/get-drive-images?folderUrl=${encodeURIComponent(driveFolderUrlToFetch)}`);
+            const result = await response.json();
+            
+            if (result.error) {
+                photoGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px; color: var(--red); font-weight:600;">Lỗi: ${escapeHtml(result.error)}</div>`;
+                return;
+            }
+
+            if (result.images && result.images.length > 0) {
+                currentClientEvent.galleryPhotos = result.images;
+                renderClientGrid();
+            } else {
+                photoGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px; color: var(--muted); font-weight:600;">Thư mục Drive này đang trống hoặc không có file hình ảnh (.jpg, .png).</div>`;
+            }
+        } catch (error) {
+            console.error("Lỗi khi fetch API Drive:", error);
+            photoGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px; color: var(--red); font-weight:600;">Lỗi kết nối đến Server xử lý Drive. Hãy đảm bảo bạn đã cấu hình thư mục api trên Vercel.</div>`;
+        }
+    } else if (prodIdParam) {
         photoGrid.style.display = 'none';
         document.querySelector('.client-bottom-bar').style.display = 'none';
         document.getElementById('clientGalleryView').style.paddingBottom = '40px';
     } else {
-        if(!currentClientEvent.galleryPhotos || currentClientEvent.galleryPhotos.length === 0) {
-            currentClientEvent.galleryPhotos = Array.from({length: 12}).map((_, i) => ({
-                id: `IMG_${pad(i+1)}.JPG`,
-                url: `https://picsum.photos/seed/${clientIdParam}_${i}/600/900` 
-            }));
-        }
-        renderClientGrid();
+        photoGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px; color: var(--muted); font-weight:600;">Hiện chưa có hình ảnh nào được tải lên để chọn lọc.</div>`;
+        document.querySelector('.client-bottom-bar').style.display = 'none';
     }
 }
 
 function renderClientGrid() {
     const grid = document.getElementById('cgPhotoGrid');
     grid.innerHTML = currentClientEvent.galleryPhotos.map(p => `
-        <div class="client-photo-card ${clientSelectedPhotos.has(p.id) ? 'selected' : ''}" onclick="window.toggleClientPhoto('${p.id}')" id="cp_${p.id}">
-            <img src="${p.url}" loading="lazy" alt="${p.id}">
+        <div class="client-photo-card ${clientSelectedPhotos.has(p.name) ? 'selected' : ''}" onclick="window.toggleClientPhoto('${escapeHtml(p.name)}')" id="cp_${escapeHtml(p.id)}">
+            <img src="${p.url}" loading="lazy" alt="${escapeHtml(p.name)}">
             <div class="heart-btn">♥</div>
-            <div class="photo-filename">${p.id}</div>
+            <div class="photo-filename">${escapeHtml(p.name)}</div>
         </div>
     `).join('');
     updateClientBottomBar();
 }
 
-window.toggleClientPhoto = function(photoId) {
-    if(clientSelectedPhotos.has(photoId)) clientSelectedPhotos.delete(photoId);
-    else clientSelectedPhotos.add(photoId);
+window.toggleClientPhoto = function(photoName) {
+    if(clientSelectedPhotos.has(photoName)) clientSelectedPhotos.delete(photoName);
+    else clientSelectedPhotos.add(photoName);
 
-    const card = document.getElementById('cp_' + photoId);
-    if(card) card.classList.toggle('selected', clientSelectedPhotos.has(photoId));
+    const currentPhotoObj = currentClientEvent.galleryPhotos.find(p => p.name === photoName);
+    if(currentPhotoObj) {
+        const card = document.getElementById('cp_' + currentPhotoObj.id);
+        if(card) card.classList.toggle('selected', clientSelectedPhotos.has(photoName));
+    }
     updateClientBottomBar();
 };
 
@@ -1947,7 +1983,6 @@ function chip(e){
       else if(lowerName.includes('xuất giá')) typeClass = 'type-xuatgia';
   }
 
-  // Cảnh báo nhấp nháy cho Admin
   let extraClass = '';
   if (currentUserRole === 'admin' && e.status !== 'confirmed' && e.status !== 'done' && e.status !== 'cancelled') {
       const evDate = parseDate(e.date);
