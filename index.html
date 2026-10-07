@@ -1206,20 +1206,36 @@ function initClientGallery() {
     }
 
     document.getElementById('cgTitle').textContent = currentClientEvent.name || "Album Kỷ Niệm";
-    document.title = (currentClientEvent.name || "Album") + " - Chọn Ảnh";
+    document.title = (currentClientEvent.name || "Album") + " - Bàn Giao";
 
     // Khôi phục danh sách ảnh đã thả tim từ Firebase
     clientSelectedPhotos = new Set(currentClientEvent.favoritePhotos || []);
     
-    // Tìm link Video trong mảng products (nếu tên chứa chữ 'video')
-    const videoLink = (currentClientEvent.products || []).find(p => p.name.toLowerCase().includes('video'));
-    if(videoLink && videoLink.url) {
-        document.getElementById('cgVideoContainer').style.display = 'block';
-        document.getElementById('cgVideoLink').href = safeUrl(videoLink.url);
+    // XỬ LÝ HIỂN THỊ LINK SẢN PHẨM (VIDEO, DRIVE, V.V...)
+    const productsContainer = document.getElementById('cgVideoContainer');
+    const products = currentClientEvent.products || [];
+    
+    if (products.length > 0) {
+        productsContainer.style.display = 'block';
+        productsContainer.innerHTML = `<h3 style="margin-top:0; font-size:20px; font-weight:800;">🎁 Sản Phẩm Bàn Giao</h3>
+        <p style="color:var(--muted); font-size:14px; margin-bottom: 20px;">Vui lòng bấm vào các nút bên dưới để xem hoặc tải xuống sản phẩm của bạn.</p>
+        <div style="display:flex; flex-direction:column; gap:12px; align-items:center;">
+        ${products.map(p => {
+            let icon = '🔗';
+            const nameLower = p.name.toLowerCase();
+            if (nameLower.includes('video')) icon = '🎥';
+            if (nameLower.includes('drive') || nameLower.includes('ảnh')) icon = '🖼️';
+            
+            return `<a href="${safeUrl(p.url)}" target="_blank" class="btn primary" style="font-size:15px; padding: 14px 32px; box-shadow: 0 5px 15px rgba(15,23,42,0.1); width:100%; max-width:300px;">
+                ${icon}${escapeHtml(p.name || 'Link Sản Phẩm')}
+            </a>`;
+        }).join('')}
+        </div>`;
+    } else {
+         productsContainer.style.display = 'none';
     }
 
-    // TẠO DỮ LIỆU ẢNH DEMO (Vì web không có backend upload file, ta sẽ mô phỏng lưới ảnh)
-    // Trong thực tế, Admin sẽ upload 1 mảng link ảnh vào Firebase. Ở đây ta tạo 12 ảnh giả lập.
+    // TẠO DỮ LIỆU ẢNH DEMO ĐỂ KHÁCH CHỌN ẢNH THAY VÌ LẤY TỪ DRIVE (KHÔNG KHẢ THI VỚI JS THUẦN)
     if(!currentClientEvent.galleryPhotos || currentClientEvent.galleryPhotos.length === 0) {
         currentClientEvent.galleryPhotos = Array.from({length: 16}).map((_, i) => ({
             id: `IMG_${pad(i+1)}.JPG`,
