@@ -3120,19 +3120,25 @@ function getSelectedFavoriteItems(event, productId = null) {
 }
 
 function renderSelectedKeySet(event, productId = null) {
+    // IMPORTANT: this Set must contain exactly ONE canonical key per selected image.
+    // Older code stored several aliases for one image, which made the selected count wrong
+    // and prevented a customer from reliably unselecting a previously-selected photo.
     const set = new Set();
     const items = getSelectedFavoriteItems(event, productId);
     for (const item of items) {
-        favoriteItemKeys(item).forEach(k => set.add(k));
+        const key = String(item?.key || item?.favoriteKey || '').trim();
+        if (key) {
+            set.add(key);
+            continue;
+        }
+        const stableId = photoStableId(item);
+        const pid = String(item?.productId || 'root');
+        if (stableId) set.add(`${pid}::id:${stableId}`);
+        else if (item?.name) set.add(`${pid}::name:${String(item.name)}`);
     }
 
-    // Dữ liệu cũ chỉ có favoritePhotos, không có productId thì chỉ fallback khi link này chỉ có 1 sản phẩm.
-    const products = Array.isArray(event?.products) ? event.products : [];
-    const canUseLegacyNames = !items.length && Array.isArray(event?.favoritePhotos) &&
-        (productId === null || products.length === 1);
-    if (canUseLegacyNames) {
-        for (const name of event.favoritePhotos) set.add(String(name));
-    }
+    // Legacy data only had favoritePhotos. Resolve names to actual gallery items later
+    // in initClientGallery, after media has been loaded, rather than adding name aliases here.
     return set;
 }
 
@@ -3235,6 +3241,19 @@ async function initClientGallery() {
     }
 
     currentClientEvent.galleryPhotos = media;
+
+    // Resolve very old favoritePhotos (name-only storage) to canonical keys now that
+    // the actual gallery is available. This keeps one Set entry per selected image.
+    const scopedFavoriteItems = getSelectedFavoriteItems(currentClientEvent, prodIdParam || null);
+    if (!scopedFavoriteItems.length && Array.isArray(currentClientEvent.favoritePhotos)) {
+        const legacyNames = new Set(currentClientEvent.favoritePhotos.map(String));
+        const scopedProducts = prodIdParam ? new Set([String(prodIdParam)]) : null;
+        media.filter(m => !m.isVideo).forEach(m => {
+            if (scopedProducts && !scopedProducts.has(String(m.productId || ''))) return;
+            if (legacyNames.has(String(m.name || ''))) clientSelectedPhotos.add(photoKey(m));
+        });
+    }
+
     const videos = media.filter(m => m.isVideo);
     const images = media.filter(m => !m.isVideo);
     document.getElementById('cgImageCount').textContent = String(images.length);
@@ -3284,7 +3303,7 @@ function renderClientGrid() {
     grid.innerHTML = images.map(p => {
         const key = photoKey(p);
         const imgUrl = p.thumb || p.url || `https://drive.google.com/thumbnail?id=${encodeURIComponent(p.id)}&sz=w1200`;
-        return `<div class="client-photo-card ${clientSelectedPhotos.has(key) || clientSelectedPhotos.has(p.name) ? 'selected' : ''}" onclick="window.toggleClientPhoto('${encodeURIComponent(key)}')" id="cp_${escapeHtml(p.id)}">
+        return `<div class="client-photo-card ${clientSelectedPhotos.has(key) ? 'selected' : ''}" onclick="window.toggleClientPhoto('${encodeURIComponent(key)}')" id="cp_${escapeHtml(p.id)}">
             <img src="${safeUrl(imgUrl)}" loading="lazy" alt="${escapeHtml(p.name)}" onerror="this.onerror=null;this.src='https://drive.google.com/thumbnail?id=${encodeURIComponent(p.id)}&sz=w1200';">
             <div class="heart-btn">♥</div>
             <div class="photo-filename">${escapeHtml(p.name)}</div>
@@ -3300,7 +3319,7 @@ window.toggleClientPhoto = function(encodedKey) {
     const obj = (currentClientEvent.galleryPhotos || []).find(p => photoKey(p) === key || p.name === key);
     if(obj) {
         const card = document.getElementById('cp_'+obj.id);
-        if(card) card.classList.toggle('selected', clientSelectedPhotos.has(key) || clientSelectedPhotos.has(obj.name));
+        if(card) card.classList.toggle('selected', clientSelectedPhotos.has(key));
     }
     updateClientBottomBar();
 };
@@ -3323,7 +3342,7 @@ window.submitClientFavorites = async function() {
     for(const p of (currentClientEvent.galleryPhotos || [])) {
         if(p.isVideo) continue;
         const key = photoKey(p);
-        if(clientSelectedPhotos.has(key) || clientSelectedPhotos.has(p.name)) {
+        if(clientSelectedPhotos.has(key)) {
             selectedItems.push({
                 key,
                 name:p.name,
@@ -3352,10 +3371,10 @@ window.submitClientFavorites = async function() {
         favoritePhotos: currentClientEvent.favoritePhotos
     });
 
-    if (saved || !window.dbRef) {
+    if (saved) {
         alert(`Cảm ơn bạn! Đã gửi thành công ${selectedItems.length} ảnh yêu thích cho Studio.`);
     } else {
-        alert(`Đã lưu lựa chọn trên thiết bị. Có ${selectedItems.length} ảnh được chọn, nhưng chưa đồng bộ lên máy chủ.`);
+        alert(`Đã lưu ${selectedItems.length} ảnh trên thiết bị và xếp hàng chờ đồng bộ. Vui lòng giữ kết nối mạng để Studio nhận được lựa chọn.`);
     }
 };
 
@@ -3469,6 +3488,13 @@ function staffIdsFromAssignments(assignments) {
 
 function defaultData(){ return { staff: [], payroll: {}, events: [], blackouts: [], auditLogs: [] } }
 
+// Canonical ID comparison: DOM dataset/input values are strings, while legacy data
+// may still contain numeric IDs. Never let an edit silently turn into a new event.
+function sameId(a, b) {
+    if (a === undefined || a === null || b === undefined || b === null) return false;
+    return String(a) === String(b);
+}
+
 function normalizeCollection(value) {
     if (Array.isArray(value)) return value.filter(Boolean);
     if (value && typeof value === 'object') {
@@ -3502,17 +3528,40 @@ function sanitizeData(d) {
     d.blackouts = normalizeCollection(d.blackouts);
     if(!d.payroll || typeof d.payroll !== 'object' || Array.isArray(d.payroll)) d.payroll = {};
     d.auditLogs = normalizeCollection(d.auditLogs);
+
+    // Normalize legacy numeric IDs to strings so editing from data-* attributes works reliably.
+    d.staff.forEach(s => { if (s?.id !== undefined && s?.id !== null) s.id = String(s.id); });
+    d.events.forEach(e => { if (e?.id !== undefined && e?.id !== null) e.id = String(e.id); });
+    d.blackouts.forEach(b => {
+        if (b?.id !== undefined && b?.id !== null) b.id = String(b.id);
+        if (b?.staffId !== undefined && b?.staffId !== null) b.staffId = String(b.staffId);
+    });
+
+    // Remove only true duplicate records that share the exact same canonical event ID.
+    // Keep the last copy because it is normally the most recently edited version.
+    const uniqueEvents = new Map();
+    d.events.forEach(e => {
+        if (!e) return;
+        const key = e.id !== undefined && e.id !== null && e.id !== '' ? String(e.id) : uid();
+        if (!e.id) e.id = key;
+        uniqueEvents.set(key, e);
+    });
+    d.events = Array.from(uniqueEvents.values());
     
     d.events.forEach(e => {
         if(e.isRuocDau === undefined) e.isRuocDau = false;
-        if(!e.eventType) e.eventType = 'Cưới'; 
+        if(!e.eventType) e.eventType = 'Cưới';
+        if(!STATUS_LABEL[e.status]) e.status = 'pending'; 
         if(!Array.isArray(e.assignments)) e.assignments = normalizeCollection(e.assignments);
         if(!Array.isArray(e.products)) e.products = normalizeCollection(e.products);
         if(!e.date) e.date = isoDate(new Date());
         if(!e.isRuocDau && !e.start) e.start = '08:00';
         if(e.isRuocDau && e.start === undefined) e.start = '';
         if(!e.end) e.end = '12:00';
-        e.assignments.forEach(a => { if(!a.locType) a.locType = ''; });
+        e.assignments.forEach(a => {
+            if (a?.id !== undefined && a?.id !== null) a.id = String(a.id);
+            if(!a.locType) a.locType = '';
+        });
     });
     return d;
 }
@@ -3529,6 +3578,90 @@ function persistLocal() {
 // DATA ACCESS LAYER — LOCAL CACHE + FIREBASE
 // ==========================================
 const FIREBASE_WRITE_TIMEOUT = 5000;
+const PENDING_SYNC_KEY = 'amorriPlanner_pending_sync_v1';
+let isFlushingPendingWrites = false;
+
+function readPendingWrites() {
+    try {
+        const arr = JSON.parse(localStorage.getItem(PENDING_SYNC_KEY) || '[]');
+        return Array.isArray(arr) ? arr : [];
+    } catch (_) { return []; }
+}
+
+function savePendingWrites(list) {
+    try { localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify((list || []).slice(-300))); } catch (_) {}
+}
+
+function queuePendingWrite(type, path, value = null) {
+    const cleanPath = String(path || '').replace(/^\/+|\/+$/g, '');
+    let list = readPendingWrites();
+    // Last operation for the same exact path wins. This prevents an offline edit session
+    // from creating an unnecessarily large queue.
+    list = list.filter(op => String(op.path) !== cleanPath);
+    list.push({ type, path: cleanPath, value, ts: Date.now() });
+    savePendingWrites(list);
+}
+
+function collectionArrayToKeyedObject(arr) {
+    const out = {};
+    (Array.isArray(arr) ? arr : []).filter(Boolean).forEach((item, index) => {
+        const key = item && typeof item === 'object' && item.id !== undefined && item.id !== null && item.id !== ''
+            ? String(item.id)
+            : String(index);
+        out[key] = item;
+    });
+    return out;
+}
+
+function setNestedValue(root, path, value, merge = false) {
+    const parts = String(path || '').split('/').filter(Boolean);
+    if (!parts.length) return root;
+    let cur = root;
+    for (let i = 0; i < parts.length - 1; i++) {
+        const k = parts[i];
+        const nextKey = parts[i + 1];
+        if (Array.isArray(cur[k]) && !/^\d+$/.test(nextKey)) {
+            // Firebase keyed collections may arrive locally as arrays after sanitization.
+            // Convert them back to keyed objects before replaying an offline path such as events/<eventId>.
+            cur[k] = collectionArrayToKeyedObject(cur[k]);
+        } else if (!cur[k] || typeof cur[k] !== 'object') {
+            cur[k] = {};
+        }
+        cur = cur[k];
+    }
+    const key = parts[parts.length - 1];
+    if (merge && cur[key] && typeof cur[key] === 'object' && value && typeof value === 'object') {
+        cur[key] = { ...cur[key], ...value };
+    } else {
+        cur[key] = value;
+    }
+    return root;
+}
+
+function removeNestedValue(root, path) {
+    const parts = String(path || '').split('/').filter(Boolean);
+    if (!parts.length) return root;
+    let cur = root;
+    for (let i = 0; i < parts.length - 1; i++) {
+        const k = parts[i];
+        const nextKey = parts[i + 1];
+        if (Array.isArray(cur[k]) && !/^\d+$/.test(nextKey)) cur[k] = collectionArrayToKeyedObject(cur[k]);
+        cur = cur?.[k];
+        if (!cur || typeof cur !== 'object') return root;
+    }
+    if (cur && typeof cur === 'object') delete cur[parts[parts.length - 1]];
+    return root;
+}
+
+function applyPendingWritesToSnapshot(snapshotData) {
+    const clone = JSON.parse(JSON.stringify(snapshotData || defaultData()));
+    for (const op of readPendingWrites()) {
+        if (op.type === 'remove') removeNestedValue(clone, op.path);
+        else if (op.type === 'update') setNestedValue(clone, op.path, op.value, true);
+        else setNestedValue(clone, op.path, op.value, false);
+    }
+    return clone;
+}
 
 async function withFirebaseTimeout(promise, timeout = FIREBASE_WRITE_TIMEOUT) {
     let timer;
@@ -3544,41 +3677,77 @@ async function withFirebaseTimeout(promise, timeout = FIREBASE_WRITE_TIMEOUT) {
     }
 }
 
+async function flushPendingWrites() {
+    if (isFlushingPendingWrites || !window.dbRef) return false;
+    let list = readPendingWrites();
+    if (!list.length) return true;
+    isFlushingPendingWrites = true;
+    try {
+        while (list.length) {
+            const op = list[0];
+            const ref = window.dbRef.child(op.path);
+            if (op.type === 'remove') await withFirebaseTimeout(ref.remove());
+            else if (op.type === 'update') await withFirebaseTimeout(ref.update(op.value));
+            else await withFirebaseTimeout(ref.set(op.value));
+            list.shift();
+            savePendingWrites(list);
+        }
+        return true;
+    } catch (err) {
+        console.error('Pending sync flush error:', err);
+        return false;
+    } finally {
+        isFlushingPendingWrites = false;
+    }
+}
+
 async function dbSet(path, value) {
     persistLocal();
-    if (!window.dbRef) return false;
+    if (!window.dbRef) {
+        queuePendingWrite('set', path, value);
+        return false;
+    }
     try {
         await withFirebaseTimeout(window.dbRef.child(path).set(value));
         return true;
     } catch (err) {
         console.error('Firebase set error:', err);
-        showToast('Đã lưu trên máy, chưa đồng bộ máy chủ.');
+        queuePendingWrite('set', path, value);
+        showToast('Đã lưu trên máy và xếp hàng chờ đồng bộ.');
         return false;
     }
 }
 
 async function dbUpdate(path, value) {
     persistLocal();
-    if (!window.dbRef) return false;
+    if (!window.dbRef) {
+        queuePendingWrite('update', path, value);
+        return false;
+    }
     try {
         await withFirebaseTimeout(window.dbRef.child(path).update(value));
         return true;
     } catch (err) {
         console.error('Firebase update error:', err);
-        showToast('Đã lưu trên máy, chưa đồng bộ máy chủ.');
+        queuePendingWrite('update', path, value);
+        showToast('Đã lưu trên máy và xếp hàng chờ đồng bộ.');
         return false;
     }
 }
 
 async function dbRemove(path) {
     persistLocal();
-    if (!window.dbRef) return false;
+    if (!window.dbRef) {
+        queuePendingWrite('remove', path, null);
+        return false;
+    }
     try {
         await withFirebaseTimeout(window.dbRef.child(path).remove());
         return true;
     } catch (err) {
         console.error('Firebase remove error:', err);
-        showToast('Đã xóa trên máy, chưa đồng bộ máy chủ.');
+        queuePendingWrite('remove', path, null);
+        showToast('Đã xóa trên máy và xếp hàng chờ đồng bộ.');
         return false;
     }
 }
@@ -3777,7 +3946,7 @@ window.setupLocationAutocomplete = function() {
                             const p = f.properties;
                             const parts = [p.name, p.street, p.district, p.city, p.state, p.country].filter(Boolean);
                             const uniqueStr = [...new Set(parts)].join(', ');
-                            return `<div class="suggest-item" onclick="window.selectLocation('${id}', '${escapeHtml(uniqueStr)}')">📍 ${escapeHtml(uniqueStr)}</div>`;
+                            return `<div class="suggest-item" onclick="window.selectLocation('${id}', decodeURIComponent('${encodeURIComponent(uniqueStr)}'))">📍 ${escapeHtml(uniqueStr)}</div>`;
                         }).join('');
                         suggestBox.style.display = 'block';
                     } else { suggestBox.style.display = 'none'; }
@@ -3839,8 +4008,10 @@ function initApp() {
             window.dbRef.on('value', (snapshot) => {
                 const val = snapshot.val();
                 if (val) {
-                    data = sanitizeData(val);
+                    // Never let a stale server snapshot erase valid local edits made while offline.
+                    data = sanitizeData(applyPendingWritesToSnapshot(val));
                     persistLocal();
+                    flushPendingWrites();
                     resolveCurrentUserRole();
                     applyRoleUI();
                     try { render(); } catch(e) { console.error('Render realtime error:', e); }
@@ -3850,8 +4021,9 @@ function initApp() {
                         window.refreshOpenEventProductActions?.();
                     }
                 } else {
-                    data = defaultData();
+                    data = sanitizeData(applyPendingWritesToSnapshot(defaultData()));
                     persistLocal();
+                    flushPendingWrites();
                     resolveCurrentUserRole();
                     applyRoleUI();
                     try { render(); } catch(e) {}
@@ -3971,9 +4143,15 @@ function getFilteredEvents() {
     return evs;
 }
 
+function getEventSortStart(e) {
+  if (!e) return '';
+  if (e.isRuocDau) return [e.startTrai, e.startGai].filter(Boolean).sort()[0] || '';
+  return e.start || '';
+}
+
 function monthEvents(){
   return getFilteredEvents().filter(e=>sameMonth(parseDate(e.date),current))
-    .sort((a,b)=>((a.date||'')+(a.start||'')).localeCompare((b.date||'')+(b.start||'')));
+    .sort((a,b)=>((a.date||'')+getEventSortStart(a)).localeCompare((b.date||'')+getEventSortStart(b)));
 }
 
 function renderFilters(){
@@ -4253,7 +4431,7 @@ function generatePayrollHTML(staffArray, evs, monthKey, isFreelance = false, isR
                 <div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:0.5px">Còn lại</div>
                 <div style="font-weight:900;font-size:22px;margin-top:4px;color:${remain > 0 ? 'var(--red)' : 'var(--green)'}">${money(remain)} đ</div>
               </div>
-              ${!isReadonly ? `<button class="btn ghost" style="padding:10px 18px;font-size:13.5px;" onclick="window.openPayrollModal('${s.id}','${escapeHtml(s.name)}','${monthKey}')">Cập nhật</button>` : ''}
+              ${!isReadonly ? `<button class="btn ghost" style="padding:10px 18px;font-size:13.5px;" onclick="window.openPayrollModal('${s.id}',decodeURIComponent('${encodeURIComponent(s.name)}'),'${monthKey}')">Cập nhật</button>` : ''}
             </div>
           </div>
           <div style="background:#f8fafc">
@@ -4312,7 +4490,7 @@ window.openPayrollModal = function(staffId, staffName, monthStr) {
   setSafeValue('payrollPaid', p.paid ? money(p.paid / 1000) : '');
 }
 
-window.savePayroll = function() {
+window.savePayroll = async function() {
   if (currentUserRole !== 'admin') return;
   const staffId = document.getElementById('payrollStaffId').value;
   const monthStr = document.getElementById('payrollMonth').value;
@@ -4322,14 +4500,16 @@ window.savePayroll = function() {
   if(!data.payroll[monthStr]) data.payroll[monthStr] = {};
   data.payroll[monthStr][staffId] = { advance, paid };
   
-  dbSet(`payroll/${monthStr}/${staffId}`, { advance, paid });
+  const savedToServer = await dbSet(`payroll/${monthStr}/${staffId}`, { advance, paid });
   writeAuditLog('PAYROLL_UPDATED', {
       severity:'info', category:'payroll', targetType:'payroll', targetId:`${monthStr}_${staffId}`,
       targetStaffIds:[staffId], message:`Cập nhật lương ${staffNameById(staffId)} tháng ${monthStr}`,
       metadata:{month:monthStr, staffId, advance, paid}
   });
   
-  window.smoothClose('payrollModal'); render(); showToast('Đã cập nhật lương');
+  window.smoothClose('payrollModal');
+  render();
+  showToast(savedToServer ? 'Đã cập nhật lương' : 'Đã lưu lương trên máy, đang chờ đồng bộ');
 }
 
 function renderUpcoming(){
@@ -4638,8 +4818,9 @@ window.updateModalVisibility = function() {
         el.style.display = (nameVal && hasLoc) ? (el.classList.contains('full') ? 'block' : 'grid') : 'none'; 
     });
     
-    const evDate = document.getElementById('eventDate')?.value; const evEnd = document.getElementById('eventEnd')?.value;
-    let isEnded = false; if(evDate && evEnd) isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
+    const evDate = document.getElementById('eventDate')?.value;
+    const evEnd = document.getElementById('eventEnd')?.value;
+    const isEnded = isCurrentEventEndedFromForm();
 
     document.querySelectorAll('.staff-modal-item, .staff-modal-staffonly').forEach(el => {
         const isChecked = el.querySelector('.staff-check')?.checked || (currentUserRole === 'staff');
@@ -4652,7 +4833,7 @@ window.updateModalVisibility = function() {
 
 let currentEventAssignments = [];
 
-window.saveStaffLinkLocally = async function(sId, sName) {
+window.saveStaffLinkLocally = async function(sId, sName = '') {
     const canWrite = currentUserRole === 'admin' || (currentUserRole === 'staff' && String(sId) === String(staffViewId));
     if(!canWrite) { showToast('Bạn không có quyền cập nhật Source của nhân sự này.'); return; }
 
@@ -4660,29 +4841,33 @@ window.saveStaffLinkLocally = async function(sId, sName) {
     if(!urlInput) { showToast('Vui lòng dán link'); return; }
     const validatedUrl = safeUrl(urlInput);
     if(validatedUrl === '#') { showToast('Link không hợp lệ. Chỉ chấp nhận http/https'); return; }
-    
-    const evId = document.getElementById('eventId')?.value;
-    if(evId) {
-        const idx = data.events.findIndex(e => e.id === evId);
-        if(idx >= 0) {
-            const aIdx = data.events[idx].assignments.findIndex(a => a.id === sId);
-            if(aIdx >= 0) {
-                data.events[idx].assignments[aIdx].link = urlInput;
-                await dbSet(`events/${evId}/assignments/${aIdx}/link`, urlInput);
-            }
-        }
-    }
+
+    const evId = String(document.getElementById('eventId')?.value || '');
+    if(!evId) { showToast('Không xác định được lịch cần cập nhật.'); return; }
+    const idx = data.events.findIndex(e => sameId(e.id, evId));
+    if(idx < 0) { showToast('Không tìm thấy lịch gốc. Vui lòng tải lại trang.'); return; }
+    const aIdx = (data.events[idx].assignments || []).findIndex(a => sameId(a.id, sId));
+    if(aIdx < 0) { showToast('Nhân sự này không còn trong lịch.'); return; }
+
+    data.events[idx].assignments[aIdx].link = urlInput;
+    persistLocal();
+    const savedToServer = await dbSet(`events/${evId}/assignments/${aIdx}/link`, urlInput);
+
     const tag = document.getElementById('evt-link-tag-'+sId);
     if(tag) { tag.href = validatedUrl; tag.innerHTML = `🔗 Bấm xem Source`; }
-    document.getElementById('evt-link-edit-'+sId).style.display = 'none';
-    document.getElementById('evt-link-view-'+sId).style.display = 'flex';
-    const currentEvent = evId ? data.events.find(e => e.id === evId) : null;
+    const editEl = document.getElementById('evt-link-edit-'+sId);
+    const viewEl = document.getElementById('evt-link-view-'+sId);
+    if(editEl) editEl.style.display = 'none';
+    if(viewEl) viewEl.style.display = 'flex';
+
+    const currentEvent = data.events[idx];
+    const resolvedStaffName = sName || staffNameById(sId);
     writeAuditLog('SOURCE_SUBMITTED', {
-      severity:'success', category:'source', targetType:'assignment', targetId:`${evId || ''}_${sId}`,
+      severity:'success', category:'source', targetType:'assignment', targetId:`${evId}_${sId}`,
       targetStaffIds:[sId], eventName:currentEvent?.name || 'lịch', eventDate:currentEvent?.date || '',
-      message:`${sName || staffNameById(sId)} vừa nộp Source`, staffMessageType:'source'
+      message:`${resolvedStaffName} vừa nộp Source`, staffMessageType:'source'
     });
-    showToast('Đã nộp Source thành công!');
+    showToast(savedToServer ? 'Đã nộp Source thành công!' : 'Đã lưu Source trên máy, đang chờ đồng bộ');
 }
 
 window.toggleEditLink = function(sId) {
@@ -4699,8 +4884,15 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
     div.dataset.url = url || '';
     div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#f8fafc; padding:16px; border-radius:16px; border:1px solid var(--line)';
 
-    if (isReadonly) return;
+    if (isReadonly) {
+        div.innerHTML = `<div class="prod-view" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" class="prod-view-link" style="font-size:13.5px;font-weight:700;color:var(--blue);text-decoration:none;flex:1;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🔗 <span class="prod-view-name">${escapeHtml(name || 'Link Bàn Giao')}</span></a>
+        </div>`;
+        container.appendChild(div);
+        return;
+    }
     const isSaved = url !== '';
+    const inputIdSafe = String(prodId).replace(/[^a-zA-Z0-9_-]/g, '_');
     div.innerHTML = `
        <div class="prod-view" style="display:${isSaved ? 'flex' : 'none'}; gap:10px; align-items:center; flex-wrap:wrap">
            <a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" class="prod-view-link" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; flex:1; min-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -4714,10 +4906,10 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
            </div>
        </div>
        <div class="prod-edit admin-only-flex" style="display:${isSaved ? 'none' : 'flex'}; gap:10px; flex-wrap:wrap; align-items:center">
-           <label for="prod-name-new" style="display:none">Tên Sản Phẩm</label>
-           <input type="text" id="prod-name-new" aria-label="Tên sản phẩm" class="prod-name field" value="${escapeHtml(name)}" placeholder="Tên SP (VD: Video Teaser, Ảnh Gốc...)" style="flex:1; min-width:120px;">
-           <label for="prod-url-new" style="display:none">Đường dẫn</label>
-           <input type="url" id="prod-url-new" aria-label="Đường dẫn" class="prod-url field" value="${escapeHtml(url)}" placeholder="🔗 Dán link Youtube, Drive, mp4..." style="flex:2; min-width:150px;">
+           <label for="prod-name-${inputIdSafe}" style="display:none">Tên Sản Phẩm</label>
+           <input type="text" id="prod-name-${inputIdSafe}" aria-label="Tên sản phẩm" class="prod-name field" value="${escapeHtml(name)}" placeholder="Tên SP (VD: Video Teaser, Ảnh Gốc...)" style="flex:1; min-width:120px;">
+           <label for="prod-url-${inputIdSafe}" style="display:none">Đường dẫn</label>
+           <input type="url" id="prod-url-${inputIdSafe}" aria-label="Đường dẫn" class="prod-url field" value="${escapeHtml(url)}" placeholder="🔗 Dán link Youtube, Drive, mp4..." style="flex:2; min-width:150px;">
            <button type="button" class="btn primary" style="padding:10px 16px; font-size:13px;" onclick="window.saveProductRow(this)">Lưu</button>
            <button type="button" class="btn danger ghost" style="padding:10px 14px; font-size:13px;" onclick="this.closest('.product-row').remove()">✕</button>
        </div>
@@ -5051,6 +5243,28 @@ window.saveFreelanceQuick = function() {
     });
 };
 
+function getEventEndMoment(dateStr, endStr, startValues = []) {
+    if (!dateStr || !endStr) return null;
+    const endMoment = new Date(`${dateStr}T${endStr}`);
+    if (Number.isNaN(endMoment.getTime())) return null;
+    const starts = (startValues || []).filter(Boolean).sort();
+    const earliestStart = starts[0] || '';
+    // If end clock is <= start clock, treat it as an overnight session ending next day.
+    if (earliestStart && endStr <= earliestStart) endMoment.setDate(endMoment.getDate() + 1);
+    return endMoment;
+}
+
+function isCurrentEventEndedFromForm() {
+    const dateStr = document.getElementById('eventDate')?.value || '';
+    const endStr = document.getElementById('eventEnd')?.value || '';
+    const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
+    const starts = isRuocDau
+        ? [document.getElementById('eventStartTrai')?.value || '', document.getElementById('eventStartGai')?.value || '']
+        : [document.getElementById('eventStart')?.value || ''];
+    const endMoment = getEventEndMoment(dateStr, endStr, starts);
+    return !!endMoment && new Date() >= endMoment;
+}
+
 window.renderEventStaffList = function() {
     const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
     const evDate = document.getElementById('eventDate')?.value;
@@ -5070,7 +5284,7 @@ window.renderEventStaffList = function() {
     }
     
     const evEnd = document.getElementById('eventEnd')?.value;
-    let isEnded = false; if(evDate && evEnd) isEnded = new Date() >= new Date(evDate + 'T' + evEnd);
+    const isEnded = isCurrentEventEndedFromForm();
     
     const isAdmin = currentUserRole === 'admin';
     const evStaffEl = document.getElementById('eventStaff'); if(!evStaffEl) return;
@@ -5117,7 +5331,7 @@ window.renderEventStaffList = function() {
                     <div id="evt-link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
                         <label for="evt-link-in-${s.id}" style="display:none">Link Source</label>
                         <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link tải Source (Drive/Fshare...)" style="flex:1; background:#fff; border:1px solid #d4d4d8; padding:10px 14px; border-radius:8px; outline:0; font-size:13.5px; min-width:150px;">
-                        <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Nộp Source</button>
+                        <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}')">Nộp Source</button>
                     </div>
                 </div>
                 <div class="wait-link-msg" style="display:${!isEnded ? 'block' : 'none'}; font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic; padding:12px; background:#f4f4f5; border-radius:8px; text-align:center;">⏳ Hệ thống nộp Source sẽ tự mở sau khi kết thúc giờ chụp.</div>
@@ -5234,7 +5448,7 @@ window.renderEventStaffList = function() {
                  <div id="evt-link-edit-${s.id}" style="display:${savedLink ? 'none' : 'flex'}; gap: 10px; flex:1; align-items:center; flex-wrap:wrap;">
                      <label for="evt-link-in-${s.id}" style="display:none">Link Source</label>
                      <input type="url" id="evt-link-in-${s.id}" value="${escapeHtml(savedLink)}" placeholder="🔗 Dán link Google Drive/Fshare..." style="flex:1; background:#fff; border:1px solid #cbd5e1; padding:10px 14px; border-radius:10px; outline:0; font-size:13.5px; min-width:150px;">
-                     <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}', '${escapeHtml(s.name)}')">Lưu</button>
+                     <button type="button" class="btn primary" style="padding:10px 18px; font-size:13.5px;" onclick="window.saveStaffLinkLocally('${s.id}')">Lưu</button>
                  </div>
             </div>
             <div class="wait-link-msg" style="display:${!isEnded && isChecked ? 'block' : 'none'}; font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic; margin-left:32px;">⏳ Hệ thống nộp Link Source sẽ mở cho thợ sau khi lịch kết thúc.</div>
@@ -5329,8 +5543,18 @@ window.openEventModal = function(prefill={}){
   const sFiltersInputs = document.querySelectorAll('#staffFiltersContainer input[type="checkbox"]');
   sFiltersInputs.forEach(cb => cb.checked = false);
 
+  const requestedId = prefill.id !== undefined && prefill.id !== null && prefill.id !== '' ? String(prefill.id) : '';
+  const e = requestedId ? data.events.find(x => sameId(x.id, requestedId)) : null;
+
+  // Critical guard: when an edit target cannot be found, DO NOT open a blank "new event"
+  // form. That was able to create a duplicate booking when the user only changed status.
+  if (requestedId && !e) {
+      showToast('Không tìm thấy lịch cần sửa. Dữ liệu vừa thay đổi, vui lòng tải lại.');
+      console.warn('openEventModal: event id not found', requestedId);
+      return;
+  }
+
   window.smoothOpen('eventModal');
-  const e=prefill.id?data.events.find(x=>x.id===prefill.id):null;
   const et = document.getElementById('eventModalTitle');
   
   const isAdmin = currentUserRole === 'admin';
@@ -5492,7 +5716,7 @@ function findEventConflicts(candidate) {
         if (!myInterval) return;
 
         data.events.forEach(e => {
-            if (!e || e.id === candidate.id || e.status === 'cancelled') return;
+            if (!e || sameId(e.id, candidate.id) || e.status === 'cancelled') return;
             const other = (e.assignments || []).find(x => x.id === a.id);
             if (!other) return;
             const otherInterval = buildAssignmentInterval(e, other);
@@ -5541,7 +5765,7 @@ window.checkConflict = function(){
          const myInterval = buildAssignmentInterval(candidate, a);
          if (!myInterval) continue;
          for (const e of data.events) {
-             if (!e || e.id === id || e.status === 'cancelled') continue;
+             if (!e || sameId(e.id, id) || e.status === 'cancelled') continue;
              const other = (e.assignments || []).find(x => x.id === s.id);
              if (!other) continue;
              const otherInterval = buildAssignmentInterval(e, other);
@@ -5552,7 +5776,7 @@ window.checkConflict = function(){
      }
 
      const allRelated = data.events
-         .filter(e => e.id !== id && e.status !== 'cancelled' && (e.assignments || []).some(a => a.id === s.id))
+         .filter(e => e.date === date && !sameId(e.id, id) && e.status !== 'cancelled' && (e.assignments || []).some(a => a.id === s.id))
          .map(e => {
              const a = (e.assignments || []).find(x => x.id === s.id);
              const iv = buildAssignmentInterval(e, a);
@@ -5572,14 +5796,38 @@ window.checkConflict = function(){
   });
 }
 
+let isSavingEvent = false;
 window.saveEvent = async function(){
-  if (currentUserRole !== 'admin') return;
-  const id=document.getElementById('eventId')?.value;
+  if (currentUserRole !== 'admin' || isSavingEvent) return;
+
+  const saveBtn = document.getElementById('saveEvent');
+  const rawId = document.getElementById('eventId')?.value || '';
+  const id = rawId ? String(rawId) : '';
   const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
-  const previousEvent = id ? JSON.parse(JSON.stringify(data.events.find(e => e.id === id) || null)) : null;
-  
+  const foundPrevious = id ? data.events.find(e => sameId(e.id, id)) : null;
+
+  // Editing must never fall through to the CREATE path.
+  if (id && !foundPrevious) {
+      showToast('Không tìm thấy lịch gốc nên hệ thống đã hủy lưu để tránh tạo lịch trùng.');
+      console.error('saveEvent: refusing edit-as-create for missing id', id);
+      return;
+  }
+
+  const previousEvent = foundPrevious ? JSON.parse(JSON.stringify(foundPrevious)) : null;
+  const effectiveId = id || uid();
+  // Assign the generated ID immediately so repeated clicks cannot generate another booking.
+  if (!id) setSafeValue('eventId', effectiveId);
+
+  isSavingEvent = true;
+  if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.dataset.oldText = saveBtn.textContent || 'Lưu lịch';
+      saveBtn.textContent = 'Đang lưu...';
+  }
+
+  try {
   const obj={
-    id:id||uid(),
+    id:effectiveId,
     isRuocDau: isRuocDau,
     eventType: document.getElementById('eventType')?.value || 'Cưới',
     name:document.getElementById('eventName')?.value.trim()||'',
@@ -5634,8 +5882,9 @@ window.saveEvent = async function(){
       if(!confirm(`⚠️ Thợ ${first.staffName} bị trùng lịch với: ${first.eventName} (Giờ: ${first.other}). Bạn có chắc chắn muốn lưu đè?${more}`)) return;
   }
   
-  const idx=data.events.findIndex(e=>e.id===id);
-  if(idx>=0)data.events[idx]=obj; else data.events.push(obj);
+  const idx = data.events.findIndex(e => sameId(e.id, effectiveId));
+  if(idx>=0) data.events[idx]=obj;
+  else data.events.push(obj);
   
   const savedToServer = await dbSet(`events/${obj.id}`, obj);
 
@@ -5691,12 +5940,20 @@ window.saveEvent = async function(){
   }
   
   window.smoothClose('eventModal'); render(); showToast(savedToServer || !window.dbRef ? (idx>=0?'Đã cập nhật lịch':'Đã thêm lịch') : 'Đã lưu trên máy, chưa đồng bộ máy chủ.');
+  } finally {
+      isSavingEvent = false;
+      if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = saveBtn.dataset.oldText || 'Lưu lịch';
+          delete saveBtn.dataset.oldText;
+      }
+  }
 }
 
 window.deleteEvent = async function(){
   if (currentUserRole !== 'admin') return;
   const id=document.getElementById('eventId')?.value;if(!id)return;
-  const e=data.events.find(x=>x.id===id); if(!e)return;
+  const e=data.events.find(x=>sameId(x.id,id)); if(!e)return;
   if(!confirm(`Xóa lịch "${e.name}"?`))return;
 
   const targetStaffIds = staffIdsFromAssignments(e.assignments);
@@ -5707,7 +5964,7 @@ window.deleteEvent = async function(){
       metadata:{deletedStaffIds:targetStaffIds, deletedEventSnapshot:{name:e.name, date:e.date, status:e.status}}
   });
 
-  data.events = data.events.filter(x => x.id !== id);
+  data.events = data.events.filter(x => !sameId(x.id, id));
   const removed = await dbRemove(`events/${id}`);
 
   window.smoothClose('eventModal');
@@ -5841,6 +6098,10 @@ document.querySelectorAll('[data-audit-filter]').forEach(btn => btn.addEventList
     renderAuditLog();
 }));
 document.getElementById('auditSearchInput')?.addEventListener('input', renderAuditLog);
+
+window.addEventListener('online', () => {
+    flushPendingWrites().then(ok => { if (ok && !readPendingWrites().length) showToast('Đã đồng bộ dữ liệu chờ lên máy chủ.'); });
+});
 
 initApp();
 </script>
