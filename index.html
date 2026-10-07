@@ -499,12 +499,8 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
     </div>
     
     <div class="gallery-container">
-        <!-- Khung Video (Sẽ hiện nếu Admin có điền link video) -->
-        <div id="cgVideoContainer" class="client-video-card" style="display:none;">
-            <h3 style="margin-top:0; font-size:20px; font-weight:800;">🎥 Video Bàn Giao</h3>
-            <p style="color:var(--muted); font-size:14px; margin-bottom: 20px;">Bấm vào nút bên dưới để xem hoặc tải video chất lượng cao.</p>
-            <a id="cgVideoLink" href="#" target="_blank" class="btn primary" style="font-size:15px; padding: 14px 32px; box-shadow: 0 10px 25px rgba(15,23,42,0.2);">Xem Video Final</a>
-        </div>
+        <!-- Khung Video / Sản Phẩm (Hiển thị qua auto-detect) -->
+        <div id="cgVideoContainer" class="client-video-card" style="display:none;"></div>
 
         <!-- Lưới Ảnh -->
         <div class="photo-grid-client" id="cgPhotoGrid"></div>
@@ -873,7 +869,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
                     📦 Link Bàn Giao & Chọn Ảnh 
                 </label>
                 <div style="display:flex; gap:8px;">
-                    <button type="button" class="btn ghost admin-only admin-only-flex" style="padding:8px 16px; font-size:12.5px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateClientLink()">🔗 Tạo Link Gửi Khách</button>
+                    <button type="button" class="btn ghost admin-only admin-only-flex" style="padding:8px 16px; font-size:12.5px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateClientLink()">🔗 Lấy Link Tất Cả</button>
                     <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:8px 16px; font-size:13px; border:1px solid #cbd5e1;" onclick="window.addProductRow()">+ Thêm Link Phụ</button>
                 </div>
             </div>
@@ -1002,11 +998,11 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     const pandaMascot = document.getElementById('panda-mascot');
-    let isReacting = false; // Biến chặn đổi hướng khi đang hiện biểu cảm
+    let isReacting = false;
 
     if (pandaMascot) {
         document.addEventListener('mousemove', (e) => {
-            if (isReacting) return; // Không nhìn theo chuột nếu đang click
+            if (isReacting) return; 
 
             const rect = pandaMascot.getBoundingClientRect();
             const pandaX = rect.left + rect.width / 2;
@@ -1015,44 +1011,36 @@ document.addEventListener("DOMContentLoaded", () => {
             const dx = e.clientX - pandaX;
             const dy = e.clientY - pandaY;
 
-            // Ngưỡng dead-zone: Chuột cách xa bao nhiêu px thì mới liếc mắt
             const threshold = 50; 
 
-            let posX = 50; // Giữa (50%)
-            let posY = 50; // Giữa (50%)
+            let posX = 50; 
+            let posY = 50; 
 
-            // Tính toán trục X (Cắt ảnh: 0% Trái, 50% Giữa, 100% Phải)
             if (dx < -threshold) posX = 0;      
             else if (dx > threshold) posX = 100; 
 
-            // Tính toán trục Y (Cắt ảnh: 0% Trên, 50% Giữa, 100% Dưới)
             if (dy < -threshold) posY = 0;      
             else if (dy > threshold) posY = 100; 
 
             pandaMascot.style.backgroundPosition = `${posX}% ${posY}%`;
         });
         
-        // Khi chuột ra ngoài màn hình
         document.addEventListener('mouseleave', () => {
             if (!isReacting) pandaMascot.style.backgroundPosition = `50% 50%`;
         });
 
-        // Hiệu ứng biểu cảm khi click
         pandaMascot.addEventListener('click', () => {
             if (isReacting) return;
             isReacting = true;
             
-            // Đổi sang file reactions
             pandaMascot.style.backgroundImage = "url('panda-reactions.webp')";
             
-            // Chọn ngẫu nhiên 1 tọa độ trong lưới 3x3 (0, 50, 100)
             const grid = [0, 50, 100];
             const randomX = grid[Math.floor(Math.random() * 3)];
             const randomY = grid[Math.floor(Math.random() * 3)];
             
             pandaMascot.style.backgroundPosition = `${randomX}% ${randomY}%`;
 
-            // Trả về trạng thái bình thường sau 1.5 giây
             setTimeout(() => {
                 pandaMascot.style.backgroundImage = "url('panda-directions.webp')";
                 pandaMascot.style.backgroundPosition = `50% 50%`;
@@ -1066,14 +1054,12 @@ document.addEventListener("DOMContentLoaded", () => {
 // MODULE BẢO VỆ MÃ NGUỒN & DEV MODE
 // ==========================================
 const urlParams = new URLSearchParams(window.location.search);
-const DEV_KEY = 'amorri2026'; // Chìa khóa bí mật để bạn bypass lớp bảo vệ
+const DEV_KEY = 'amorri2026';
 const isDevMode = urlParams.get('dev') === DEV_KEY;
 
 if (!isDevMode) {
-    // 1. Chặn chuột phải
     document.addEventListener('contextmenu', event => event.preventDefault());
 
-    // 2. Chặn các phím tắt công cụ Dev (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U)
     document.onkeydown = function (e) {
         if (e.keyCode == 123 || 
            (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) ||
@@ -1082,12 +1068,10 @@ if (!isDevMode) {
         }
     };
 
-    // 3. Bẫy Debugger
     setInterval(function() {
         (function (a) { return (function (a) { return (Function('Function(arguments[0]+"' + a + '")()')) })(a) })('bugger')('de');
     }, 1000);
     
-    // 4. Lời cảnh báo
     console.log("%c⚠️ Dừng lại!", "color: red; font-size: 40px; font-weight: bold; -webkit-text-stroke: 1px black;");
     console.log("%cĐây là tính năng của trình duyệt dành cho nhà phát triển. Việc cố tình can thiệp hoặc dán mã lạ vào đây có thể khiến bạn bị đánh cắp dữ liệu.", "font-size: 16px;");
 } else {
@@ -1186,6 +1170,7 @@ let currentUserRole = 'guest';
 // LOGIC PHÒNG CHỌN ẢNH (CLIENT GALLERY)
 // ==========================================
 const clientIdParam = urlParams.get('client_gallery');
+const prodIdParam = urlParams.get('prod'); // Lấy thêm tham số prod ID từ URL
 let isClientMode = !!clientIdParam;
 let clientSelectedPhotos = new Set();
 let currentClientEvent = null;
@@ -1205,45 +1190,86 @@ function initClientGallery() {
         return;
     }
 
-    document.getElementById('cgTitle').textContent = currentClientEvent.name || "Album Kỷ Niệm";
-    document.title = (currentClientEvent.name || "Album") + " - Bàn Giao";
-
-    // Khôi phục danh sách ảnh đã thả tim từ Firebase
+    document.getElementById('cgTitle').textContent = currentClientEvent.name || "Sản Phẩm Của Bạn";
+    document.title = (currentClientEvent.name || "Amorri Studio") + " - Bàn Giao";
     clientSelectedPhotos = new Set(currentClientEvent.favoritePhotos || []);
     
-    // XỬ LÝ HIỂN THỊ LINK SẢN PHẨM (VIDEO, DRIVE, V.V...)
     const productsContainer = document.getElementById('cgVideoContainer');
-    const products = currentClientEvent.products || [];
+    const photoGrid = document.getElementById('cgPhotoGrid');
     
-    if (products.length > 0) {
+    // Lọc ra sản phẩm cần hiển thị nếu có truyền prod ID, ngược lại hiện tất cả
+    let targetProducts = currentClientEvent.products || [];
+    if (prodIdParam) {
+        targetProducts = targetProducts.filter(p => p.id === prodIdParam);
+    }
+    
+    if (targetProducts.length > 0) {
         productsContainer.style.display = 'block';
-        productsContainer.innerHTML = `<h3 style="margin-top:0; font-size:20px; font-weight:800;">🎁 Sản Phẩm Bàn Giao</h3>
-        <p style="color:var(--muted); font-size:14px; margin-bottom: 20px;">Vui lòng bấm vào các nút bên dưới để xem hoặc tải xuống sản phẩm của bạn.</p>
-        <div style="display:flex; flex-direction:column; gap:12px; align-items:center;">
-        ${products.map(p => {
-            let icon = '🔗';
-            const nameLower = p.name.toLowerCase();
-            if (nameLower.includes('video')) icon = '🎥';
-            if (nameLower.includes('drive') || nameLower.includes('ảnh')) icon = '🖼️';
+        productsContainer.style.background = 'transparent';
+        productsContainer.style.boxShadow = 'none';
+        productsContainer.style.border = 'none';
+        productsContainer.style.padding = '0';
+        
+        productsContainer.innerHTML = targetProducts.map(p => {
+            const rawUrl = p.url || '';
+            const lowerUrl = rawUrl.toLowerCase();
+            let viewHtml = '';
             
-            return `<a href="${safeUrl(p.url)}" target="_blank" class="btn primary" style="font-size:15px; padding: 14px 32px; box-shadow: 0 5px 15px rgba(15,23,42,0.1); width:100%; max-width:300px;">
-                ${icon}${escapeHtml(p.name || 'Link Sản Phẩm')}
-            </a>`;
-        }).join('')}
-        </div>`;
+            // 1. Nhận diện Youtube
+            if (lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be')) {
+                let videoId = '';
+                if(lowerUrl.includes('youtu.be/')) videoId = rawUrl.split('youtu.be/')[1].split('?')[0];
+                else if(lowerUrl.includes('v=')) videoId = rawUrl.split('v=')[1].split('&')[0];
+                
+                viewHtml = `<div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:16px; box-shadow:var(--shadow-lg);">
+                    <iframe src="https://www.youtube.com/embed/${videoId}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allowfullscreen></iframe>
+                </div>`;
+            }
+            // 2. Nhận diện Video trực tiếp (.mp4, .mov)
+            else if (lowerUrl.match(/\.(mp4|webm|mov|ogg)$/)) {
+                viewHtml = `<video controls style="width:100%; border-radius:16px; box-shadow:var(--shadow-lg);">
+                    <source src="${safeUrl(rawUrl)}" type="video/mp4">Trình duyệt không hỗ trợ video.</video>`;
+            }
+            // 3. Nhận diện Ảnh trực tiếp (.jpg, .png)
+            else if (lowerUrl.match(/\.(jpeg|jpg|gif|png|webp)$/)) {
+                viewHtml = `<img src="${safeUrl(rawUrl)}" style="width:100%; border-radius:16px; box-shadow:var(--shadow-lg);" alt="Sản phẩm">`;
+            }
+            // 4. Nhận diện Google Drive / Các link khác (Tạo nút bấm sang trọng)
+            else {
+                let icon = lowerUrl.includes('drive.google.com') ? '☁️' : '🔗';
+                let btnText = lowerUrl.includes('drive.google.com') ? 'Truy Cập Thư Mục Drive' : 'Mở Link Bàn Giao';
+                viewHtml = `<div class="client-video-card">
+                    <div style="font-size:48px; margin-bottom:16px;">${icon}</div>
+                    <h3 style="margin:0 0 10px; font-size:20px; font-weight:800;">${escapeHtml(p.name)}</h3>
+                    <p style="color:var(--muted); font-size:14px; margin-bottom: 24px;">Đã sẵn sàng. Bấm để chuyển hướng đến kho lưu trữ an toàn.</p>
+                    <a href="${safeUrl(rawUrl)}" target="_blank" class="btn primary" style="font-size:15px; padding: 14px 32px;">${btnText}</a>
+                </div>`;
+            }
+            
+            return `<div style="margin-bottom: 40px;">
+                <h3 style="font-size: 20px; font-weight:800; color:var(--text); margin-bottom:16px; text-align:center;">${escapeHtml(p.name)}</h3>
+                ${viewHtml}
+            </div>`;
+        }).join('');
     } else {
          productsContainer.style.display = 'none';
     }
 
-    // TẠO DỮ LIỆU ẢNH DEMO ĐỂ KHÁCH CHỌN ẢNH THAY VÌ LẤY TỪ DRIVE (KHÔNG KHẢ THI VỚI JS THUẦN)
-    if(!currentClientEvent.galleryPhotos || currentClientEvent.galleryPhotos.length === 0) {
-        currentClientEvent.galleryPhotos = Array.from({length: 16}).map((_, i) => ({
-            id: `IMG_${pad(i+1)}.JPG`,
-            url: `https://picsum.photos/seed/${clientIdParam}_${i}/600/900` 
-        }));
+    // Ẩn lưới ảnh giả lập nếu đang xem chế độ 1 Link duy nhất (Không phải xem tổng)
+    if (prodIdParam) {
+        photoGrid.style.display = 'none';
+        document.querySelector('.client-bottom-bar').style.display = 'none';
+        document.getElementById('clientGalleryView').style.paddingBottom = '40px';
+    } else {
+        // Nếu không có ảnh demo nào, tạo 1 mảng giả lập
+        if(!currentClientEvent.galleryPhotos || currentClientEvent.galleryPhotos.length === 0) {
+            currentClientEvent.galleryPhotos = Array.from({length: 12}).map((_, i) => ({
+                id: `IMG_${pad(i+1)}.JPG`,
+                url: `https://picsum.photos/seed/${clientIdParam}_${i}/600/900` 
+            }));
+        }
+        renderClientGrid();
     }
-
-    renderClientGrid();
 }
 
 function renderClientGrid() {
@@ -1291,15 +1317,9 @@ window.generateClientLink = function() {
     const evId = document.getElementById('eventId').value;
     if(!evId) { showToast('⚠️ Vui lòng LƯU LỊCH trước khi tạo link!'); return; }
     
-    // Nếu chưa có mảng link Drive/Video, nhắc nhẹ
-    const productsEl = document.getElementById('eventProductsList');
-    if(productsEl.children.length === 0) {
-        alert("Gợi ý: Nhấn 'Thêm Link Phụ' để dán link Video, khách sẽ thấy nút tải Video trong phòng chọn ảnh nhé.");
-    }
-
     const clientLink = window.location.origin + window.location.pathname + '?client_gallery=' + evId;
     window.copyText(clientLink);
-    showToast('✅ Đã copy Link Phòng Chọn Ảnh gửi khách!');
+    showToast('✅ Đã copy Link Tổng gửi khách!');
 };
 
 window.copyFavoriteList = function() {
@@ -2406,7 +2426,6 @@ function render(){
   const options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
   const tt = document.getElementById('todayText'); if(tt) tt.textContent=`Hôm nay · ${new Date().toLocaleDateString('vi-VN', options)}`;
   
-  // Dynamic Document Title
   if (currentUserRole === 'admin') {
       document.title = "Amorri Studio - Quản Lí";
   } else if (currentUserRole === 'staff') {
@@ -2455,7 +2474,6 @@ window.updateModalVisibility = function() {
     const evType = document.getElementById('eventType')?.value;
     let isRuocDauInput = document.getElementById('eventIsRuocDau');
     
-    // Auto reset logic
     if(evType !== 'Cưới' && isRuocDauInput?.value === 'true') {
         isRuocDauInput.value = 'false';
     }
@@ -2552,32 +2570,47 @@ window.toggleEditLink = function(sId) {
     document.getElementById('evt-link-edit-'+sId).style.display = 'flex';
 }
 
-window.addProductRow = function(name='', url='', isReadonly=false) {
+window.addProductRow = function(name='', url='', isReadonly=false, id='') {
     const container = document.getElementById('eventProductsList'); if(!container) return;
     const div = document.createElement('div');
-    div.className = 'product-row'; div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#f8fafc; padding:16px; border-radius:16px; border:1px solid var(--line)';
+    const prodId = id || 'prod_' + uid();
+    div.className = 'product-row'; 
+    div.dataset.id = prodId;
+    div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#f8fafc; padding:16px; border-radius:16px; border:1px solid var(--line)';
     
     if (isReadonly) return;
     const isSaved = url !== '';
     div.innerHTML = `
        <div class="prod-view" style="display:${isSaved ? 'flex' : 'none'}; gap: 10px; align-items:center; flex-wrap:wrap">
-           <a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" class="prod-view-link" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; flex:1; min-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+           <a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" class="prod-view-link" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; flex:1; min-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
               🔗 <span class="prod-view-name">${escapeHtml(name || 'Link Bàn Giao')}</span>
            </a>
-           <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px; border:1px solid #cbd5e1;" onclick="copyText(this.parentElement.parentElement.querySelector('.prod-url').value)">📋 Copy</button>
-           <button type="button" class="btn ghost admin-only-flex" style="padding:8px 12px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'">✏️ Sửa</button>
+           
+           <div style="display:flex; gap:6px;">
+               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateSingleClientLink('${prodId}')">🔗 Gửi Khách</button>
+               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.parentElement.parentElement.style.display='none'; this.parentElement.parentElement.nextElementSibling.style.display='flex'">✏️ Sửa</button>
+           </div>
        </div>
        <div class="prod-edit admin-only-flex" style="display:${isSaved ? 'none' : 'flex'}; gap: 10px; flex-wrap:wrap; align-items:center">
            <label for="prod-name-new" style="display:none">Tên Sản Phẩm</label>
-           <input type="text" id="prod-name-new" aria-label="Tên sản phẩm" class="prod-name field" value="${escapeHtml(name)}" placeholder="Tên SP (Ảnh gốc...)" style="flex:1; min-width:120px;">
+           <input type="text" id="prod-name-new" aria-label="Tên sản phẩm" class="prod-name field" value="${escapeHtml(name)}" placeholder="Tên SP (VD: Video Teaser, Ảnh Gốc...)" style="flex:1; min-width:120px;">
            <label for="prod-url-new" style="display:none">Link</label>
-           <input type="url" id="prod-url-new" aria-label="Đường dẫn" class="prod-url field" value="${escapeHtml(url)}" placeholder="🔗 Dán link..." style="flex:2; min-width:150px;">
+           <input type="url" id="prod-url-new" aria-label="Đường dẫn" class="prod-url field" value="${escapeHtml(url)}" placeholder="🔗 Dán link Youtube, Drive, mp4..." style="flex:2; min-width:150px;">
            <button type="button" class="btn primary" style="padding:10px 16px; font-size:13px;" onclick="window.saveProductRow(this)">Lưu</button>
            <button type="button" class="btn danger ghost" style="padding:10px 14px; font-size:13px;" onclick="this.parentElement.parentElement.remove()">✕</button>
        </div>
     `;
     container.appendChild(div);
 }
+
+window.generateSingleClientLink = function(prodId) {
+    const evId = document.getElementById('eventId').value;
+    if(!evId) { showToast('⚠️ Vui lòng LƯU LỊCH trước khi tạo link!'); return; }
+    
+    const clientLink = window.location.origin + window.location.pathname + '?client_gallery=' + evId + '&prod=' + prodId;
+    window.copyText(clientLink);
+    showToast('✅ Đã copy Link gửi khách cho sản phẩm này!');
+};
 
 window.saveProductRow = function(btn) {
     const row = btn.closest('.product-row');
@@ -2943,7 +2976,7 @@ window.openEventModal = function(prefill={}){
   window.updateModalVisibility(); 
   window.renderEventStaffList(); 
   
-  if (e && e.products && e.products.length > 0) e.products.forEach(p => window.addProductRow(p.name, p.url, !isAdmin)); 
+  if (e && e.products && e.products.length > 0) e.products.forEach(p => window.addProductRow(p.name, p.url, !isAdmin, p.id)); 
 
   window.updateDepositLabel();
   
@@ -3085,6 +3118,7 @@ window.saveEvent = function(){
        };
     }),
     products:[...document.querySelectorAll('.product-row')].map(row => ({
+       id: row.dataset.id || 'prod_' + uid(),
        name: row.querySelector('.prod-name')?.value.trim()||'',
        url: row.querySelector('.prod-url')?.value.trim()||''
     })).filter(p => p.url),
@@ -3092,7 +3126,7 @@ window.saveEvent = function(){
     price: parseMoney(document.getElementById('eventPrice')?.value) * 1000,
     deposit: parseMoney(document.getElementById('eventDeposit')?.value) * 1000,
     note:document.getElementById('eventNote')?.value.trim()||'',
-    favoritePhotos: previousEvent?.favoritePhotos || [] // Giữ lại ảnh khách đã chọn
+    favoritePhotos: previousEvent?.favoritePhotos || []
   };
   
   if(!obj.name||!obj.date||!obj.end){showToast('Vui lòng điền đủ Tên, Ngày và Giờ kết thúc');return}
