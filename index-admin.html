@@ -4966,8 +4966,11 @@ window.openSettings = function(){
 window.openStaff = function(){ window.smoothOpen('staffModal'); renderStaffManage(); }
 window.copyStaffLink = function(id) {
     if (currentUserRole !== 'admin') return;
-    const url = window.location.origin + window.location.pathname + '?staff=' + encodeURIComponent(id);
-    window.copyText(url);
+    if (!id) { showToast('Không tìm thấy mã nhân sự'); return; }
+    const url = new URL('/index-staff.html', window.location.origin);
+    url.searchParams.set('staff', String(id));
+    window.copyText(url.toString());
+    showToast('Đã copy link Staff');
 }
 
 function renderStaffManage(){
