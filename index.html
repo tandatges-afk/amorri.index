@@ -227,7 +227,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 
 .empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 14.5px; font-weight: 600; }
 .agenda { display: none; padding: 24px; }
-.side-panel { display: grid; gap: 24px; align-content: start; }
+.side-panel { display: grid; gap: 24px; align-content: start; padding-bottom: 120px; }
 .side-card { padding: 24px; border-radius: var(--radius); }
 .side-card h3 { margin: 0; font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
 .mini-list { display: grid; gap: 10px; margin-top: 16px; }
@@ -328,7 +328,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 ================================== */
 .copyright-badge {
     position: fixed;
-    bottom: 24px;
+    bottom: 90px;
     right: 24px;
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(10px);
@@ -349,7 +349,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 
 #panda-mascot-container {
     position: fixed;
-    bottom: 37px;
+    bottom: 105px;
     right: 80px;
     width: 90px;
     height: 90px;
@@ -416,8 +416,8 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
   .toast { bottom: 100px; right: 16px; left: 16px; text-align: center; }
 
   /* Đẩy Panda & Badge lên khỏi thanh menu dưới ở Mobile */
-  .copyright-badge { bottom: 90px; right: 16px; font-size: 11px; padding: 6px 12px; }
-  #panda-mascot-container { bottom: 85px; left: 16px; width: 65px; height: 65px;}
+  .copyright-badge { bottom: 100px; right: 16px; font-size: 11px; padding: 6px 12px; }
+  #panda-mascot-container { bottom: 110px; left: 16px; width: 65px; height: 65px;}
 }
 
 /* =========================================
@@ -431,7 +431,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 }
 .gallery-cover {
     width: 100%; height: 35vh; min-height: 300px;
-    background: linear-gradient(to bottom, rgba(15,23,42,0.2), rgba(15,23,42,0.8)), url('https://images.unsplash.com/photo-1511285560929-80b456fea0bc?q=80&w=2069&auto=format&fit=crop') center/cover;
+    background: linear-gradient(to bottom, rgba(15,23,42,0.2), rgba(15,23,42,0.8)), url('BG.png') center/cover;
     display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 20px;
 }
 .gallery-cover h1 { font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
@@ -1302,7 +1302,8 @@ function renderClientGrid() {
     const grid = document.getElementById('cgPhotoGrid');
     grid.innerHTML = currentClientEvent.galleryPhotos.map(p => `
         <div class="client-photo-card ${clientSelectedPhotos.has(p.name) ? 'selected' : ''}" onclick="window.toggleClientPhoto('${escapeHtml(p.name)}')" id="cp_${escapeHtml(p.id)}">
-            <img src="${p.url}" loading="lazy" alt="${escapeHtml(p.name)}">
+            <img src="${p.thumb || p.url}" loading="lazy" alt="${escapeHtml(p.name)}">
+            ${p.isVideo ? '<div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:40px; pointer-events:none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">▶️</div>' : ''}
             <div class="heart-btn">♥</div>
             <div class="photo-filename">${escapeHtml(p.name)}</div>
         </div>
