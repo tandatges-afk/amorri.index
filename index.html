@@ -1007,7 +1007,7 @@ body[data-client-gallery="true"] .toast.show { transform:translate(-50%,0); }
                 </label>
                 <div style="display:flex; gap:8px;">
                     <button type="button" class="btn ghost admin-only admin-only-flex" style="padding:8px 15px; font-size:12.5px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateClientLink()">🔗 Gửi tất cả</button>
-                    <button type="button" class="btn ghost admin-only admin-only-flex raw-tool-sync-btn" style="padding:8px 15px; font-size:12.5px; border:1px solid #16a34a; color:#15803d; font-weight:700;" onclick="window.sendAllFavoritesToRawTool()">🖥 Gửi trực tiếp Tool RAW</button>
+                    <button type="button" class="btn ghost admin-only admin-only-flex raw-tool-sync-btn" style="padding:8px 15px; font-size:12.5px; border:1px solid #16a34a; color:#15803d; font-weight:700;" onclick="window.sendAllFavoritesToRawTool()">🖥 Gửi Tool RAW</button>
                     <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:8px 15px; font-size:13px; border:1px solid #cbd5e1;" onclick="window.addProductRow()">+ Thêm thư mục / clip</button>
                 </div>
             </div>
@@ -2783,7 +2783,7 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
            </a>
            <div style="display:flex; gap:6px; flex-wrap:wrap;">
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateSingleClientLink('${prodId}')">🔗 Gửi Khách</button>
-               <button type="button" class="btn ghost admin-only-flex product-raw-sync" data-product-id="${prodId}" style="display:none; padding:6px 10px; font-size:12px; border:1px solid #16a34a; color:#15803d; font-weight:700;">🖥 Gửi trực tiếp Tool RAW</button>
+               <button type="button" class="btn ghost admin-only-flex product-raw-sync" data-product-id="${prodId}" style="display:none; padding:6px 10px; font-size:12px; border:1px solid #16a34a; color:#15803d; font-weight:700;">🖥 Gửi Tool RAW</button>
                <button type="button" class="btn ghost admin-only-flex product-copy-favorites" data-product-id="${prodId}" style="display:none; padding:6px 10px; font-size:12px; border:1px solid #86efac; color:#15803d; font-weight:700;">📋 Copy tên ảnh</button>
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.closest('.product-row').querySelector('.prod-view').style.display='none'; this.closest('.product-row').querySelector('.prod-edit').style.display='flex'">✏️ Sửa</button>
            </div>
@@ -2807,71 +2807,65 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
     if (isSaved) window.refreshProductMediaRow(div, prodId, url);
 };
 
+
 const RAW_TOOL_URL = 'http://127.0.0.1:8765';
-const RAW_TOOL_PROTOCOL = 'amorri://sync?payload=';
+let rawToolConnected = false;
+let rawToolCheckTimer = null;
 
-function encodeRawToolPayload(payload) {
-    // Base64 UTF-8 để custom protocol có thể truyền tiếng Việt/tên file.
-    const json = JSON.stringify(payload);
-    const bytes = new TextEncoder().encode(json);
-    let binary = '';
-    const chunk = 0x8000;
+async function rawToolFetch(path, options = {}) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
 
-    for (let i = 0; i < bytes.length; i += chunk) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-    }
-
-    return encodeURIComponent(btoa(binary));
-}
-
-function openRawToolProtocol(payload) {
-    const encoded = encodeRawToolPayload(payload);
-
-    // Giữ payload vừa phải cho command line của Windows.
-    if (encoded.length > 28000) {
-        throw new Error('Danh sách ảnh quá dài để gửi bằng protocol. Hãy gửi theo từng thư mục.');
-    }
-
-    const uri = `${RAW_TOOL_PROTOCOL}${encoded}`;
-
-    // Phải phát lệnh từ chính user gesture của nút bấm.
-    // Hidden iframe có thể bị Chrome/Edge chặn nên không dùng nữa.
-    const link = document.createElement('a');
-    link.href = uri;
-    link.style.display = 'none';
-    link.rel = 'noopener';
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => link.remove(), 1500);
-    return true;
-}
-
-async function sendSelectionToRawTool(payload, successMessage) {
-    // QUAN TRỌNG: gọi custom protocol NGAY trong click event.
-    // Không đợi fetch/await trước, nếu không browser có thể mất user gesture
-    // và sẽ im lặng chặn hộp thoại "Open Amorri Studio".
     try {
-        openRawToolProtocol(payload);
-        showToast('🖥 Đang mở Amorri Studio để nhận danh sách ảnh...');
-    } catch (protocolErr) {
-        console.error('RAW protocol bridge error:', protocolErr);
-        showToast('Không mở được Amorri Studio. Hãy chạy locanh-bridge.py một lần để đăng ký kết nối.');
+        const response = await fetch(`${RAW_TOOL_URL}${path}`, {
+            ...options,
+            mode: 'cors',
+            credentials: 'omit',
+            cache: 'no-store',
+            signal: controller.signal,
+            headers: {
+                ...(options.headers || {}),
+                'Cache-Control': 'no-cache'
+            }
+        });
+
+        let payload = {};
+        try {
+            payload = await response.json();
+        } catch (_) {}
+
+        if (!response.ok) {
+            throw new Error(payload?.error || `HTTP ${response.status}`);
+        }
+
+        return payload;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+async function checkRawToolConnection(showError = false) {
+    try {
+        const result = await rawToolFetch('/api/health');
+        rawToolConnected = !!result?.ok;
+
+        document.querySelectorAll('.raw-tool-sync-btn').forEach(btn => {
+            btn.title = rawToolConnected
+                ? 'Tool RAW đang kết nối'
+                : 'Tool RAW chưa kết nối';
+        });
+
+        return rawToolConnected;
+    } catch (err) {
+        rawToolConnected = false;
+
+        if (showError) {
+            console.warn('RAW Tool health check:', err);
+            showToast('Tool RAW chưa mở hoặc trình duyệt chưa cho phép kết nối Local.');
+        }
+
         return false;
     }
-
-    // Gửi thêm qua local API khi app đang chạy; đây là đường truyền ổn định
-    // cho trường hợp trình duyệt đã cho phép local network.
-    try {
-        await rawToolFetch('/api/import-selection', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-    } catch (httpErr) {
-        console.warn('Local HTTP sync unavailable:', httpErr);
-    }
-
-    return true;
 }
 
 window.sendProductFavoritesToRawTool = async function(prodId) {
@@ -2908,10 +2902,25 @@ window.sendProductFavoritesToRawTool = async function(prodId) {
         }))
     };
 
-    return sendSelectionToRawTool(
-        payload,
-        `🖥 Đã gửi ${items.length} ảnh sang Tool RAW.`
-    );
+    try {
+        await rawToolFetch('/api/import-selection', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        rawToolConnected = true;
+        showToast(`🖥 Đã gửi trực tiếp ${items.length} ảnh sang Tool RAW.`);
+        return true;
+    } catch (err) {
+        rawToolConnected = false;
+        console.error('RAW Tool sync error:', err);
+
+        showToast(
+            'Không kết nối được Tool RAW. Hãy mở locanh-bridge.py rồi thử lại.'
+        );
+        return false;
+    }
 };
 
 window.sendAllFavoritesToRawTool = async function() {
@@ -2950,12 +2959,39 @@ window.sendAllFavoritesToRawTool = async function() {
         })
     };
 
-    return sendSelectionToRawTool(
-        payload,
-        `🖥 Đã gửi ${allItems.length} ảnh từ tất cả thư mục sang Tool RAW.`
-    );
+    try {
+        await rawToolFetch('/api/import-selection', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        rawToolConnected = true;
+        showToast(
+            `🖥 Đã gửi trực tiếp ${allItems.length} ảnh sang Tool RAW.`
+        );
+        return true;
+    } catch (err) {
+        rawToolConnected = false;
+        console.error('RAW Tool sync all error:', err);
+
+        showToast(
+            'Không kết nối được Tool RAW. Hãy mở locanh-bridge.py rồi thử lại.'
+        );
+        return false;
+    }
 };
 
+function startRawToolConnectionMonitor() {
+    clearInterval(rawToolCheckTimer);
+
+    checkRawToolConnection(false);
+    rawToolCheckTimer = setInterval(() => {
+        checkRawToolConnection(false);
+    }, 8000);
+}
+
+document.addEventListener('DOMContentLoaded', startRawToolConnectionMonitor);
 window.getProductFavoriteCount = function(prodId) {
     const evId = document.getElementById('eventId')?.value;
     const ev = data.events.find(e => e.id === evId);
