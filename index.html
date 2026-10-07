@@ -1312,14 +1312,74 @@ if (isClientMode) {
     document.body.setAttribute('data-client-gallery', 'true');
 }
 
-function photoKey(p) {
-    return String(p.favoriteKey || p.key || `${p.productId || 'root'}::${p.name || p.id || ''}`);
+function photoStableId(p) {
+    return String(
+        p?.id ?? p?.fileId ?? p?.file_id ?? p?.driveFileId ?? p?.webViewLink ?? p?.url ?? ''
+    ).trim();
 }
 
-function renderSelectedKeySet(event) {
+function photoKey(p) {
+    const productId = String(p?.productId || 'root');
+    const explicit = String(p?.favoriteKey || p?.key || '').trim();
+    if (explicit) return explicit;
+    const stableId = photoStableId(p);
+    if (stableId) return `${productId}::id:${stableId}`;
+    return `${productId}::name:${String(p?.name || '')}`;
+}
+
+function favoriteItemKeys(item) {
+    if (!item) return [];
+    const productId = String(item.productId || 'root');
+    const name = String(item.name || '');
+    const keys = [];
+    if (item.key) keys.push(String(item.key));
+    if (item.favoriteKey) keys.push(String(item.favoriteKey));
+    const stableId = photoStableId(item);
+    if (stableId) {
+        keys.push(`${productId}::id:${stableId}`);
+        keys.push(`${productId}::${stableId}`);
+    }
+    if (name) {
+        keys.push(`${productId}::name:${name}`);
+        keys.push(`${productId}::${name}`); // legacy key
+        keys.push(name);                    // legacy favoritePhotos fallback
+    }
+    return [...new Set(keys.filter(Boolean))];
+}
+
+function favoriteItemMatchesPhoto(item, photo) {
+    if (!item || !photo) return false;
+    if (String(item.productId || '') !== String(photo.productId || '')) return false;
+    const itemKeys = favoriteItemKeys(item);
+    const pKey = photoKey(photo);
+    if (itemKeys.includes(pKey)) return true;
+    const photoStable = photoStableId(photo);
+    const itemStable = photoStableId(item);
+    if (photoStable && itemStable && photoStable === itemStable) return true;
+    return !!item.name && String(item.name) === String(photo.name || '');
+}
+
+function getSelectedFavoriteItems(event, productId = null) {
     const items = Array.isArray(event?.favoritePhotoItems) ? event.favoritePhotoItems : [];
-    if (items.length) return new Set(items.map(x => String(x.key || `${x.productId || 'root'}::${x.name || ''}`)));
-    return new Set((event?.favoritePhotos || []).map(n => String(n)));
+    if (productId === null || productId === undefined || productId === '') return items;
+    return items.filter(item => String(item.productId || '') === String(productId));
+}
+
+function renderSelectedKeySet(event, productId = null) {
+    const set = new Set();
+    const items = getSelectedFavoriteItems(event, productId);
+    for (const item of items) {
+        favoriteItemKeys(item).forEach(k => set.add(k));
+    }
+
+    // Dữ liệu cũ chỉ có favoritePhotos, không có productId thì chỉ fallback khi link này chỉ có 1 sản phẩm.
+    const products = Array.isArray(event?.products) ? event.products : [];
+    const canUseLegacyNames = !items.length && Array.isArray(event?.favoritePhotos) &&
+        (productId === null || products.length === 1);
+    if (canUseLegacyNames) {
+        for (const name of event.favoritePhotos) set.add(String(name));
+    }
+    return set;
 }
 
 function isDriveFolderUrl(url) {
@@ -1335,6 +1395,22 @@ function extractDriveFileId(url) {
     return null;
 }
 
+function extractYouTubeVideoId(url) {
+    const raw = String(url || '').trim();
+    const patterns = [
+        /youtu\.be\/([a-zA-Z0-9_-]{6,})/i,
+        /youtube\.com\/watch\?[^#]*?v=([a-zA-Z0-9_-]{6,})/i,
+        /youtube\.com\/shorts\/([a-zA-Z0-9_-]{6,})/i,
+        /youtube\.com\/embed\/([a-zA-Z0-9_-]{6,})/i
+    ];
+    for (const re of patterns) {
+        const m = raw.match(re);
+        if (m) return m[1];
+    }
+    return '';
+}
+
+
 async function initClientGallery() {
     if(!isClientMode) return;
     currentClientEvent = data.events.find(e => e.id === clientIdParam);
@@ -1349,7 +1425,7 @@ async function initClientGallery() {
 
     document.getElementById('cgTitle').textContent = currentClientEvent.name || 'Bộ bàn giao của bạn';
     document.title = (currentClientEvent.name || 'Amorri Studio') + ' - Bàn giao';
-    clientSelectedPhotos = renderSelectedKeySet(currentClientEvent);
+    clientSelectedPhotos = renderSelectedKeySet(currentClientEvent, prodIdParam || null);
 
     const allProducts = Array.isArray(currentClientEvent.products) ? currentClientEvent.products : [];
     const products = prodIdParam ? allProducts.filter(p => String(p.id) === String(prodIdParam)) : allProducts;
@@ -1361,11 +1437,9 @@ async function initClientGallery() {
         const rawUrl = String(p.url || '').trim();
         if(!rawUrl || isDriveFolderUrl(rawUrl)) continue;
         const lower = rawUrl.toLowerCase();
-        if (lower.includes('youtube.com') || lower.includes('youtu.be')) {
-            let videoId='';
-            if(lower.includes('youtu.be/')) videoId=rawUrl.split('youtu.be/')[1].split(/[?&]/)[0];
-            else if(lower.includes('v=')) videoId=rawUrl.split('v=')[1].split('&')[0];
-            media.push({id:`yt_${p.id}`,name:p.name||'Video',isVideo:true,externalType:'youtube',videoId,productId:p.id});
+        const youtubeVideoId = extractYouTubeVideoId(rawUrl);
+        if (youtubeVideoId) {
+            media.push({id:`yt_${p.id}`,name:p.name||'Video',isVideo:true,externalType:'youtube',videoId:youtubeVideoId,productId:p.id});
         } else if (extractDriveFileId(rawUrl)) {
             const driveFileId = extractDriveFileId(rawUrl);
             media.push({
@@ -1379,9 +1453,9 @@ async function initClientGallery() {
                 productId:p.id,
                 productName:p.name||'Clip'
             });
-        } else if (/\.(mp4|webm|mov|ogg)(?:[?#].*)?$/i.test(rawUrl)) {
+        } else if (/\.(mp4|webm|mov|m4v|avi|mkv|ogg)(?:[?#].*)?$/i.test(rawUrl)) {
             media.push({id:`direct_${p.id}`,name:p.name||'Video',isVideo:true,url:rawUrl,productId:p.id});
-        } else if (/\.(jpeg|jpg|gif|png|webp)(?:[?#].*)?$/i.test(rawUrl)) {
+        } else if (/\.(jpeg|jpg|gif|png|webp|heic|heif)(?:[?#].*)?$/i.test(rawUrl)) {
             media.push({id:`img_${p.id}`,name:p.name||'Ảnh',isVideo:false,url:rawUrl,thumb:rawUrl,productId:p.id});
         }
     }
@@ -1398,7 +1472,7 @@ async function initClientGallery() {
                     ...item,
                     productId:p.id,
                     productName:p.name || 'Thư mục ảnh',
-                    favoriteKey:`${p.id || 'root'}::${item.name}`
+                    favoriteKey:`${p.id || 'root'}::id:${photoStableId(item) || item.name || item.url || 'unknown'}`
                 });
             }
         } catch(err) {
@@ -1486,23 +1560,49 @@ function updateClientBottomBar() {
     if(imageStats) imageStats.style.display = imageCount ? 'flex' : 'none';
 }
 
-window.submitClientFavorites = function() {
+window.submitClientFavorites = async function() {
     if(!currentClientEvent) return;
-    const items=[];
-    const names=[];
+
+    const targetProductId = prodIdParam ? String(prodIdParam) : null;
+    const selectedItems = [];
+    const selectedNames = [];
     for(const p of (currentClientEvent.galleryPhotos || [])) {
         if(p.isVideo) continue;
-        const key=photoKey(p);
+        const key = photoKey(p);
         if(clientSelectedPhotos.has(key) || clientSelectedPhotos.has(p.name)) {
-            items.push({key,name:p.name,productId:p.productId||'',productName:p.productName||''});
-            names.push(p.name);
+            selectedItems.push({
+                key,
+                name:p.name,
+                productId:String(p.productId || ''),
+                productName:p.productName || ''
+            });
+            selectedNames.push(p.name);
         }
     }
-    currentClientEvent.favoritePhotoItems=items;
-    currentClientEvent.favoritePhotos=[...new Set(names)];
-    dbSet(`events/${currentClientEvent.id}/favoritePhotoItems`, items).then(() =>
-        dbSet(`events/${currentClientEvent.id}/favoritePhotos`, currentClientEvent.favoritePhotos)
-    ).then(() => alert(`Cảm ơn bạn! Đã gửi thành công ${items.length} ảnh yêu thích cho Studio.`));
+
+    const previousItems = Array.isArray(currentClientEvent.favoritePhotoItems)
+        ? currentClientEvent.favoritePhotoItems
+        : [];
+
+    // Link theo từng thư mục chỉ được thay thế selection của chính thư mục đó,
+    // không được xóa selection của các thư mục khác.
+    const preservedItems = targetProductId === null
+        ? []
+        : previousItems.filter(item => String(item.productId || '') !== targetProductId);
+    const mergedItems = [...preservedItems, ...selectedItems];
+    currentClientEvent.favoritePhotoItems = mergedItems;
+    currentClientEvent.favoritePhotos = [...new Set(mergedItems.map(x => x.name).filter(Boolean))];
+
+    const saved = await dbUpdate(`events/${currentClientEvent.id}`, {
+        favoritePhotoItems: mergedItems,
+        favoritePhotos: currentClientEvent.favoritePhotos
+    });
+
+    if (saved || !window.dbRef) {
+        alert(`Cảm ơn bạn! Đã gửi thành công ${selectedItems.length} ảnh yêu thích cho Studio.`);
+    } else {
+        alert(`Đã lưu lựa chọn trên thiết bị. Có ${selectedItems.length} ảnh được chọn, nhưng chưa đồng bộ lên máy chủ.`);
+    }
 };
 
 // ==========================================
@@ -1664,25 +1764,66 @@ function sanitizeData(d) {
 }
 
 function persistLocal() {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch(e) {}
+    try {
+        const snapshot = JSON.parse(JSON.stringify(data));
+        (snapshot.events || []).forEach(e => { delete e.galleryPhotos; });
+        localStorage.setItem(STORE_KEY, JSON.stringify(snapshot));
+    } catch(e) {}
 }
 
-function dbSet(path, value) {
+const FIREBASE_WRITE_TIMEOUT = 5000;
+
+async function withFirebaseTimeout(promise, timeout = FIREBASE_WRITE_TIMEOUT) {
+    let timer;
+    try {
+        return await Promise.race([
+            promise,
+            new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error('Firebase write timeout')), timeout);
+            })
+        ]);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function dbSet(path, value) {
     persistLocal();
-    if (!window.dbRef) return Promise.resolve();
-    return window.dbRef.child(path).set(value).catch(err => {
+    if (!window.dbRef) return false;
+    try {
+        await withFirebaseTimeout(window.dbRef.child(path).set(value));
+        return true;
+    } catch (err) {
         console.error('Firebase set error:', err);
-        showToast('Đã lưu Offline');
-    });
+        showToast('Đã lưu trên máy, chưa đồng bộ máy chủ.');
+        return false;
+    }
 }
 
-function dbRemove(path) {
+async function dbUpdate(path, value) {
     persistLocal();
-    if (!window.dbRef) return Promise.resolve();
-    return window.dbRef.child(path).remove().catch(err => {
+    if (!window.dbRef) return false;
+    try {
+        await withFirebaseTimeout(window.dbRef.child(path).update(value));
+        return true;
+    } catch (err) {
+        console.error('Firebase update error:', err);
+        showToast('Đã lưu trên máy, chưa đồng bộ máy chủ.');
+        return false;
+    }
+}
+
+async function dbRemove(path) {
+    persistLocal();
+    if (!window.dbRef) return false;
+    try {
+        await withFirebaseTimeout(window.dbRef.child(path).remove());
+        return true;
+    } catch (err) {
         console.error('Firebase remove error:', err);
-        showToast('Đã lưu Offline');
-    });
+        showToast('Đã xóa trên máy, chưa đồng bộ máy chủ.');
+        return false;
+    }
 }
 
 const AUDIT_META = {
@@ -1909,6 +2050,14 @@ function initApp() {
     setupDefaultFilters();
     window.setupLocationAutocomplete();
 
+    // Render dữ liệu local ngay lập tức để giao diện vẫn hoạt động khi Firebase/network lỗi.
+    try {
+        applyRoleUI();
+        render();
+    } catch (e) {
+        console.error('Local initial render error:', e);
+    }
+
     const hideLoading = () => {
         if (!isFirstLoad) return;
         const overlay = document.getElementById('loadingOverlay');
@@ -1941,11 +2090,17 @@ function initApp() {
                     persistLocal();
                     try { render(); } catch(e) { console.error('Render realtime error:', e); }
                     if (isClientMode) { initClientGallery(); }
+                    else if (document.getElementById('eventModal')?.classList.contains('show')) {
+                        window.refreshOpenEventProductActions?.();
+                    }
                 } else {
                     data = defaultData();
                     persistLocal();
                     try { render(); } catch(e) {}
                     if (isClientMode) { initClientGallery(); }
+                    else if (document.getElementById('eventModal')?.classList.contains('show')) {
+                        window.refreshOpenEventProductActions?.();
+                    }
                 }
                 hideLoading();
             }, (error) => {
@@ -2862,11 +3017,11 @@ function updateRawToolButtons() {
         btn.disabled = !canSendRaw;
         btn.title = canSendRaw
             ? `Gửi ${favoriteCount} ảnh đã chọn của link này sang Tool RAW`
-            : rawToolConnected
-                ? (hasSelectedPhotos
+            : !rawToolConnected
+                ? 'Tool RAW chưa kết nối'
+                : !hasLink
                     ? 'Link chưa hợp lệ'
-                    : 'Thư mục này chưa có ảnh khách chọn')
-                : 'Tool RAW chưa kết nối';
+                    : 'Thư mục này chưa có ảnh khách chọn';
     });
 }
 
@@ -2982,7 +3137,7 @@ window.detectProductMediaType = async function(rawUrl) {
     const url = String(rawUrl || '').trim();
     const lower = url.toLowerCase();
     if (!url) return 'unknown';
-    if (lower.includes('youtube.com') || lower.includes('youtu.be') || extractDriveFileId(url) || /\.(mp4|webm|mov|m4v|avi|mkv|ogg)(?:[?#].*)?$/i.test(url)) return 'video';
+    if (extractYouTubeVideoId(url) || extractDriveFileId(url) || /\.(mp4|webm|mov|m4v|avi|mkv|ogg)(?:[?#].*)?$/i.test(url)) return 'video';
     if (/\.(jpe?g|png|gif|webp|heic|heif)(?:[?#].*)?$/i.test(url)) return 'image';
     if (isDriveFolderUrl(url)) {
         try {
@@ -3003,6 +3158,19 @@ window.detectProductMediaType = async function(rawUrl) {
         }
     }
     return 'unknown';
+};
+
+window.refreshOpenEventProductActions = async function() {
+    const eventId = document.getElementById('eventId')?.value;
+    if (!eventId) return;
+    const event = data.events.find(e => e.id === eventId);
+    if (!event) return;
+    const rows = [...document.querySelectorAll('#eventProductsList .product-row')];
+    for (const row of rows) {
+        const prodId = row.dataset.id || '';
+        const rawUrl = row.dataset.url || row.querySelector('.prod-url')?.value || '';
+        if (rawUrl) await window.refreshProductMediaRow(row, prodId, rawUrl);
+    }
 };
 
 window.refreshProductMediaRow = async function(row, prodId, rawUrl) {
@@ -3046,10 +3214,11 @@ window.copyProductFavoriteNames = function(prodId) {
         showToast(`Đã copy ${names.length} tên ảnh của thư mục này.`);
         return;
     }
-    // Fallback cho dữ liệu cũ: không có favoritePhotoItems thì copy toàn bộ danh sách cũ.
-    if(Array.isArray(ev.favoritePhotos) && ev.favoritePhotos.length) {
+    // Dữ liệu cũ không có productId thì chỉ fallback an toàn khi event chỉ có đúng 1 sản phẩm.
+    const productCount = Array.isArray(ev.products) ? ev.products.length : 0;
+    if(productCount === 1 && Array.isArray(ev.favoritePhotos) && ev.favoritePhotos.length) {
         window.copyText(ev.favoritePhotos.join('\n'));
-        showToast('Dữ liệu cũ chưa lưu theo thư mục; đã copy toàn bộ tên ảnh.');
+        showToast('Dữ liệu cũ chưa lưu theo thư mục; đã copy tên ảnh của bộ duy nhất.');
     } else {
         showToast('Thư mục này chưa có ảnh khách chọn.');
     }
@@ -3063,13 +3232,53 @@ window.saveProductRow = function(btn) {
     const validatedUrl = safeUrl(urlInput);
     if(validatedUrl === '#') { showToast('Link không hợp lệ. Chỉ chấp nhận http/https'); return; }
     
-    row.querySelector('.prod-view-link').href = urlInput;
+    row.querySelector('.prod-view-link').href = validatedUrl;
     row.querySelector('.prod-view-name').textContent = nameInput || 'Link Bàn Giao';
-    row.dataset.url = urlInput;
+    row.dataset.url = validatedUrl;
     row.querySelector('.prod-edit').style.display = 'none';
     row.querySelector('.prod-view').style.display = 'flex';
-    window.refreshProductMediaRow(row, row.dataset.id, urlInput);
+    window.refreshProductMediaRow(row, row.dataset.id, validatedUrl);
 }
+
+window.saveFreelanceQuick = function() {
+    if (currentUserRole !== 'admin') return;
+    const name = document.getElementById('newFreeName')?.value.trim();
+    const role = document.getElementById('newFreeRole')?.value || 'Khác';
+    if (!name) {
+        showToast('Nhập tên Freelance');
+        return;
+    }
+
+    const newStaff = {
+        id: uid(),
+        name,
+        role: Array.from(new Set(['Freelance', role].filter(Boolean))).join(', ')
+    };
+
+    data.staff.push(newStaff);
+    const savePromise = dbSet(`staff/${newStaff.id}`, newStaff);
+    writeAuditLog('STAFF_ADDED', {
+        severity:'info', category:'staff', targetType:'staff', targetId:newStaff.id, targetStaffIds:[newStaff.id],
+        message:`Thêm nhân sự ${newStaff.name}`, metadata:{staffId:newStaff.id, staffName:newStaff.name, role:newStaff.role, quickAdd:true}
+    });
+    currentEventAssignments = Array.isArray(currentEventAssignments) ? currentEventAssignments : [];
+    if (!currentEventAssignments.some(a => a.id === newStaff.id)) {
+        currentEventAssignments.push({ id: newStaff.id, task: '', locType: '', cost: 0, link: '' });
+    }
+
+    setSafeValue('newFreeName', '');
+    setSafeValue('newFreeRole', 'Chụp');
+    const ff = document.getElementById('freelanceForm');
+    if (ff) ff.style.display = 'none';
+    const eventStaffEl = document.getElementById('eventStaff');
+    if (eventStaffEl) eventStaffEl.innerHTML = '';
+
+    window.renderEventStaffList();
+    showToast('Đã thêm Freelance và chọn vào lịch hiện tại.');
+    return savePromise.then(() => {
+        window.filterStaffModal();
+    });
+};
 
 window.renderEventStaffList = function() {
     const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
@@ -3424,6 +3633,9 @@ window.openEventModal = function(prefill={}){
   if (e && e.products && e.products.length > 0) e.products.forEach(p => window.addProductRow(p.name, p.url, !isAdmin, p.id)); 
 
   window.updateDepositLabel();
+  if (isAdmin && e?.products?.length) {
+      checkRawToolConnection(false).then(() => window.refreshOpenEventProductActions?.());
+  }
   
   const de = document.getElementById('deleteEvent'); if (de) de.style.display = (isAdmin && e) ? 'inline-flex' : 'none';
   const fp = document.getElementById('fullPaidBtn'); if (fp) fp.style.display = isAdmin ? 'block' : 'none';
@@ -3457,34 +3669,73 @@ function getAssignmentStart(event, assignment) {
     return event.startTrai || event.startGai || '';
 }
 
+function timeToMinutes(value) {
+    const m = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return null;
+    const h = Number(m[1]);
+    const min = Number(m[2]);
+    if (h > 23 || min > 59) return null;
+    return h * 60 + min;
+}
+
+function dateStartMs(dateValue) {
+    const m = String(dateValue || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return NaN;
+    return Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+function buildAssignmentInterval(event, assignment) {
+    const dateMs = dateStartMs(event?.date);
+    const startText = getAssignmentStart(event, assignment);
+    const endText = event?.end || '';
+    const startMin = timeToMinutes(startText);
+    const endMin = timeToMinutes(endText);
+    if (!Number.isFinite(dateMs) || startMin === null || endMin === null) return null;
+
+    const startMs = dateMs + startMin * 60000;
+    const endMs = dateMs + endMin * 60000;
+    const adjustedEndMs = endMin <= startMin ? endMs + 86400000 : endMs;
+    if (adjustedEndMs <= startMs) return null;
+    return { startMs, endMs: adjustedEndMs, startText, endText };
+}
+
+function intervalsOverlap(a, b) {
+    return !!a && !!b && a.startMs < b.endMs && a.endMs > b.startMs;
+}
+
 function timeRangesOverlap(startA, endA, startB, endB) {
-    if (!startA || !endA || !startB || !endB) return false;
-    if (endA <= startA || endB <= startB) return false;
-    return startA < endB && endA > startB;
+    const a = { startMs: timeToMinutes(startA), endMs: timeToMinutes(endA) };
+    const b = { startMs: timeToMinutes(startB), endMs: timeToMinutes(endB) };
+    if (a.startMs === null || a.endMs === null || b.startMs === null || b.endMs === null) return false;
+    if (a.endMs <= a.startMs) a.endMs += 1440;
+    if (b.endMs <= b.startMs) b.endMs += 1440;
+    return a.startMs < b.endMs && a.endMs > b.startMs;
 }
 
 function findEventConflicts(candidate) {
     if (!candidate?.date || candidate.status === 'cancelled') return [];
     const conflicts = [];
+
     (candidate.assignments || []).forEach(a => {
-        const myStart = getAssignmentStart(candidate, a);
-        if (!myStart || !candidate.end || candidate.end <= myStart) return;
+        const myInterval = buildAssignmentInterval(candidate, a);
+        if (!myInterval) return;
+
         data.events.forEach(e => {
-            if (e.id === candidate.id || e.status === 'cancelled' || e.date !== candidate.date) return;
+            if (!e || e.id === candidate.id || e.status === 'cancelled') return;
             const other = (e.assignments || []).find(x => x.id === a.id);
             if (!other) return;
-            const otherStart = getAssignmentStart(e, other);
-            if (timeRangesOverlap(myStart, candidate.end, otherStart, e.end)) {
-                const staff = data.staff.find(s => s.id === a.id);
-                conflicts.push({
-                    staffId: a.id,
-                    staffName: staff?.name || a.id,
-                    mine: `${myStart}-${candidate.end}`,
-                    other: `${otherStart}-${e.end}`,
-                    eventName: e.name || 'Lịch khác',
-                    locType: a.locType || ''
-                });
-            }
+            const otherInterval = buildAssignmentInterval(e, other);
+            if (!otherInterval || !intervalsOverlap(myInterval, otherInterval)) return;
+
+            const staff = data.staff.find(s => s.id === a.id);
+            conflicts.push({
+                staffId: a.id,
+                staffName: staff?.name || a.id,
+                mine: `${myInterval.startText}-${myInterval.endText}`,
+                other: `${otherInterval.startText}-${otherInterval.endText}`,
+                eventName: e.name || 'Lịch khác',
+                locType: a.locType || ''
+            });
         });
     });
     return conflicts;
@@ -3492,36 +3743,65 @@ function findEventConflicts(candidate) {
 
 window.checkConflict = function(){
   if (currentUserRole !== 'admin') return;
-  const date=document.getElementById('eventDate')?.value; 
-  const id=document.getElementById('eventId')?.value;
+  const date = document.getElementById('eventDate')?.value || '';
+  const id = document.getElementById('eventId')?.value || '';
   const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
-  const end = document.getElementById('eventEnd')?.value;
-  
+  const end = document.getElementById('eventEnd')?.value || '';
+
   data.staff.forEach(s => {
      const infoSpan = document.getElementById('busy-info-' + s.id); if(!infoSpan) return;
-     const sEvents = data.events.filter(e => e.id !== id && e.status !== 'cancelled' && e.date === date && e.assignments.some(a => a.id === s.id));
-     if(sEvents.length === 0) { infoSpan.innerHTML = ''; return; }
 
-     const intervals = sEvents.map(e => {
-         const a = e.assignments.find(x => x.id === s.id);
-         return { s: getAssignmentStart(e, a), e: e.end || '' };
-     }).filter(iv => iv.s && iv.e);
+     const candidate = {
+         id,
+         date,
+         isRuocDau,
+         start: isRuocDau ? '' : (document.getElementById('eventStart')?.value || ''),
+         startTrai: isRuocDau ? (document.getElementById('eventStartTrai')?.value || '') : '',
+         startGai: isRuocDau ? (document.getElementById('eventStartGai')?.value || '') : '',
+         end,
+         status: 'pending'
+     };
+     const relevantAssignments = isRuocDau
+         ? [{id:s.id, locType: document.getElementById('evt-loc-'+s.id)?.value || ''}]
+         : [{id:s.id, locType:''}];
 
-     const text = intervals.map(iv => `${iv.s}-${iv.e}`).join(', ');
-     const locTeam = document.getElementById('evt-loc-'+s.id)?.value || '';
-     const myStart = isRuocDau
-         ? (locTeam === 'Nhà gái' ? (document.getElementById('eventStartGai')?.value || '') : (document.getElementById('eventStartTrai')?.value || ''))
-         : (document.getElementById('eventStart')?.value || '');
+     const overlaps = [];
+     for (const a of relevantAssignments) {
+         const myInterval = buildAssignmentInterval(candidate, a);
+         if (!myInterval) continue;
+         for (const e of data.events) {
+             if (!e || e.id === id || e.status === 'cancelled') continue;
+             const other = (e.assignments || []).find(x => x.id === s.id);
+             if (!other) continue;
+             const otherInterval = buildAssignmentInterval(e, other);
+             if (intervalsOverlap(myInterval, otherInterval)) {
+                 overlaps.push(`${otherInterval.startText}-${otherInterval.endText}`);
+             }
+         }
+     }
 
-     const overlap = timeRangesOverlap(myStart, end, intervals[0]?.s, intervals[0]?.e) ||
-         intervals.some(iv => timeRangesOverlap(myStart, end, iv.s, iv.e));
+     const allRelated = data.events
+         .filter(e => e.id !== id && e.status !== 'cancelled' && (e.assignments || []).some(a => a.id === s.id))
+         .map(e => {
+             const a = (e.assignments || []).find(x => x.id === s.id);
+             const iv = buildAssignmentInterval(e, a);
+             return iv ? {text:`${iv.startText}-${iv.endText}`, iv} : null;
+         })
+         .filter(Boolean);
 
-     if(overlap) infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${text})</span>`;
-     else infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${text})</span>`;
+     if (overlaps.length) {
+         const unique = [...new Set(overlaps)];
+         infoSpan.innerHTML = `<span style="color:var(--red);font-weight:800;margin-left:8px;font-size:11.5px;background:#fef2f2;padding:2px 6px;border-radius:4px">(⚠️ Trùng: ${unique.join(', ')})</span>`;
+     } else if (allRelated.length) {
+         const unique = [...new Set(allRelated.map(x => x.text))];
+         infoSpan.innerHTML = `<span style="color:var(--orange);font-weight:750;margin-left:8px;font-size:11.5px;background:#fffbeb;padding:2px 6px;border-radius:4px">(Có lịch: ${unique.join(', ')})</span>`;
+     } else {
+         infoSpan.innerHTML = '';
+     }
   });
 }
 
-window.saveEvent = function(){
+window.saveEvent = async function(){
   if (currentUserRole !== 'admin') return;
   const id=document.getElementById('eventId')?.value;
   const isRuocDau = document.getElementById('eventIsRuocDau')?.value === 'true';
@@ -3562,7 +3842,8 @@ window.saveEvent = function(){
     price: parseMoney(document.getElementById('eventPrice')?.value) * 1000,
     deposit: parseMoney(document.getElementById('eventDeposit')?.value) * 1000,
     note:document.getElementById('eventNote')?.value.trim()||'',
-    favoritePhotos: previousEvent?.favoritePhotos || []
+    favoritePhotos: Array.isArray(previousEvent?.favoritePhotos) ? [...previousEvent.favoritePhotos] : [],
+    favoritePhotoItems: Array.isArray(previousEvent?.favoritePhotoItems) ? JSON.parse(JSON.stringify(previousEvent.favoritePhotoItems)) : []
   };
   
   if(!obj.name||!obj.date||!obj.end){showToast('Vui lòng điền đủ Tên, Ngày và Giờ kết thúc');return}
@@ -3585,7 +3866,7 @@ window.saveEvent = function(){
   const idx=data.events.findIndex(e=>e.id===id);
   if(idx>=0)data.events[idx]=obj; else data.events.push(obj);
   
-  dbSet(`events/${obj.id}`, obj);
+  const savedToServer = await dbSet(`events/${obj.id}`, obj);
 
   const newStaffIds = staffIdsFromAssignments(obj.assignments).filter(sid => !(previousEvent?.assignments || []).some(a => a.id === sid));
   const removedStaffIds = (previousEvent?.assignments || []).map(a => a.id).filter(sid => !staffIdsFromAssignments(obj.assignments).includes(sid));
@@ -3638,7 +3919,7 @@ window.saveEvent = function(){
       }
   }
   
-  window.smoothClose('eventModal'); render(); showToast(idx>=0?'Đã cập nhật lịch':'Đã thêm lịch');
+  window.smoothClose('eventModal'); render(); showToast(savedToServer || !window.dbRef ? (idx>=0?'Đã cập nhật lịch':'Đã thêm lịch') : 'Đã lưu trên máy, chưa đồng bộ máy chủ.');
 }
 
 window.deleteEvent = function(){
@@ -3721,7 +4002,7 @@ window.addStaff = function(){
   
   setSafeValue('staffName','');
   document.querySelectorAll('#staffRoleChecks input').forEach(cb => cb.checked = false);
-  renderStaffManage();showToast('Đã thêm nhân sự');
+  renderStaffManage(); savedToServer.then(ok => showToast(ok || !window.dbRef ? 'Đã thêm nhân sự' : 'Đã thêm nhân sự trên máy, chưa đồng bộ máy chủ.'));
 }
 
 let searchTimeout;
