@@ -630,7 +630,7 @@ body[data-client-gallery="true"] .toast.show { transform:translate(-50%,0); }
                     <h1 id="cgTitle">Loading...</h1>
                     <p>Ảnh và clip bàn giao. Bấm ❤️ trên ảnh cần chọn, còn clip chỉ cần bấm để xem.</p>
                 </div>
-                <div class="gallery-head-status">
+                <div class="gallery-head-status" id="cgImageStats">
                     <div class="gallery-stat"><strong id="cgImageCount">0</strong><span>Ảnh</span></div>
                     <div class="gallery-stat"><strong id="cgSelectedTop">0</strong><span>Đã chọn</span></div>
                 </div>
@@ -1010,11 +1010,6 @@ body[data-client-gallery="true"] .toast.show { transform:translate(-50%,0); }
                     <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:8px 15px; font-size:13px; border:1px solid #cbd5e1;" onclick="window.addProductRow()">+ Thêm thư mục / clip</button>
                 </div>
             </div>
-            <div id="adminClientFavStats" style="display:none; background:#f0fdf4; border:1px dashed #4ade80; padding:11px 14px; border-radius:12px; margin-bottom:14px; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-                <div style="font-size:13px; color:#166534; font-weight:600;">❤️ Khách đã chọn <b id="adminFavCount" style="font-size:16px;">0</b> ảnh.</div>
-                <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12px; border:1px solid #86efac; color:#15803d; background:#fff;" onclick="window.copyFavoriteList()">Copy tất cả tên ảnh</button>
-            </div>
-          
             <div id="eventProductsList" style="display:flex; flex-direction:column; gap:12px;"></div>
           </div>
 
@@ -1415,6 +1410,8 @@ async function initClientGallery() {
     const videos = media.filter(m => m.isVideo);
     const images = media.filter(m => !m.isVideo);
     document.getElementById('cgImageCount').textContent = String(images.length);
+    const imageStats = document.getElementById('cgImageStats');
+    if (imageStats) imageStats.style.display = images.length ? 'flex' : 'none';
     videoContainer.innerHTML = '';
 
     // Clip không có tim; thường chỉ có một clip nên đưa lên đầu thành player riêng.
@@ -1484,6 +1481,9 @@ function updateClientBottomBar() {
     document.getElementById('cgSelectedCount').textContent = clientSelectedPhotos.size;
     const topSelected=document.getElementById('cgSelectedTop');
     if(topSelected) topSelected.textContent=clientSelectedPhotos.size;
+    const imageStats = document.getElementById('cgImageStats');
+    const imageCount = (currentClientEvent?.galleryPhotos || []).filter(p => !p.isVideo).length;
+    if(imageStats) imageStats.style.display = imageCount ? 'flex' : 'none';
 }
 
 window.submitClientFavorites = function() {
@@ -2768,35 +2768,91 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
     const container = document.getElementById('eventProductsList'); if(!container) return;
     const div = document.createElement('div');
     const prodId = id || 'prod_' + uid();
-    div.className = 'product-row'; 
+    div.className = 'product-row';
     div.dataset.id = prodId;
+    div.dataset.url = url || '';
     div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#f8fafc; padding:16px; border-radius:16px; border:1px solid var(--line)';
-    
+
     if (isReadonly) return;
     const isSaved = url !== '';
     div.innerHTML = `
-       <div class="prod-view" style="display:${isSaved ? 'flex' : 'none'}; gap: 10px; align-items:center; flex-wrap:wrap">
+       <div class="prod-view" style="display:${isSaved ? 'flex' : 'none'}; gap:10px; align-items:center; flex-wrap:wrap">
            <a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" class="prod-view-link" style="font-size:13.5px; font-weight:700; color:var(--blue); text-decoration:none; flex:1; min-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
               🔗 <span class="prod-view-name">${escapeHtml(name || 'Link Bàn Giao')}</span>
            </a>
-           
-           <div style="display:flex; gap:6px;">
+           <div style="display:flex; gap:6px; flex-wrap:wrap;">
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateSingleClientLink('${prodId}')">🔗 Gửi Khách</button>
-               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #86efac; color:#15803d; font-weight:700;" onclick="window.copyProductFavoriteNames('${prodId}')">📋 Copy tên ảnh</button>
-               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.parentElement.parentElement.style.display='none'; this.parentElement.parentElement.nextElementSibling.style.display='flex'">✏️ Sửa</button>
+               <button type="button" class="btn ghost admin-only-flex product-copy-favorites" data-product-id="${prodId}" style="display:none; padding:6px 10px; font-size:12px; border:1px solid #86efac; color:#15803d; font-weight:700;">📋 Copy tên ảnh</button>
+               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.closest('.product-row').querySelector('.prod-view').style.display='none'; this.closest('.product-row').querySelector('.prod-edit').style.display='flex'">✏️ Sửa</button>
            </div>
        </div>
-       <div class="prod-edit admin-only-flex" style="display:${isSaved ? 'none' : 'flex'}; gap: 10px; flex-wrap:wrap; align-items:center">
+       <div class="prod-edit admin-only-flex" style="display:${isSaved ? 'none' : 'flex'}; gap:10px; flex-wrap:wrap; align-items:center">
            <label for="prod-name-new" style="display:none">Tên Sản Phẩm</label>
            <input type="text" id="prod-name-new" aria-label="Tên sản phẩm" class="prod-name field" value="${escapeHtml(name)}" placeholder="Tên SP (VD: Video Teaser, Ảnh Gốc...)" style="flex:1; min-width:120px;">
-           <label for="prod-url-new" style="display:none">Link</label>
+           <label for="prod-url-new" style="display:none">Đường dẫn</label>
            <input type="url" id="prod-url-new" aria-label="Đường dẫn" class="prod-url field" value="${escapeHtml(url)}" placeholder="🔗 Dán link Youtube, Drive, mp4..." style="flex:2; min-width:150px;">
            <button type="button" class="btn primary" style="padding:10px 16px; font-size:13px;" onclick="window.saveProductRow(this)">Lưu</button>
-           <button type="button" class="btn danger ghost" style="padding:10px 14px; font-size:13px;" onclick="this.parentElement.parentElement.remove()">✕</button>
+           <button type="button" class="btn danger ghost" style="padding:10px 14px; font-size:13px;" onclick="this.closest('.product-row').remove()">✕</button>
        </div>
     `;
     container.appendChild(div);
-}
+
+    const copyBtn = div.querySelector('.product-copy-favorites');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => window.copyProductFavoriteNames(prodId));
+    }
+
+    if (isSaved) window.refreshProductMediaRow(div, prodId, url);
+};
+
+window.getProductFavoriteCount = function(prodId) {
+    const evId = document.getElementById('eventId')?.value;
+    const ev = data.events.find(e => e.id === evId);
+    if(!ev || !Array.isArray(ev.favoritePhotoItems)) return 0;
+    return ev.favoritePhotoItems.filter(x => String(x.productId || '') === String(prodId) && x.name).length;
+};
+
+window.detectProductMediaType = async function(rawUrl) {
+    const url = String(rawUrl || '').trim();
+    const lower = url.toLowerCase();
+    if (!url) return 'unknown';
+    if (lower.includes('youtube.com') || lower.includes('youtu.be') || extractDriveFileId(url) || /\.(mp4|webm|mov|m4v|avi|mkv|ogg)(?:[?#].*)?$/i.test(url)) return 'video';
+    if (/\.(jpe?g|png|gif|webp|heic|heif)(?:[?#].*)?$/i.test(url)) return 'image';
+    if (isDriveFolderUrl(url)) {
+        try {
+            const response = await fetch(`/api/get-drive-images?folderUrl=${encodeURIComponent(url)}`);
+            if(!response.ok) return 'unknown';
+            const result = await response.json();
+            if(result.error) return 'unknown';
+            const media = Array.isArray(result.images) ? result.images : [];
+            const hasImage = media.some(m => !m.isVideo);
+            const hasVideo = media.some(m => !!m.isVideo);
+            if (hasImage && hasVideo) return 'mixed';
+            if (hasImage) return 'image';
+            if (hasVideo) return 'video';
+            return 'empty';
+        } catch (err) {
+            console.warn('Không thể nhận diện thư mục bàn giao:', err);
+            return 'unknown';
+        }
+    }
+    return 'unknown';
+};
+
+window.refreshProductMediaRow = async function(row, prodId, rawUrl) {
+    if (!row || !rawUrl) return;
+    const copyBtn = row.querySelector('.product-copy-favorites');
+    if (!copyBtn) return;
+    copyBtn.style.display = 'none';
+    copyBtn.disabled = true;
+    const mediaType = await window.detectProductMediaType(rawUrl);
+    row.dataset.mediaType = mediaType;
+    const favoriteCount = window.getProductFavoriteCount(prodId);
+    const canCopy = (mediaType === 'image' || mediaType === 'mixed') && favoriteCount > 0;
+    copyBtn.style.display = canCopy ? 'inline-flex' : 'none';
+    copyBtn.disabled = !canCopy;
+    if (canCopy) copyBtn.textContent = `📋 Copy tên ảnh (${favoriteCount})`;
+};
 
 window.generateSingleClientLink = function(prodId) {
     const evId = document.getElementById('eventId').value;
@@ -2836,9 +2892,11 @@ window.saveProductRow = function(btn) {
     if(validatedUrl === '#') { showToast('Link không hợp lệ. Chỉ chấp nhận http/https'); return; }
     
     row.querySelector('.prod-view-link').href = urlInput;
-    row.querySelector('.prod-view-name').textContent = nameInput || 'Link sản phẩm';
+    row.querySelector('.prod-view-name').textContent = nameInput || 'Link Bàn Giao';
+    row.dataset.url = urlInput;
     row.querySelector('.prod-edit').style.display = 'none';
     row.querySelector('.prod-view').style.display = 'flex';
+    window.refreshProductMediaRow(row, row.dataset.id, urlInput);
 }
 
 window.renderEventStaffList = function() {
@@ -3217,15 +3275,6 @@ window.openEventModal = function(prefill={}){
 
   const btnCancel = document.getElementById('cancelEvent'); if(btnCancel) btnCancel.textContent = isAdmin ? 'Hủy' : 'Đóng';
 
-  const favStats = document.getElementById('adminClientFavStats');
-  if (favStats) {
-      if (e && e.favoritePhotos && e.favoritePhotos.length > 0) {
-          favStats.style.display = 'flex';
-          document.getElementById('adminFavCount').textContent = e.favoritePhotos.length;
-      } else {
-          favStats.style.display = 'none';
-      }
-  }
 }
 
 function getAssignmentStart(event, assignment) {
