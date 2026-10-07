@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     }
 
     // Thay thế bằng API Key bạn vừa lấy ở Bước 1
-    const API_KEY = process.env.GOOGLE_DRIVE_API_KEY || "DÁN_API_KEY_CỦA_BẠN_VÀO_ĐÂY_NẾU_KHÔNG_DÙNG_BIẾN_MÔI_TRƯỜNG"; 
+    const API_KEY = process.env.GOOGLE_DRIVE_API_KEY || "AIzaSyCnkBZGal4xkhqIdY70T50PMDROybCOdds"; 
 
     // API của Google Drive để lấy danh sách file trong thư mục
     const driveApiUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,thumbnailLink,webContentLink)&key=${API_KEY}`;
