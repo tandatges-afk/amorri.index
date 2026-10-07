@@ -1357,6 +1357,15 @@ function isDriveFolderUrl(url) {
     return /drive\.google\.com\/(?:drive\/u\/\d+\/)?folders\/[a-zA-Z0-9_-]+/i.test(url || '') || /drive\.google\.com\/folderview/i.test(url || '');
 }
 
+function extractDriveFileId(url) {
+    const raw = String(url || '');
+    const m1 = raw.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
+    if (m1) return m1[1];
+    const m2 = raw.match(/[?&]id=([a-zA-Z0-9_-]+)/i);
+    if (m2 && /drive\.google\.com/i.test(raw)) return m2[1];
+    return null;
+}
+
 async function initClientGallery() {
     if(!isClientMode) return;
     currentClientEvent = data.events.find(e => e.id === clientIdParam);
@@ -1388,6 +1397,19 @@ async function initClientGallery() {
             if(lower.includes('youtu.be/')) videoId=rawUrl.split('youtu.be/')[1].split(/[?&]/)[0];
             else if(lower.includes('v=')) videoId=rawUrl.split('v=')[1].split('&')[0];
             media.push({id:`yt_${p.id}`,name:p.name||'Video',isVideo:true,externalType:'youtube',videoId,productId:p.id});
+        } else if (extractDriveFileId(rawUrl)) {
+            const driveFileId = extractDriveFileId(rawUrl);
+            media.push({
+                id:driveFileId,
+                name:p.name||'Clip',
+                isVideo:true,
+                source:'drive',
+                previewUrl:`https://drive.google.com/file/d/${encodeURIComponent(driveFileId)}/preview`,
+                webViewLink:`https://drive.google.com/file/d/${encodeURIComponent(driveFileId)}/view`,
+                url:`https://drive.google.com/file/d/${encodeURIComponent(driveFileId)}/view`,
+                productId:p.id,
+                productName:p.name||'Clip'
+            });
         } else if (/\.(mp4|webm|mov|ogg)(?:[?#].*)?$/i.test(rawUrl)) {
             media.push({id:`direct_${p.id}`,name:p.name||'Video',isVideo:true,url:rawUrl,productId:p.id});
         } else if (/\.(jpeg|jpg|gif|png|webp)(?:[?#].*)?$/i.test(rawUrl)) {
