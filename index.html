@@ -1007,6 +1007,7 @@ body[data-client-gallery="true"] .toast.show { transform:translate(-50%,0); }
                 </label>
                 <div style="display:flex; gap:8px;">
                     <button type="button" class="btn ghost admin-only admin-only-flex" style="padding:8px 15px; font-size:12.5px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateClientLink()">🔗 Gửi tất cả</button>
+                    <button type="button" class="btn ghost admin-only admin-only-flex raw-tool-sync-btn" style="padding:8px 15px; font-size:12.5px; border:1px solid #16a34a; color:#15803d; font-weight:700;" onclick="window.sendAllFavoritesToRawTool()">🖥 Gửi Tool RAW</button>
                     <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:8px 15px; font-size:13px; border:1px solid #cbd5e1;" onclick="window.addProductRow()">+ Thêm thư mục / clip</button>
                 </div>
             </div>
@@ -2782,6 +2783,7 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
            </a>
            <div style="display:flex; gap:6px; flex-wrap:wrap;">
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateSingleClientLink('${prodId}')">🔗 Gửi Khách</button>
+               <button type="button" class="btn ghost admin-only-flex product-raw-sync" data-product-id="${prodId}" style="display:none; padding:6px 10px; font-size:12px; border:1px solid #16a34a; color:#15803d; font-weight:700;">🖥 Tool RAW</button>
                <button type="button" class="btn ghost admin-only-flex product-copy-favorites" data-product-id="${prodId}" style="display:none; padding:6px 10px; font-size:12px; border:1px solid #86efac; color:#15803d; font-weight:700;">📋 Copy tên ảnh</button>
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.closest('.product-row').querySelector('.prod-view').style.display='none'; this.closest('.product-row').querySelector('.prod-edit').style.display='flex'">✏️ Sửa</button>
            </div>
@@ -2803,6 +2805,85 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
     }
 
     if (isSaved) window.refreshProductMediaRow(div, prodId, url);
+};
+
+const RAW_TOOL_URL = 'http://127.0.0.1:8765';
+
+async function rawToolFetch(path, options = {}) {
+    const response = await fetch(`${RAW_TOOL_URL}${path}`, {
+        ...options,
+        mode: 'cors',
+        cache: 'no-store'
+    });
+    let payload = null;
+    try { payload = await response.json(); } catch (_) {}
+    if (!response.ok) throw new Error(payload?.error || `HTTP ${response.status}`);
+    return payload || {};
+}
+
+window.sendProductFavoritesToRawTool = async function(prodId) {
+    const evId = document.getElementById('eventId')?.value;
+    const ev = data.events.find(e => e.id === evId);
+    if (!ev) { showToast('Chưa có dữ liệu lịch.'); return false; }
+    const items = Array.isArray(ev.favoritePhotoItems)
+        ? ev.favoritePhotoItems.filter(x => String(x.productId || '') === String(prodId) && x.name)
+        : [];
+    if (!items.length) { showToast('Thư mục này chưa có ảnh khách chọn.'); return false; }
+    const product = (ev.products || []).find(p => String(p.id) === String(prodId));
+    try {
+        await rawToolFetch('/api/import-selection', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                eventId: ev.id || '',
+                eventName: ev.name || '',
+                items: items.map(x => ({
+                    name: x.name,
+                    productId: String(x.productId || prodId),
+                    productName: product?.name || x.productName || ''
+                }))
+            })
+        });
+        showToast(`🖥 Đã gửi ${items.length} ảnh sang Tool RAW.`);
+        return true;
+    } catch (err) {
+        console.error('RAW Tool sync error:', err);
+        showToast('Không kết nối được Tool RAW. Hãy mở locanh.py trước.');
+        return false;
+    }
+};
+
+window.sendAllFavoritesToRawTool = async function() {
+    const evId = document.getElementById('eventId')?.value;
+    const ev = data.events.find(e => e.id === evId);
+    if (!ev) { showToast('Chưa có dữ liệu lịch.'); return false; }
+    const allItems = Array.isArray(ev.favoritePhotoItems) ? ev.favoritePhotoItems.filter(x => x.name) : [];
+    if (!allItems.length) { showToast('Hiện chưa có ảnh khách chọn.'); return false; }
+    const products = Array.isArray(ev.products) ? ev.products : [];
+    try {
+        await rawToolFetch('/api/import-selection', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                eventId: ev.id || '',
+                eventName: ev.name || '',
+                items: allItems.map(x => {
+                    const product = products.find(p => String(p.id) === String(x.productId || ''));
+                    return {
+                        name: x.name,
+                        productId: String(x.productId || ''),
+                        productName: product?.name || x.productName || ''
+                    };
+                })
+            })
+        });
+        showToast(`🖥 Đã gửi ${allItems.length} ảnh từ tất cả thư mục sang Tool RAW.`);
+        return true;
+    } catch (err) {
+        console.error('RAW Tool sync all error:', err);
+        showToast('Không kết nối được Tool RAW. Hãy mở locanh.py trước.');
+        return false;
+    }
 };
 
 window.getProductFavoriteCount = function(prodId) {
@@ -2842,16 +2923,23 @@ window.detectProductMediaType = async function(rawUrl) {
 window.refreshProductMediaRow = async function(row, prodId, rawUrl) {
     if (!row || !rawUrl) return;
     const copyBtn = row.querySelector('.product-copy-favorites');
+    const rawBtn = row.querySelector('.product-raw-sync');
     if (!copyBtn) return;
     copyBtn.style.display = 'none';
     copyBtn.disabled = true;
+    if (rawBtn) { rawBtn.style.display = 'none'; rawBtn.disabled = true; }
     const mediaType = await window.detectProductMediaType(rawUrl);
     row.dataset.mediaType = mediaType;
     const favoriteCount = window.getProductFavoriteCount(prodId);
-    const canCopy = (mediaType === 'image' || mediaType === 'mixed') && favoriteCount > 0;
-    copyBtn.style.display = canCopy ? 'inline-flex' : 'none';
-    copyBtn.disabled = !canCopy;
-    if (canCopy) copyBtn.textContent = `📋 Copy tên ảnh (${favoriteCount})`;
+    const canUseFavoriteActions = (mediaType === 'image' || mediaType === 'mixed') && favoriteCount > 0;
+    copyBtn.style.display = canUseFavoriteActions ? 'inline-flex' : 'none';
+    copyBtn.disabled = !canUseFavoriteActions;
+    if (canUseFavoriteActions) copyBtn.textContent = `📋 Copy tên ảnh (${favoriteCount})`;
+    if (rawBtn) {
+        rawBtn.style.display = canUseFavoriteActions ? 'inline-flex' : 'none';
+        rawBtn.disabled = !canUseFavoriteActions;
+        rawBtn.onclick = () => window.sendProductFavoritesToRawTool(prodId);
+    }
 };
 
 window.generateSingleClientLink = function(prodId) {
