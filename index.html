@@ -417,227 +417,131 @@ body[data-client-gallery="true"] #panda-mascot-container {
 }
 
 /* =========================================
-   GIAO DIỆN BÀN GIAO KHÁCH HÀNG — PREMIUM / GỌN
+   GIAO DIỆN BÀN GIAO KHÁCH HÀNG — MEDIA FIRST
 ========================================= */
 #clientGalleryView {
-    display: none;
-    min-height: 100vh;
-    background: #f8fafc;
-    color: var(--text);
-    padding-bottom: 92px;
+    display:none;
+    min-height:100vh;
+    padding-bottom:92px;
+    background:#f8fafc;
+    color:var(--text);
 }
 .gallery-cover {
-    width: 100%;
-    background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
-    color: #fff;
-    padding: 28px 20px 26px;
+    width:100%;
+    min-height:230px;
+    display:flex;
+    align-items:flex-end;
+    color:#fff;
+    background:
+      linear-gradient(180deg, rgba(15,23,42,.15) 0%, rgba(15,23,42,.82) 100%),
+      url('BG.png') center/cover;
 }
 .gallery-cover-inner {
-    max-width: 1240px;
-    margin: 0 auto;
+    width:100%;
+    max-width:1240px;
+    margin:0 auto;
+    padding:32px 20px 28px;
 }
 .gallery-brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: .4px;
-    color: rgba(255,255,255,.76);
-    margin-bottom: 20px;
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.3px;
+    color:rgba(255,255,255,.86);
+    margin-bottom:18px;
 }
 .gallery-brand img {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    object-fit: cover;
-    background: #fff;
+    width:30px; height:30px; border-radius:9px; object-fit:cover; background:#fff;
 }
 .gallery-brand .gallery-brand-tag {
-    padding: 5px 9px;
-    border-radius: 999px;
-    background: rgba(255,255,255,.08);
-    border: 1px solid rgba(255,255,255,.1);
-    color: rgba(255,255,255,.66);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: .7px;
+    padding:5px 9px;
+    border-radius:999px;
+    background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.14);
+    color:#fff;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.6px;
 }
 .gallery-head-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 20px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:18px;
 }
-.gallery-head-copy { min-width: 0; }
-.gallery-head-copy .eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    margin-bottom: 8px;
-    font-size: 11px;
-    font-weight: 800;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-.gallery-head-copy .eyebrow::before {
-    content: '';
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #34d399;
-    box-shadow: 0 0 0 4px rgba(52,211,153,.12);
-}
+.gallery-head-copy { min-width:0; }
+.gallery-head-copy .eyebrow { display:none; }
 .gallery-cover h1 {
-    font-size: clamp(25px, 4vw, 38px);
-    font-weight: 800;
-    margin: 0;
-    letter-spacing: -.9px;
-    line-height: 1.08;
+    font-size:clamp(26px,4vw,40px);
+    line-height:1.05;
+    font-weight:800;
+    margin:0;
+    letter-spacing:-.9px;
 }
 .gallery-cover p {
-    font-size: 13.5px;
-    line-height: 1.6;
-    color: #cbd5e1;
-    margin: 9px 0 0;
-    max-width: 720px;
+    margin:9px 0 0;
+    max-width:680px;
+    color:#e2e8f0;
+    font-size:13px;
+    line-height:1.55;
+    font-weight:600;
 }
-.gallery-head-status {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-}
+.gallery-head-status { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 .gallery-stat {
-    min-width: 90px;
-    padding: 10px 12px;
-    border-radius: 14px;
-    background: rgba(255,255,255,.07);
-    border: 1px solid rgba(255,255,255,.1);
-    text-align: center;
+    min-width:92px;
+    padding:10px 12px;
+    border-radius:14px;
+    background:rgba(15,23,42,.28);
+    border:1px solid rgba(255,255,255,.15);
+    backdrop-filter:blur(8px);
+    text-align:center;
 }
-.gallery-stat strong { display:block; font-size: 16px; color:#fff; }
-.gallery-stat span { display:block; margin-top:2px; font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.6px; }
+.gallery-stat strong { display:block; font-size:16px; color:#fff; }
+.gallery-stat span { display:block; margin-top:2px; font-size:10px; font-weight:800; color:#cbd5e1; text-transform:uppercase; letter-spacing:.55px; }
+.gallery-container { max-width:1240px; margin:0 auto; padding:20px 20px 28px; }
 
-.gallery-container {
-    max-width: 1240px;
-    margin: 0 auto;
-    padding: 18px 20px 28px;
+#cgVideoContainer { display:grid; gap:14px; margin-bottom:18px; }
+.client-video-card {
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 10px 30px rgba(15,23,42,.06);
 }
-.handover-toolbar {
+.client-video-head {
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:12px;
-    padding: 12px 14px;
-    margin-bottom: 18px;
-    background:#fff;
-    border:1px solid var(--line);
-    border-radius:16px;
-    box-shadow:0 8px 24px rgba(15,23,42,.05);
-}
-.handover-toolbar-copy { min-width:0; }
-.handover-toolbar-title { font-size:12px; font-weight:800; color:var(--text); }
-.handover-toolbar-sub { margin-top:2px; font-size:11px; color:var(--muted); font-weight:600; }
-.handover-toolbar-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
-.handover-toolbar .btn { padding:9px 13px; font-size:12px; box-shadow:none; }
-
-#cgVideoContainer { display:grid; gap:18px; }
-.client-product-block {
-    background:#fff;
-    border:1px solid var(--line);
-    border-radius:20px;
-    padding:18px;
-    box-shadow:0 10px 28px rgba(15,23,42,.05);
-}
-.client-product-head {
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-    margin-bottom:12px;
-}
-.client-product-title { min-width:0; }
-.client-product-title strong { display:block; font-size:15px; font-weight:800; color:var(--text); }
-.client-product-title span { display:block; margin-top:3px; font-size:11px; color:var(--muted); font-weight:600; }
-.client-product-chip {
-    flex:0 0 auto;
-    padding:6px 9px; border-radius:999px;
-    background:#f1f5f9; color:#475569; border:1px solid var(--line);
-    font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.5px;
-}
-.client-video-card {
-    background: #fff;
-    padding: 0;
-    border-radius: 16px;
-    box-shadow: none;
-    text-align: left;
-    margin: 0;
-    border: 1px solid var(--line);
-    overflow: hidden;
-}
-.client-video-frame {
-    position:relative;
-    width:100%;
-    aspect-ratio:16 / 9;
-    background:#0b1220;
-    overflow:hidden;
-}
-.client-video-frame iframe,
-.client-video-frame video {
-    position:absolute; inset:0; width:100%; height:100%; border:0;
-}
-.client-link-row {
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    gap:10px;
     padding:12px 14px;
+    border-bottom:1px solid var(--line);
 }
-.client-link-row .copy { min-width:0; }
-.client-link-row .copy strong { display:block; font-size:12.5px; font-weight:800; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.client-link-row .copy span { display:block; margin-top:2px; font-size:11px; color:var(--muted); }
-.client-link-row .actions { display:flex; gap:7px; flex:0 0 auto; }
-.client-link-row .btn { padding:8px 11px; font-size:11.5px; box-shadow:none; }
-.client-drive-row {
-    display:flex; align-items:center; justify-content:space-between; gap:14px;
-    padding:14px; border:1px dashed #cbd5e1; border-radius:14px; background:#f8fafc;
-}
-.client-drive-copy { display:flex; align-items:center; gap:11px; min-width:0; }
-.client-drive-icon { width:34px; height:34px; display:grid; place-items:center; border-radius:10px; background:#e0f2fe; font-size:17px; flex:0 0 auto; }
-.client-drive-copy strong { display:block; font-size:12.5px; font-weight:800; color:var(--text); }
-.client-drive-copy span { display:block; margin-top:2px; font-size:11px; font-weight:600; color:var(--muted); }
+.client-video-title { min-width:0; font-size:13px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.client-video-tag { flex:0 0 auto; padding:5px 8px; border-radius:999px; background:#f1f5f9; color:#475569; font-size:10px; font-weight:800; letter-spacing:.5px; }
+.client-video-frame { position:relative; width:100%; aspect-ratio:16/9; background:#020617; }
+.client-video-frame iframe, .client-video-frame video { position:absolute; inset:0; width:100%; height:100%; border:0; }
+.client-video-foot { display:flex; justify-content:flex-end; padding:10px 12px; }
+.client-video-foot a { font-size:11px; font-weight:800; color:#475569; text-decoration:none; }
 
 .photo-grid-client {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 14px;
-    margin-top: 18px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:14px;
+    margin-top:0;
 }
 .client-photo-card, .client-media-card {
     position:relative;
-    border-radius:18px;
     overflow:hidden;
+    border-radius:18px;
     background:#e2e8f0;
+    border:1px solid rgba(226,232,240,.9);
     box-shadow:0 8px 22px rgba(15,23,42,.07);
-    border:1px solid rgba(226,232,240,.85);
 }
-.client-photo-card { cursor:pointer; aspect-ratio: 4 / 5; }
-.client-media-card { cursor:pointer; aspect-ratio: 4 / 5; }
+.client-photo-card { cursor:pointer; aspect-ratio:4/5; }
 .client-photo-card img, .client-media-card img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .35s ease, filter .25s ease; }
 .client-photo-card:hover img, .client-media-card:hover img { transform:scale(1.04); }
-.client-media-card::after {
-    content:''; position:absolute; inset:0;
-    background:linear-gradient(180deg, rgba(2,6,23,.08), rgba(2,6,23,.56));
-    pointer-events:none;
-}
-.client-media-badge {
-    position:absolute; left:12px; top:12px; z-index:3;
-    padding:6px 8px; border-radius:999px; background:rgba(15,23,42,.76); color:#fff;
-    font-size:10px; font-weight:800; letter-spacing:.4px;
-    backdrop-filter:blur(8px);
-}
-.client-media-play {
-    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:3;
-    width:54px; height:54px; display:grid; place-items:center;
-    border-radius:50%; background:rgba(255,255,255,.92); color:#0f172a;
-    font-size:20px; box-shadow:0 10px 30px rgba(0,0,0,.24);
-}
 .client-photo-card .heart-btn {
     position:absolute; top:12px; right:12px; width:40px; height:40px; z-index:4;
     background:rgba(255,255,255,.78); backdrop-filter:blur(8px);
@@ -646,26 +550,23 @@ body[data-client-gallery="true"] #panda-mascot-container {
 }
 .client-photo-card.selected .heart-btn { background:#fff; color:#ef4444; transform:scale(1.08); border-color:#fca5a5; }
 .client-photo-card.selected img { opacity:.82; filter:brightness(.9); }
-.client-photo-card.selected::after {
-    content:''; position:absolute; inset:0; border:3px solid #ef4444; border-radius:18px; pointer-events:none; z-index:5;
-}
+.client-photo-card.selected::after { content:''; position:absolute; inset:0; border:3px solid #ef4444; border-radius:18px; pointer-events:none; z-index:5; }
 .photo-filename {
-    position:absolute; bottom:0; left:0; right:0; z-index:4;
-    background:linear-gradient(transparent,rgba(0,0,0,.75)); color:#fff;
-    padding:28px 12px 11px; font-size:11.5px; font-weight:700; pointer-events:none;
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    position:absolute; left:0; right:0; bottom:0; z-index:4;
+    padding:28px 12px 11px; color:#fff; font-size:11.5px; font-weight:700;
+    background:linear-gradient(transparent,rgba(0,0,0,.75));
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; pointer-events:none;
 }
-.client-media-meta {
-    position:absolute; left:12px; right:12px; bottom:11px; z-index:4;
-    color:#fff; font-size:11.5px; font-weight:700; overflow:hidden;
-    text-overflow:ellipsis; white-space:nowrap;
-}
+.client-media-card { cursor:pointer; aspect-ratio:16/9; }
+.client-media-card::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(2,6,23,.08),rgba(2,6,23,.6)); pointer-events:none; }
+.client-media-badge { position:absolute; left:12px; top:12px; z-index:3; padding:5px 8px; border-radius:999px; background:rgba(15,23,42,.78); color:#fff; font-size:10px; font-weight:800; letter-spacing:.4px; }
+.client-media-play { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:3; width:54px; height:54px; display:grid; place-items:center; border-radius:50%; background:rgba(255,255,255,.94); color:#0f172a; font-size:20px; box-shadow:0 10px 30px rgba(0,0,0,.24); }
+.client-media-meta { position:absolute; left:12px; right:12px; bottom:11px; z-index:4; color:#fff; font-size:11.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 .client-bottom-bar {
-    position: fixed; left:50%; bottom:14px; transform:translateX(-50%);
-    width:min(680px, calc(100vw - 24px));
-    background:rgba(15,23,42,.94);
-    color:#fff; backdrop-filter:blur(14px);
+    position:fixed; left:50%; bottom:14px; transform:translateX(-50%);
+    width:min(680px,calc(100vw - 24px));
+    background:rgba(15,23,42,.94); color:#fff; backdrop-filter:blur(14px);
     padding:10px 12px 10px 15px; border-radius:18px;
     box-shadow:0 18px 45px rgba(15,23,42,.22);
     display:flex; justify-content:space-between; align-items:center; gap:12px;
@@ -675,43 +576,35 @@ body[data-client-gallery="true"] #panda-mascot-container {
 .client-bottom-bar .count-info span { color:#fff; font-size:20px; font-weight:800; margin:0 5px 0 2px; }
 .client-bottom-bar .btn { border:0; box-shadow:none; padding:10px 14px; font-size:12px; border-radius:12px; }
 
-/* Modal xem video Drive */
+/* Video Drive modal */
 .drive-video-modal { position:fixed; inset:0; z-index:3000; display:none; padding:18px; background:rgba(2,6,23,.72); backdrop-filter:blur(8px); }
 .drive-video-modal.show { display:flex; align-items:center; justify-content:center; }
 .drive-video-shell { width:min(1040px,100%); background:#0b1220; border:1px solid rgba(255,255,255,.08); border-radius:20px; overflow:hidden; box-shadow:0 25px 70px rgba(0,0,0,.45); }
 .drive-video-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; color:#fff; }
 .drive-video-title { min-width:0; font-size:13px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .drive-video-head .btn { background:rgba(255,255,255,.09); color:#fff; border-color:rgba(255,255,255,.12); box-shadow:none; padding:8px 10px; font-size:11.5px; }
-.drive-video-frame { position:relative; aspect-ratio:16 / 9; background:#000; }
+.drive-video-frame { position:relative; aspect-ratio:16/9; background:#000; }
 .drive-video-frame iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
 .drive-video-foot { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 14px; background:#0f172a; }
 .drive-video-foot span { color:#94a3b8; font-size:11px; font-weight:600; }
 .drive-video-foot a { color:#e2e8f0; font-size:11px; font-weight:800; text-decoration:none; }
 
-body[data-client-gallery="true"] .toast { bottom: 88px; right: auto; left:50%; transform:translate(-50%,20px); width:max-content; max-width:calc(100vw - 32px); }
+body[data-client-gallery="true"] .toast { bottom:88px; right:auto; left:50%; transform:translate(-50%,20px); width:max-content; max-width:calc(100vw - 32px); }
 body[data-client-gallery="true"] .toast.show { transform:translate(-50%,0); }
-
-@media(max-width: 900px){
-  .gallery-head-row { align-items:flex-start; flex-direction:column; }
-  .gallery-head-status { justify-content:flex-start; }
-}
-@media(max-width: 700px){
-  #clientGalleryView { padding-bottom: 80px; }
-  .gallery-cover { padding:20px 16px 22px; }
-  .gallery-container { padding:14px 12px 24px; }
-  .gallery-brand { margin-bottom:15px; }
-  .gallery-cover p { font-size:12.5px; }
-  .gallery-stat { min-width:84px; }
-  .handover-toolbar { align-items:flex-start; flex-direction:column; }
-  .handover-toolbar-actions { width:100%; justify-content:flex-start; }
-  .client-product-block { padding:13px; border-radius:17px; }
-  .client-product-head { align-items:flex-start; }
-  .client-drive-row { align-items:flex-start; flex-direction:column; }
-  .client-drive-row .btn { width:100%; }
-  .photo-grid-client { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:14px; }
-  .client-photo-card, .client-media-card { border-radius:14px; }
-  .client-bottom-bar { bottom:10px; width:calc(100vw - 16px); }
-  .client-bottom-bar .btn { padding:9px 11px; }
+@media(max-width:900px){ .gallery-head-row{align-items:flex-start;flex-direction:column;} .gallery-head-status{justify-content:flex-start;} }
+@media(max-width:700px){
+  #clientGalleryView{padding-bottom:80px;}
+  .gallery-cover{min-height:210px;}
+  .gallery-cover-inner{padding:22px 16px 20px;}
+  .gallery-container{padding:14px 12px 24px;}
+  .gallery-brand{margin-bottom:14px;}
+  .gallery-cover p{font-size:12px;}
+  .gallery-stat{min-width:84px;}
+  .photo-grid-client{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  .client-photo-card{border-radius:14px;}
+  .client-media-card{border-radius:14px;}
+  .client-bottom-bar{bottom:10px;width:calc(100vw - 16px);}
+  .client-bottom-bar .btn{padding:9px 11px;}
 }
 </style>
 </head>
@@ -745,12 +638,11 @@ body[data-client-gallery="true"] .toast.show { transform:translate(-50%,0); }
             </div>
             <div class="gallery-head-row">
                 <div class="gallery-head-copy">
-                    <div class="eyebrow">Không gian bàn giao</div>
                     <h1 id="cgTitle">Loading...</h1>
-                    <p>Xin mời xem video, chọn ảnh yêu thích và gửi lại cho Studio. Gọn, nhanh và tối ưu cho điện thoại.</p>
+                    <p>Ảnh và clip bàn giao. Bấm ❤️ trên ảnh cần chọn, còn clip chỉ cần bấm để xem.</p>
                 </div>
                 <div class="gallery-head-status">
-                    <div class="gallery-stat"><strong id="cgImageCount">0</strong><span>Media</span></div>
+                    <div class="gallery-stat"><strong id="cgImageCount">0</strong><span>Ảnh</span></div>
                     <div class="gallery-stat"><strong id="cgSelectedTop">0</strong><span>Đã chọn</span></div>
                 </div>
             </div>
@@ -758,23 +650,13 @@ body[data-client-gallery="true"] .toast.show { transform:translate(-50%,0); }
     </div>
 
     <div class="gallery-container">
-        <div class="handover-toolbar" id="cgToolbar">
-            <div class="handover-toolbar-copy">
-                <div class="handover-toolbar-title">Kho bàn giao</div>
-                <div class="handover-toolbar-sub">Ảnh và video được tải trực tiếp từ Google Drive.</div>
-            </div>
-            <div class="handover-toolbar-actions">
-                <a id="cgDriveLink" class="btn" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">☁️ Mở thư mục Drive</a>
-            </div>
-        </div>
-
-        <div id="cgVideoContainer" style="display:none;"></div>
+        <div id="cgVideoContainer"></div>
         <div class="photo-grid-client" id="cgPhotoGrid"></div>
     </div>
 
-    <div class="client-bottom-bar">
-        <div class="count-info">Đã yêu thích: <span id="cgSelectedCount">0</span> ảnh</div>
-        <button class="btn primary" style="background:#ef4444; color:#fff;" onclick="window.submitClientFavorites()">Gửi Studio chỉnh sửa</button>
+    <div class="client-bottom-bar" id="cgBottomBar">
+        <div class="count-info">Đã chọn: <span id="cgSelectedCount">0</span> ảnh</div>
+        <button class="btn primary" style="background:#ef4444;color:#fff;" onclick="window.submitClientFavorites()">Gửi Studio chỉnh sửa</button>
     </div>
 
     <div class="drive-video-modal" id="driveVideoModal" aria-hidden="true">
@@ -1144,21 +1026,19 @@ body[data-client-gallery="true"] .toast.show { transform:translate(-50%,0); }
           
           <div class="form-group full step3-item" style="display:none"><label for="eventNote">Ghi chú chung / Yêu cầu</label><textarea id="eventNote" placeholder="Trang phục, concept, thiết bị, thời gian di chuyển..."></textarea></div>
 
-          <div class="form-group full step3-item admin-only admin-only-block" id="productsSection" style="display:none; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 24px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap: wrap; gap: 10px;">
-                <label style="font-size:15px; color:#0f172a; display:flex; align-items:center; gap:8px;">
-                    📦 Link Bàn Giao & Chọn Ảnh 
+          <div class="form-group full step3-item admin-only admin-only-block" id="productsSection" style="display:none; margin-top:16px; border-top:1px solid var(--line); padding-top:24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                <label style="font-size:15px; color:#0f172a; display:flex; align-items:center; gap:8px; margin:0;">
+                    📦 Bàn giao ảnh / clip
                 </label>
                 <div style="display:flex; gap:8px;">
-                    <button type="button" class="btn ghost admin-only admin-only-flex" style="padding:8px 16px; font-size:12.5px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateClientLink()">🔗 Lấy Link Tất Cả</button>
-                    <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:8px 16px; font-size:13px; border:1px solid #cbd5e1;" onclick="window.addProductRow()">+ Thêm Link Phụ</button>
+                    <button type="button" class="btn ghost admin-only admin-only-flex" style="padding:8px 15px; font-size:12.5px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateClientLink()">🔗 Gửi tất cả</button>
+                    <button type="button" id="btnAddProduct" class="btn ghost admin-only admin-only-flex" style="padding:8px 15px; font-size:13px; border:1px solid #cbd5e1;" onclick="window.addProductRow()">+ Thêm thư mục / clip</button>
                 </div>
             </div>
-          
-            <!-- Thông báo số ảnh khách đã chọn -->
-            <div id="adminClientFavStats" style="display:none; background:#f0fdf4; border:1px dashed #4ade80; padding:12px 16px; border-radius:12px; margin-bottom:16px; align-items:center; justify-content:space-between;">
-                <div style="font-size:13.5px; color:#166534; font-weight:600;">❤️ Khách đã chốt chọn <b id="adminFavCount" style="font-size:16px;">0</b> ảnh.</div>
-                <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12px; border:1px solid #86efac; color:#15803d; background:#fff;" onclick="window.copyFavoriteList()">Copy Tên Ảnh</button>
+            <div id="adminClientFavStats" style="display:none; background:#f0fdf4; border:1px dashed #4ade80; padding:11px 14px; border-radius:12px; margin-bottom:14px; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                <div style="font-size:13px; color:#166534; font-weight:600;">❤️ Khách đã chọn <b id="adminFavCount" style="font-size:16px;">0</b> ảnh.</div>
+                <button type="button" class="btn ghost" style="padding:6px 12px; font-size:12px; border:1px solid #86efac; color:#15803d; background:#fff;" onclick="window.copyFavoriteList()">Copy tất cả tên ảnh</button>
             </div>
           
             <div id="eventProductsList" style="display:flex; flex-direction:column; gap:12px;"></div>
@@ -1463,145 +1343,125 @@ if (isClientMode) {
     document.body.setAttribute('data-client-gallery', 'true');
 }
 
+function photoKey(p) {
+    return String(p.favoriteKey || p.key || `${p.productId || 'root'}::${p.name || p.id || ''}`);
+}
+
+function renderSelectedKeySet(event) {
+    const items = Array.isArray(event?.favoritePhotoItems) ? event.favoritePhotoItems : [];
+    if (items.length) return new Set(items.map(x => String(x.key || `${x.productId || 'root'}::${x.name || ''}`)));
+    return new Set((event?.favoritePhotos || []).map(n => String(n)));
+}
+
+function isDriveFolderUrl(url) {
+    return /drive\.google\.com\/(?:drive\/u\/\d+\/)?folders\/[a-zA-Z0-9_-]+/i.test(url || '') || /drive\.google\.com\/folderview/i.test(url || '');
+}
+
 async function initClientGallery() {
     if(!isClientMode) return;
     currentClientEvent = data.events.find(e => e.id === clientIdParam);
-    
+    const photoGrid = document.getElementById('cgPhotoGrid');
+    const videoContainer = document.getElementById('cgVideoContainer');
+    const bottomBar = document.getElementById('cgBottomBar');
     if(!currentClientEvent) {
-        document.getElementById('cgTitle').textContent = "Không tìm thấy bộ ảnh!";
+        document.getElementById('cgTitle').textContent = 'Không tìm thấy bộ bàn giao!';
+        bottomBar.style.display = 'none';
         return;
     }
 
-    document.getElementById('cgTitle').textContent = currentClientEvent.name || "Sản Phẩm Của Bạn";
-    document.title = (currentClientEvent.name || "Amorri Studio") + " - Bàn Giao";
-    clientSelectedPhotos = new Set(currentClientEvent.favoritePhotos || []);
-    document.getElementById('cgSelectedTop').textContent = clientSelectedPhotos.size;
-    
-    const productsContainer = document.getElementById('cgVideoContainer');
-    const photoGrid = document.getElementById('cgPhotoGrid');
-    const driveLink = document.getElementById('cgDriveLink');
-    
-    let targetProducts = currentClientEvent.products || [];
-    if (prodIdParam) {
-        targetProducts = targetProducts.filter(p => p.id === prodIdParam);
-    }
-    
-    let driveFolderUrlToFetch = null;
+    document.getElementById('cgTitle').textContent = currentClientEvent.name || 'Bộ bàn giao của bạn';
+    document.title = (currentClientEvent.name || 'Amorri Studio') + ' - Bàn giao';
+    clientSelectedPhotos = renderSelectedKeySet(currentClientEvent);
 
-    if (targetProducts.length > 0) {
-        productsContainer.style.display = 'grid';
-        productsContainer.innerHTML = targetProducts.map(p => {
-            const rawUrl = p.url || '';
-            const lowerUrl = rawUrl.toLowerCase();
-            let viewHtml = '';
-            let kindLabel = 'Sản phẩm';
-            
-            if (lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be')) {
-                let videoId = '';
-                if(lowerUrl.includes('youtu.be/')) videoId = rawUrl.split('youtu.be/')[1].split('?')[0];
-                else if(lowerUrl.includes('v=')) videoId = rawUrl.split('v=')[1].split('&')[0];
-                kindLabel = 'YouTube';
-                viewHtml = `<div class="client-video-card"><div class="client-video-frame"><iframe src="https://www.youtube.com/embed/${videoId}" title="${escapeHtml(p.name || 'Video')}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe></div></div>`;
+    const allProducts = Array.isArray(currentClientEvent.products) ? currentClientEvent.products : [];
+    const products = prodIdParam ? allProducts.filter(p => String(p.id) === String(prodIdParam)) : allProducts;
+    const media = [];
+    const folderProducts = products.filter(p => isDriveFolderUrl(p.url || ''));
+
+    // Các sản phẩm link trực tiếp (YouTube/mp4/image) vẫn được hiển thị như media bàn giao.
+    for (const p of products) {
+        const rawUrl = String(p.url || '').trim();
+        if(!rawUrl || isDriveFolderUrl(rawUrl)) continue;
+        const lower = rawUrl.toLowerCase();
+        if (lower.includes('youtube.com') || lower.includes('youtu.be')) {
+            let videoId='';
+            if(lower.includes('youtu.be/')) videoId=rawUrl.split('youtu.be/')[1].split(/[?&]/)[0];
+            else if(lower.includes('v=')) videoId=rawUrl.split('v=')[1].split('&')[0];
+            media.push({id:`yt_${p.id}`,name:p.name||'Video',isVideo:true,externalType:'youtube',videoId,productId:p.id});
+        } else if (/\.(mp4|webm|mov|ogg)(?:[?#].*)?$/i.test(rawUrl)) {
+            media.push({id:`direct_${p.id}`,name:p.name||'Video',isVideo:true,url:rawUrl,productId:p.id});
+        } else if (/\.(jpeg|jpg|gif|png|webp)(?:[?#].*)?$/i.test(rawUrl)) {
+            media.push({id:`img_${p.id}`,name:p.name||'Ảnh',isVideo:false,url:rawUrl,thumb:rawUrl,productId:p.id});
+        }
+    }
+
+    // Tải tất cả các thư mục Drive thay vì chỉ thư mục đầu tiên.
+    for (const p of folderProducts) {
+        try {
+            const response = await fetch(`/api/get-drive-images?folderUrl=${encodeURIComponent(p.url)}`);
+            if(!response.ok) throw new Error('HTTP '+response.status);
+            const result = await response.json();
+            if(result.error) throw new Error(result.error);
+            for(const item of (result.images || [])) {
+                media.push({
+                    ...item,
+                    productId:p.id,
+                    productName:p.name || 'Thư mục ảnh',
+                    favoriteKey:`${p.id || 'root'}::${item.name}`
+                });
             }
-            else if (lowerUrl.match(/\.(mp4|webm|mov|ogg)(?:[?#].*)?$/)) {
-                kindLabel = 'Video';
-                const mime = lowerUrl.includes('.webm') ? 'video/webm' : lowerUrl.includes('.ogg') ? 'video/ogg' : 'video/mp4';
-                viewHtml = `<div class="client-video-card"><div class="client-video-frame"><video controls playsinline preload="metadata"><source src="${safeUrl(rawUrl)}" type="${mime}">Trình duyệt không hỗ trợ video.</video></div></div>`;
+        } catch(err) {
+            console.error('Drive folder error:', p.name, err);
+        }
+    }
+
+    currentClientEvent.galleryPhotos = media;
+    const videos = media.filter(m => m.isVideo);
+    const images = media.filter(m => !m.isVideo);
+    document.getElementById('cgImageCount').textContent = String(images.length);
+    videoContainer.innerHTML = '';
+
+    // Clip không có tim; thường chỉ có một clip nên đưa lên đầu thành player riêng.
+    if(videos.length) {
+        videoContainer.style.display='grid';
+        videoContainer.innerHTML = videos.map(v => {
+            let frame='';
+            if(v.externalType==='youtube') {
+                frame=`<iframe src="https://www.youtube.com/embed/${encodeURIComponent(v.videoId)}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+            } else if(v.source === 'drive') {
+                frame=`<iframe src="${safeUrl(v.previewUrl || `https://drive.google.com/file/d/${encodeURIComponent(v.id)}/preview`)}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+            } else if(v.url) {
+                frame=`<video controls playsinline preload="metadata" src="${safeUrl(v.url)}"></video>`;
             }
-            else if (lowerUrl.match(/\.(jpeg|jpg|gif|png|webp)(?:[?#].*)?$/)) {
-                kindLabel = 'Ảnh';
-                viewHtml = `<div class="client-video-card"><img src="${safeUrl(rawUrl)}" style="display:block;width:100%;max-height:720px;object-fit:contain;background:#0b1220;" alt="${escapeHtml(p.name || 'Sản phẩm')}"></div>`;
-            }
-            else if (lowerUrl.includes('drive.google.com/drive/folders/') || lowerUrl.includes('drive.google.com/folderview')) {
-                kindLabel = 'Google Drive';
-                if (!driveFolderUrlToFetch) driveFolderUrlToFetch = rawUrl;
-                driveLink.href = safeUrl(rawUrl);
-                driveLink.style.display = 'inline-flex';
-                viewHtml = `<div class="client-drive-row">
-                    <div class="client-drive-copy">
-                        <div class="client-drive-icon">☁️</div>
-                        <div><strong>${escapeHtml(p.name || 'Thư mục Drive')}</strong><span>Toàn bộ ảnh và video được đồng bộ từ thư mục gốc.</span></div>
-                    </div>
-                    <a class="btn" href="${safeUrl(rawUrl)}" target="_blank" rel="noopener noreferrer">Mở Drive ↗</a>
-                </div>`;
-            }
-            else {
-                kindLabel = lowerUrl.includes('drive.google.com') ? 'Google Drive' : 'Liên kết';
-                const icon = lowerUrl.includes('drive.google.com') ? '☁️' : '🔗';
-                viewHtml = `<div class="client-drive-row">
-                    <div class="client-drive-copy">
-                        <div class="client-drive-icon">${icon}</div>
-                        <div><strong>${escapeHtml(p.name || 'Link bàn giao')}</strong><span>Nhấn nút bên cạnh để mở nội dung.</span></div>
-                    </div>
-                    <a class="btn primary" href="${safeUrl(rawUrl)}" target="_blank" rel="noopener noreferrer">Mở link ↗</a>
-                </div>`;
-            }
-            
-            return `<section class="client-product-block">
-                <div class="client-product-head">
-                    <div class="client-product-title"><strong>${escapeHtml(p.name || 'Sản phẩm bàn giao')}</strong><span>Nội dung bàn giao của Studio</span></div>
-                    <div class="client-product-chip">${kindLabel}</div>
-                </div>
-                ${viewHtml}
+            const openUrl=v.webViewLink || v.url || `https://drive.google.com/file/d/${v.id}/view`;
+            return `<section class="client-video-card">
+                <div class="client-video-head"><div class="client-video-title">${escapeHtml(v.name)}</div><div class="client-video-tag">CLIP</div></div>
+                <div class="client-video-frame">${frame}</div>
+                <div class="client-video-foot"><a href="${safeUrl(openUrl)}" target="_blank" rel="noopener noreferrer">Mở clip trong Google Drive ↗</a></div>
             </section>`;
         }).join('');
     } else {
-        productsContainer.style.display = 'none';
-        driveLink.style.display = 'none';
+        videoContainer.style.display='none';
     }
 
-    const shouldLoadDrive = driveFolderUrlToFetch && (!prodIdParam || targetProducts.some(p => p.url === driveFolderUrlToFetch));
-    if (shouldLoadDrive) {
-        photoGrid.style.display = 'grid';
-        document.querySelector('.client-bottom-bar').style.display = 'flex';
-        photoGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--muted);font-weight:700;background:#fff;border:1px solid var(--line);border-radius:18px;">Đang tải ảnh và video từ Google Drive…</div>`;
-        
-        try {
-            const response = await fetch(`/api/get-drive-images?folderUrl=${encodeURIComponent(driveFolderUrlToFetch)}`);
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            const result = await response.json();
-            
-            if (result.error) {
-                photoGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:42px 20px;color:var(--red);font-weight:700;background:#fff;border:1px solid #fecaca;border-radius:18px;">${escapeHtml(result.error)}</div>`;
-                return;
-            }
-
-            if (result.images && result.images.length > 0) {
-                currentClientEvent.galleryPhotos = result.images;
-                document.getElementById('cgImageCount').textContent = result.images.length;
-                renderClientGrid();
-            } else {
-                photoGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:42px 20px;color:var(--muted);font-weight:700;background:#fff;border:1px solid var(--line);border-radius:18px;">Thư mục Drive chưa có media ảnh/video để bàn giao.</div>`;
-            }
-        } catch (error) {
-            console.error('Lỗi khi fetch API Drive:', error);
-            photoGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:42px 20px;color:var(--red);font-weight:700;background:#fff;border:1px solid #fecaca;border-radius:18px;">Không tải được dữ liệu Drive. Hãy kiểm tra API `/api/get-drive-images` và quyền chia sẻ thư mục.</div>`;
-        }
-    } else if (prodIdParam) {
-        photoGrid.style.display = 'none';
-        document.querySelector('.client-bottom-bar').style.display = 'none';
-        document.getElementById('clientGalleryView').style.paddingBottom = '28px';
+    if(images.length) {
+        photoGrid.style.display='grid';
+        bottomBar.style.display='flex';
+        renderClientGrid();
     } else {
-        photoGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:42px 20px;color:var(--muted);font-weight:700;background:#fff;border:1px solid var(--line);border-radius:18px;">Hiện chưa có ảnh/video nào được tải lên để bàn giao.</div>`;
-        document.querySelector('.client-bottom-bar').style.display = 'none';
-        document.getElementById('cgImageCount').textContent = '0';
+        photoGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--muted);font-weight:700;background:#fff;border:1px solid var(--line);border-radius:18px;">Chưa có ảnh bàn giao.</div>';
+        bottomBar.style.display='none';
     }
 }
 
 function renderClientGrid() {
     const grid = document.getElementById('cgPhotoGrid');
-    const photos = currentClientEvent.galleryPhotos || [];
-    grid.innerHTML = photos.map(p => {
-        if (p.isVideo) {
-            return `<div class="client-media-card" id="cp_${escapeHtml(p.id)}" onclick="window.openDriveVideo('${escapeHtml(p.id)}')" title="Xem ${escapeHtml(p.name)}">
-                ${p.thumb ? `<img src="${safeUrl(p.thumb)}" loading="lazy" alt="${escapeHtml(p.name)}">` : `<div style="width:100%;height:100%;display:grid;place-items:center;background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;font-size:52px;">▶</div>`}
-                <div class="client-media-badge">VIDEO</div>
-                <div class="client-media-play">▶</div>
-                <div class="client-media-meta">${escapeHtml(p.name)}</div>
-            </div>`;
-        }
-        return `<div class="client-photo-card ${clientSelectedPhotos.has(p.name) ? 'selected' : ''}" onclick="window.toggleClientPhoto('${escapeHtml(p.name)}')" id="cp_${escapeHtml(p.id)}">
-            <img src="${safeUrl(p.thumb || p.url)}" loading="lazy" alt="${escapeHtml(p.name)}">
+    const images = (currentClientEvent.galleryPhotos || []).filter(p => !p.isVideo);
+    grid.innerHTML = images.map(p => {
+        const key = photoKey(p);
+        const imgUrl = p.thumb || p.url || `https://drive.google.com/thumbnail?id=${encodeURIComponent(p.id)}&sz=w1200`;
+        return `<div class="client-photo-card ${clientSelectedPhotos.has(key) || clientSelectedPhotos.has(p.name) ? 'selected' : ''}" onclick="window.toggleClientPhoto('${encodeURIComponent(key)}')" id="cp_${escapeHtml(p.id)}">
+            <img src="${safeUrl(imgUrl)}" loading="lazy" alt="${escapeHtml(p.name)}" onerror="this.onerror=null;this.src='https://drive.google.com/thumbnail?id=${encodeURIComponent(p.id)}&sz=w1200';">
             <div class="heart-btn">♥</div>
             <div class="photo-filename">${escapeHtml(p.name)}</div>
         </div>`;
@@ -1609,71 +1469,41 @@ function renderClientGrid() {
     updateClientBottomBar();
 }
 
-window.openDriveVideo = function(fileId) {
-    if(!fileId) return;
-    const video = (currentClientEvent?.galleryPhotos || []).find(p => p.id === fileId && p.isVideo);
-    if(!video) return;
-    const modal = document.getElementById('driveVideoModal');
-    const frame = document.getElementById('driveVideoFrame');
-    const title = document.getElementById('driveVideoTitle');
-    const openLink = document.getElementById('driveVideoOpen');
-    if(!modal || !frame) return;
-    title.textContent = video.name || 'Video bàn giao';
-    frame.src = `https://drive.google.com/file/d/${encodeURIComponent(fileId)}/preview`;
-    const rawOpenUrl = video.webViewLink || video.url || `https://drive.google.com/file/d/${fileId}/view`;
-    try {
-        const openUrl = new URL(rawOpenUrl, window.location.href);
-        openLink.href = (openUrl.protocol === 'http:' || openUrl.protocol === 'https:') ? openUrl.href : '#';
-    } catch(e) {
-        openLink.href = '#';
-    }
-    modal.classList.add('show');
-    modal.setAttribute('aria-hidden','false');
-    document.body.classList.add('modal-open');
-};
-
-window.closeDriveVideo = function() {
-    const modal = document.getElementById('driveVideoModal');
-    const frame = document.getElementById('driveVideoFrame');
-    if(frame) frame.src = 'about:blank';
-    if(modal) { modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); }
-    document.body.classList.remove('modal-open');
-};
-
-document.getElementById('driveVideoModal')?.addEventListener('click', (e) => {
-    if(e.target.id === 'driveVideoModal') window.closeDriveVideo();
-});
-document.addEventListener('keydown', (e) => {
-    if(e.key === 'Escape' && document.getElementById('driveVideoModal')?.classList.contains('show')) window.closeDriveVideo();
-});
-
-window.toggleClientPhoto = function(photoName) {
-    if(clientSelectedPhotos.has(photoName)) clientSelectedPhotos.delete(photoName);
-    else clientSelectedPhotos.add(photoName);
-
-    const currentPhotoObj = currentClientEvent.galleryPhotos.find(p => p.name === photoName);
-    if(currentPhotoObj) {
-        const card = document.getElementById('cp_' + currentPhotoObj.id);
-        if(card) card.classList.toggle('selected', clientSelectedPhotos.has(photoName));
+window.toggleClientPhoto = function(encodedKey) {
+    const key = decodeURIComponent(encodedKey || '');
+    if(!key) return;
+    if(clientSelectedPhotos.has(key)) clientSelectedPhotos.delete(key); else clientSelectedPhotos.add(key);
+    const obj = (currentClientEvent.galleryPhotos || []).find(p => photoKey(p) === key || p.name === key);
+    if(obj) {
+        const card = document.getElementById('cp_'+obj.id);
+        if(card) card.classList.toggle('selected', clientSelectedPhotos.has(key) || clientSelectedPhotos.has(obj.name));
     }
     updateClientBottomBar();
 };
 
 function updateClientBottomBar() {
     document.getElementById('cgSelectedCount').textContent = clientSelectedPhotos.size;
-    const topSelected = document.getElementById('cgSelectedTop');
-    if(topSelected) topSelected.textContent = clientSelectedPhotos.size;
+    const topSelected=document.getElementById('cgSelectedTop');
+    if(topSelected) topSelected.textContent=clientSelectedPhotos.size;
 }
 
 window.submitClientFavorites = function() {
     if(!currentClientEvent) return;
-    const favArr = Array.from(clientSelectedPhotos);
-    
-    currentClientEvent.favoritePhotos = favArr;
-    
-    dbSet(`events/${currentClientEvent.id}/favoritePhotos`, favArr).then(() => {
-        alert(`Cảm ơn bạn! Đã gửi thành công ${favArr.length} ảnh yêu thích cho Studio.`);
-    });
+    const items=[];
+    const names=[];
+    for(const p of (currentClientEvent.galleryPhotos || [])) {
+        if(p.isVideo) continue;
+        const key=photoKey(p);
+        if(clientSelectedPhotos.has(key) || clientSelectedPhotos.has(p.name)) {
+            items.push({key,name:p.name,productId:p.productId||'',productName:p.productName||''});
+            names.push(p.name);
+        }
+    }
+    currentClientEvent.favoritePhotoItems=items;
+    currentClientEvent.favoritePhotos=[...new Set(names)];
+    dbSet(`events/${currentClientEvent.id}/favoritePhotoItems`, items).then(() =>
+        dbSet(`events/${currentClientEvent.id}/favoritePhotos`, currentClientEvent.favoritePhotos)
+    ).then(() => alert(`Cảm ơn bạn! Đã gửi thành công ${items.length} ảnh yêu thích cho Studio.`));
 };
 
 // ==========================================
@@ -1692,7 +1522,7 @@ window.copyFavoriteList = function() {
     const evId = document.getElementById('eventId').value;
     const ev = data.events.find(e => e.id === evId);
     if(ev && ev.favoritePhotos && ev.favoritePhotos.length > 0) {
-        window.copyText(ev.favoritePhotos.join(', '));
+        window.copyText(ev.favoritePhotos.join('\n'));
         showToast('Đã copy danh sách tên file!');
     }
 }
@@ -2953,6 +2783,7 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
            
            <div style="display:flex; gap:6px;">
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateSingleClientLink('${prodId}')">🔗 Gửi Khách</button>
+               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #86efac; color:#15803d; font-weight:700;" onclick="window.copyProductFavoriteNames('${prodId}')">📋 Copy tên ảnh</button>
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.parentElement.parentElement.style.display='none'; this.parentElement.parentElement.nextElementSibling.style.display='flex'">✏️ Sửa</button>
            </div>
        </div>
@@ -2975,6 +2806,26 @@ window.generateSingleClientLink = function(prodId) {
     const clientLink = window.location.origin + window.location.pathname + '?client_gallery=' + evId + '&prod=' + prodId;
     window.copyText(clientLink);
     showToast('✅ Đã copy Link gửi khách cho sản phẩm này!');
+};
+
+window.copyProductFavoriteNames = function(prodId) {
+    const evId = document.getElementById('eventId')?.value;
+    const ev = data.events.find(e => e.id === evId);
+    if(!ev) { showToast('Chưa có dữ liệu lịch.'); return; }
+    const items = Array.isArray(ev.favoritePhotoItems) ? ev.favoritePhotoItems : [];
+    const names = items.filter(x => String(x.productId || '') === String(prodId)).map(x => x.name).filter(Boolean);
+    if(names.length) {
+        window.copyText(names.join('\n'));
+        showToast(`Đã copy ${names.length} tên ảnh của thư mục này.`);
+        return;
+    }
+    // Fallback cho dữ liệu cũ: không có favoritePhotoItems thì copy toàn bộ danh sách cũ.
+    if(Array.isArray(ev.favoritePhotos) && ev.favoritePhotos.length) {
+        window.copyText(ev.favoritePhotos.join('\n'));
+        showToast('Dữ liệu cũ chưa lưu theo thư mục; đã copy toàn bộ tên ảnh.');
+    } else {
+        showToast('Thư mục này chưa có ảnh khách chọn.');
+    }
 };
 
 window.saveProductRow = function(btn) {
