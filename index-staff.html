@@ -1859,6 +1859,50 @@ body.role-staff #upcomingList .mini-item:hover { transform: none; }
   }
 }
 
+/* Staff Home */
+body.role-staff .staff-home-view { display: grid; gap: 16px; }
+.staff-home-hero { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:22px; border-radius:24px; background:linear-gradient(135deg,#171715,#29251f); color:#fff; box-shadow:0 18px 44px rgba(23,23,21,.14); }
+.staff-home-eyebrow,.staff-home-kicker { font-size:10px; font-weight:800; letter-spacing:.12em; color:#b59a72; }
+.staff-home-hero h3 { margin:6px 0 5px; font-size:25px; letter-spacing:-.04em; }
+.staff-home-hero p { margin:0; color:#cfc8bd; font-size:12px; line-height:1.5; font-weight:600; }
+.staff-home-avatar { width:54px; height:54px; flex:0 0 54px; border-radius:18px; display:grid; place-items:center; background:#f4eee3; color:#1b1b19; font-size:20px; font-weight:900; }
+.staff-home-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.staff-home-stat { padding:15px 12px; border:1px solid var(--line); border-radius:18px; background:var(--surface,#fffdf9); box-shadow:0 8px 22px rgba(37,32,24,.04); }
+.staff-home-stat span,.staff-home-stat small { display:block; color:var(--muted); font-size:10px; font-weight:700; }
+.staff-home-stat strong { display:block; margin:5px 0 2px; font-size:25px; line-height:1; color:var(--ink,var(--text)); }
+.staff-home-section { padding:18px; border:1px solid var(--line); border-radius:22px; background:var(--surface,#fffdf9); box-shadow:0 8px 24px rgba(37,32,24,.045); }
+.staff-home-section-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:13px; }
+.staff-home-section-head h3 { margin:3px 0 0; font-size:17px; letter-spacing:-.03em; }
+.staff-home-link { padding:8px 10px; border-radius:10px; background:#f4f0e8; color:#685c4b; font-size:11px; font-weight:800; }
+.staff-next-job { min-height:70px; }
+.staff-next-card { padding:16px; border-radius:18px; background:#f8f5ef; border:1px solid #e8e1d6; }
+.staff-next-card-top { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+.staff-next-card h4 { margin:0; font-size:16px; line-height:1.35; letter-spacing:-.025em; }
+.staff-next-meta { display:grid; gap:7px; margin-top:13px; color:#625c54; font-size:12.5px; font-weight:650; }
+.staff-next-actions { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+.staff-next-actions a,.staff-next-actions button { min-height:40px; padding:9px 13px; border-radius:12px; border:1px solid #ded5c8; background:#fff; color:#2a2925; text-decoration:none; font-size:12px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; }
+.staff-next-actions .primary-action { background:#1b1b19; color:#fff; border-color:#1b1b19; }
+.staff-home-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.staff-home-actions button { min-height:82px; padding:12px 8px; border:1px solid var(--line); border-radius:18px; background:var(--surface,#fffdf9); color:var(--ink,var(--text)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; font-size:11px; font-weight:800; box-shadow:0 6px 18px rgba(37,32,24,.035); }
+.staff-home-actions b { font-size:20px; }
+.staff-home-notices { display:grid; gap:8px; }
+.staff-home-notice { padding:11px 12px; border-radius:13px; background:#f8f5ef; border:1px solid #ebe3d7; }
+.staff-home-notice strong { display:block; font-size:12px; line-height:1.45; }
+.staff-home-notice span { display:block; margin-top:3px; color:var(--muted); font-size:10.5px; font-weight:650; }
+.staff-home-empty { padding:16px 12px; text-align:center; color:var(--muted); background:#f8f5ef; border-radius:14px; font-size:12px; font-weight:650; }
+
+@media (max-width: 768px) {
+  body.role-staff .staff-home-view { gap:12px; }
+  .staff-home-hero { padding:18px; border-radius:20px; }
+  .staff-home-hero h3 { font-size:22px; }
+  .staff-home-avatar { width:48px; height:48px; flex-basis:48px; border-radius:16px; }
+  .staff-home-section { padding:15px; border-radius:18px; }
+  .staff-home-stat { padding:13px 10px; border-radius:16px; }
+  .staff-home-stat strong { font-size:22px; }
+  body.role-staff .side-nav .nav-btn.staff-only,
+  body.role-staff .side-nav .nav-btn[data-view="month"] { max-width:none; }
+}
+
 @media (max-width: 420px) {
   body.role-staff .main { padding-left: 10px !important; padding-right: 10px !important; }
   body.role-staff #upcomingList .mini-item { padding: 14px !important; }
@@ -1932,7 +1976,8 @@ body.role-staff #upcomingList .mini-item:hover { transform: none; }
     </div>
     
     <nav class="side-nav">
-      <button class="nav-btn active" data-view="month"><b>▦</b><span class="sb-text">Lịch</span></button>
+      <button class="nav-btn staff-only active" data-view="home"><b>⌂</b><span class="sb-text">Hôm nay</span></button>
+      <button class="nav-btn" data-view="month"><b>▦</b><span class="sb-text">Lịch</span></button>
       <button class="nav-btn admin-only" data-view="agenda"><b>💰</b><span class="sb-text">Lương thợ</span></button>
       <button class="nav-btn staff-only" data-view="agenda"><b>💰</b><span class="sb-text">Lương</span></button>
       <button class="nav-btn admin-only" id="openStaffBtn"><b>✦</b><span class="sb-text">Đội ngũ</span></button>
@@ -1964,7 +2009,46 @@ body.role-staff #upcomingList .mini-item:hover { transform: none; }
       <div class="stat"><div class="stat-label">Khách nợ</div><div class="stat-num" id="statUnpaid" style="color:var(--red)">0</div><div class="stat-meta">chưa thanh toán đủ</div></div>
     </section>
 
-    <section class="layout">
+    <section id="staffHomeView" class="staff-home-view staff-only-block" style="display:none;">
+      <div class="staff-home-hero">
+        <div>
+          <div class="staff-home-eyebrow">AMORRI STAFF</div>
+          <h3>Xin chào, <span id="staffHomeName">Thợ</span></h3>
+          <p id="staffHomeDate">Sẵn sàng cho lịch làm việc hôm nay.</p>
+        </div>
+        <div class="staff-home-avatar" id="staffHomeAvatar">A</div>
+      </div>
+
+      <div class="staff-home-stats">
+        <div class="staff-home-stat"><span>Hôm nay</span><strong id="staffHomeTodayCount">0</strong><small>công việc</small></div>
+        <div class="staff-home-stat"><span>7 ngày tới</span><strong id="staffHomeWeekCount">0</strong><small>lịch đã xếp</small></div>
+        <div class="staff-home-stat"><span>Tháng này</span><strong id="staffHomeMonthCount">0</strong><small>ca làm</small></div>
+      </div>
+
+      <div class="staff-home-section">
+        <div class="staff-home-section-head">
+          <div><span class="staff-home-kicker">CÔNG VIỆC TIẾP THEO</span><h3>Lịch gần nhất</h3></div>
+          <button type="button" class="staff-home-link" onclick="setView('month')">Xem lịch</button>
+        </div>
+        <div id="staffNextJob" class="staff-next-job"></div>
+      </div>
+
+      <div class="staff-home-actions">
+        <button type="button" onclick="setView('month')"><b>▦</b><span>Xem lịch tháng</span></button>
+        <button type="button" onclick="window.openBlackoutModal()"><b>⛔</b><span>Báo nghỉ</span></button>
+        <button type="button" onclick="setView('agenda')"><b>💰</b><span>Xem lương</span></button>
+      </div>
+
+      <div class="staff-home-section">
+        <div class="staff-home-section-head">
+          <div><span class="staff-home-kicker">CẬP NHẬT</span><h3>Thông báo từ Admin</h3></div>
+          <span id="staffHomeNoticeBadge" class="pill orange" style="display:none">Mới</span>
+        </div>
+        <div id="staffHomeNoticeList" class="staff-home-notices"></div>
+      </div>
+    </section>
+
+    <section class="layout" id="mainWorkspace">
       <div class="panel">
         <div class="calendar-head">
           <div class="calendar-nav">
@@ -2539,7 +2623,7 @@ const STATUS_LABEL = {
 
 let data = { staff: [], events: [], payroll: {}, blackouts: [], auditLogs: [] };
 let current = new Date(); current.setHours(0,0,0,0);
-let currentView = 'month'; let isFirstLoad = true;
+let currentView = 'home'; let isFirstLoad = true;
 
 // ================================
 // STAFF ENTRY — chỉ cho phép Staff theo ?staff=<id>
@@ -3847,6 +3931,81 @@ window.savePayroll = function() {
   window.smoothClose('payrollModal'); render(); showToast('Đã cập nhật lương');
 }
 
+function getStaffAssignedEvents() {
+  if(currentUserRole !== 'staff' || !staffViewId) return [];
+  return (data.events || []).filter(e => e && e.status !== 'cancelled' && Array.isArray(e.assignments) && e.assignments.some(a => String(a.id) === String(staffViewId)));
+}
+
+function renderStaffHome() {
+  const home = document.getElementById('staffHomeView');
+  if(!home || currentUserRole !== 'staff') return;
+
+  const staff = data.staff.find(s => String(s.id) === String(staffViewId));
+  const staffName = staff?.name || 'Thợ';
+  const nameEl = document.getElementById('staffHomeName');
+  const avatarEl = document.getElementById('staffHomeAvatar');
+  const dateEl = document.getElementById('staffHomeDate');
+  if(nameEl) nameEl.textContent = staffName;
+  if(avatarEl) avatarEl.textContent = initials(staffName) || 'A';
+  if(dateEl) dateEl.textContent = new Date().toLocaleDateString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayIso = isoDate(today);
+  const weekEnd = new Date(today); weekEnd.setDate(weekEnd.getDate()+7);
+  const events = getStaffAssignedEvents();
+  const future = events.filter(e => parseDate(e.date) >= today).sort((a,b)=>{
+    const aa=(a.assignments||[]).find(x=>String(x.id)===String(staffViewId));
+    const ba=(b.assignments||[]).find(x=>String(x.id)===String(staffViewId));
+    return ((a.date||'')+(getAssignmentStart(a,aa)||'99:99')).localeCompare((b.date||'')+(getAssignmentStart(b,ba)||'99:99'));
+  });
+  const todayEvents = events.filter(e => e.date === todayIso);
+  const weekEvents = future.filter(e => parseDate(e.date) < weekEnd);
+  const monthEventsMine = events.filter(e => { const d=parseDate(e.date); return d.getFullYear()===today.getFullYear() && d.getMonth()===today.getMonth(); });
+
+  const setText=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=String(val); };
+  setText('staffHomeTodayCount',todayEvents.length);
+  setText('staffHomeWeekCount',weekEvents.length);
+  setText('staffHomeMonthCount',monthEventsMine.length);
+
+  const nextEl=document.getElementById('staffNextJob');
+  const next=future[0];
+  if(nextEl) {
+    if(!next) {
+      nextEl.innerHTML='<div class="staff-home-empty">Chưa có lịch sắp tới. Khi Admin phân công, lịch sẽ xuất hiện tại đây.</div>';
+    } else {
+      const assignment=(next.assignments||[]).find(a=>String(a.id)===String(staffViewId));
+      const start=getAssignmentStart(next,assignment)||'Chưa định';
+      let loc=next.location||'';
+      let phone=next.phone||'';
+      if(next.isRuocDau && assignment?.locType==='Nhà trai'){ loc=next.locTrai||''; phone=next.phoneTrai||''; }
+      if(next.isRuocDau && assignment?.locType==='Nhà gái'){ loc=next.locGai||''; phone=next.phoneGai||''; }
+      const map=loc?makeMapLink(loc):'#';
+      const status=STATUS_LABEL[next.status]||'Chưa xác định';
+      nextEl.innerHTML=`<div class="staff-next-card">
+        <div class="staff-next-card-top"><div><h4>${escapeHtml(next.name||'Lịch làm việc')}</h4><div style="margin-top:5px;color:var(--muted);font-size:11px;font-weight:700">${escapeHtml(next.eventType||'')} ${next.isRuocDau?'· Rước dâu':''}</div></div><span class="pill ${next.status==='confirmed'?'green':'orange'}">${escapeHtml(status)}</span></div>
+        <div class="staff-next-meta">
+          <div>📅 ${escapeHtml(formatDate(next.date))} · ⏰ ${escapeHtml(start)}</div>
+          ${assignment?.task?`<div>📷 ${escapeHtml(assignment.task)}</div>`:''}
+          ${loc?`<div>📍 ${escapeHtml(loc)}</div>`:''}
+        </div>
+        <div class="staff-next-actions">
+          ${loc?`<a class="primary-action" href="${map}" target="_blank" rel="noopener noreferrer">Chỉ đường</a>`:''}
+          ${phone?`<a href="tel:${escapeHtml(phone)}">Gọi khách</a>`:''}
+          <button type="button" onclick="window.openEventModal({id:'${escapeHtml(next.id)}'})">Chi tiết</button>
+        </div>
+      </div>`;
+    }
+  }
+
+  const visibleActions = new Set(['EVENT_CREATED','STAFF_ASSIGNED','STAFF_REMOVED','EVENT_UPDATED','EVENT_DELETED','SOURCE_SUBMITTED','SOURCE_UPDATED']);
+  const logs=(data.auditLogs||[]).filter(l=>visibleActions.has(l.action)).filter(l=>Array.isArray(l.targetStaffIds)&&l.targetStaffIds.some(id=>String(id)===String(staffViewId))).sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,4);
+  const noticeEl=document.getElementById('staffHomeNoticeList');
+  const noticeBadge=document.getElementById('staffHomeNoticeBadge');
+  const important=logs.filter(l=>['warning','danger'].includes(l.severity)).length;
+  if(noticeBadge){ noticeBadge.style.display=important?'inline-flex':'none'; noticeBadge.textContent=important?`${important} mới`:'Mới'; }
+  if(noticeEl) noticeEl.innerHTML=logs.length?logs.map(log=>`<div class="staff-home-notice"><strong>${escapeHtml(getStaffAuditMessage(log,staffViewId))}</strong><span>${escapeHtml(formatAuditTime(log.timestamp))}</span></div>`).join(''):'<div class="staff-home-empty">Chưa có thông báo mới.</div>';
+}
+
 function renderUpcoming(){
   const panel = document.getElementById('upcomingListPanel');
   if (currentUserRole !== 'staff') { if(panel) panel.style.display = 'none'; return; }
@@ -4049,11 +4208,25 @@ function renderMonthSummary(){
 
 function render(){
   renderFilters(); renderStats();
-  if(currentView === 'month') {
-      renderMonth(); const mf = document.getElementById('mainFilters'); if(mf) mf.style.display = 'flex';
+  const home = document.getElementById('staffHomeView');
+  const workspace = document.getElementById('mainWorkspace');
+  const mf = document.getElementById('mainFilters');
+
+  if(currentUserRole === 'staff' && currentView === 'home') {
+      if(home) home.style.display = 'grid';
+      if(workspace) workspace.style.display = 'none';
+      if(mf) mf.style.display = 'none';
+      renderStaffHome();
   } else {
-      renderPayroll(); const mf = document.getElementById('mainFilters'); if(mf) mf.style.display = 'none';
+      if(home) home.style.display = 'none';
+      if(workspace) workspace.style.display = '';
+      if(currentView === 'month') {
+          renderMonth(); if(mf) mf.style.display = 'flex';
+      } else {
+          renderPayroll(); if(mf) mf.style.display = 'none';
+      }
   }
+
   renderUpcoming(); renderStaffActivityLog(); renderStaffMonthList(); renderMonthSummary(); renderAuditLog();
   const options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
   const tt = document.getElementById('todayText'); if(tt) tt.textContent=`Hôm nay · ${new Date().toLocaleDateString('vi-VN', options)}`;
@@ -4064,14 +4237,17 @@ function render(){
       const sName = data.staff.find(s => String(s.id) === String(staffViewId))?.name || 'Thợ';
       document.title = `Amorri Studio - ${sName}`;
       const pageTitle = document.querySelector('.topbar .title');
-      if(pageTitle) pageTitle.textContent = `Lịch của ${sName}`;
+      if(pageTitle) pageTitle.textContent = currentView === 'home' ? 'Hôm nay' : currentView === 'agenda' ? `Lương của ${sName}` : `Lịch của ${sName}`;
   } else {
       document.title = "Amorri Studio — Lịch Quay & Chụp";
   }
 }
 
 function setView(v){
-  currentView=v; document.querySelectorAll('[data-view],[data-switch]').forEach(x=>x.classList.toggle('active',x.dataset.view===v)); render();
+  currentView=v;
+  document.querySelectorAll('[data-view],[data-switch]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
+  render();
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
 window.filterStaffModal = function() {
