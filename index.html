@@ -323,30 +323,6 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.96); } }
 
-/* ==================================
-   PANDA MASCOT & COPYRIGHT BADGE
-================================== */
-.copyright-badge {
-    position: fixed;
-    bottom: 18px;
-    right: 18px;
-    background: rgba(255, 255, 255, 0.86);
-    backdrop-filter: blur(10px);
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 11.5px;
-    font-weight: 800;
-    color: var(--muted);
-    border: 1px solid rgba(226,232,240,0.9);
-    z-index: 9998;
-    pointer-events: none;
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    letter-spacing: 0.2px;
-}
-
 #panda-mascot-container {
     position: fixed;
     bottom: 22px;
@@ -370,8 +346,7 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 }
 
 /* Không để mascot/badge chen vào giao diện bàn giao */
-body[data-client-gallery="true"] .copyright-badge,
-body[data-client-gallery="true"] #panda-mascot-container {
+body[data-client-gallery="true"] .studio-credit {
     display: none !important;
 }
 
@@ -412,8 +387,6 @@ body[data-client-gallery="true"] #panda-mascot-container {
   .modal-foot { flex-wrap: wrap; padding: 20px 24px; padding-bottom: max(20px, env(safe-area-inset-bottom)); border-radius: 0; }
   .modal-foot > div { width: 100%; justify-content: flex-end; margin-top: 12px; }
   .toast { bottom: 100px; right: 16px; left: 16px; text-align: center; }
-  .copyright-badge { bottom: 14px; right: 12px; font-size: 10.5px; padding: 5px 10px; }
-  #panda-mascot-container { bottom: 16px; left: 12px; width: 56px; height: 56px;}
 }
 
 /* =========================================
@@ -595,18 +568,235 @@ body[data-client-gallery="true"] .toast.show { transform:translate(-50%,0); }
   .client-bottom-bar{bottom:10px;width:calc(100vw - 16px);}
   .client-bottom-bar .btn{padding:9px 11px;}
 }
+
+
+/* ==================================
+   ADMIN UI/UX POLISH — COMPACT + BALANCED
+================================== */
+.main {
+  padding: 32px;
+}
+
+.topbar {
+  margin-bottom: 24px;
+}
+
+.grid-stats {
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat {
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 6px 22px rgba(15,23,42,.05);
+}
+
+.layout {
+  gap: 20px;
+}
+
+.panel {
+  border: 1px solid rgba(226,232,240,.75);
+  box-shadow: 0 8px 24px rgba(15,23,42,.045);
+}
+
+.calendar-head {
+  padding: 18px 20px 14px;
+}
+
+.month-title {
+  min-width: 128px;
+  font-size: 18px;
+}
+
+.filters {
+  padding: 12px 18px;
+  gap: 8px;
+  background: #fbfdff;
+}
+
+.field {
+  min-height: 40px;
+  padding: 9px 13px;
+}
+
+.calendar {
+  min-width: 860px;
+}
+
+.weekday {
+  padding: 12px 8px;
+  font-size: 12px;
+  background: #f8fafc;
+}
+
+.day {
+  min-height: 122px;
+  padding: 10px;
+}
+
+.daynum {
+  margin-bottom: 6px;
+}
+
+.event-chip {
+  padding: 7px 8px;
+  margin: 4px 0;
+  border-radius: 9px;
+  font-size: 11.5px;
+}
+
+.side-panel {
+  gap: 16px;
+  padding-bottom: 20px;
+}
+
+.side-card {
+  padding: 20px;
+  border-radius: 18px;
+}
+
+.side-card h3 {
+  font-size: 16px;
+}
+
+.btn:focus-visible,
+.icon-btn:focus-visible,
+.nav-btn:focus-visible,
+.field:focus-visible {
+  outline: 3px solid rgba(59,130,246,.22);
+  outline-offset: 2px;
+}
+
+/* Brand credit: một cụm duy nhất, không còn badge + mascot lệch nhau */
+.studio-credit {
+  position: fixed;
+  right: 18px;
+  bottom: 16px;
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.studio-credit-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(226,232,240,.95);
+  box-shadow: 0 8px 22px rgba(15,23,42,.08);
+  color: #64748b;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .15px;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+}
+
+.studio-credit-pill strong {
+  color: #334155;
+  font-weight: 800;
+}
+
+.studio-credit-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.10);
+}
+
+#panda-mascot-container {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  pointer-events: auto;
+  cursor: pointer;
+  transform: translateY(1px);
+}
+
+#panda-mascot {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 5px 12px rgba(15,23,42,.16));
+  animation: floatPanda 3.8s ease-in-out infinite;
+}
+
+@keyframes floatPanda {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-4px) rotate(-1deg); }
+}
+
+@media (max-width: 1200px) {
+  .main { padding: 26px; }
+  .layout { grid-template-columns: minmax(0,1fr) 320px; }
+  .day { min-height: 116px; }
+}
+
+@media (max-width: 900px) {
+  .main { padding: 22px 18px 34px; }
+  .layout { gap: 16px; }
+  .side-panel { padding-bottom: 8px; }
+  .calendar-head { padding: 16px; }
+  .filters { padding: 12px 14px; }
+  .calendar { min-width: 820px; }
+  .day { min-height: 110px; }
+}
+
+@media (max-width: 768px) {
+  .topbar { margin-bottom: 16px; }
+  .title { font-size: 24px; }
+  .subtitle { font-size: 12.5px; }
+  .grid-stats { gap: 12px; margin-bottom: 16px; }
+  .stat { padding: 16px; border-radius: 16px; }
+  .calendar-head { padding: 14px; }
+  .month-title { font-size: 17px; }
+  .filters { padding: 10px 12px; }
+  .field { min-height: 42px; }
+  .studio-credit {
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    gap: 5px;
+  }
+  .studio-credit-pill {
+    min-height: 30px;
+    padding: 6px 9px;
+    font-size: 9.5px;
+  }
+  #panda-mascot-container {
+    width: 46px;
+    height: 46px;
+    flex-basis: 46px;
+  }
+}
+
+body[data-client-gallery="true"] .studio-credit {
+  display: none !important;
+}
+
 </style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
-<!-- BADGE CHỐNG COPY -->
-<div class="copyright-badge">
-    <span style="font-size: 16px;">©</span> Design by AmorriStudio
-</div>
-
-<!-- PANDA MASCOT SPRITE SHEET -->
-<div id="panda-mascot-container">
-    <div id="panda-mascot"></div>
+<!-- CREDIT THƯƠNG HIỆU + PANDA MASCOT -->
+<div class="studio-credit" aria-label="Design by AmorriStudio">
+    <div class="studio-credit-pill">
+        <span class="studio-credit-dot" aria-hidden="true"></span>
+        <span>Design by <strong>AmorriStudio</strong></span>
+    </div>
+    <div id="panda-mascot-container" aria-hidden="true">
+        <div id="panda-mascot"></div>
+    </div>
 </div>
 
 <div id="loadingOverlay">
