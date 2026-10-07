@@ -1170,14 +1170,14 @@ let currentUserRole = 'guest';
 // LOGIC PHÒNG CHỌN ẢNH (CLIENT GALLERY)
 // ==========================================
 const clientIdParam = urlParams.get('client_gallery');
-const prodIdParam = urlParams.get('prod'); // Lấy thêm tham số prod ID từ URL
+const prodIdParam = urlParams.get('prod'); 
 let isClientMode = !!clientIdParam;
 let clientSelectedPhotos = new Set();
 let currentClientEvent = null;
 
 if (isClientMode) {
-    document.querySelector('.app').style.display = 'none'; // Ẩn Dashboard
-    document.getElementById('clientGalleryView').style.display = 'block'; // Hiện Gallery
+    document.querySelector('.app').style.display = 'none'; 
+    document.getElementById('clientGalleryView').style.display = 'block'; 
     document.body.style.background = '#f1f5f9';
 }
 
@@ -1197,7 +1197,6 @@ function initClientGallery() {
     const productsContainer = document.getElementById('cgVideoContainer');
     const photoGrid = document.getElementById('cgPhotoGrid');
     
-    // Lọc ra sản phẩm cần hiển thị nếu có truyền prod ID, ngược lại hiện tất cả
     let targetProducts = currentClientEvent.products || [];
     if (prodIdParam) {
         targetProducts = targetProducts.filter(p => p.id === prodIdParam);
@@ -1215,7 +1214,6 @@ function initClientGallery() {
             const lowerUrl = rawUrl.toLowerCase();
             let viewHtml = '';
             
-            // 1. Nhận diện Youtube
             if (lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be')) {
                 let videoId = '';
                 if(lowerUrl.includes('youtu.be/')) videoId = rawUrl.split('youtu.be/')[1].split('?')[0];
@@ -1225,16 +1223,13 @@ function initClientGallery() {
                     <iframe src="https://www.youtube.com/embed/${videoId}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allowfullscreen></iframe>
                 </div>`;
             }
-            // 2. Nhận diện Video trực tiếp (.mp4, .mov)
             else if (lowerUrl.match(/\.(mp4|webm|mov|ogg)$/)) {
                 viewHtml = `<video controls style="width:100%; border-radius:16px; box-shadow:var(--shadow-lg);">
                     <source src="${safeUrl(rawUrl)}" type="video/mp4">Trình duyệt không hỗ trợ video.</video>`;
             }
-            // 3. Nhận diện Ảnh trực tiếp (.jpg, .png)
             else if (lowerUrl.match(/\.(jpeg|jpg|gif|png|webp)$/)) {
                 viewHtml = `<img src="${safeUrl(rawUrl)}" style="width:100%; border-radius:16px; box-shadow:var(--shadow-lg);" alt="Sản phẩm">`;
             }
-            // 4. Nhận diện Google Drive / Các link khác (Tạo nút bấm sang trọng)
             else {
                 let icon = lowerUrl.includes('drive.google.com') ? '☁️' : '🔗';
                 let btnText = lowerUrl.includes('drive.google.com') ? 'Truy Cập Thư Mục Drive' : 'Mở Link Bàn Giao';
@@ -1255,13 +1250,11 @@ function initClientGallery() {
          productsContainer.style.display = 'none';
     }
 
-    // Ẩn lưới ảnh giả lập nếu đang xem chế độ 1 Link duy nhất (Không phải xem tổng)
     if (prodIdParam) {
         photoGrid.style.display = 'none';
         document.querySelector('.client-bottom-bar').style.display = 'none';
         document.getElementById('clientGalleryView').style.paddingBottom = '40px';
     } else {
-        // Nếu không có ảnh demo nào, tạo 1 mảng giả lập
         if(!currentClientEvent.galleryPhotos || currentClientEvent.galleryPhotos.length === 0) {
             currentClientEvent.galleryPhotos = Array.from({length: 12}).map((_, i) => ({
                 id: `IMG_${pad(i+1)}.JPG`,
@@ -1301,10 +1294,8 @@ window.submitClientFavorites = function() {
     if(!currentClientEvent) return;
     const favArr = Array.from(clientSelectedPhotos);
     
-    // Cập nhật vào mảng data local
     currentClientEvent.favoritePhotos = favArr;
     
-    // Bắn thẳng dữ liệu lên Firebase
     dbSet(`events/${currentClientEvent.id}/favoritePhotos`, favArr).then(() => {
         alert(`Cảm ơn bạn! Đã gửi thành công ${favArr.length} ảnh yêu thích cho Studio.`);
     });
