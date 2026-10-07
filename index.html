@@ -324,15 +324,14 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.96); } }
 
 #panda-mascot-container {
-    position: relative;
-    right: 0px;
-    bottom: -25px;
-    width: 18px;
-    height: 100px;
-    flex: 0 0 100px;
+    position: fixed;
+    bottom: 22px;
+    right: 24px;
+    width: 72px;
+    height: 72px;
+    z-index: 9999;
     pointer-events: auto;
     cursor: pointer;
-    transform: translateY(1px);
 }
 
 #panda-mascot {
@@ -349,6 +348,61 @@ body.role-guest .event-chip:hover { transform: none; box-shadow: none; border-co
 /* Không để mascot/badge chen vào giao diện bàn giao */
 body[data-client-gallery="true"] .studio-credit {
     display: none !important;
+}
+
+/* UX POLISH — ADMIN WORKSPACE */
+.main {
+  padding-bottom: 72px;
+}
+.topbar {
+  position: relative;
+  z-index: 8;
+}
+.topbar-left {
+  min-width: 0;
+}
+.topbar-left .title {
+  line-height: 1.1;
+}
+.actions {
+  max-width: 100%;
+}
+.actions .btn {
+  min-height: 42px;
+}
+.filters .field {
+  min-width: 0;
+}
+.calendar-wrap {
+  border-radius: 0 0 20px 20px;
+}
+.day {
+  transition: background .18s ease, box-shadow .18s ease;
+}
+.day:hover {
+  box-shadow: inset 0 0 0 1px rgba(59,130,246,.08);
+}
+.event-chip:focus-visible,
+.mini-item:focus-visible {
+  outline: 3px solid rgba(59,130,246,.18);
+  outline-offset: 1px;
+}
+.studio-credit {
+  align-items: flex-end;
+  gap: 6px;
+}
+.studio-credit-pill {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding-bottom: 28px;
+  }
+  .studio-credit {
+    right: 10px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
 }
 
 /* CSS FIX MOBILE RESPONSIVE HOÀN THIỆN */
@@ -716,11 +770,11 @@ body[data-client-gallery="true"] .toast.show { transform:translate(-50%,0); }
 
 #panda-mascot-container {
   position: relative;
-  right: auto;
-  bottom: auto;
-  width: 54px;
-  height: 54px;
-  flex: 0 0 54px;
+  right: 0px;
+  bottom: -25px;
+  width: 18px;
+  height: 100px;
+  flex: 0 0 100px;
   pointer-events: auto;
   cursor: pointer;
   transform: translateY(1px);
@@ -775,9 +829,10 @@ body[data-client-gallery="true"] .toast.show { transform:translate(-50%,0); }
     font-size: 9.5px;
   }
   #panda-mascot-container {
-    width: 46px;
-    height: 46px;
-    flex-basis: 46px;
+    width: 18px;
+    height: 100px;
+    flex-basis: 100px;
+    bottom: -25px;
   }
 }
 
