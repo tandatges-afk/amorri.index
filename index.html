@@ -4925,16 +4925,27 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
 };
 
 
-const RAW_TOOL_URL = 'http://127.0.0.1:8765';
+// RAW TOOL LOCAL BRIDGE — V4.1
+// Thử cả 127.0.0.1 và localhost vì một số trình duyệt / bridge chỉ cho phép một hostname.
+const RAW_TOOL_URLS = ['http://127.0.0.1:8765', 'http://localhost:8765'];
+let RAW_TOOL_URL = RAW_TOOL_URLS[0];
 let rawToolConnected = false;
+let rawToolChecking = false;
 let rawToolCheckTimer = null;
 
-async function rawToolFetch(path, options = {}) {
+function isRawToolHealthy(payload) {
+    if (!payload || typeof payload !== 'object') return false;
+    if (payload.ok === true || payload.connected === true || payload.running === true) return true;
+    const status = String(payload.status || payload.state || '').toLowerCase();
+    return ['ok', 'ready', 'running', 'connected', 'healthy', 'online'].includes(status);
+}
+
+async function rawToolFetchFrom(baseUrl, path, options = {}) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     try {
-        const response = await fetch(`${RAW_TOOL_URL}${path}`, {
+        const response = await fetch(`${baseUrl}${path}`, {
             ...options,
             mode: 'cors',
             credentials: 'omit',
@@ -4948,7 +4959,9 @@ async function rawToolFetch(path, options = {}) {
         let payload = {};
         try {
             payload = await response.json();
-        } catch (_) {}
+        } catch (_) {
+            try { payload = { text: await response.text() }; } catch (_) {}
+        }
 
         if (!response.ok) {
             throw new Error(payload?.error || `HTTP ${response.status}`);
@@ -4958,6 +4971,24 @@ async function rawToolFetch(path, options = {}) {
     } finally {
         clearTimeout(timeoutId);
     }
+}
+
+async function rawToolFetch(path, options = {}) {
+    // Với POST/import, ưu tiên URL đã health-check thành công.
+    const orderedUrls = [RAW_TOOL_URL, ...RAW_TOOL_URLS.filter(x => x !== RAW_TOOL_URL)];
+    let lastError = null;
+
+    for (const baseUrl of orderedUrls) {
+        try {
+            const payload = await rawToolFetchFrom(baseUrl, path, options);
+            RAW_TOOL_URL = baseUrl;
+            return payload;
+        } catch (err) {
+            lastError = err;
+        }
+    }
+
+    throw lastError || new Error('RAW Tool unavailable');
 }
 
 function updateRawToolButtons() {
@@ -4972,38 +5003,69 @@ function updateRawToolButtons() {
         const favoriteCount = window.getProductFavoriteCount
             ? window.getProductFavoriteCount(prodId)
             : 0;
-        const hasSelectedPhotos =
-            (mediaType === 'image' || mediaType === 'mixed') && favoriteCount > 0;
-        const canSendRaw = rawToolConnected && hasLink && hasSelectedPhotos;
 
-        btn.style.display = canSendRaw ? 'inline-flex' : 'none';
-        btn.disabled = !canSendRaw;
-        btn.title = canSendRaw
-            ? `Gửi ${favoriteCount} ảnh đã chọn của link này sang Tool RAW`
-            : !rawToolConnected
-                ? 'Tool RAW chưa kết nối'
-                : !hasLink
-                    ? 'Link chưa hợp lệ'
-                    : 'Thư mục này chưa có ảnh khách chọn';
+        // favoritePhotoItems là tín hiệu đáng tin cậy hơn detect mediaType.
+        // Trước đây nếu detect thư mục Drive lỗi/chậm thì nút RAW bị ẩn dù app đang chạy.
+        const hasSelectedPhotos = favoriteCount > 0;
+        const looksLikePhotoProduct =
+            hasSelectedPhotos || mediaType === 'image' || mediaType === 'mixed';
+
+        // Không phụ thuộc rawToolConnected để HIỂN THỊ nút.
+        // Connection chỉ đổi trạng thái/nhãn; khi click sẽ health-check lại.
+        const shouldShow = hasLink && looksLikePhotoProduct;
+        btn.style.display = shouldShow ? 'inline-flex' : 'none';
+        btn.disabled = !shouldShow || rawToolChecking;
+
+        if (!shouldShow) {
+            btn.title = !hasLink
+                ? 'Link chưa hợp lệ'
+                : 'Thư mục này chưa có ảnh khách chọn';
+            return;
+        }
+
+        if (rawToolChecking) {
+            btn.textContent = '🖥 Đang kiểm tra RAW...';
+            btn.title = 'Đang kiểm tra kết nối Tool RAW';
+        } else if (rawToolConnected) {
+            btn.textContent = `🖥 Gửi RAW (${favoriteCount})`;
+            btn.title = `Gửi ${favoriteCount} ảnh đã chọn của link này sang Tool RAW`;
+        } else {
+            btn.textContent = `🖥 Gửi RAW (${favoriteCount})`;
+            btn.title = 'Bấm để kết nối lại Tool RAW và gửi danh sách ảnh';
+        }
     });
 }
 
 async function checkRawToolConnection(showError = false) {
+    if (rawToolChecking) return rawToolConnected;
+    rawToolChecking = true;
+    updateRawToolButtons();
+
+    let lastError = null;
     try {
-        const result = await rawToolFetch('/api/health');
-        rawToolConnected = !!result?.ok;
-        updateRawToolButtons();
-        return rawToolConnected;
-    } catch (err) {
-        rawToolConnected = false;
-        updateRawToolButtons();
-
-        if (showError) {
-            console.warn('RAW Tool health check:', err);
-            showToast('Tool RAW chưa mở hoặc trình duyệt chưa cho phép kết nối Local.');
+        const orderedUrls = [RAW_TOOL_URL, ...RAW_TOOL_URLS.filter(x => x !== RAW_TOOL_URL)];
+        for (const baseUrl of orderedUrls) {
+            try {
+                const result = await rawToolFetchFrom(baseUrl, '/api/health');
+                if (isRawToolHealthy(result)) {
+                    RAW_TOOL_URL = baseUrl;
+                    rawToolConnected = true;
+                    return true;
+                }
+                lastError = new Error('Health response không báo trạng thái ready');
+            } catch (err) {
+                lastError = err;
+            }
         }
-
+        rawToolConnected = false;
+        if (showError) {
+            console.warn('RAW Tool health check:', lastError);
+            showToast('Không thấy Tool RAW ở cổng 8765. Hãy kiểm tra app RAW đang chạy.');
+        }
         return false;
+    } finally {
+        rawToolChecking = false;
+        updateRawToolButtons();
     }
 }
 
@@ -5052,8 +5114,7 @@ window.sendProductFavoritesToRawTool = async function(prodId) {
     };
 
     try {
-        if (!await checkRawToolConnection(false)) {
-            showToast('Tool RAW chưa kết nối.');
+        if (!await checkRawToolConnection(true)) {
             return false;
         }
 
@@ -5081,14 +5142,23 @@ window.sendProductFavoritesToRawTool = async function(prodId) {
 
 function startRawToolConnectionMonitor() {
     clearInterval(rawToolCheckTimer);
-
     checkRawToolConnection(false);
     rawToolCheckTimer = setInterval(() => {
         checkRawToolConnection(false);
-    }, 8000);
+    }, 5000);
 }
 
-document.addEventListener('DOMContentLoaded', startRawToolConnectionMonitor);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startRawToolConnectionMonitor, { once:true });
+} else {
+    startRawToolConnectionMonitor();
+}
+
+// Khi quay lại tab, kiểm tra ngay vì app RAW có thể vừa được mở sau web.
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkRawToolConnection(false);
+});
+window.addEventListener('focus', () => checkRawToolConnection(false));
 window.getProductFavoriteCount = function(prodId) {
     const evId = document.getElementById('eventId')?.value;
     const ev = data.events.find(e => e.id === evId);
