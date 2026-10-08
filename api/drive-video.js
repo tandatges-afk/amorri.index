@@ -109,8 +109,24 @@ export default async function handler(req, res) {
   if (!['GET', 'POST'].includes(req.method)) return sendError(res, 405, 'Method Not Allowed');
   try {
     requiredConfig();
-    const id = String(req.method === 'POST' ? req.body?.id || '' : req.query.id || '');
-    if (!ID_PATTERN.test(id)) return sendError(res, 400, 'Invalid Drive file ID');
+    // Vercel runtimes may expose JSON request bodies as parsed objects,
+    // strings or Buffers. Normalize before validating any file ID.
+    let payload = {};
+    if (req.method === 'POST') {
+      try {
+        const raw = req.body;
+        payload = Buffer.isBuffer(raw) ? JSON.parse(raw.toString('utf8'))
+          : typeof raw === 'string' ? JSON.parse(raw)
+          : raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+      } catch {
+        return sendError(res, 400, 'Invalid JSON request body');
+      }
+    }
+    const incomingId = req.method === 'POST' ? payload.id : req.query.id;
+    const id = typeof incomingId === 'string' ? incomingId.trim() : '';
+    if (!ID_PATTERN.test(id)) {
+      return sendError(res, 400, 'Invalid Drive file ID: request must include a Google Drive file ID in field "id"');
+    }
 
     if (req.method === 'POST') {
       const headers = await getDriveHeaders();
@@ -123,8 +139,8 @@ export default async function handler(req, res) {
         try { uid = (await getFirebase().verifyIdToken(bearer[1], true)).uid; }
         catch { /* Fall back to validated client-gallery capability, never unrestricted access. */ }
       }
-      const clientGallery = req.body?.clientGallery;
-      const productId = req.body?.productId;
+      const clientGallery = payload.clientGallery;
+      const productId = payload.productId;
       const permitted = await authorizeGallery(clientGallery,productId,id,headers,meta);
       // Login alone does not authorize access; gallery/product membership is mandatory.
       if (!permitted) return sendError(res, 403, 'Video does not belong to this client gallery/product');
