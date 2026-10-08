@@ -9,7 +9,7 @@ import { Readable } from 'node:stream';
 import admin from 'firebase-admin';
 import { GoogleAuth } from 'google-auth-library';
 
-const CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB; requires streaming response (pipe), not buffering
+const CHUNK_BYTES = 5 * 1024 * 1024; // 8 MiB; requires streaming response (pipe), not buffering
 const TOKEN_SECONDS = 15 * 60; // Short-lived signed access; revoke by waiting 15 minutes or rotating signing secret
 const ID_PATTERN = /^[\w-]{10,200}$/;
 const DRIVE = 'https://www.googleapis.com/drive/v3/files/';
