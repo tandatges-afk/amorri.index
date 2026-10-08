@@ -2516,7 +2516,7 @@ body {
 .vr-comment-actions .vr-edit,.vr-comment-actions .vr-resolve{width:auto;margin:0;height:29px;padding:0 9px;border-radius:8px;font-size:11px}
 @media(max-width:620px){.vr-comment-top{grid-template-columns:auto minmax(0,1fr)}.vr-comment-actions{grid-column:1/-1;justify-content:flex-start}.vr-comment-top small{white-space:normal}}
 
-#eventProductsList .product-row [data-video-review-action]{display:none}
+#eventProductsList .product-row [data-video-review-action]{display:inline-flex}
 @media(max-width:1050px){.client-video-review-layout{grid-template-columns:1fr}.vr-list{max-height:380px}.client-video-left{padding:7px}}
 @media(max-width:700px){.vr-comment-top{display:flex}.vr-jump{width:auto;flex:0 0 auto}.vr-edit,.vr-resolve{width:auto;flex:0 0 auto}.vr-entry{grid-template-columns:72px minmax(0,1fr)}}
 </style>
@@ -2564,7 +2564,7 @@ body {
 .vr-comment-actions .vr-edit,.vr-comment-actions .vr-resolve{width:auto;margin:0;height:29px;padding:0 9px;border-radius:8px;font-size:11px}
 @media(max-width:620px){.vr-comment-top{grid-template-columns:auto minmax(0,1fr)}.vr-comment-actions{grid-column:1/-1;justify-content:flex-start}.vr-comment-top small{white-space:normal}}
 
-#eventProductsList .product-row [data-video-review-action]{display:none}
+#eventProductsList .product-row [data-video-review-action]{display:inline-flex}
 @media(max-width:1100px){.client-video-review-layout{grid-template-columns:minmax(0,1fr) 260px}}
 @media(max-width:850px){.client-video-review-layout{grid-template-columns:1fr}.vr-list{max-height:340px}.client-video-left{padding:6px}}
 </style>
@@ -3363,6 +3363,80 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-cinema-
 body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-delete{padding:5px 8px;border-radius:8px;background:#f9e8e4;color:#91433a;border:1px solid #e9c7bd;font-weight:700;font-size:11px;cursor:pointer}
 body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-delete:hover{background:#efd5cd}
 @media(max-width:850px){body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel{height:auto!important;max-height:none!important}}
+</style>
+
+<style id="amorri-v543-alignment-review-controls">
+/* Single horizontal rhythm shared by the cover, content and credits. */
+body[data-client-gallery="true"] #clientGalleryView{--delivery-width:1240px;--delivery-pad:20px;overflow-x:clip}
+body[data-client-gallery="true"] #clientGalleryView .gallery-cover-inner,
+body[data-client-gallery="true"] #clientGalleryView .gallery-container{
+ width:100%!important;max-width:var(--delivery-width)!important;
+ margin-inline:auto!important;box-sizing:border-box!important;
+ padding-inline:var(--delivery-pad)!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .gallery-cover-inner{padding-top:28px!important;padding-bottom:24px!important}
+body[data-client-gallery="true"] #clientGalleryView .gallery-container{padding-top:20px!important;padding-bottom:24px!important}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer,
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-card{width:100%!important;min-width:0!important;max-width:100%!important}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-review-layout{
+ display:grid!important;grid-template-columns:minmax(0,1fr) 310px!important;
+ gap:12px!important;width:100%!important;max-width:100%!important;
+ align-items:start!important;container-type:inline-size!important;
+ background:transparent!important;grid-template-rows:auto!important
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-left{
+ width:100%!important;min-width:0!important;margin:0!important;padding:0!important;overflow:visible!important
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-frame{
+ aspect-ratio:16/9!important;height:auto!important;width:100%!important;min-width:0!important;margin:0!important;
+ overflow:hidden!important;position:relative!important;display:block!important
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel{
+ box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
+ width:100%!important;min-width:0!important;padding:0!important;margin:0!important;
+ background:rgba(249,246,239,.94)!important;color:#38332e!important;opacity:1!important;
+}
+@media(min-width:851px){
+ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel{
+  height:calc((100cqw - 322px)*.5625)!important;max-height:calc((100cqw - 322px)*.5625)!important;overflow:hidden!important;
+ }
+ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-list-wrap{
+  flex:1 1 0!important;min-height:0!important;max-height:none!important;overflow:hidden!important
+ }
+ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-list{
+  flex:1 1 auto!important;min-height:0!important;max-height:none!important;overflow-y:auto!important
+ }
+}
+/* Date gets its own line; controls cannot squeeze the name/date away. */
+body[data-client-gallery="true"] .vr-comment-top{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;gap:5px 7px!important;align-items:center!important;flex-wrap:nowrap!important}
+body[data-client-gallery="true"] .vr-comment-meta{display:flex!important;flex-direction:column!important;min-width:0!important;gap:2px!important;overflow:visible!important;white-space:normal!important}
+body[data-client-gallery="true"] .vr-comment-date{display:block!important;visibility:visible!important;opacity:1!important;font-size:10px!important;line-height:1.3!important;white-space:nowrap!important}
+body[data-client-gallery="true"] .vr-comment-author{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+body[data-client-gallery="true"] .vr-comment-actions{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:3px!important;min-width:0!important}
+body[data-client-gallery="true"] .vr-comment-actions>button{display:inline-grid!important;place-items:center!important;flex:0 0 auto!important;padding:3px 5px!important;min-width:25px!important;height:25px!important;line-height:1!important;font-size:10px!important;border-radius:6px!important;margin:0!important;white-space:nowrap!important}
+body[data-client-gallery="true"] .vr-comment-body{white-space:pre-wrap!important;overflow-wrap:anywhere!important}
+body[data-client-gallery="true"] .vr-comment.done{opacity:1!important;border-color:#a9bfae!important}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-cinema-active .amorri-video-only .vr-panel{
+ background:rgba(190,177,159,.55)!important;opacity:1!important;filter:none!important;
+ backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important
+}
+body[data-client-gallery="true"] #clientGalleryView .vr-panel :is(.vr-comment-body,.vr-comment-author,.vr-heading strong){color:#38332e!important}
+/* Prevent a split banner/body during playback and keep dark mode consistent. */
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView,
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-cover,
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-container{
+ background-color:#09090b!important;background-image:none!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .gallery-cover-inner{transition:opacity .35s ease,visibility .35s ease!important}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-cinema-active .gallery-cover-inner{opacity:0!important;visibility:hidden!important}
+/* Bulk "Đã fix" action must be visible on admin event rows. */
+body.role-admin #eventProductsList .product-row [data-video-review-action]{visibility:visible!important;opacity:1!important}
+@media(max-width:850px){
+ body[data-client-gallery="true"] #clientGalleryView{--delivery-pad:12px}
+ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-review-layout{grid-template-columns:minmax(0,1fr)!important;container-type:normal!important}
+ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel{height:auto!important;max-height:none!important}
+ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-list-wrap{max-height:340px!important}
+}
 </style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
@@ -4391,13 +4465,14 @@ function initVideoReviewPanels() {
                 const nameLine=document.createElement('span');nameLine.className='vr-comment-author';
                 nameLine.textContent=c.name||'Khách hàng';
                 author.append(dateLine,nameLine);top.appendChild(author);
-                const edit=document.createElement('button');edit.type='button';edit.className='vr-edit';edit.textContent='Sửa';
+                const edit=document.createElement('button');edit.type='button';edit.className='vr-edit';edit.textContent='✎';edit.title='Sửa góp ý';
                 edit.disabled=!!c.resolved;edit.onclick=()=>openCommentEditor(c);
                 const commentActions=document.createElement('span');commentActions.className='vr-comment-actions';commentActions.appendChild(edit);
                 // Only signed-in staff can remove a resolved comment.
                 if(firebase.auth().currentUser){
                     const fixed=document.createElement('button');fixed.type='button';fixed.className='vr-resolve';fixed.textContent='✓ Fix';
-                    fixed.textContent=c.resolved?'Đã fix':'Fix';
+                    fixed.textContent=c.resolved?'✓':'Fix';
+                    fixed.title=c.resolved?'Đã fix — nhấn để mở lại':'Đánh dấu đã fix';
                     fixed.classList.toggle('is-fixed', !!c.resolved);
                     fixed.setAttribute('aria-pressed', c.resolved?'true':'false');
                     fixed.onclick=async()=>{
@@ -4413,7 +4488,7 @@ function initVideoReviewPanels() {
                 // Admin-only deletion uses exactly the same Firebase location as the customer viewer.
                 if(firebase.auth().currentUser && currentUserRole === 'admin'){
                     const remove=document.createElement('button');
-                    remove.type='button';remove.className='vr-delete';remove.textContent='Xóa';
+                    remove.type='button';remove.className='vr-delete';remove.textContent='✕';
                     remove.title='Xóa vĩnh viễn bình luận này khỏi Firebase';
                     remove.onclick=async()=>{
                         if(!confirm('Xóa bình luận của '+(c.name||'Khách hàng')+' tại '+vrFormat(c.seconds)+'?'))return;
@@ -4427,7 +4502,7 @@ function initVideoReviewPanels() {
                     commentActions.appendChild(remove);
                 }
                 top.appendChild(commentActions);
-                const content=document.createElement('div');content.className='vr-comment-body';content.textContent=(c.resolved?'✓ Đã fix · ':'')+c.text;
+                const content=document.createElement('div');content.className='vr-comment-body';content.textContent=c.text;
                 el.append(top,content);list.appendChild(el);
             }
             renderMarkers();status.textContent=comments.filter(c=>!c.resolved).length+' cần sửa · '+comments.filter(c=>c.resolved).length+' đã fix';
@@ -6284,7 +6359,7 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
            </a>
            <div style="display:flex; gap:6px; flex-wrap:wrap;">
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateSingleClientLink('${prodId}')">🔗 Copy link</button>
-               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px;font-size:12px;border:1px solid #b59a72;color:#79603e;font-weight:700" data-video-review-action="true" onclick="window.clearVideoReviewsForProduct('${prodId}')">✓ Đã fix</button>
+               <button type="button" class="btn ghost admin-only-flex" style="display:inline-flex;padding:6px 10px;font-size:12px;border:1px solid #b59a72;color:#79603e;font-weight:700" data-video-review-action="true" onclick="window.clearVideoReviewsForProduct('${prodId}')">✓ Đã fix</button>
                <button type="button" class="btn ghost admin-only-flex product-copy-favorites" data-product-id="${prodId}" style="display:none; padding:6px 10px; font-size:12px; border:1px solid #86efac; color:#15803d; font-weight:700;">📋 Copy tên ảnh</button>
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.closest('.product-row').querySelector('.prod-view').style.display='none'; this.closest('.product-row').querySelector('.prod-edit').style.display='flex'">✏️ Sửa</button>
            </div>
@@ -6371,9 +6446,10 @@ window.refreshProductMediaRow = async function(row, prodId, rawUrl) {
         try {
             const mediaType = await window.detectProductMediaType(rawUrl, row.querySelector('.prod-name')?.value || row.querySelector('.prod-view-name')?.textContent || '');
             row.dataset.mediaType = mediaType;
-            if (reviewBtn) reviewBtn.style.display = (mediaType === 'video' || mediaType === 'mixed') ? 'inline-flex' : 'none';
+            if (reviewBtn) reviewBtn.style.display = (mediaType === 'image') ? 'none' : 'inline-flex';
         } catch (_) {
             row.dataset.mediaType = 'unknown';
+            if(reviewBtn)reviewBtn.style.display='inline-flex';
         }
     }
 
@@ -6397,7 +6473,7 @@ window.clearVideoReviewsForProduct = async function(prodId) {
     if(!product){showToast('Không tìm thấy sản phẩm');return;}
     const row=[...document.querySelectorAll('#eventProductsList .product-row')].find(e=>e.dataset.id===String(prodId));
     const mediaType=row?.dataset.mediaType || await window.detectProductMediaType(product.url||'',product.name||'');
-    if(mediaType!=='video'&&mediaType!=='mixed') {showToast('Chỉ có thể làm mới góp ý của sản phẩm video');return;}
+    if(mediaType==='image') {showToast('Sản phẩm này là ảnh, không có góp ý video');return;}
     if(!firebase.auth().currentUser){showToast('Vui lòng đăng nhập tài khoản quản trị');return;}
     const ok=confirm('Xác nhận video đã fix và XÓA TOÀN BỘ bình luận cũ của sản phẩm "'+(product.name||'Video')+'"?\n\nThao tác này không thể hoàn tác. Các sản phẩm khác không bị ảnh hưởng.');
     if(!ok)return;
