@@ -3439,77 +3439,33 @@ body.role-admin #eventProductsList .product-row [data-video-review-action]{visib
 }
 </style>
 
-<style id="amorri-v544-unified-cinema-surface">
-/* The playback state is a single surface spanning body, cover, gallery and footer.
-   Scope to client video deliveries only; never touch the admin application. */
-body[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only){
- --cinema-surface:#09090b;
- --cinema-ease:background-color .44s ease;
-}
-body[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only),
-body[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only) #clientGalleryView,
-body[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only) #clientGalleryView .gallery-cover,
-body[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only) #clientGalleryView .gallery-container,
-body[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only) #clientGalleryView #cgVideoContainer,
-body[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only) #clientGalleryView .client-video-card,
-body[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only) #clientGalleryView .client-video-review-layout,
-body[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only) .studio-credit,
-body[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only) .studio-credit-pill{
- transition:var(--cinema-ease)!important;
-}
-body.amorri-cinema[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only),
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only,
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only .gallery-cover,
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only .gallery-container,
+<style id="amorri-v545-overlay-cinema">
+/* One visual overlay instead of recoloring every section of the delivery page. */
+#amorri-cinema-overlay{position:fixed;inset:0;z-index:700;background:#08090c;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .42s ease,visibility .42s ease;}
+body.amorri-cinema[data-client-gallery="true"] #amorri-cinema-overlay{opacity:1;visibility:visible;}
+/* Only the video/comment region remains above the overlay. Original page remains intact beneath it. */
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only .gallery-container{position:relative!important;z-index:701!important;background:transparent!important;background-image:none!important;isolation:visible!important;}
 body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only #cgVideoContainer,
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only .client-video-card,
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only .client-video-review-layout,
-body.amorri-cinema[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only) .studio-credit,
-body.amorri-cinema[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only) .studio-credit-pill{
- background-color:var(--cinema-surface)!important;
- background-image:none!important;
- box-shadow:none!important;
- border-color:transparent!important;
-}
-/* Video surface remains transparent so the blurred Ambient light can escape. */
 body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only #cgVideoContainer .client-video-card,
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only #cgVideoContainer .client-video-review-layout{
- background:transparent!important;overflow:visible!important;
-}
-/* Video frame keeps its natural black rectangle, on top of Ambient canvas. */
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only #cgVideoContainer .client-video-frame{
- background:#000!important;isolation:auto!important;
-}
-/* Gallery's content wrapper must not paint a separate card behind the video. */
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only .gallery-cover::before,
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only .gallery-container::before{
- background:transparent!important;box-shadow:none!important;
-}
-/* Keep comments as a readable soft, slightly translucent neutral island. */
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only #cgVideoContainer .vr-panel{
- background:rgba(197,188,176,.68)!important;
- color:#302d29!important;opacity:1!important;filter:none!important;
- border:1px solid rgba(233,224,212,.16)!important;
- box-shadow:none!important;
- backdrop-filter:blur(18px) saturate(.70)!important;
- -webkit-backdrop-filter:blur(18px) saturate(.70)!important;
-}
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only #cgVideoContainer .vr-panel :is(.vr-heading,.vr-list-wrap,.vr-list-toolbar,.vr-compose,.vr-list){background:transparent!important;}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only #cgVideoContainer .client-video-review-layout{background:transparent!important;background-image:none!important;box-shadow:none!important;overflow:visible!important;}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only #cgVideoContainer .client-video-frame{position:relative!important;background:#000!important;z-index:2!important;}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only #cgVideoContainer .vr-panel{position:relative!important;z-index:2!important;background:rgba(195,184,169,.69)!important;color:#302d29!important;opacity:1!important;filter:none!important;border:1px solid rgba(243,230,210,.15)!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important;}
 body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only #cgVideoContainer .vr-panel :is(.vr-comment-body,.vr-comment-author,.vr-heading strong,.vr-list-toolbar strong,.vr-time){color:#302d29!important;}
-body.amorri-cinema[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only) .studio-credit-pill{
- border:0!important;outline:0!important;backdrop-filter:none!important;
- -webkit-backdrop-filter:none!important;
-}
-/* Fade cover content without removing its height or causing layout jump. */
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only .gallery-cover-inner{
- opacity:0!important;visibility:hidden!important;pointer-events:none!important;
-}
-@media (prefers-reduced-motion:reduce){
- body[data-client-gallery="true"]:has(#clientGalleryView.amorri-video-only) *{scroll-behavior:auto;}
-}
+/* Disable ambient light completely when not playing, including decorative fallback glow. */
+body:not(.amorri-cinema) #clientGalleryView .client-video-left::before,
+body:not(.amorri-cinema) #clientGalleryView .amorri-ambient-canvas{opacity:0!important;visibility:hidden!important;animation:none!important;}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only .client-video-left::before{opacity:.72!important;visibility:visible!important;}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only .amorri-ambient-canvas{opacity:.74!important;visibility:visible!important;}
+/* Prevent idle browser frame sampling and transitions from leaking into the interface. */
+#clientGalleryView .amorri-ambient-canvas{pointer-events:none!important;transition:opacity .35s ease,visibility .35s ease!important;}
+/* Credit and cover remain UNDER the overlay, rather than having their own dark CSS surface. */
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only .gallery-cover-inner{opacity:0!important;visibility:hidden!important;}
+@media(max-width:850px){body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-video-only .gallery-container{z-index:701!important;}}
+@media(prefers-reduced-motion:reduce){#amorri-cinema-overlay{transition:none!important;}}
 </style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
+<div id="amorri-cinema-overlay" aria-hidden="true"></div>
 
 
 
@@ -7660,8 +7616,8 @@ initApp();
  document.addEventListener('play',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;createAmbient(v);ambient.get(v)?.start();setCinema(v,true)},true);
  document.addEventListener('pause',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;ambient.get(v)?.stop();setCinema(v,false)},true);
  document.addEventListener('ended',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;ambient.get(v)?.stop();setCinema(v,false)},true);
- document.addEventListener('loadeddata',e=>{const v=e.target;if(v instanceof HTMLVideoElement && v.matches(videoSelector))createAmbient(v)},true);
- const observer=new MutationObserver(()=>{if(!isVideoGallery()){document.body.classList.remove('amorri-cinema');gallery.classList.remove('amorri-cinema-active');return;}document.querySelectorAll(videoSelector).forEach(v=>{if(v.readyState>=2)createAmbient(v); if(!v.paused && !v.ended)setCinema(v,true);})});
+ // Ambient is intentionally not initialized at loadeddata: playback alone enables it.
+ const observer=new MutationObserver(()=>{if(!isVideoGallery()){document.body.classList.remove('amorri-cinema');gallery.classList.remove('amorri-cinema-active');return;}document.querySelectorAll(videoSelector).forEach(v=>{if(!v.paused && !v.ended){createAmbient(v);ambient.get(v)?.start();setCinema(v,true);}else{ambient.get(v)?.stop();}})});
  observer.observe(document.getElementById('cgVideoContainer'),{childList:true,subtree:false});
 })();
 </script>
