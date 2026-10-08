@@ -3135,7 +3135,79 @@ body {
   .calendar .month-grid .blackout-chip { max-width:100%;font-size:9px;overflow-wrap:anywhere; }
 }
 </style>
-<style id="amorri-v525-mobile-hint">.calendar-mobile-hint{display:none}@media(max-width:768px){.calendar-mobile-hint{display:block;padding:8px 12px;font-size:11px;font-weight:650;color:#826d50;background:#f8f4ec;border-bottom:1px solid #e9e1d6;}}</style></head>
+<style id="amorri-v525-mobile-hint">.calendar-mobile-hint{display:none}@media(max-width:768px){.calendar-mobile-hint{display:block;padding:8px 12px;font-size:11px;font-weight:650;color:#826d50;background:#f8f4ec;border-bottom:1px solid #e9e1d6;}}</style><style id="amorri-v526-luxury-theme">
+/* AMORRI 2026 — cohesive warm editorial luxury; nonfunctional visual override */
+:root{
+ --bg:#f7f5f1;--panel:#fffefa;--text:#282621;--muted:#766f65;
+ --line:#e9e3da;--primary:#393c36;--primary-hover:#51574c;
+ --shadow-sm:0 2px 8px rgba(53,46,35,.045);
+ --shadow-md:0 10px 28px rgba(53,46,35,.075);
+ --shadow-lg:0 20px 55px rgba(53,46,35,.12);
+ --radius:16px;
+}
+body{background:#f7f5f1;color:#282621}
+/* make all gallery titles legible on every cover photograph */
+#clientGalleryView .gallery-cover{
+ position:relative;isolation:isolate;
+ background:linear-gradient(90deg,rgba(22,24,22,.94) 0%,rgba(25,27,25,.83) 52%,rgba(22,24,22,.52) 100%),url('BG.png') center/cover !important;
+ color:#fffdf6 !important;
+}
+#clientGalleryView .gallery-cover::after{content:none !important}
+#clientGalleryView .gallery-cover-inner{position:relative;z-index:3}
+#clientGalleryView #cgTitle,
+#clientGalleryView .gallery-cover h1{
+ display:block !important;position:relative !important;z-index:4 !important;
+ color:#fffdf8 !important;-webkit-text-fill-color:#fffdf8 !important;
+ opacity:1 !important;visibility:visible !important;
+ font-weight:800;line-height:1.15;letter-spacing:-.035em;
+ text-shadow:0 2px 18px rgba(0,0,0,.55) !important;
+ mix-blend-mode:normal !important;filter:none !important;
+}
+#clientGalleryView .gallery-cover p{color:#ebe6dd !important;opacity:1}
+#clientGalleryView .gallery-brand,
+#clientGalleryView .gallery-brand span{color:#f6f0e8 !important}
+#clientGalleryView .gallery-brand-tag{
+ background:rgba(255,255,255,.13) !important;
+ color:#fffdf8 !important;border:1px solid rgba(255,255,255,.22) !important;
+}
+#clientGalleryView .gallery-stat{background:rgba(255,255,255,.1)!important;border:1px solid rgba(255,255,255,.2)!important;box-shadow:none!important}
+#clientGalleryView .gallery-stat strong{color:#fffdf8 !important}
+#clientGalleryView .gallery-stat span{color:#e5ded3 !important}
+#clientGalleryView{background:#f7f5f1 !important}
+/* unified administrative surfaces */
+.sidebar{background:#fdfbf7 !important;border-right:1px solid #e8e3da !important}
+.topbar{background:rgba(253,251,247,.97) !important;border-bottom:1px solid #e8e3da !important}
+.card,.panel,.calendar,.modal-content,.modal-box{border-color:#e8e3da;box-shadow:0 8px 30px rgba(45,42,36,.055)}
+input:not([type=checkbox]):not([type=radio]),textarea,select{accent-color:#7c6751}
+input:not([type=checkbox]):not([type=radio]):focus-visible,textarea:focus-visible,select:focus-visible,
+button:focus-visible,a:focus-visible{outline:2px solid #a88964;outline-offset:2px}
+.btn.primary{background:#393c36 !important;color:#fffefa !important;border-color:#393c36 !important;box-shadow:0 4px 12px rgba(40,42,36,.13) !important}
+.btn.primary:hover{background:#555c50 !important;border-color:#555c50 !important}
+/* gallery images, selection actions, video review share the same neutral palette */
+#cgVideoContainer .client-video-card,.client-photo-card,.client-media-card{border-color:#e6dfd5 !important;box-shadow:0 12px 34px rgba(47,42,34,.075) !important}
+#cgVideoContainer .client-video-head{background:#fffefa !important;border-color:#e8e3da !important}
+#cgVideoContainer .vr-panel{background:#fffefa !important;color:#2b2925 !important;border-color:#e8e3da !important}
+#cgVideoContainer .vr-comment{background:#f9f6f0 !important;border-color:#e9e1d5 !important}
+#cgVideoContainer .vr-comment.vr-selected{background:#f4eddf !important;border-color:#b89b75 !important}
+#cgVideoContainer .vr-message,#cgVideoContainer .vr-name{background:#fff !important;color:#292722 !important;border-color:#e0d8cc !important}
+#cgVideoContainer .vr-jump{background:#f1e7d8 !important;color:#493a2c !important;border-color:#d9c5ab !important}
+/* retain semantic red Fix / green Đã fix states: no broad overrides on those buttons */
+#clientGalleryView .client-bottom-bar{background:rgba(41,43,38,.97) !important;backdrop-filter:blur(14px)}
+#clientGalleryView .client-bottom-bar .btn.primary{background:#b99870 !important;border-color:#b99870 !important;color:#221d17 !important}
+#clientGalleryView .client-bottom-bar .btn.primary:hover{background:#cfad84 !important}
+/* calmer event calendar without suppressing status-coded chips */
+.calendar .month-grid{border-color:#e8e1d7 !important}
+.calendar .month-grid .day{border-color:#eee8df !important}
+.calendar .month-grid .day.today{box-shadow:inset 0 0 0 1.5px #b0926e}
+@media(max-width:768px){
+ #clientGalleryView .gallery-cover{background:linear-gradient(180deg,rgba(22,24,22,.88),rgba(22,24,22,.75)),url('BG.png') center/cover !important}
+ #clientGalleryView .gallery-cover-inner{padding:26px 16px 24px !important}
+ #clientGalleryView #cgTitle{font-size:clamp(25px,7vw,36px) !important;line-height:1.18 !important;overflow-wrap:anywhere}
+ #clientGalleryView .gallery-head-row{align-items:flex-start;flex-direction:column}
+ #clientGalleryView .gallery-head-status{justify-content:flex-start}
+}
+</style>
+</head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
 <!-- CREDIT THƯƠNG HIỆU + PANDA MASCOT -->
