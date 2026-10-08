@@ -2835,6 +2835,25 @@ body {
  #cgVideoContainer .vr-list{max-height:320px!important}
 }
 </style>
+
+<style id="amorri-v520-video-bottom-spacing">
+/* The original page had 92px outer padding plus 52px !important on the
+   gallery container. Overrides apply only to pages with video and no photos. */
+#clientGalleryView:has(.gallery-container.amorri-video-only){
+  padding-bottom:0 !important;
+}
+#clientGalleryView .gallery-container.amorri-video-only{
+  padding-bottom:12px !important;
+  margin-bottom:0 !important;
+}
+#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer{
+  margin-bottom:0 !important;
+}
+@media(max-width:700px){
+  #clientGalleryView:has(.gallery-container.amorri-video-only){padding-bottom:0 !important}
+  #clientGalleryView .gallery-container.amorri-video-only{padding-bottom:12px !important}
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -4093,9 +4112,10 @@ async function initClientGallery() {
             const gallery = videoContainer.closest('.gallery-container');
             if(gallery){
                 // Padding is only used for video-only links, never photo delivery.
-                gallery.style.paddingBottom = images.length === 0
-                    ? Math.max(0, Math.round((window.innerHeight - frameHeight) / 2) - 150) + 'px'
-                    : '';
+                // Video-only pages use a small, fixed footer spacing.
+                // Do not calculate extra padding from viewport/frame height.
+                gallery.classList.toggle('amorri-video-only', images.length === 0);
+                gallery.style.removeProperty('padding-bottom');
             }
         };
         syncVideoReviewLayout();
@@ -4106,7 +4126,7 @@ async function initClientGallery() {
         stopVideoReviewListeners();
         videoContainer.style.display='none';
         const gallery = videoContainer.closest('.gallery-container');
-        if(gallery) gallery.style.paddingBottom='';
+        if(gallery) { gallery.classList.remove('amorri-video-only'); gallery.style.removeProperty('padding-bottom'); }
     }
 
     if(images.length) {
