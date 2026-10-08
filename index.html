@@ -3342,6 +3342,28 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-cinema-
 }
 @media(prefers-reduced-motion:reduce){body[data-client-gallery="true"] #clientGalleryView .gallery-cover-inner{transition:none!important}}
 </style>
+
+<style id="amorri-v542-delivery-layout-and-controls">
+/* Unified desktop geometry: review panel exactly tracks video height, not its contents. */
+@media(min-width:851px){
+ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-review-layout{align-items:stretch!important;grid-template-rows:minmax(0,auto)!important;container-type:inline-size!important}
+ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel{align-self:start!important;height:calc((100cqw - 322px) * 9 / 16)!important;max-height:calc((100cqw - 322px) * 9 / 16)!important;min-height:0!important}
+ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-list-wrap{max-height:none!important;min-height:0!important;flex:1 1 0!important}
+ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-list{max-height:none!important;min-height:0!important;overflow:auto!important}
+}
+/* Avoid visible boxed credit separate from the gallery during cinema. */
+body[data-client-gallery="true"] .studio-credit{border:0!important;box-shadow:none!important;background:transparent!important}
+body[data-client-gallery="true"] .studio-credit-pill{border:0!important;box-shadow:none!important;background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.amorri-cinema[data-client-gallery="true"] .studio-credit{background:#09090b!important;color:#9d968b!important}
+body.amorri-cinema[data-client-gallery="true"] .studio-credit-pill{background:transparent!important;color:#aca398!important}
+body.amorri-cinema[data-client-gallery="true"] .studio-credit-pill strong{color:#cfc3b3!important}
+/* Playback dims the review panel background and chrome, not legible comment text. */
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-cinema-active .amorri-video-only #cgVideoContainer .vr-panel{background:rgba(184,170,150,.47)!important;border-color:rgba(169,155,137,.18)!important;filter:none!important;box-shadow:none!important;backdrop-filter:blur(17px) saturate(.72)!important;-webkit-backdrop-filter:blur(17px) saturate(.72)!important}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-cinema-active .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-heading,.vr-compose,.vr-list-toolbar){background:transparent!important}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-delete{padding:5px 8px;border-radius:8px;background:#f9e8e4;color:#91433a;border:1px solid #e9c7bd;font-weight:700;font-size:11px;cursor:pointer}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-delete:hover{background:#efd5cd}
+@media(max-width:850px){body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel{height:auto!important;max-height:none!important}}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -4341,6 +4363,9 @@ function initVideoReviewPanels() {
                 yt=new YT.Player(frame,{events:{onReady:()=>{duration=yt.getDuration()||0;renderMarkers();refreshTime()},onStateChange:(e)=>{
                     if(e.data===YT.PlayerState.PAUSED)capturedAt=currentTime();
                     if(e.data===YT.PlayerState.PLAYING)capturedAt=null;
+                    if(e.data===YT.PlayerState.PLAYING || e.data===YT.PlayerState.PAUSED || e.data===YT.PlayerState.ENDED){
+                        window.amorriSetIframeCinema?.(card.querySelector('iframe'),e.data===YT.PlayerState.PLAYING);
+                    }
                     duration=yt.getDuration()||duration;refreshTime();renderMarkers();
                 }}});vrPlayers.set(productKey,yt);
             }).catch(()=>{card.querySelector('[data-vr-hint]').textContent='Không đọc được YouTube timeline. Hãy tải lại trang.'});
@@ -4384,6 +4409,22 @@ function initVideoReviewPanels() {
                         }catch(err){showToast('Không cập nhật được: '+err.message)}
                         finally{fixed.disabled=false;}
                     };commentActions.appendChild(fixed);
+                }
+                // Admin-only deletion uses exactly the same Firebase location as the customer viewer.
+                if(firebase.auth().currentUser && currentUserRole === 'admin'){
+                    const remove=document.createElement('button');
+                    remove.type='button';remove.className='vr-delete';remove.textContent='Xóa';
+                    remove.title='Xóa vĩnh viễn bình luận này khỏi Firebase';
+                    remove.onclick=async()=>{
+                        if(!confirm('Xóa bình luận của '+(c.name||'Khách hàng')+' tại '+vrFormat(c.seconds)+'?'))return;
+                        remove.disabled=true;
+                        try{
+                            await ref.child(c.id).remove();
+                            if(editingCommentId===c.id)closeCommentEditor();
+                            showToast('Đã xóa bình luận khỏi hệ thống');
+                        }catch(err){showToast('Không xóa được bình luận: '+err.message);remove.disabled=false;}
+                    };
+                    commentActions.appendChild(remove);
                 }
                 top.appendChild(commentActions);
                 const content=document.createElement('div');content.className='vr-comment-body';content.textContent=(c.resolved?'✓ Đã fix · ':'')+c.text;
@@ -7428,16 +7469,29 @@ initApp();
  const videoSelector='#cgVideoContainer .client-video-card video';
  const ambient=new WeakMap();
  let cinemaVideo=null, scrollLock=0;
+ function centerPlayer(target){
+   if(!target || matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+   const player=target.closest('.client-video-frame') || target;
+   // Avoid repositioning the video when a user manually seeks or resumes moments later.
+   const now=Date.now();if(now-scrollLock<900)return;scrollLock=now;
+   requestAnimationFrame(()=>requestAnimationFrame(()=>{
+     if(!player.isConnected || !isVideoGallery())return;
+     const r=player.getBoundingClientRect();
+     const destination=Math.max(0,window.scrollY + r.top + r.height/2 - window.innerHeight/2);
+     if(Math.abs(destination-window.scrollY)>12)window.scrollTo({top:destination,behavior:'smooth'});
+   }));
+ }
  function isVideoGallery(){return gallery && getComputedStyle(gallery).display !== 'none' && !!gallery.querySelector('#cgVideoContainer .client-video-card');}
  function setCinema(video,on){
   if(!isVideoGallery())return;
-  if(on){cinemaVideo=video;document.body.classList.add('amorri-cinema');gallery.classList.add('amorri-cinema-active');}
-  else if(![...document.querySelectorAll(videoSelector)].some(v=>!v.paused && !v.ended)){
+  if(on){const newlyActive=!document.body.classList.contains('amorri-cinema');cinemaVideo=video;document.body.classList.add('amorri-cinema');gallery.classList.add('amorri-cinema-active');if(newlyActive)centerPlayer(video);}
+  else if(cinemaVideo===video || ![...document.querySelectorAll(videoSelector)].some(v=>!v.paused && !v.ended)){
     if(cinemaVideo===video)cinemaVideo=null;
     document.body.classList.remove('amorri-cinema');
     gallery.classList.remove('amorri-cinema-active');
   }
  }
+ window.amorriSetIframeCinema=(frame,playing)=>{if(frame)setCinema(frame,playing)};
  function createAmbient(video){
   const host=video.closest('.client-video-left');if(!host || ambient.has(video))return;
   const glow=document.createElement('canvas');glow.className='amorri-ambient-canvas';glow.style.background='radial-gradient(ellipse,#876653,#332a29 64%,#141313)';glow.width=96;glow.height=54;
