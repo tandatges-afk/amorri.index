@@ -4571,6 +4571,56 @@ const prodIdParam = urlParams.get('prod');
 let isClientMode = !!clientIdParam;
 let clientSelectedPhotos = new Set();
 let currentClientEvent = null;
+// A delivery link is scoped by its event ID and optional product ID.
+// Do not rebuild players for unrelated calendar, payroll, audit or favorite changes.
+let clientMediaSignature = null;
+let clientGalleryLoadVersion = 0;
+let clientGalleryServerReady = false;
+function clientMediaFingerprint(event) {
+    if (!event) return 'missing';
+    const products = normalizeCollection(event.products);
+    const visible = prodIdParam
+        ? products.filter(p => String(p.id) === String(prodIdParam))
+        : products;
+    return JSON.stringify(visible.map(p => [String(p.id || ''), String(p.name || ''), String(p.url || '')]));
+}
+function updateClientDeliveryMetadata(event) {
+    if (!event) return;
+    const title = event.name || 'Bộ bàn giao của bạn';
+    const titleEl = document.getElementById('cgTitle');
+    if (titleEl && titleEl.textContent !== title) titleEl.textContent = title;
+    document.title = title + ' - Bàn giao';
+    // Keep the already loaded media and in-progress client selections intact.
+    if (currentClientEvent && String(currentClientEvent.id) === String(event.id)) {
+        const media = currentClientEvent.galleryPhotos;
+        Object.assign(currentClientEvent, event);
+        if (media) currentClientEvent.galleryPhotos = media;
+    }
+}
+function handleClientEventSnapshot(snapshot) {
+    const raw = snapshot.val();
+    const incoming = raw && typeof raw === 'object'
+        ? sanitizeData({staff:[],events:[{...raw,id:String(clientIdParam)}],payroll:{},blackouts:[],auditLogs:[]}).events[0]
+        : null;
+    const index = data.events.findIndex(e => String(e.id) === String(clientIdParam));
+    if (incoming) {
+        if (index < 0) data.events.push(incoming);
+        else data.events[index] = incoming;
+    } else if (index >= 0) {
+        data.events.splice(index, 1);
+    }
+    persistLocal();
+    const nextSignature = clientMediaFingerprint(incoming);
+    const needsRebuild = !clientGalleryServerReady || nextSignature !== clientMediaSignature;
+    clientGalleryServerReady = true;
+    clientMediaSignature = nextSignature;
+    if (needsRebuild) {
+        // Only this delivery link, and only when its visible media changed.
+        initClientGallery().catch(err => console.error('Scoped client gallery render failed:', err));
+    } else {
+        updateClientDeliveryMetadata(incoming);
+    }
+}
 
 if (isClientMode) {
     document.querySelector('.app').style.display = 'none'; 
@@ -5059,11 +5109,17 @@ function initVideoReviewPanels() {
 
 async function initClientGallery() {
     if(!isClientMode) return;
+    const thisLoad = ++clientGalleryLoadVersion;
     currentClientEvent = data.events.find(e => e.id === clientIdParam);
     const photoGrid = document.getElementById('cgPhotoGrid');
     const videoContainer = document.getElementById('cgVideoContainer');
     const bottomBar = document.getElementById('cgBottomBar');
     if(!currentClientEvent) {
+        stopVideoReviewListeners();
+        if(window._amorriPanelHeightObserver) window._amorriPanelHeightObserver.disconnect();
+        videoContainer.replaceChildren();
+        videoContainer.style.display = 'none';
+        photoGrid.replaceChildren();
         document.getElementById('cgTitle').textContent = 'Không tìm thấy bộ bàn giao!';
         bottomBar.style.display = 'none';
         return;
@@ -5115,6 +5171,7 @@ async function initClientGallery() {
             const response = await fetch(`/api/get-drive-images?folderUrl=${encodeURIComponent(p.url)}`);
             if(!response.ok) throw new Error('HTTP '+response.status);
             const result = await response.json();
+            if (thisLoad !== clientGalleryLoadVersion) return; // A newer media version superseded this fetch.
             if(result.error) throw new Error(result.error);
             for(const item of (result.images || [])) {
                 media.push({
@@ -5130,6 +5187,7 @@ async function initClientGallery() {
         }
     }
 
+    if (thisLoad !== clientGalleryLoadVersion) return;
     currentClientEvent.galleryPhotos = media;
 
     // Resolve very old favoritePhotos (name-only storage) to canonical keys now that
@@ -6000,44 +6058,48 @@ function initApp() {
                 currentAuthUser = user || null;
                 resolveCurrentUserRole();
                 applyRoleUI();
-                render();
+                // Do not touch a running delivery player when authentication is refreshed.
+                if (!isClientMode) render();
                 notifyInvalidStaffLinkIfNeeded();
             });
 
             window.dbRef = firebase.database().ref('studioPlanner_v1');
-            window.dbRef.on('value', (snapshot) => {
-                const val = snapshot.val();
-                if (val) {
-                    // Never let a stale server snapshot erase valid local edits made while offline.
-                    data = sanitizeData(applyPendingWritesToSnapshot(val));
+            if (isClientMode) {
+                // Subscribe to ONE event. Saving any other event, staff, payroll, or audit
+                // no longer causes Firebase callbacks on this delivery page.
+                const scopedEventRef = window.dbRef.child('events').child(String(clientIdParam));
+                scopedEventRef.on('value', snapshot => {
+                    try { handleClientEventSnapshot(snapshot); }
+                    catch (err) { console.error('Delivery link update error:', err); }
+                    hideLoading();
+                }, error => {
+                    console.error('Scoped delivery Firebase error:', error);
+                    if (!clientGalleryServerReady) {
+                        // Offline fallback: read only this event from local cache.
+                        handleClientEventSnapshot({val: () => data.events.find(e => String(e.id) === String(clientIdParam)) || null});
+                    }
+                    hideLoading();
+                });
+            } else {
+                // Admin/staff dashboards still need live updates across all events.
+                window.dbRef.on('value', snapshot => {
+                    const val = snapshot.val();
+                    data = sanitizeData(applyPendingWritesToSnapshot(val || defaultData()));
                     persistLocal();
                     flushPendingWrites();
                     resolveCurrentUserRole();
                     applyRoleUI();
                     try { render(); } catch(e) { console.error('Render realtime error:', e); }
                     notifyInvalidStaffLinkIfNeeded();
-                    if (isClientMode) { initClientGallery(); }
-                    else if (document.getElementById('eventModal')?.classList.contains('show')) {
+                    if (document.getElementById('eventModal')?.classList.contains('show')) {
                         window.refreshOpenEventProductActions?.();
                     }
-                } else {
-                    data = sanitizeData(applyPendingWritesToSnapshot(defaultData()));
-                    persistLocal();
-                    flushPendingWrites();
-                    resolveCurrentUserRole();
-                    applyRoleUI();
-                    try { render(); } catch(e) {}
-                    notifyInvalidStaffLinkIfNeeded();
-                    if (isClientMode) { initClientGallery(); }
-                    else if (document.getElementById('eventModal')?.classList.contains('show')) {
-                        window.refreshOpenEventProductActions?.();
-                    }
-                }
-                hideLoading();
-            }, (error) => {
-                console.error('Realtime database error:', error);
-                hideLoading();
-            });
+                    hideLoading();
+                }, error => {
+                    console.error('Realtime database error:', error);
+                    hideLoading();
+                });
+            }
         }
     } catch (err) { hideLoading(); }
 }
