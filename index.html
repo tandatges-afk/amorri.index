@@ -3373,6 +3373,68 @@ body[data-client-gallery="true"] #panda-mascot{width:50px !important;height:50px
  #clientGalleryView #cgVideoContainer .client-video-left::before{transition:none !important}
 }
 </style>
+
+<style id="amorri-v531-clean-ambient-navigation">
+/* Remove the white surrounding card entirely: only the video and a glass review panel. */
+#clientGalleryView #cgVideoContainer{overflow:visible!important}
+#clientGalleryView #cgVideoContainer .client-video-card{
+ background:transparent!important;border:0!important;border-radius:0!important;
+ box-shadow:none!important;outline:0!important;overflow:visible!important;
+ isolation:isolate!important;
+}
+#clientGalleryView #cgVideoContainer .client-video-head,
+#clientGalleryView #cgVideoContainer .client-video-title,
+#clientGalleryView #cgVideoContainer .client-video-tag{display:none!important}
+#clientGalleryView #cgVideoContainer .client-video-review-layout{
+ background:transparent!important;box-shadow:none!important;border:0!important;
+ overflow:visible!important;align-items:stretch;
+}
+#clientGalleryView #cgVideoContainer .client-video-left{
+ background:transparent!important;position:relative!important;isolation:isolate!important;
+ overflow:visible!important;padding:clamp(20px,3vw,42px) clamp(15px,2vw,30px) clamp(52px,5vw,86px)!important;
+}
+/* Bigger light field, especially beneath video. No continuous CSS animation. */
+#clientGalleryView #cgVideoContainer .client-video-left::before{
+ content:""!important;display:block!important;position:absolute!important;
+ inset:-13% -9% -30%!important;z-index:-1!important;pointer-events:none!important;
+ background:
+ radial-gradient(ellipse 78% 64% at 47% 66%, rgba(var(--vr-ambient-rgb,169,133,102),.47) 0%,rgba(var(--vr-ambient-rgb,169,133,102),.24) 42%,transparent 82%),
+ radial-gradient(ellipse 70% 56% at 52% 91%,rgba(184,143,108,.27),transparent 85%)!important;
+ filter:blur(clamp(28px,4.5vw,82px)) saturate(.90)!important;
+ opacity:1!important;transform:translateZ(0)!important;
+ transition:background-color .35s ease!important;
+ border-radius:22%!important;
+}
+#clientGalleryView #cgVideoContainer .client-video-frame{
+ position:relative!important;z-index:1!important;
+ box-shadow:0 18px 48px rgba(36,29,23,.22)!important;
+}
+#clientGalleryView #cgVideoContainer .vr-panel{
+ background:rgba(255,253,248,.78)!important;
+ -webkit-backdrop-filter:blur(15px) saturate(118%)!important;
+ backdrop-filter:blur(15px) saturate(118%)!important;
+ border:1px solid rgba(205,189,167,.42)!important;
+ border-radius:17px!important;
+ box-shadow:0 10px 32px rgba(50,40,30,.075)!important;
+ overflow:hidden!important;
+}
+@media(max-width:768px){
+ /* Both elements use transform on GPU, never update bottom during scroll. */
+ body .studio-credit,body[data-client-gallery="true"] .studio-credit{
+  bottom:calc(env(safe-area-inset-bottom,0px) + 80px)!important;
+  transform:translate3d(0,var(--amorri-credit-shift,0px),0)!important;
+  transition:none!important;will-change:transform;
+ }
+ body .app>.sidebar{transition:none!important;will-change:transform}
+ #clientGalleryView #cgVideoContainer .client-video-left{padding:12px 8px 45px!important}
+ #clientGalleryView #cgVideoContainer .client-video-left::before{inset:-10% -4% -29%!important;filter:blur(35px)!important}
+ #clientGalleryView #cgVideoContainer .vr-panel{border-radius:14px!important;margin-top:8px}
+}
+@media(prefers-reduced-motion:reduce){
+ body .studio-credit,body .app>.sidebar{transition:none!important}
+ #clientGalleryView #cgVideoContainer .client-video-left::before{transition:none!important}
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -4581,7 +4643,6 @@ async function initClientGallery() {
             }
             const vrKey = reviewKey(String(v.productId || "") + "::" + String(v.id || ""));
             return `<section class="client-video-card" data-vr-product="${escapeHtml(vrKey)}" data-vr-file-id="${escapeHtml(v.id||'')}" data-vr-raw-product="${escapeHtml(v.productId||'')}" data-vr-type="${escapeHtml(v.externalType==='youtube'?'youtube':v.source==='drive'?'drive':'direct')}">
-                <div class="client-video-head"><div class="client-video-title">${escapeHtml(v.name||'Video bàn giao')}</div><div class="client-video-tag">VIDEO REVIEW</div></div>
                 <div class="client-video-review-layout">
                   <div class="client-video-left">
                     <div class="client-video-frame">${frame}</div>
@@ -7436,15 +7497,14 @@ initApp();
   if (!nav) return;
   const mobile = window.matchMedia('(max-width:768px)');
   const interactive = el => !!el?.closest?.('input, textarea, select, [contenteditable="true"], [role="textbox"]');
-  let offset = 0, lastY = window.scrollY || 0, pending = false;
+  let offset = 0, lastY = window.scrollY || 0, pending = false, direction = 0, accumulated = 0;
   function height() { return Math.max(56, nav.getBoundingClientRect().height + 12); }
   function blocked() { return interactive(document.activeElement) || !!document.querySelector('.modal-overlay.active, .modal-backdrop.active, dialog[open]'); }
   function setOffset(next, instant = false) {
     offset = Math.max(0, Math.min(height(), next));
     nav.style.setProperty('--amorri-mobile-nav-offset', `${Math.round(offset)}px`);
-    // Keep Design by just above the visible portion of mobile navigation.
-    const visibleHeight = Math.max(0, nav.getBoundingClientRect().height - offset);
-    document.body.style.setProperty('--amorri-credit-clearance', `${Math.round(visibleHeight + (visibleHeight ? 8 : 0))}px`);
+    // Translate credit and navigation together without animating layout/bottom.
+    document.body.style.setProperty('--amorri-credit-shift', `${Math.round(offset)}px`);
     nav.classList.toggle('amorri-nav-at-rest', !instant && (offset < 1 || offset >= height()-1));
   }
   function update() {
@@ -7453,9 +7513,13 @@ initApp();
     const dy = y - lastY;
     lastY = y;
     if (!mobile.matches || y < 24 || blocked()) { setOffset(0); return; }
-    if (Math.abs(dy) < 0.6 || Math.abs(dy) > 220) return;
-    // Nav follows scroll continuously rather than waiting for a threshold.
-    setOffset(offset + dy * 1.18, true);
+    if (Math.abs(dy) < 1.3 || Math.abs(dy) > 220) return;
+    const nextDir = Math.sign(dy);
+    if (direction !== nextDir) { direction = nextDir; accumulated = 0; }
+    accumulated += Math.abs(dy);
+    // Ignore tiny rubber-band movements; otherwise follow finger/scroll smoothly.
+    if (accumulated < 9) return;
+    setOffset(offset + dy * 0.96, true);
   }
   window.addEventListener('scroll', () => {
     if (!pending) { pending = true; requestAnimationFrame(update); }
@@ -7482,8 +7546,12 @@ initApp();
       for(let i=0;i<rgba.length;i+=16){ r+=rgba[i];g+=rgba[i+1];b+=rgba[i+2];n++; }
       if(!n)return;
       r=Math.round(r/n);g=Math.round(g/n);b=Math.round(b/n);
-      // Tone down brightness to preserve legibility and the Amorri palette.
-      card.style.setProperty('--vr-ambient-rgb', `${r},${g},${b}`);
+      // Blend actual footage into a calm, muted palette; avoid sharp color jumps.
+      const previous = card._amorriAmbient || [169,133,102];
+      const target = [r,g,b].map((value,i)=>Math.round(value*.48 + [161,124,91][i]*.52));
+      const blended = target.map((v,i)=>Math.round(previous[i]*.78+v*.22));
+      card._amorriAmbient = blended;
+      card.style.setProperty('--vr-ambient-rgb', blended.join(','));
     } catch (_) {
       // Browser blocks canvas reads from cross-origin media: keep CSS fallback.
     }
@@ -7492,7 +7560,7 @@ initApp();
     const video=e.target;
     if (!(video instanceof HTMLVideoElement) || !video.closest(selector)) return;
     if (reduced.matches || document.hidden) return;
-    const now=performance.now();if(now-lastUpdate < 850)return;lastUpdate=now;
+    const now=performance.now();if(now-lastUpdate < 260)return;lastUpdate=now;
     const card=video.closest(selector);if(card)apply(card,video);
   },true);
   document.addEventListener('loadeddata',e=>{
