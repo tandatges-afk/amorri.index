@@ -1594,6 +1594,26 @@ body.sidebar-closed .nav-btn.active { box-shadow: inset 0 -2px 0 var(--champagne
     scroll-behavior: auto !important;
   }
 }
+
+/* Video review: frame-accurate feedback for direct video / YouTube */
+.vr-panel{padding:16px;border-top:1px solid var(--line);background:#fffdf9}
+.vr-heading{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}
+.vr-heading strong{font-size:14px;color:#1b1b19}.vr-sub{font-size:12px;color:#78716c;line-height:1.6;margin:6px 0 12px}
+.vr-entry{display:flex;align-items:flex-start;gap:9px;flex-wrap:wrap;margin:10px 0}
+.vr-time,.vr-name,.vr-manual{border:1px solid #ded6ca;border-radius:10px;padding:10px;background:white;font:inherit;font-size:12px}
+.vr-time{font-weight:800;white-space:nowrap;background:#f1e8da}.vr-name{flex:1;min-width:130px}.vr-manual{max-width:130px}
+.vr-message{width:100%;min-height:76px;resize:vertical;border:1px solid #ded6ca;border-radius:12px;padding:12px;background:white;font:inherit;font-size:13px;line-height:1.5}
+.vr-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:9px}
+.vr-btn{border:0;background:#1b1b19;color:white;padding:10px 15px;border-radius:10px;font-weight:800;font-size:12px;cursor:pointer}
+.vr-btn:disabled{opacity:.55;cursor:wait}.vr-status{font-size:12px;color:#78716c;font-weight:600}
+.vr-list{display:grid;gap:9px;margin-top:16px}.vr-comment{border:1px solid #e8e1d6;background:#faf8f4;border-radius:12px;padding:12px}
+.vr-comment.done{opacity:.68}.vr-comment-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:7px}
+.vr-jump{background:#f1e8da;border:1px solid #decbaa;color:#59452c;border-radius:8px;padding:6px 10px;font-weight:800;cursor:pointer}
+.vr-comment-body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.55}
+.vr-comment small{color:#78716c;font-size:11px}.vr-resolve{border:1px solid #cbd5c6;border-radius:8px;padding:5px 9px;background:white;cursor:pointer;font-size:11px;margin-left:auto}
+.vr-markers{position:relative;min-height:12px;background:#e8e1d6;border-radius:20px;margin:14px 2px 0}
+.vr-marker{position:absolute;top:0;width:10px;height:12px;transform:translateX(-50%);border:0;border-radius:12px;background:#b59a72;cursor:pointer;padding:0}
+@media(max-width:700px){.vr-panel{padding:12px}.vr-time{width:100%}.vr-name{flex:1}.vr-manual{max-width:none}}
 </style>
 
 
@@ -2387,7 +2407,7 @@ body {
             <div class="gallery-head-row">
                 <div class="gallery-head-copy">
                     <h1 id="cgTitle">Loading...</h1>
-                    <p>Ảnh và clip bàn giao. Bấm ❤️ trên ảnh cần chọn, còn clip chỉ cần bấm để xem.</p>
+                    <p>Ảnh và video bàn giao. Với video, hãy dừng ở đoạn cần sửa và gửi góp ý theo mốc thời gian.</p>
                 </div>
                 <div class="gallery-head-status" id="cgImageStats">
                     <div class="gallery-stat"><strong id="cgImageCount">0</strong><span>Ảnh</span></div>
@@ -3171,6 +3191,143 @@ function extractYouTubeVideoId(url) {
 }
 
 
+
+// Feedback stored independently from planner/events to avoid overwriting concurrent edits.
+const vrListeners = [];
+const vrPlayers = new Map();
+let vrYoutubePromise = null;
+function reviewKey(id) { return 'k' + Array.from(String(id||'unknown')).map(c=>c.codePointAt(0).toString(16)).join('_'); }
+function vrFormat(sec) {
+    const n=Math.max(0,Math.floor(Number(sec)||0));
+    const h=Math.floor(n/3600),m=Math.floor(n%3600/60),s=n%60;
+    return (h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+function vrParse(str) {
+    const parts=String(str||'').trim().split(':');
+    if(!parts.length||parts.length>3||parts.some(x=>!/^\d+$/.test(x))) return null;
+    let n=0;for(const p of parts)n=n*60+Number(p);
+    if(parts.length>1 && parts.slice(1).some(x=>Number(x)>=60))return null;
+    return n;
+}
+function stopVideoReviewListeners() {
+    vrListeners.splice(0).forEach(({ref,callback})=>ref.off('value',callback));
+    vrPlayers.forEach(player=>{try{player.destroy()}catch(_){}});vrPlayers.clear();
+}
+function vrYoutubeAPI() {
+    if(window.YT?.Player)return Promise.resolve();
+    if(vrYoutubePromise)return vrYoutubePromise;
+    vrYoutubePromise=new Promise((resolve,reject)=>{
+        const old=window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady=()=>{if(typeof old==='function')old();resolve();};
+        const script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';
+        script.onerror=()=>reject(new Error('Không tải được YouTube Player API'));
+        document.head.appendChild(script);
+    });return vrYoutubePromise;
+}
+function initVideoReviewPanels() {
+    const panels=[...document.querySelectorAll('#cgVideoContainer .client-video-card')];
+    for(const card of panels){
+        const productKey=card.dataset.vrProduct, kind=card.dataset.vrType;
+        const status=card.querySelector('[data-vr-status]'), time=card.querySelector('[data-vr-current]');
+        const input=card.querySelector('[data-vr-name]'), message=card.querySelector('[data-vr-message]');
+        const manual=card.querySelector('[data-vr-manual]'),button=card.querySelector('[data-vr-send]');
+        const list=card.querySelector('[data-vr-list]'),markers=card.querySelector('[data-vr-markers]');
+        try{input.value=localStorage.getItem('amorri_video_review_name')||''}catch(_){}
+        let yt=null;const htmlVideo=card.querySelector('video');let duration=0,comments=[];
+        let capturedAt=null;
+        const currentTime=()=>{
+            if(manual)return vrParse(manual.value);
+            if(htmlVideo)return Number(htmlVideo.currentTime)||0;
+            if(yt){try{return Number(yt.getCurrentTime())||0}catch(_){return 0}}
+            return null;
+        };
+        const refreshTime=()=>{
+            if(!card.isConnected)return;
+            const n=currentTime();time.textContent=n===null?'--:--':vrFormat(n);
+        };
+        if(htmlVideo){
+            htmlVideo.addEventListener('timeupdate',refreshTime);
+            htmlVideo.addEventListener('pause',()=>{capturedAt=currentTime();refreshTime()});
+            htmlVideo.addEventListener('durationchange',()=>{duration=htmlVideo.duration||0;renderMarkers()});
+            duration=htmlVideo.duration||0;
+        }
+        if(kind==='youtube'){
+            const frame=card.querySelector('iframe');
+            vrYoutubeAPI().then(()=>{
+                if(!card.isConnected)return;
+                yt=new YT.Player(frame,{events:{onReady:()=>{duration=yt.getDuration()||0;renderMarkers();refreshTime()},onStateChange:(e)=>{
+                    if(e.data===YT.PlayerState.PAUSED)capturedAt=currentTime();
+                    if(e.data===YT.PlayerState.PLAYING)capturedAt=null;
+                    duration=yt.getDuration()||duration;refreshTime();renderMarkers();
+                }}});vrPlayers.set(productKey,yt);
+            }).catch(()=>{card.querySelector('[data-vr-hint]').textContent='Không đọc được YouTube timeline. Hãy thử tải lại trang.'});
+        }
+        const jump=(sec)=>{
+            if(htmlVideo){htmlVideo.currentTime=sec;htmlVideo.pause();htmlVideo.scrollIntoView({behavior:'smooth',block:'center'});}
+            else if(yt){try{yt.seekTo(sec,true);yt.pauseVideo();card.scrollIntoView({behavior:'smooth',block:'center'})}catch(_){}}
+            else if(manual){manual.value=vrFormat(sec);card.scrollIntoView({behavior:'smooth',block:'center'});showToast('Google Drive: tua video đến '+vrFormat(sec)+' bằng thanh phát.');}
+            refreshTime();
+        };
+        function renderMarkers(){
+            markers.replaceChildren();
+            if(!duration||!Number.isFinite(duration)){markers.hidden=true;return;}
+            markers.hidden=false;
+            for(const c of comments){if(c.seconds>duration)continue;
+                const dot=document.createElement('button');dot.type='button';dot.className='vr-marker';
+                dot.style.left=(Math.max(0,Math.min(100,c.seconds/duration*100)))+'%';
+                dot.title=vrFormat(c.seconds)+' — '+c.text;dot.onclick=()=>jump(c.seconds);markers.appendChild(dot);
+            }
+        }
+        function renderComments(){
+            list.replaceChildren();
+            if(!comments.length){const empty=document.createElement('p');empty.className='vr-sub';empty.textContent='Chưa có góp ý. Hãy gửi nhận xét đầu tiên cho editor.';list.appendChild(empty);}
+            for(const c of comments){
+                const el=document.createElement('div');el.className='vr-comment'+(c.resolved?' done':'');
+                const top=document.createElement('div');top.className='vr-comment-top';
+                const jumpBtn=document.createElement('button');jumpBtn.className='vr-jump';jumpBtn.textContent='▶ '+vrFormat(c.seconds);jumpBtn.onclick=()=>jump(c.seconds);top.appendChild(jumpBtn);
+                const author=document.createElement('small');author.textContent=(c.name||'Khách hàng')+' · '+new Date(c.createdAt||Date.now()).toLocaleString('vi-VN');top.appendChild(author);
+                if(c.resolved){const done=document.createElement('small');done.textContent='✓ Đã xử lý';top.appendChild(done)}
+                if(firebase.auth().currentUser){
+                    const resolve=document.createElement('button');resolve.className='vr-resolve';resolve.textContent=c.resolved?'↶ Mở lại':'✓ Đã sửa';
+                    resolve.onclick=async()=>{try{await ref.child(c.id).child('resolved').set(!c.resolved)}catch(err){showToast('Không có quyền cập nhật: '+err.message)}};top.appendChild(resolve);
+                }
+                const text=document.createElement('div');text.className='vr-comment-body';text.textContent=c.text;
+                el.append(top,text);list.appendChild(el);
+            }
+            renderMarkers();status.textContent=comments.length+' góp ý';
+        }
+        // Separate Firebase branch; no local-only "success" on network/permission failures.
+        if(typeof firebase==='undefined'||!firebase.apps.length){status.textContent='Chưa kết nối Firebase';button.disabled=true;continue;}
+        const ref=firebase.database().ref('videoReviews_v1/'+reviewKey(clientIdParam)+'/'+productKey);
+        const listener=(snap)=>{
+            comments=Object.entries(snap.val()||{}).filter(([,v])=>v&&typeof v==='object').map(([id,v])=>({...v,id})).sort((a,b)=>(a.seconds||0)-(b.seconds||0)||(a.createdAt||0)-(b.createdAt||0));
+            renderComments();
+        };
+        ref.on('value',listener,err=>{status.textContent='Không có quyền đọc bình luận';console.error(err)});
+        vrListeners.push({ref,callback:listener});
+        message.addEventListener('focus',()=>{
+            if(htmlVideo&&!htmlVideo.paused)htmlVideo.pause();
+            if(yt){try{yt.pauseVideo()}catch(_){}}
+            capturedAt=currentTime();refreshTime();
+        });
+        button.addEventListener('click',async()=>{
+            const content=message.value.trim();const name=input.value.trim();
+            const seconds=manual?vrParse(manual.value):(capturedAt ?? currentTime());
+            if(seconds===null||!Number.isFinite(seconds)||seconds<0){showToast('Nhập mốc thời gian đúng dạng mm:ss (ví dụ 01:25).');return;}
+            if(!name){showToast('Vui lòng nhập tên người góp ý');input.focus();return;}
+            if(!content){showToast('Nhập nội dung cần chỉnh sửa');message.focus();return;}
+            button.disabled=true;status.textContent='Đang lưu góp ý...';
+            try{
+                await ref.push({name:name.slice(0,60),text:content.slice(0,2000),seconds:Math.floor(seconds),createdAt:firebase.database.ServerValue.TIMESTAMP,resolved:false});
+                try{localStorage.setItem('amorri_video_review_name',name)}catch(_){}
+                message.value='';capturedAt=null;showToast('Đã gửi góp ý tại '+vrFormat(seconds));
+            }catch(err){status.textContent='Lưu thất bại';showToast('Không lưu được góp ý: '+err.message);console.error(err)}
+            finally{button.disabled=false;}
+        });
+        if(manual)manual.addEventListener('input',refreshTime);
+    }
+}
+
 async function initClientGallery() {
     if(!isClientMode) return;
     currentClientEvent = data.events.find(e => e.id === clientIdParam);
@@ -3264,21 +3421,35 @@ async function initClientGallery() {
     // Clip không có tim; thường chỉ có một clip nên đưa lên đầu thành player riêng.
     if(videos.length) {
         videoContainer.style.display='grid';
+        stopVideoReviewListeners();
         videoContainer.innerHTML = videos.map(v => {
             let frame='';
             if(v.externalType==='youtube') {
-                frame=`<iframe src="https://www.youtube.com/embed/${encodeURIComponent(v.videoId)}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+                frame=`<iframe src="https://www.youtube.com/embed/${encodeURIComponent(v.videoId)}?enablejsapi=1" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
             } else if(v.source === 'drive') {
                 frame=`<iframe src="${safeUrl(v.previewUrl || `https://drive.google.com/file/d/${encodeURIComponent(v.id)}/preview`)}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
             } else if(v.url) {
                 frame=`<video controls playsinline preload="metadata" src="${safeUrl(v.url)}"></video>`;
             }
-            return `<section class="client-video-card">
-                <div class="client-video-head"><div class="client-video-tag">CLIP</div></div>
+            const vrKey = reviewKey(v.productId || v.id);
+            return `<section class="client-video-card" data-vr-product="${escapeHtml(vrKey)}" data-vr-type="${escapeHtml(v.externalType==='youtube'?'youtube':v.source==='drive'?'drive':'direct')}">
+                <div class="client-video-head"><div class="client-video-title">${escapeHtml(v.name||'Video bàn giao')}</div><div class="client-video-tag">VIDEO REVIEW</div></div>
                 <div class="client-video-frame">${frame}</div>
+                <div class="vr-panel">
+                    <div class="vr-heading"><strong>💬 Góp ý chỉnh sửa theo timeline</strong><span class="vr-status" data-vr-status>Đang kết nối...</span></div>
+                    <p class="vr-sub">Dừng video tại đoạn cần sửa, ghi nhận xét và bấm Gửi. Editor có thể bấm vào mốc thời gian để xem lại.</p>
+                    <div class="vr-entry"><span class="vr-time" data-vr-current>00:00</span><input class="vr-name" data-vr-name maxlength="60" placeholder="Tên người góp ý" aria-label="Tên người góp ý">
+                    ${v.source==='drive' ? '<input class="vr-manual" data-vr-manual placeholder="mm:ss" aria-label="Mốc thời gian ví dụ 01:25" title="Google Drive không cung cấp thời gian phát; hãy nhập mốc thời gian thủ công">' : ''}</div>
+                    <textarea class="vr-message" data-vr-message maxlength="2000" placeholder="Ví dụ: Giây này chỉnh màu sáng hơn, cắt chuyển cảnh chậm lại..." aria-label="Nội dung góp ý"></textarea>
+                    <div class="vr-actions"><span class="vr-status" data-vr-hint>${v.source==='drive'?'Video Drive: nhập thời gian mm:ss hoặc hh:mm:ss từ trình phát.':'Thời gian được lấy từ vị trí đang phát.'}</span><button type="button" class="vr-btn" data-vr-send>Gửi góp ý tại mốc này ↗</button></div>
+                    <div class="vr-markers" data-vr-markers hidden></div>
+                    <div class="vr-list" data-vr-list></div>
+                </div>
             </section>`;
         }).join('');
+        initVideoReviewPanels();
     } else {
+        stopVideoReviewListeners();
         videoContainer.style.display='none';
     }
 
@@ -4900,6 +5071,7 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
            </a>
            <div style="display:flex; gap:6px; flex-wrap:wrap;">
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateSingleClientLink('${prodId}')">🔗 Gửi Khách</button>
+               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px;font-size:12px;border:1px solid #b59a72;color:#79603e;font-weight:700" onclick="window.openVideoReviews('${prodId}')">💬 Góp ý video</button>
                <button type="button" class="btn ghost admin-only-flex product-copy-favorites" data-product-id="${prodId}" style="display:none; padding:6px 10px; font-size:12px; border:1px solid #86efac; color:#15803d; font-weight:700;">📋 Copy tên ảnh</button>
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.closest('.product-row').querySelector('.prod-view').style.display='none'; this.closest('.product-row').querySelector('.prod-edit').style.display='flex'">✏️ Sửa</button>
            </div>
@@ -4999,6 +5171,14 @@ window.refreshProductMediaRow = async function(row, prodId, rawUrl) {
             ? `Copy ${favoriteCount} tên ảnh khách đã chọn`
             : 'Chưa có ảnh khách chọn';
     }
+};
+
+window.openVideoReviews = function(prodId) {
+    const eventId = document.getElementById('eventId')?.value;
+    if(!eventId){showToast('Hãy lưu sự kiện trước khi xem góp ý');return;}
+    const url = new URL(window.location.href);
+    url.search='';url.searchParams.set('client_gallery',eventId);url.searchParams.set('prod',prodId);
+    window.open(url.toString(),'_blank','noopener,noreferrer');
 };
 
 window.generateSingleClientLink = function(prodId) {
