@@ -3480,6 +3480,54 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-
 }
 @media(prefers-reduced-motion:reduce){#clientGalleryView #amorri-cinema-overlay,#clientGalleryView .gallery-cover-inner{transition:none!important}}
 </style>
+
+<style id="amorri-v547-footer-review-surface">
+/* v5.47 — Footer credit is the only visible decorative element.
+   Kill separators/pseudo rules rather than altering the gallery stacking model. */
+body[data-client-gallery="true"] .studio-credit,
+body[data-client-gallery="true"] .studio-credit-pill {
+  border:0!important;border-top:0!important;outline:0!important;
+  box-shadow:none!important;background:transparent!important;
+  background-image:none!important;
+}
+body[data-client-gallery="true"] .studio-credit::before,
+body[data-client-gallery="true"] .studio-credit::after,
+body[data-client-gallery="true"] .studio-credit-pill::before,
+body[data-client-gallery="true"] .studio-credit-pill::after {
+  content:none!important;display:none!important;
+}
+body[data-client-gallery="true"] .studio-credit {
+  width:auto!important;max-width:100%!important;
+  padding:5px 18px 9px!important;gap:0!important;
+}
+/* Uniform translucent backdrop for the complete review panel.  Preserve
+   opacity:1 on the panel so form fields and text remain legible. */
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel {
+  opacity:1!important;
+  background:rgba(240,233,222,.72)!important;
+  backdrop-filter:blur(16px)!important;
+  -webkit-backdrop-filter:blur(16px)!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel {
+  background:rgba(197,188,175,.61)!important;
+}
+/* The toolbar and scroll region must not paint a second opaque color
+   on top of the parent translucent surface. */
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-list-toolbar,
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-list-wrap,
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-list {
+  background:transparent!important;background-image:none!important;
+  box-shadow:none!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-list-toolbar {
+  border-color:rgba(91,77,60,.13)!important;
+}
+/* Add exactly 50px after the video delivery block, not below every
+   page footer and not to the video frame's aspect-ratio geometry. */
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer {
+  padding-bottom:50px!important;
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
