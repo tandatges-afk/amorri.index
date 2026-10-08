@@ -2628,6 +2628,11 @@ body {
   .gallery-container:has(#cgVideoContainer .client-video-card){padding-left:10px!important;padding-right:10px!important}
   #cgVideoContainer .vr-list-wrap{max-height:260px}
 }
+
+/* v5.12: video ~15% smaller than v5.11, keep its right-hand alignment */
+@media(min-width:1001px){
+  #cgVideoContainer .client-video-frame{width:85%;max-width:100%;margin-left:auto;margin-right:0}
+}
 </style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
@@ -3683,6 +3688,13 @@ function initVideoReviewPanels() {
             if(htmlVideo&&!htmlVideo.paused)htmlVideo.pause();
             if(yt){try{yt.pauseVideo()}catch(_){}}
             if(!editingCommentId)capturedAt=(kind==='drive'&&!synced)?referenceSeconds:currentTime();refreshTime();
+        });
+        // Enter sends; Shift+Enter inserts a new line. Never submit during IME composition.
+        message.addEventListener('keydown',e=>{
+            if(e.key==='Enter' && !e.shiftKey && !e.isComposing && e.keyCode!==229){
+                e.preventDefault();
+                if(!button.disabled)button.click();
+            }
         });
         button.addEventListener('click',async()=>{
             const content=message.value.trim();const name=input.value.trim();

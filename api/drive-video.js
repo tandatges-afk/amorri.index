@@ -9,7 +9,7 @@ import { Readable } from 'node:stream';
 import admin from 'firebase-admin';
 import { GoogleAuth } from 'google-auth-library';
 
-const CHUNK_BYTES = 4 * 1024 * 1024; // 4 MiB, below Vercel's ~4.5 MB buffered response limit
+const CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB; requires streaming response (pipe), not buffering
 const TOKEN_SECONDS = 15 * 60; // Short-lived signed access; revoke by waiting 15 minutes or rotating signing secret
 const ID_PATTERN = /^[\w-]{10,200}$/;
 const DRIVE = 'https://www.googleapis.com/drive/v3/files/';
@@ -201,7 +201,7 @@ export default async function handler(req, res) {
 
     // Performance: POST already verifies ownership and video metadata.
     // Ticket signs id, gallery, product, MIME type, size, and expiry.
-    // Avoid repeat Firebase reads + Drive metadata requests on every 4 MiB Range GET.
+    // Avoid repeat Firebase reads + Drive metadata requests on every 8 MiB Range GET.
     // Revocation is not immediate: existing tickets work until expiry (15 minutes).
     const ticketData = verifyTicket(req.query.ticket, id);
     if (!ticketData) return sendError(res, 401, 'Missing or expired playback ticket');
