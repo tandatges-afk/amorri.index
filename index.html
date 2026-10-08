@@ -1595,6 +1595,27 @@ body.sidebar-closed .nav-btn.active { box-shadow: inset 0 -2px 0 var(--champagne
   }
 }
 
+
+/* Interactive review timeline v2 */
+.vr-timeline-box{padding:14px;margin:12px 0;border:1px solid #eadfce;border-radius:14px;background:#faf7f1}
+.vr-timeline-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;font-weight:800;color:#514437;margin-bottom:8px}
+.vr-scrub-wrap{position:relative;height:30px;display:flex;align-items:center}
+.vr-scrub{width:100%;position:relative;z-index:2;appearance:none;background:transparent;cursor:pointer;margin:0;height:30px}
+.vr-scrub::-webkit-slider-runnable-track{height:8px;background:linear-gradient(90deg,#b59a72 var(--vr-progress,0%),#e5ddd0 var(--vr-progress,0%));border-radius:12px}
+.vr-scrub::-moz-range-track{height:8px;background:#e5ddd0;border-radius:12px}
+.vr-scrub::-moz-range-progress{height:8px;background:#b59a72;border-radius:12px}
+.vr-scrub::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;border:3px solid white;background:#8d6e48;box-shadow:0 2px 8px #0003;margin-top:-5px}
+.vr-scrub::-moz-range-thumb{width:15px;height:15px;border-radius:50%;border:3px solid white;background:#8d6e48}
+.vr-timeline-dots{position:absolute;inset:9px 9px auto 9px;height:12px;pointer-events:none;z-index:3}
+.vr-timeline-dots .vr-dot{position:absolute;top:0;width:7px;height:12px;border-radius:5px;background:#c66e53;transform:translateX(-50%);box-shadow:0 0 0 2px #fff}
+.vr-time-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px}
+.vr-time-tools input{padding:8px;border:1px solid #dcd1c1;border-radius:9px;background:#fff;width:105px;font:inherit;font-size:12px}
+.vr-time-tools label{font-size:11px;font-weight:700;color:#807467}
+.vr-inline-btn{border:1px solid #d9caba;background:white;padding:8px 10px;border-radius:9px;font:inherit;font-size:11px;font-weight:800;cursor:pointer;color:#69543d}
+.vr-mode-note{font-size:11px;color:#85715e;margin-top:9px;line-height:1.5}
+.vr-comment{cursor:default}.vr-comment-top{align-items:center}
+@media(max-width:700px){.vr-time-tools input{width:87px}.vr-timeline-box{padding:10px}}
+
 /* Video review: frame-accurate feedback for direct video / YouTube */
 .vr-panel{padding:16px;border-top:1px solid var(--line);background:#fffdf9}
 .vr-heading{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}
@@ -3230,26 +3251,83 @@ function initVideoReviewPanels() {
         const productKey=card.dataset.vrProduct, kind=card.dataset.vrType;
         const status=card.querySelector('[data-vr-status]'), time=card.querySelector('[data-vr-current]');
         const input=card.querySelector('[data-vr-name]'), message=card.querySelector('[data-vr-message]');
-        const manual=card.querySelector('[data-vr-manual]'),button=card.querySelector('[data-vr-send]');
+        const button=card.querySelector('[data-vr-send]');
+        const scrub=card.querySelector('[data-vr-scrub]'),dots=card.querySelector('[data-vr-dots]');
+        const seekInput=card.querySelector('[data-vr-seek-input]'),seekBtn=card.querySelector('[data-vr-seek]');
+        const durationInput=card.querySelector('[data-vr-drive-duration]'),total=card.querySelector('[data-vr-total]');
+        const mode=card.querySelector('[data-vr-mode]'),modeNote=card.querySelector('[data-vr-mode-note]');
+        const secondTime=card.querySelector('[data-vr-current-secondary]');
         const list=card.querySelector('[data-vr-list]'),markers=card.querySelector('[data-vr-markers]');
         try{input.value=localStorage.getItem('amorri_video_review_name')||''}catch(_){}
         let yt=null;const htmlVideo=card.querySelector('video');let duration=0,comments=[];
-        let capturedAt=null;
+        let capturedAt=null, referenceSeconds=0, synced=kind!=='drive';
+        const driveFrame=card.querySelector('[data-vr-drive-frame]');
+        let dragging=false;
+        const durationStore='amorri_review_duration_'+productKey;
+        const updateMode=()=>{
+            mode.textContent=synced?'· Đồng bộ tự động':'· Chọn mốc thủ công';
+            modeNote.textContent=synced?'Kéo timeline hoặc dừng video để gắn bình luận. Bấm vào góp ý để tua video.':'Google Drive đang chạy trong khung nhúng: kéo thanh mốc bên dưới hoặc nhập mm:ss sau khi dừng video trong Drive. Timeline này không điều khiển được iframe Drive.';
+            card.querySelector('[data-vr-drive-duration-label]').style.display=kind==='drive'&&!synced?'':'none';
+            durationInput.style.display=kind==='drive'&&!synced?'':'none';
+            card.querySelector('[data-vr-hint]').textContent=synced?'Thời gian được lấy tự động từ video.':'Mốc được chọn trên timeline bình luận; không tự đọc từ trình phát Google Drive.';
+        };
         const currentTime=()=>{
-            if(manual)return vrParse(manual.value);
+            if(kind==='drive'&&!synced)return referenceSeconds;
             if(htmlVideo)return Number(htmlVideo.currentTime)||0;
             if(yt){try{return Number(yt.getCurrentTime())||0}catch(_){return 0}}
-            return null;
+            return referenceSeconds;
         };
         const refreshTime=()=>{
             if(!card.isConnected)return;
-            const n=currentTime();time.textContent=n===null?'--:--':vrFormat(n);
+            const n=currentTime();time.textContent=vrFormat(n);secondTime.textContent=vrFormat(n);
+            seekInput.value=document.activeElement===seekInput?seekInput.value:vrFormat(n);
+            total.textContent=duration?vrFormat(duration):'--:--';
+            if(!dragging){scrub.max=Math.max(1,Math.ceil(duration||Math.max(n,60)));scrub.value=Math.min(Number(scrub.max),n);}
+            scrub.style.setProperty('--vr-progress',(Math.min(100,100*Number(scrub.value)/Number(scrub.max)))+'%');
         };
+        function jump(sec){
+            referenceSeconds=Math.max(0,Math.floor(sec));capturedAt=referenceSeconds;
+            if(synced&&htmlVideo){try{htmlVideo.currentTime=referenceSeconds;htmlVideo.pause()}catch(_){}}
+            else if(yt){try{yt.seekTo(referenceSeconds,true);yt.pauseVideo()}catch(_){}}
+            if(kind==='drive'&&!synced)showToast('Đã chọn mốc '+vrFormat(referenceSeconds)+'. Hãy tua video Drive tới mốc này để đối chiếu.');
+            refreshTime();
+        }
+        function renderMarkers(){
+            dots.replaceChildren();markers.replaceChildren();
+            if(!duration||!Number.isFinite(duration)){markers.hidden=true;return;}
+            markers.hidden=true;
+            for(const c of comments){if(c.seconds>duration)continue;
+                const dot=document.createElement('span');dot.className='vr-dot';
+                dot.style.left=(Math.max(0,Math.min(100,c.seconds/duration*100)))+'%';dot.title=vrFormat(c.seconds)+' — '+c.text;
+                dots.appendChild(dot);
+            }
+        }
+        scrub.addEventListener('input',()=>{dragging=true;referenceSeconds=Number(scrub.value);time.textContent=vrFormat(referenceSeconds);secondTime.textContent=vrFormat(referenceSeconds);seekInput.value=vrFormat(referenceSeconds);scrub.style.setProperty('--vr-progress',(100*Number(scrub.value)/Number(scrub.max))+'%');});
+        scrub.addEventListener('change',()=>{dragging=false;jump(Number(scrub.value));});
+        seekBtn.addEventListener('click',()=>{const n=vrParse(seekInput.value);if(n===null){showToast('Nhập thời gian dạng mm:ss');return;}jump(n);});
+        seekInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();seekBtn.click()}});
+        if(kind==='drive'){
+            try{const v=localStorage.getItem(durationStore);duration=v?Number(v):0}catch(_){}
+            durationInput.value=duration?vrFormat(duration):'';
+            durationInput.addEventListener('change',()=>{let n=vrParse(durationInput.value);if(n===null||n<=0){showToast('Nhập tổng thời lượng video đúng dạng mm:ss');return;}duration=n;try{localStorage.setItem(durationStore,String(n))}catch(_){}renderMarkers();refreshTime()});
+            const fallback=()=>{
+                synced=false;htmlVideo.style.display='none';htmlVideo.removeAttribute('src');htmlVideo.load();
+                driveFrame.style.display='block';updateMode();refreshTime();
+            };
+            htmlVideo.addEventListener('error',fallback,{once:true});
+            htmlVideo.addEventListener('loadedmetadata',()=>{
+                if(!Number.isFinite(htmlVideo.duration)||htmlVideo.duration<=0){fallback();return;}
+                synced=true;htmlVideo.style.display='block';driveFrame.style.display='none';
+                duration=htmlVideo.duration;updateMode();renderMarkers();refreshTime();
+            });
+            // A Drive HTML5 endpoint is optional. The original iframe remains available on failure.
+            htmlVideo.load();
+        }
         if(htmlVideo){
-            htmlVideo.addEventListener('timeupdate',refreshTime);
-            htmlVideo.addEventListener('pause',()=>{capturedAt=currentTime();refreshTime()});
-            htmlVideo.addEventListener('durationchange',()=>{duration=htmlVideo.duration||0;renderMarkers()});
-            duration=htmlVideo.duration||0;
+            htmlVideo.addEventListener('timeupdate',()=>{if(synced)refreshTime()});
+            htmlVideo.addEventListener('pause',()=>{if(synced){capturedAt=currentTime();refreshTime()}});
+            htmlVideo.addEventListener('durationchange',()=>{if(synced&&Number.isFinite(htmlVideo.duration)){duration=htmlVideo.duration||0;renderMarkers();refreshTime()}});
+            if(kind!=='drive')duration=htmlVideo.duration||0;
         }
         if(kind==='youtube'){
             const frame=card.querySelector('iframe');
@@ -3260,24 +3338,10 @@ function initVideoReviewPanels() {
                     if(e.data===YT.PlayerState.PLAYING)capturedAt=null;
                     duration=yt.getDuration()||duration;refreshTime();renderMarkers();
                 }}});vrPlayers.set(productKey,yt);
-            }).catch(()=>{card.querySelector('[data-vr-hint]').textContent='Không đọc được YouTube timeline. Hãy thử tải lại trang.'});
+            }).catch(()=>{card.querySelector('[data-vr-hint]').textContent='Không đọc được YouTube timeline. Hãy tải lại trang.'});
+            const loop=()=>{if(!card.isConnected)return;if(!dragging)refreshTime();setTimeout(loop,600)};loop();
         }
-        const jump=(sec)=>{
-            if(htmlVideo){htmlVideo.currentTime=sec;htmlVideo.pause();htmlVideo.scrollIntoView({behavior:'smooth',block:'center'});}
-            else if(yt){try{yt.seekTo(sec,true);yt.pauseVideo();card.scrollIntoView({behavior:'smooth',block:'center'})}catch(_){}}
-            else if(manual){manual.value=vrFormat(sec);card.scrollIntoView({behavior:'smooth',block:'center'});showToast('Google Drive: tua video đến '+vrFormat(sec)+' bằng thanh phát.');}
-            refreshTime();
-        };
-        function renderMarkers(){
-            markers.replaceChildren();
-            if(!duration||!Number.isFinite(duration)){markers.hidden=true;return;}
-            markers.hidden=false;
-            for(const c of comments){if(c.seconds>duration)continue;
-                const dot=document.createElement('button');dot.type='button';dot.className='vr-marker';
-                dot.style.left=(Math.max(0,Math.min(100,c.seconds/duration*100)))+'%';
-                dot.title=vrFormat(c.seconds)+' — '+c.text;dot.onclick=()=>jump(c.seconds);markers.appendChild(dot);
-            }
-        }
+        updateMode();refreshTime();
         function renderComments(){
             list.replaceChildren();
             if(!comments.length){const empty=document.createElement('p');empty.className='vr-sub';empty.textContent='Chưa có góp ý. Hãy gửi nhận xét đầu tiên cho editor.';list.appendChild(empty);}
@@ -3312,7 +3376,7 @@ function initVideoReviewPanels() {
         });
         button.addEventListener('click',async()=>{
             const content=message.value.trim();const name=input.value.trim();
-            const seconds=manual?vrParse(manual.value):(capturedAt ?? currentTime());
+            const seconds=(capturedAt ?? currentTime());
             if(seconds===null||!Number.isFinite(seconds)||seconds<0){showToast('Nhập mốc thời gian đúng dạng mm:ss (ví dụ 01:25).');return;}
             if(!name){showToast('Vui lòng nhập tên người góp ý');input.focus();return;}
             if(!content){showToast('Nhập nội dung cần chỉnh sửa');message.focus();return;}
@@ -3324,7 +3388,7 @@ function initVideoReviewPanels() {
             }catch(err){status.textContent='Lưu thất bại';showToast('Không lưu được góp ý: '+err.message);console.error(err)}
             finally{button.disabled=false;}
         });
-        if(manual)manual.addEventListener('input',refreshTime);
+
     }
 }
 
@@ -3427,7 +3491,7 @@ async function initClientGallery() {
             if(v.externalType==='youtube') {
                 frame=`<iframe src="https://www.youtube.com/embed/${encodeURIComponent(v.videoId)}?enablejsapi=1" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
             } else if(v.source === 'drive') {
-                frame=`<iframe src="${safeUrl(v.previewUrl || `https://drive.google.com/file/d/${encodeURIComponent(v.id)}/preview`)}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+                frame=`<video controls playsinline preload="metadata" data-vr-drive-video style="display:none" src="/api/drive-video?id=${encodeURIComponent(v.id)}"></video><iframe data-vr-drive-frame src="${safeUrl(v.previewUrl || `https://drive.google.com/file/d/${encodeURIComponent(v.id)}/preview`)}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
             } else if(v.url) {
                 frame=`<video controls playsinline preload="metadata" src="${safeUrl(v.url)}"></video>`;
             }
@@ -3438,8 +3502,14 @@ async function initClientGallery() {
                 <div class="vr-panel">
                     <div class="vr-heading"><strong>💬 Góp ý chỉnh sửa theo timeline</strong><span class="vr-status" data-vr-status>Đang kết nối...</span></div>
                     <p class="vr-sub">Dừng video tại đoạn cần sửa, ghi nhận xét và bấm Gửi. Editor có thể bấm vào mốc thời gian để xem lại.</p>
-                    <div class="vr-entry"><span class="vr-time" data-vr-current>00:00</span><input class="vr-name" data-vr-name maxlength="60" placeholder="Tên người góp ý" aria-label="Tên người góp ý">
-                    ${v.source==='drive' ? '<input class="vr-manual" data-vr-manual placeholder="mm:ss" aria-label="Mốc thời gian ví dụ 01:25" title="Google Drive không cung cấp thời gian phát; hãy nhập mốc thời gian thủ công">' : ''}</div>
+                    <div class="vr-timeline-box">
+                       <div class="vr-timeline-top"><span>Timeline góp ý <span data-vr-mode></span></span><span><b data-vr-current>00:00</b> / <span data-vr-total>--:--</span></span></div>
+                       <div class="vr-scrub-wrap"><input class="vr-scrub" type="range" min="0" max="100" step="1" value="0" data-vr-scrub aria-label="Chọn vị trí góp ý trên timeline"><div class="vr-timeline-dots" data-vr-dots></div></div>
+                       <div class="vr-time-tools"><label>Thời điểm</label><input data-vr-seek-input placeholder="01:25" aria-label="Mốc thời gian"><button class="vr-inline-btn" data-vr-seek type="button">Chọn mốc</button><label data-vr-drive-duration-label style="display:none">Độ dài video</label><input data-vr-drive-duration style="display:none" placeholder="04:30" aria-label="Tổng thời lượng video"></div>
+                       <div class="vr-mode-note" data-vr-mode-note></div>
+                    </div>
+                    <div class="vr-entry"><span class="vr-time" data-vr-current-secondary>00:00</span><input class="vr-name" data-vr-name maxlength="60" placeholder="Tên người góp ý" aria-label="Tên người góp ý">
+                    </div>
                     <textarea class="vr-message" data-vr-message maxlength="2000" placeholder="Ví dụ: Giây này chỉnh màu sáng hơn, cắt chuyển cảnh chậm lại..." aria-label="Nội dung góp ý"></textarea>
                     <div class="vr-actions"><span class="vr-status" data-vr-hint>${v.source==='drive'?'Video Drive: nhập thời gian mm:ss hoặc hh:mm:ss từ trình phát.':'Thời gian được lấy từ vị trí đang phát.'}</span><button type="button" class="vr-btn" data-vr-send>Gửi góp ý tại mốc này ↗</button></div>
                     <div class="vr-markers" data-vr-markers hidden></div>
