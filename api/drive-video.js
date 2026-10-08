@@ -9,8 +9,8 @@ import { Readable } from 'node:stream';
 import admin from 'firebase-admin';
 import { GoogleAuth } from 'google-auth-library';
 
-const CHUNK_BYTES = 1024 * 1024; // 1 MiB, safely below Vercel's 4.5 MB response limit
-const TOKEN_SECONDS = 60 * 60;
+const CHUNK_BYTES = 4 * 1024 * 1024; // 4 MiB, below Vercel's ~4.5 MB buffered response limit
+const TOKEN_SECONDS = 15 * 60; // Short-lived signed access; revoke by waiting 15 minutes or rotating signing secret
 const ID_PATTERN = /^[\w-]{10,200}$/;
 const DRIVE = 'https://www.googleapis.com/drive/v3/files/';
 const TIMEOUT_MS = 10000;
@@ -43,8 +43,8 @@ function requiredConfig() {
 function signature(value) {
   return crypto.createHmac('sha256', process.env.DRIVE_VIDEO_SIGNING_SECRET).update(value).digest('base64url');
 }
-function mintTicket(fileId, uid, clientGallery, productId) {
-  const body = Buffer.from(JSON.stringify({ id: fileId, uid, clientGallery, productId, exp: Math.floor(Date.now() / 1000) + TOKEN_SECONDS })).toString('base64url');
+function mintTicket(fileId, uid, clientGallery, productId, metadata) {
+  const body = Buffer.from(JSON.stringify({ id: fileId, uid, clientGallery, productId, size: Number(metadata.size), mimeType: metadata.mimeType, exp: Math.floor(Date.now() / 1000) + TOKEN_SECONDS })).toString('base64url');
   return `${body}.${signature(body)}`;
 }
 function verifyTicket(ticket, requestedId) {
@@ -56,7 +56,7 @@ function verifyTicket(ticket, requestedId) {
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false;
   try {
     const data = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
-    return data.id === requestedId && typeof data.uid === 'string' && typeof data.clientGallery === 'string' && typeof data.productId === 'string' && data.exp > Date.now()/1000 ? data : false;
+    return data.id === requestedId && typeof data.uid === 'string' && typeof data.clientGallery === 'string' && typeof data.productId === 'string' && Number.isSafeInteger(data.size) && data.size > 0 && typeof data.mimeType === 'string' && data.mimeType.startsWith('video/') && data.exp > Date.now()/1000 ? data : false;
   } catch { return false; }
 }
 function getFirebase() {
@@ -180,6 +180,7 @@ export default async function handler(req, res) {
       console.info('drive-video stage: metadata-done');
       if (!meta.mimeType?.startsWith('video/')) return sendError(res, 415, 'File is not a video');
       if (meta.capabilities?.canDownload === false) return sendError(res, 403, 'Downloading disabled in Google Drive');
+      if (!Number.isSafeInteger(Number(meta.size)) || Number(meta.size) < 1) return sendError(res, 422, 'Invalid or unknown video size');
       const bearer = /^Bearer (.+)$/i.exec(req.headers.authorization || '');
       let uid = '';
       if (bearer) {
@@ -193,20 +194,20 @@ export default async function handler(req, res) {
       // Login alone does not authorize access; gallery/product membership is mandatory.
       if (!permitted) return sendError(res, 403, 'Video does not belong to this client gallery/product');
       uid ||= 'gallery:'+clientGallery;
-      const ticket = mintTicket(id, uid, clientGallery, productId);
+      const ticket = mintTicket(id, uid, clientGallery, productId, meta);
       const url = `/api/drive-video?id=${encodeURIComponent(id)}&ticket=${encodeURIComponent(ticket)}`;
       return res.status(200).json({ success: true, url, expiresIn: TOKEN_SECONDS, mimeType: meta.mimeType });
     }
 
+    // Performance: POST already verifies ownership and video metadata.
+    // Ticket signs id, gallery, product, MIME type, size, and expiry.
+    // Avoid repeat Firebase reads + Drive metadata requests on every 4 MiB Range GET.
+    // Revocation is not immediate: existing tickets work until expiry (15 minutes).
     const ticketData = verifyTicket(req.query.ticket, id);
     if (!ticketData) return sendError(res, 401, 'Missing or expired playback ticket');
     const headers = await getDriveHeaders();
-    const meta = await getMetadata(id, headers);
-    if (!meta.mimeType?.startsWith('video/')) return sendError(res, 415, 'Not a video');
-    if (meta.capabilities?.canDownload === false) return sendError(res, 403, 'Downloading disabled');
-    if (!await authorizeGallery(ticketData.clientGallery, ticketData.productId, id, headers, meta)) return sendError(res, 403, 'Video no longer belongs to this client gallery/product');
-    const total = Number(meta.size);
-    if (!Number.isSafeInteger(total) || total < 1) return sendError(res, 422, 'Invalid or unknown video size');
+    const total = ticketData.size;
+    const mimeType = ticketData.mimeType;
     let start = 0, end = Math.min(total - 1, CHUNK_BYTES - 1);
     const range = req.headers.range;
     if (range) {
@@ -242,8 +243,8 @@ export default async function handler(req, res) {
     res.setHeader('Accept-Ranges', 'bytes');
     res.setHeader('Content-Range', `bytes ${start}-${end}/${total}`);
     res.setHeader('Content-Length', String(end - start + 1));
-    res.setHeader('Content-Type', meta.mimeType);
-    // Pipe small bounded ranges, not the entire file.
+    res.setHeader('Content-Type', mimeType);
+    // Pipe bounded ranges, not the entire file.
     await new Promise((resolve, reject) => {
       const stream = Readable.fromWeb(upstream.body);
       stream.on('error', reject);
