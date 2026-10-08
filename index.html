@@ -3334,6 +3334,45 @@ body #panda-mascot{max-height:43px;animation:none !important}
   body .app>.sidebar{transition:none !important}
 }
 </style>
+<style id="amorri-v530-ambient-credit-fix">
+/* Ambient light is behind the player but ABOVE its parent background. */
+#clientGalleryView #cgVideoContainer .client-video-card,
+#clientGalleryView #cgVideoContainer .client-video-review-layout,
+#clientGalleryView #cgVideoContainer .client-video-left{overflow:visible !important;isolation:auto !important}
+#clientGalleryView #cgVideoContainer .client-video-left{position:relative;isolation:isolate !important;z-index:0;padding-top:clamp(18px,2vw,28px);padding-bottom:clamp(18px,2vw,28px)}
+#clientGalleryView #cgVideoContainer .client-video-left::before{
+ content:"" !important;display:block !important;position:absolute !important;
+ inset:2% -3% 2% !important;border-radius:30px !important;
+ z-index:0 !important;pointer-events:none !important;
+ background:radial-gradient(ellipse at 45% 46%,rgba(var(--vr-ambient-rgb,185,153,118),.7) 0%,rgba(var(--vr-ambient-rgb,185,153,118),.43) 35%,rgba(var(--vr-ambient-rgb,185,153,118),.18) 64%,transparent 84%) !important;
+ filter:blur(clamp(18px,3vw,46px)) !important;
+ transform:scale(1.07) !important;opacity:.92 !important;
+ transition:background 1.15s ease,opacity .8s ease !important;
+}
+#clientGalleryView #cgVideoContainer .client-video-frame{position:relative;z-index:2 !important;box-shadow:0 14px 35px rgba(40,33,28,.28)}
+/* Credit floats directly above the mobile nav, then drops as the nav slides away. */
+@media(max-width:768px){
+ body .studio-credit,body[data-client-gallery="true"] .studio-credit{
+  position:fixed !important;left:auto !important;right:10px !important;top:auto !important;
+  width:max-content !important;max-width:calc(100vw - 20px) !important;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 8px + var(--amorri-credit-clearance,72px)) !important;
+  padding:0 !important;min-height:0 !important;margin:0 !important;
+  display:flex !important;align-items:center !important;justify-content:flex-end !important;
+  z-index:999 !important;pointer-events:none !important;
+  transition:bottom 60ms linear !important;
+ }
+ body .studio-credit-pill{pointer-events:none}
+ body #panda-mascot-container{width:50px !important;height:50px !important;flex:0 0 50px !important;max-width:50px !important;max-height:50px !important;bottom:0 !important}
+ body #panda-mascot{width:50px !important;height:50px !important;max-height:50px !important;background-size:300% 300%}
+}
+/* Mascot on the gallery is exactly 50x50, not the former stretched sprite. */
+body[data-client-gallery="true"] #panda-mascot-container{width:50px !important;height:50px !important;flex:0 0 50px !important;max-width:50px !important;max-height:50px !important}
+body[data-client-gallery="true"] #panda-mascot{width:50px !important;height:50px !important;max-height:50px !important}
+@media(prefers-reduced-motion:reduce){
+ body .studio-credit{transition:none !important}
+ #clientGalleryView #cgVideoContainer .client-video-left::before{transition:none !important}
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -7403,6 +7442,9 @@ initApp();
   function setOffset(next, instant = false) {
     offset = Math.max(0, Math.min(height(), next));
     nav.style.setProperty('--amorri-mobile-nav-offset', `${Math.round(offset)}px`);
+    // Keep Design by just above the visible portion of mobile navigation.
+    const visibleHeight = Math.max(0, nav.getBoundingClientRect().height - offset);
+    document.body.style.setProperty('--amorri-credit-clearance', `${Math.round(visibleHeight + (visibleHeight ? 8 : 0))}px`);
     nav.classList.toggle('amorri-nav-at-rest', !instant && (offset < 1 || offset >= height()-1));
   }
   function update() {
