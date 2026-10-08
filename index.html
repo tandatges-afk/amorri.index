@@ -2604,6 +2604,31 @@ body {
 @media(max-width:1100px){.client-video-review-layout{grid-template-columns:minmax(0,1fr) 260px}}
 @media(max-width:850px){.client-video-review-layout{grid-template-columns:1fr}.vr-panel{border-left:0;border-top:1px solid #eee3d6}.vr-list{max-height:340px}.client-video-left{padding:6px}}
 </style>
+
+<style id="amorri-v511-video-review">
+/* Constrain only the comments stream; composer remains below and always visible. */
+#cgVideoContainer .vr-panel{min-height:0;min-width:0;display:flex;flex-direction:column}
+#cgVideoContainer .vr-list-wrap{flex:0 1 auto;min-height:0;max-height:clamp(210px,44vh,480px);overflow:hidden}
+#cgVideoContainer .vr-list{flex:1 1 auto;min-height:0;max-height:none;height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#bea78d #f8f3eb}
+#cgVideoContainer .vr-list::-webkit-scrollbar{width:7px}
+#cgVideoContainer .vr-list::-webkit-scrollbar-track{background:#f8f3eb;border-radius:6px}
+#cgVideoContainer .vr-list::-webkit-scrollbar-thumb{background:#bea78d;border-radius:6px}
+#cgVideoContainer .vr-compose{flex:0 0 auto;margin-top:0;position:relative;z-index:1}
+/* Give the 16:9 player approx. 30% more available space where viewport permits. */
+.gallery-container:has(#cgVideoContainer .client-video-card){max-width:2400px!important;width:100%;padding-left:clamp(12px,2.5vw,42px)!important;padding-right:12px!important}
+#cgVideoContainer .client-video-review-layout{grid-template-columns:minmax(0,1fr) 265px;column-gap:0}
+#cgVideoContainer .client-video-left{min-width:0;padding:5px 5px 5px clamp(12px,2vw,32px)}
+#cgVideoContainer .client-video-frame{width:100%;aspect-ratio:16/9}
+@media(max-width:1000px){
+  #cgVideoContainer .client-video-review-layout{grid-template-columns:1fr}
+  #cgVideoContainer .client-video-left{padding:8px}
+  #cgVideoContainer .vr-list-wrap{max-height:320px}
+}
+@media(max-width:600px){
+  .gallery-container:has(#cgVideoContainer .client-video-card){padding-left:10px!important;padding-right:10px!important}
+  #cgVideoContainer .vr-list-wrap{max-height:260px}
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
