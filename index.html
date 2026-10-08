@@ -1692,6 +1692,65 @@ body.sidebar-closed .nav-btn.active { box-shadow: inset 0 -2px 0 var(--champagne
   .vr-edit,.vr-resolve{width:100%}
 }
 
+
+/* === Video review compact UI v5.7 === */
+.client-video-review-layout{display:grid;grid-template-columns:minmax(0,1.55fr) 420px;align-items:stretch;background:#0b1020}
+.client-video-left{padding:14px;background:radial-gradient(circle at top,#172554 0%,#0f172a 32%,#050816 100%)}
+.client-video-frame{border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 48px rgba(0,0,0,.28)}
+.vr-panel{border-left:1px solid rgba(255,255,255,.07);background:linear-gradient(180deg,#181824,#12121b);color:#eef2ff;padding:14px;gap:10px}
+.vr-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:0 0 2px}
+.vr-heading strong{font-size:15px;color:#fff}
+.vr-sub{margin:2px 0 0;color:#a8b0c7;font-size:11px;line-height:1.45}
+.vr-shell{display:grid;gap:10px;min-height:0;flex:1}
+.vr-card{border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);border-radius:14px;padding:12px;box-shadow:none}
+.vr-card-title{margin:0 0 8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.vr-card-title strong,.vr-list-toolbar strong{font-size:12px;color:#fff;letter-spacing:.2px}
+.vr-chip{background:rgba(124,58,237,.18);border:1px solid rgba(167,139,250,.34);color:#ddd6fe;padding:4px 8px}
+.vr-status[data-vr-status]{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-size:10px;color:#cbd5e1}
+.vr-timeline-box{padding:0;border:0;background:transparent;margin:0}
+.vr-timeline-top{font-size:11px;color:#dbe4ff;margin-bottom:8px}
+.vr-timeline-top span:last-child{color:#fff}
+.vr-scrub-wrap{height:24px}
+.vr-scrub{height:24px}
+.vr-scrub::-webkit-slider-runnable-track{height:6px;background:linear-gradient(90deg,#7c3aed var(--vr-progress,0%),rgba(255,255,255,.12) var(--vr-progress,0%));border-radius:99px}
+.vr-scrub::-moz-range-track{height:6px;background:rgba(255,255,255,.12)}
+.vr-scrub::-moz-range-progress{height:6px;background:#7c3aed}
+.vr-scrub::-webkit-slider-thumb{width:16px;height:16px;border:2px solid #fff;background:#8b5cf6;margin-top:-5px;box-shadow:0 2px 10px rgba(124,58,237,.45)}
+.vr-scrub::-moz-range-thumb{width:16px;height:16px;border:2px solid #fff;background:#8b5cf6}
+.vr-timeline-dots{inset:7px 7px auto 7px;height:10px}
+.vr-timeline-dots .vr-dot{width:6px;height:10px;background:#f59e0b;box-shadow:0 0 0 2px #171723}
+.vr-time-tools{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;margin-top:8px}
+.vr-time-tools label{font-size:10px;color:#94a3b8}
+.vr-time-tools input{height:36px;border-radius:10px;background:#0f172a;color:#fff;border:1px solid rgba(255,255,255,.08);width:100%;padding:8px}
+.vr-inline-btn{height:36px;border-radius:10px;background:#1e293b;color:#fff;border:1px solid rgba(255,255,255,.08);padding:0 10px}
+.vr-mode-note{margin-top:8px;font-size:10px;color:#94a3b8;line-height:1.45}
+.vr-entry{display:grid;grid-template-columns:90px minmax(0,1fr);gap:8px;align-items:center;margin:0}
+.vr-time,.vr-name{height:38px;border-radius:10px;padding:0 12px;background:#0f172a;border:1px solid rgba(255,255,255,.08);color:#fff}
+.vr-time{justify-content:center;font-size:13px;background:rgba(124,58,237,.15);color:#ede9fe;font-weight:800}
+.vr-message{margin-top:8px;min-height:88px;border-radius:12px;background:#0f172a;border:1px solid rgba(255,255,255,.08);color:#fff;padding:12px}
+.vr-actions{margin-top:8px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
+.vr-actions .vr-status{display:flex;align-items:center;border-radius:10px;background:#0f172a;border:1px solid rgba(255,255,255,.08);color:#94a3b8;padding:8px 10px;font-size:11px}
+.vr-btn{min-height:38px;border-radius:10px;background:linear-gradient(180deg,#8b5cf6,#6d28d9);padding:0 14px;font-size:12px;box-shadow:none}
+.vr-markers{height:10px;min-height:10px;border-radius:99px;background:rgba(255,255,255,.08);margin:10px 0 0}
+.vr-marker{height:10px;width:8px;border-radius:99px;background:#a78bfa}
+.vr-list-wrap{display:grid;gap:10px;min-height:0}
+.vr-list-toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.vr-list-toolbar span{font-size:10px;color:#94a3b8}
+.vr-list{display:grid;gap:8px;max-height:460px;overflow:auto;margin-top:0;padding-right:2px}
+.vr-list::-webkit-scrollbar{width:8px}.vr-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:20px}
+.vr-comment{padding:11px;border-radius:12px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.04);box-shadow:none}
+.vr-comment.vr-selected{border-color:rgba(167,139,250,.8);background:rgba(124,58,237,.16)}
+.vr-comment-top{display:grid;grid-template-columns:auto 1fr auto auto;gap:6px;align-items:center;margin-bottom:6px}
+.vr-jump,.vr-edit,.vr-resolve{height:30px;padding:0 10px;border-radius:9px;font-size:11px;font-weight:800}
+.vr-jump{background:rgba(124,58,237,.14);border:1px solid rgba(167,139,250,.35);color:#ede9fe}
+.vr-edit{background:#111827;border:1px solid rgba(255,255,255,.08);color:#fff}
+.vr-resolve{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#bbf7d0}
+.vr-comment-body{font-size:12px;line-height:1.55;color:#f8fafc}
+.vr-comment small{font-size:10px;color:#94a3b8}
+@media (max-width:1180px){.client-video-review-layout{grid-template-columns:1fr}.vr-panel{border-left:0;border-top:1px solid rgba(255,255,255,.07)}}
+@media (max-width:700px){.client-video-left{padding:10px}.vr-panel{padding:10px}.vr-entry{grid-template-columns:1fr}.vr-time-tools{grid-template-columns:1fr 1fr}.vr-time-tools label{grid-column:1/-1}.vr-inline-btn{grid-column:1/-1}.vr-actions{grid-template-columns:1fr}.vr-comment-top{grid-template-columns:1fr 1fr}.vr-jump{grid-column:1/-1;justify-self:start;width:auto}}
+
+
 </style>
 
 
@@ -3640,26 +3699,26 @@ async function initClientGallery() {
                     <div class="client-video-frame">${frame}</div>
                   </div>
                   <aside class="vr-panel">
-                    <div class="vr-heading"><div><strong>💬 Góp ý chỉnh sửa theo timeline</strong><p class="vr-sub">Khách hàng và editor có thể chọn đúng mốc thời gian, chỉnh sửa lại góp ý và xử lý nhanh hơn ngay bên phải video.</p></div><span class="vr-status" data-vr-status>Đang kết nối...</span></div>
+                    <div class="vr-heading"><div><strong>💬 Video review</strong><p class="vr-sub">Gọn hơn, tập trung vào timeline và danh sách góp ý như kiểu panel review.</p></div><span class="vr-status" data-vr-status>Đang kết nối...</span></div>
                     <div class="vr-shell">
                       <div class="vr-card">
-                        <div class="vr-card-title"><strong>1. Chọn mốc thời gian</strong><span class="vr-chip">Theo timeline video</span></div>
+                        <div class="vr-card-title"><strong>Timeline</strong><span class="vr-chip">Quick review</span></div>
                         <div class="vr-timeline-box">
-                           <div class="vr-timeline-top"><span>Timeline góp ý <span data-vr-mode></span></span><span><b data-vr-current>00:00</b> / <span data-vr-total>--:--</span></span></div>
+                           <div class="vr-timeline-top"><span data-vr-mode>Timeline</span><span><b data-vr-current>00:00</b> / <span data-vr-total>--:--</span></span></div>
                            <div class="vr-scrub-wrap"><input class="vr-scrub" type="range" min="0" max="100" step="1" value="0" data-vr-scrub aria-label="Chọn vị trí góp ý trên timeline"><div class="vr-timeline-dots" data-vr-dots></div></div>
-                           <div class="vr-time-tools"><label>Thời điểm</label><input data-vr-seek-input placeholder="01:25" aria-label="Mốc thời gian"><button class="vr-inline-btn" data-vr-seek type="button">Chọn mốc</button><label data-vr-drive-duration-label style="display:none">Độ dài video</label><input data-vr-drive-duration style="display:none" placeholder="04:30" aria-label="Tổng thời lượng video"></div>
+                           <div class="vr-time-tools"><label>Jump to</label><input data-vr-seek-input placeholder="01:25" aria-label="Mốc thời gian"><button class="vr-inline-btn" data-vr-seek type="button">Đi tới</button><label data-vr-drive-duration-label style="display:none">Duration</label><input data-vr-drive-duration style="display:none" placeholder="04:30" aria-label="Tổng thời lượng video"></div>
                            <div class="vr-mode-note" data-vr-mode-note></div>
                         </div>
                       </div>
                       <div class="vr-card">
-                        <div class="vr-card-title"><strong>2. Viết góp ý / chỉnh sửa</strong><span class="vr-chip">Dễ nhập • Dễ sửa</span></div>
+                        <div class="vr-card-title"><strong>Góp ý nhanh</strong><span class="vr-chip">Comment composer</span></div>
                         <div class="vr-entry"><span class="vr-time" data-vr-current-secondary>00:00</span><input class="vr-name" data-vr-name maxlength="60" placeholder="Tên người góp ý" aria-label="Tên người góp ý"></div>
-                        <textarea class="vr-message" data-vr-message maxlength="2000" placeholder="Ví dụ: Giây này chỉnh màu sáng hơn, cắt chuyển cảnh chậm lại..." aria-label="Nội dung góp ý"></textarea>
-                        <div class="vr-actions"><span class="vr-status" data-vr-hint>${v.source==='drive'?'Video Drive: nhập thời gian mm:ss hoặc hh:mm:ss từ trình phát.':'Thời gian được lấy từ vị trí đang phát.'}</span><button type="button" class="vr-btn" data-vr-send>Gửi góp ý tại mốc này ↗</button></div>
+                        <textarea class="vr-message" data-vr-message maxlength="2000" placeholder="Nhập góp ý tại đúng mốc thời gian này..." aria-label="Nội dung góp ý"></textarea>
+                        <div class="vr-actions"><span class="vr-status" data-vr-hint>${v.source==='drive'?'Video Drive: nhập thời gian mm:ss hoặc hh:mm:ss từ trình phát.':'Thời gian được lấy từ vị trí đang phát.'}</span><button type="button" class="vr-btn" data-vr-send>Gửi góp ý</button></div>
                         <div class="vr-markers" data-vr-markers hidden></div>
                       </div>
                       <div class="vr-card vr-list-wrap">
-                        <div class="vr-list-toolbar"><strong>3. Danh sách góp ý cần xử lý</strong><span>Bấm ▶ để nhảy đúng đoạn, ✏️ để sửa, ✓ để đánh dấu đã fix.</span></div>
+                        <div class="vr-list-toolbar"><strong>Comments</strong><span>▶ nhảy • ✏️ sửa • ✓ fix</span></div>
                         <div class="vr-list" data-vr-list></div>
                       </div>
                     </div>
