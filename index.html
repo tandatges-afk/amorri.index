@@ -3750,16 +3750,7 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-
 body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-aspect-tools select{
   background:rgba(35,32,34,.7);color:#d7d0c8;border-color:rgba(200,188,173,.25)
 }
-/* Iframe background glow: static thumbnail (YouTube), only while actively playing. */
-body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-iframe-ambient{
-  pointer-events:none;position:absolute;inset:-10% -9% -13%;z-index:0;
-  background-repeat:no-repeat;background-position:center;background-size:cover;
-  filter:blur(clamp(36px,5vw,84px)) saturate(1.65) brightness(.92);
-  opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s ease;
-}
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-card.vr-ambient-playing .vr-iframe-ambient{
-  opacity:.83;visibility:visible;
-}
+/* YouTube Ambient uses the consolidated v5.62 style below. */
 /* Scope BOTH ambient layers to the currently playing card (rather than every player). */
 body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-card:not(.vr-ambient-playing) :is(.amorri-ambient-canvas,.vr-iframe-ambient){opacity:0!important;visibility:hidden!important;animation:none!important}
 body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-card:not(.vr-ambient-playing) .client-video-left::before{opacity:0!important;visibility:hidden!important;animation:none!important}
@@ -3788,23 +3779,7 @@ body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-review
    min-height:300px!important;
  }
 }
-/* A moving, subtle dual-color field for cross-origin iframe embeds. */
-body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-iframe-ambient{
- background-image:radial-gradient(ellipse at 25% 42%,rgba(157,86,120,.85),transparent 65%),
- radial-gradient(ellipse at 75% 60%,rgba(64,105,168,.8),transparent 70%),
- linear-gradient(115deg,#2f172d,#1b2942)!important;
- background-size:130% 135%,140% 145%,100% 100%!important;
- background-position:0% 35%,100% 70%,center!important;
- animation:none!important;will-change:auto;
-}
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card.vr-ambient-playing .vr-iframe-ambient{
- animation:amorri-iframe-glow-motion 11s ease-in-out infinite alternate!important;
-}
-@keyframes amorri-iframe-glow-motion{
- from{background-position:0% 35%,100% 70%,center;filter:blur(65px) saturate(1.3)}
- to{background-position:100% 65%,0% 20%,center;filter:blur(75px) saturate(1.6)}
-}
-@media(prefers-reduced-motion:reduce){body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-iframe-ambient{animation:none!important}}
+/* Superseded duplicate YouTube ambient rules removed (v5.62). */
 </style>
 
 <style id="amorri-v556-unified-player-geometry">
@@ -3834,48 +3809,78 @@ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoC
 }
 </style>
 
-<style id="amorri-v561-youtube-ambient">
-/* YouTube iframe forbids frame pixel sampling. Render a restrained, animated halo
-   only when active; never use static thumbnail as an ambient-frame substitute. */
-body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left{
-  position:relative!important;overflow:visible!important;isolation:isolate!important;
+
+<style id="amorri-v562-sidebar-youtube-ambient">
+/* One coherent warm-light navigation palette. The old white sidebar + white brand
+   was a cascade conflict. Keep text visible even while nav-at-rest is set. */
+body:not([data-client-gallery="true"]) .app > .sidebar,
+body:not([data-client-gallery="true"]) .app > .sidebar.amorri-nav-at-rest{
+  background:#fdfbf7!important;color:#352f28!important;border-color:#ddd5c9!important;
 }
-body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left::before{
-  content:none!important;display:none!important;
+body:not([data-client-gallery="true"]) .app > .sidebar .brand h1,
+body:not([data-client-gallery="true"]) .app > .sidebar .brand h1 span{
+  color:#2f2923!important;-webkit-text-fill-color:#2f2923!important;opacity:1!important;
 }
-body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-frame{
-  position:relative!important;z-index:2!important;
+body:not([data-client-gallery="true"]) .app > .sidebar .brand small{color:#695b4e!important;opacity:1!important}
+body:not([data-client-gallery="true"]) .app > .sidebar .nav-btn,
+body:not([data-client-gallery="true"]) .app > .sidebar.amorri-nav-at-rest .nav-btn{
+  color:#4b4136!important;opacity:1!important;text-shadow:none!important;
 }
-body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left > .vr-iframe-ambient{
-  display:block!important;position:absolute!important;inset:-18% -13% -23%!important;
-  width:auto!important;height:auto!important;z-index:1!important;pointer-events:none!important;
-  border-radius:26%!important;background-color:transparent!important;
-  background-image:
-    radial-gradient(ellipse 50% 60% at 24% 40%, rgba(180,120,106,.74),transparent 86%),
-    radial-gradient(ellipse 62% 66% at 74% 65%, rgba(82,121,142,.7),transparent 84%),
-    radial-gradient(ellipse 57% 44% at 52% 24%, rgba(137,110,133,.36),transparent 86%)!important;
-  background-size:140% 135%,150% 140%,135% 140%!important;
-  background-position:0% 40%,100% 70%,50% 0%!important;
-  background-repeat:no-repeat!important;
-  filter:blur(clamp(38px,5vw,84px)) saturate(1.28) brightness(.95)!important;
-  transform:translateZ(0) scale(1.015)!important;
-  animation:none!important;
-  opacity:0!important;visibility:hidden!important;
-  transition:opacity .3s ease, visibility 0s linear .3s!important;
+body:not([data-client-gallery="true"]) .app > .sidebar .nav-btn b{color:#80674f!important;opacity:1!important}
+body:not([data-client-gallery="true"]) .app > .sidebar .nav-btn.active{
+  background:#eee5d8!important;color:#2b211a!important;box-shadow:inset 3px 0 0 #9d7954!important;
+}
+body:not([data-client-gallery="true"]) .app > .sidebar .nav-btn.active b{color:#6b4b2e!important}
+body:not([data-client-gallery="true"]) .app > .sidebar .nav-btn:hover{background:#f0e9df!important;color:#2b211a!important}
+body:not([data-client-gallery="true"]) .app > .sidebar #sidebarToggleBtn{color:#574637!important}
+@media(max-width:768px){
+ body:not([data-client-gallery="true"]) .app > .sidebar .nav-btn.active{
+  box-shadow:inset 0 3px 0 #9d7954!important;
+ }
+}
+/* YouTube iframe cannot supply video pixels to a parent origin.
+   This is explicitly a motion-based glow. The native-video canvas remains
+   the only true per-frame Ambient source, and is never affected below. */
+#clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"]{
+ isolation:isolate!important;overflow:visible!important;
+}
+#clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left{
+ position:relative!important;overflow:visible!important;isolation:isolate!important;
+ background:transparent!important;
+}
+#clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left::before{
+ content:none!important;display:none!important;
+}
+#clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-frame{
+ position:relative!important;z-index:2!important;
+}
+#clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left > .vr-iframe-ambient{
+ display:block!important;position:absolute!important;inset:-30% -20% -32%!important;
+ width:auto!important;height:auto!important;z-index:1!important;pointer-events:none!important;
+ border:0!important;border-radius:35%!important;background-color:transparent!important;
+ background-image:
+  radial-gradient(ellipse 38% 52% at 18% 48%,rgba(175,101,89,.88),transparent 95%),
+  radial-gradient(ellipse 42% 53% at 83% 55%,rgba(67,115,179,.78),transparent 95%),
+  radial-gradient(ellipse 50% 35% at 53% 27%,rgba(157,112,167,.53),transparent 95%)!important;
+ background-size:135% 130%,145% 140%,140% 125%!important;
+ background-position:0% 30%,100% 70%,50% 0%!important;background-repeat:no-repeat!important;
+ filter:blur(clamp(34px,4.5vw,70px)) saturate(1.4)!important;
+ transform:translateZ(0) scale(1.02)!important;
+ opacity:0!important;visibility:hidden!important;
+ transition:opacity .28s ease,visibility 0s linear .28s!important;
+ animation:none!important;
 }
 body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"].vr-ambient-playing .client-video-left > .vr-iframe-ambient{
-  opacity:.87!important;visibility:visible!important;
-  transition:opacity .3s ease,visibility 0s!important;
-  animation:amorri-v561-yt-halo-flow 18s ease-in-out infinite alternate!important;
+ opacity:.98!important;visibility:visible!important;
+ transition:opacity .28s ease,visibility 0s!important;
+ animation:amorri-v562-youtube-motion 18s ease-in-out infinite alternate!important;
 }
-@keyframes amorri-v561-yt-halo-flow{
-  from{background-position:0% 40%,100% 65%,45% 0%;transform:scale(1.015)}
-  to{background-position:95% 50%,5% 38%,65% 80%;transform:scale(1.055)}
+@keyframes amorri-v562-youtube-motion{
+ from{background-position:0% 30%,100% 70%,50% 0%;transform:scale(1.02)}
+ to{background-position:90% 70%,8% 24%,63% 80%;transform:scale(1.07)}
 }
 @media(prefers-reduced-motion:reduce){
-  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left > .vr-iframe-ambient{
-    animation:none!important;transition:none!important;
-  }
+ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"].vr-ambient-playing .client-video-left > .vr-iframe-ambient{animation:none!important}
 }
 </style>
 </head>
@@ -4735,7 +4740,9 @@ function extractYouTubeVideoId(url) {
         /youtu\.be\/([a-zA-Z0-9_-]{6,})/i,
         /youtube\.com\/watch\?[^#]*?v=([a-zA-Z0-9_-]{6,})/i,
         /youtube\.com\/shorts\/([a-zA-Z0-9_-]{6,})/i,
-        /youtube\.com\/embed\/([a-zA-Z0-9_-]{6,})/i
+        /youtube\.com\/embed\/([a-zA-Z0-9_-]{6,})/i,
+        /youtube\.com\/live\/([a-zA-Z0-9_-]{6,})/i,
+        /youtube-nocookie\.com\/embed\/([a-zA-Z0-9_-]{6,})/i
     ];
     for (const re of patterns) {
         const m = raw.match(re);
@@ -4918,10 +4925,22 @@ function initVideoReviewPanels() {
                     const result=await response.json().catch(()=>({}));
                     if(!response.ok||!result.url)throw new Error(result.error||('API HTTP '+response.status));
                     if(!card.isConnected)return;
-                    htmlVideo.src=result.url;
+                    const wasPlaying=!htmlVideo.paused&&!htmlVideo.ended;
+                    const previousTime=Number(htmlVideo.currentTime)||0;
+                    const oldSource=htmlVideo.currentSrc||htmlVideo.src;
+                    if(oldSource!==result.url){
+                        if(previousTime>0||wasPlaying){
+                            htmlVideo.addEventListener('loadedmetadata',()=>{
+                                try {if(Number.isFinite(htmlVideo.duration)) htmlVideo.currentTime=Math.min(previousTime,Math.max(0,htmlVideo.duration-.1));}
+                                catch(_){}
+                                if(wasPlaying)htmlVideo.play()?.catch?.(()=>{});
+                            },{once:true});
+                        }
+                        htmlVideo.src=result.url;
+                        htmlVideo.load();
+                    }
                     htmlVideo.style.display='block';
                     driveFrame.style.display='none';
-                    htmlVideo.load();
                     // Renew expiring tickets when the viewer returns to the player.
                     const delay=Math.max(15,Number(result.expiresIn||3600)-120)*1000;
                     const refreshTimer=setTimeout(()=>{if(card.isConnected)startDrivePlayback();},delay);
@@ -4944,9 +4963,18 @@ function initVideoReviewPanels() {
             const clearStop=()=>{if(stopTimer!==null){clearTimeout(stopTimer);stopTimer=null;}};
             card._ytClearAmbientStop=clearStop;
             const setAmbient=(active)=>{
-                if(!card.isConnected || lastAmbientState===active)return;
+                if(!card.isConnected)return;
+                card.dataset.vrAmbientStatus=active?'playing':'inactive';
+                if(lastAmbientState===active && card.classList.contains('vr-ambient-playing')===active)return;
                 lastAmbientState=active;
-                window.amorriSetIframeCinema?.(card,active);
+                if(typeof window.amorriSetIframeCinema==='function'){
+                    window.amorriSetIframeCinema(card,active);
+                }else{
+                    // Event arrives before the footer module initializes: retain visual state.
+                    card.classList.toggle('vr-ambient-playing',active);
+                    document.body.classList.toggle('amorri-cinema',active);
+                    document.getElementById('clientGalleryView')?.classList.toggle('amorri-cinema-active',active);
+                }
             };
             const reconcileState=(state)=>{
                 if(!card.isConnected)return;
@@ -4955,8 +4983,8 @@ function initVideoReviewPanels() {
                     clearStop();hadPlayed=true;setAmbient(true);return;
                 }
                 if(state===S.BUFFERING){
-                    // Seeking and network buffering MUST preserve the last active cinema state.
-                    clearStop();return;
+                    // Seeking/buffering does not mean the user paused the video.
+                    clearStop();card.dataset.vrAmbientStatus='buffering';return;
                 }
                 if(state===S.ENDED){
                     clearStop();hadPlayed=false;setAmbient(false);return;
@@ -4984,6 +5012,7 @@ function initVideoReviewPanels() {
                         onReady:(e)=>{
                             ytReady=true;
                             duration=Number(e.target.getDuration?.())||0;
+                            card.dataset.vrYoutubeReady='true';
                             renderMarkers();refreshTime();
                             reconcileState(e.target.getPlayerState?.());
                         },
@@ -5009,6 +5038,8 @@ function initVideoReviewPanels() {
             }).catch(err=>{
                 clearStop();hadPlayed=false;setAmbient(false);
                 console.warn('[Amorri] YouTube Ambient/Timeline unavailable:',err);
+                card.dataset.vrYoutubeReady='error';
+                card.dataset.vrAmbientStatus='api-unavailable';
                 const hint=card.querySelector('[data-vr-hint]');
                 if(hint)hint.textContent='Không kết nối được YouTube API; chức năng tự đồng bộ và Ambient chưa sẵn sàng.';
             });
@@ -8089,41 +8120,55 @@ initApp();
 </script>
 
 <script id="amorri-space-play-pause">
-// Space controls the gallery video while the viewer is not typing or operating UI controls.
+/* v5.62: native-video keyboard control is a single keydown action.
+   Capture/consume keyup too: Chromium's native media-control shadow DOM can
+   otherwise react to release and immediately resume a paused Drive video. */
 (() => {
-  document.addEventListener('keydown', (event) => {
-    if (event.code !== 'Space' || event.repeat || event.defaultPrevented ||
-        event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing) return;
-
-    const gallery = document.getElementById('clientGalleryView');
-    if (!gallery || getComputedStyle(gallery).display === 'none' || !gallery.getClientRects().length) return;
-
-    // Preserve normal typing, textarea spaces, and keyboard button activation.
-    const active = document.activeElement;
-    const origin = event.target instanceof Element ? event.target : active;
-    if (origin?.closest('input, textarea, select, button, a, summary, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="button"], [role="slider"], [role="combobox"], [role="menuitem"], [role="checkbox"], [role="radio"]') ||
-        active?.closest?.('input, textarea, select, button, a, summary, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="button"], [role="slider"], [role="combobox"]')) return;
-
-    const visible = (element) => !!element && !!element.getClientRects().length &&
-      getComputedStyle(element).display !== 'none' && getComputedStyle(element).visibility !== 'hidden';
-    const videos = [...gallery.querySelectorAll('#cgVideoContainer .client-video-card video')]
-      .filter(video => visible(video) && !!video.currentSrc);
-    if (!videos.length) return; // Google Drive fallback iframes cannot be controlled this way.
-
-    const playing = videos.find(video => !video.paused && !video.ended);
-    const inViewport = videos.find(video => {
-      const r=video.getBoundingClientRect();
-      return r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
-    });
-    const video = playing || inViewport || videos[0];
-    event.preventDefault();
-    if (video.paused || video.ended) {
-      const playback = video.play();
-      playback?.catch?.(() => {});
-    } else {
-      video.pause();
+  const blocked='input, textarea, select, button, a, summary, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="button"], [role="slider"], [role="combobox"], [role="menuitem"], [role="checkbox"], [role="radio"]';
+  let handledSpace=false;
+  function galleryVisible(){
+    const gallery=document.getElementById('clientGalleryView');
+    return gallery && gallery.getClientRects().length && getComputedStyle(gallery).display!=='none' ? gallery : null;
+  }
+  function ignore(e){
+    if(e.code!=='Space' && e.key!==' ')return true;
+    if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey||e.isComposing)return true;
+    const active=document.activeElement;
+    // Never capture form typing or keyboard activation of controls.
+    return !!(e.target instanceof Element && e.target.closest(blocked)) || !!active?.closest?.(blocked);
+  }
+  function pickVideo(gallery){
+    const displayed=(node)=>node.getClientRects().length>0 && getComputedStyle(node).display!=='none' && getComputedStyle(node).visibility!=='hidden';
+    const videos=[...gallery.querySelectorAll('#cgVideoContainer .client-video-card video')]
+      .filter(v=>displayed(v) && (v.currentSrc || v.src));
+    if(!videos.length)return null;
+    const active=document.activeElement;
+    if(active instanceof HTMLVideoElement && videos.includes(active))return active;
+    const playing=videos.find(v=>!v.paused&&!v.ended);
+    if(playing)return playing;
+    const center=innerHeight/2;
+    return videos.filter(v=>{const r=v.getBoundingClientRect();return r.bottom>0&&r.top<innerHeight;})
+      .sort((a,b)=>{const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();return Math.abs((ar.top+ar.bottom)/2-center)-Math.abs((br.top+br.bottom)/2-center)})[0] || videos[0];
+  }
+  function capture(e){
+    if(ignore(e) || !galleryVisible())return;
+    const video=pickVideo(galleryVisible());
+    if(!video)return; // A cross-origin Drive fallback iframe cannot be controlled from the parent document.
+    if(e.type==='keydown'){
+      e.preventDefault();e.stopImmediatePropagation();
+      if(e.repeat || handledSpace)return;
+      handledSpace=true;
+      if(video.paused || video.ended){video.play()?.catch?.(err=>console.warn('[Amorri] Space play rejected:',err));}
+      else video.pause();
+    }else if(handledSpace){
+      e.preventDefault();e.stopImmediatePropagation();
+      if(e.type==='keyup')handledSpace=false;
     }
-  });
+  }
+  document.addEventListener('keydown',capture,true);
+  document.addEventListener('keypress',capture,true);
+  document.addEventListener('keyup',capture,true);
+  window.addEventListener('blur',()=>{handledSpace=false});
 })();
 </script>
 
