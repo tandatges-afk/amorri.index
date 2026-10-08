@@ -4900,7 +4900,6 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
            </a>
            <div style="display:flex; gap:6px; flex-wrap:wrap;">
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateSingleClientLink('${prodId}')">🔗 Gửi Khách</button>
-               <button type="button" class="btn ghost admin-only-flex product-raw-sync" data-product-id="${prodId}" style="display:none; padding:6px 10px; font-size:12px; border:1px solid #16a34a; color:#15803d; font-weight:700;">📋 Gửi sang App RAW</button>
                <button type="button" class="btn ghost admin-only-flex product-copy-favorites" data-product-id="${prodId}" style="display:none; padding:6px 10px; font-size:12px; border:1px solid #86efac; color:#15803d; font-weight:700;">📋 Copy tên ảnh</button>
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.closest('.product-row').querySelector('.prod-view').style.display='none'; this.closest('.product-row').querySelector('.prod-edit').style.display='flex'">✏️ Sửa</button>
            </div>
@@ -4925,135 +4924,6 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
 };
 
 
-
-/* =========================================================
-   AMORRI RAW APP COMPAT — V4.2
-   App RAW hiện tại là Tkinter thuần, KHÔNG có HTTP server/API.
-   Vì vậy web KHÔNG gọi localhost/127.0.0.1 nữa.
-   Luồng đúng:
-       Web -> Copy tên ảnh khách chọn vào Clipboard
-       -> mở App RAW -> Ctrl+V vào ô danh sách
-       -> chọn thư mục RAW -> Bắt đầu lọc
-========================================================= */
-
-function updateRawToolButtons() {
-    document.querySelectorAll('.product-row').forEach(row => {
-        const btn = row.querySelector('.product-raw-sync');
-        if (!btn) return;
-
-        const prodId = row.dataset.id || '';
-        const favoriteCount = window.getProductFavoriteCount
-            ? window.getProductFavoriteCount(prodId)
-            : 0;
-
-        const canUse = favoriteCount > 0;
-
-        btn.style.display = canUse ? 'inline-flex' : 'none';
-        btn.disabled = !canUse;
-        btn.textContent = canUse
-            ? `📋 Gửi sang App RAW (${favoriteCount})`
-            : '📋 Gửi sang App RAW';
-        btn.title = canUse
-            ? `Copy ${favoriteCount} tên ảnh khách đã chọn để dán vào App RAW`
-            : 'Thư mục này chưa có ảnh khách chọn';
-    });
-}
-
-/**
- * Tương thích 100% với code Tkinter RAW hiện tại:
- * - App RAW đọc tên ảnh từ ô Text.
- * - Tách bằng dấu phẩy hoặc xuống dòng.
- * - Bỏ phần mở rộng trước khi đối chiếu RAW.
- *
- * Vì vậy web chỉ cần copy mỗi tên file trên một dòng.
- */
-window.sendProductFavoritesToRawTool = async function(prodId) {
-    const evId = document.getElementById('eventId')?.value;
-    const ev = data.events.find(e => String(e.id) === String(evId));
-
-    if (!ev) {
-        showToast('Chưa có dữ liệu lịch.');
-        return false;
-    }
-
-    let names = [];
-
-    if (Array.isArray(ev.favoritePhotoItems)) {
-        names = ev.favoritePhotoItems
-            .filter(x =>
-                String(x?.productId || '') === String(prodId) &&
-                String(x?.name || '').trim()
-            )
-            .map(x => String(x.name).trim());
-    }
-
-    // Fallback cho dữ liệu cũ chưa có productId:
-    // chỉ dùng khi lịch có đúng 1 sản phẩm để tránh copy nhầm thư mục.
-    if (!names.length) {
-        const productCount = Array.isArray(ev.products) ? ev.products.length : 0;
-        if (
-            productCount === 1 &&
-            Array.isArray(ev.favoritePhotos) &&
-            ev.favoritePhotos.length
-        ) {
-            names = ev.favoritePhotos
-                .map(x => String(x || '').trim())
-                .filter(Boolean);
-        }
-    }
-
-    // Chống trùng tên ảnh nhưng vẫn giữ nguyên thứ tự khách chọn.
-    const seen = new Set();
-    names = names.filter(name => {
-        const key = name.toLowerCase();
-        if (!key || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-    });
-
-    if (!names.length) {
-        showToast('Thư mục này chưa có ảnh khách chọn.');
-        updateRawToolButtons();
-        return false;
-    }
-
-    const payload = names.join('\n');
-
-    try {
-        if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(payload);
-        } else {
-            const ta = document.createElement('textarea');
-            ta.value = payload;
-            ta.setAttribute('readonly', '');
-            ta.style.position = 'fixed';
-            ta.style.left = '-9999px';
-            ta.style.top = '0';
-            document.body.appendChild(ta);
-            ta.focus();
-            ta.select();
-
-            const ok = document.execCommand('copy');
-            ta.remove();
-
-            if (!ok) throw new Error('Clipboard copy failed');
-        }
-
-        showToast(
-            `✅ Đã copy ${names.length} tên ảnh. Mở App RAW → Ctrl+V → chọn thư mục RAW → Bắt đầu lọc.`
-        );
-        return true;
-    } catch (err) {
-        console.error('RAW clipboard error:', err);
-
-        // Fallback cuối: mở prompt để người dùng Ctrl+C thủ công.
-        window.prompt(
-            'Trình duyệt không cho copy tự động. Nhấn Ctrl+C để copy danh sách này rồi dán vào App RAW:',
-            payload
-        );
-        return false;
-    }
-};
 
 window.getProductFavoriteCount = function(prodId) {
     const evId = document.getElementById('eventId')?.value;
@@ -5106,12 +4976,10 @@ window.refreshProductMediaRow = async function(row, prodId, rawUrl) {
     if (!row) return;
 
     const copyBtn = row.querySelector('.product-copy-favorites');
-    const rawBtn = row.querySelector('.product-raw-sync');
-
     const favoriteCount = window.getProductFavoriteCount(prodId);
-    const canUseFavoriteActions = favoriteCount > 0;
+    const canCopy = favoriteCount > 0;
 
-    // Media detection chỉ phục vụ UI khác; không dùng để khóa chức năng RAW.
+    // Media detection chỉ phục vụ hiển thị loại nội dung, không ảnh hưởng chức năng copy.
     if (rawUrl) {
         try {
             const mediaType = await window.detectProductMediaType(rawUrl);
@@ -5122,23 +4990,15 @@ window.refreshProductMediaRow = async function(row, prodId, rawUrl) {
     }
 
     if (copyBtn) {
-        copyBtn.style.display = canUseFavoriteActions ? 'inline-flex' : 'none';
-        copyBtn.disabled = !canUseFavoriteActions;
-        copyBtn.textContent = canUseFavoriteActions
+        copyBtn.style.display = canCopy ? 'inline-flex' : 'none';
+        copyBtn.disabled = !canCopy;
+        copyBtn.textContent = canCopy
             ? `📋 Copy tên ảnh (${favoriteCount})`
             : '📋 Copy tên ảnh';
+        copyBtn.title = canCopy
+            ? `Copy ${favoriteCount} tên ảnh khách đã chọn`
+            : 'Chưa có ảnh khách chọn';
     }
-
-    if (rawBtn) {
-        rawBtn.style.display = canUseFavoriteActions ? 'inline-flex' : 'none';
-        rawBtn.disabled = !canUseFavoriteActions;
-        rawBtn.textContent = canUseFavoriteActions
-            ? `📋 Gửi sang App RAW (${favoriteCount})`
-            : '📋 Gửi sang App RAW';
-        rawBtn.onclick = () => window.sendProductFavoritesToRawTool(prodId);
-    }
-
-    updateRawToolButtons();
 };
 
 window.generateSingleClientLink = function(prodId) {
