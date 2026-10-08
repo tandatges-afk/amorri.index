@@ -105,26 +105,9 @@ async function readGalleryEvents() {
   const result = await googleFetch(`${databaseURL}/studioPlanner_v1/events.json`, {
     headers: {Authorization: `Bearer ${access.token}`, Accept:'application/json'}
   }, 'firebase-rest-fetch');
-  
-if (!result.ok) {
-  const errorBody = await result.text();
-
-  console.error("Firebase REST failed", {
-    status: result.status,
-    body: errorBody.slice(0, 1000)
-  });
-
-  throw Object.assign(
-    new Error(
-      `Firebase REST returned HTTP ${result.status}`
-    ),
-    {
-      status: 502,
-      step: "firebase-rest-http"
-    }
-  );
-}
-
+  if (!result.ok) {
+    console.error('drive-video Firebase REST HTTP:', result.status);
+    throw Object.assign(new Error(`Firebase REST returned HTTP ${result.status}; check IAM and database URL`),{status:502,step:'firebase-rest-http'});
   }
   const events = await withTimeout(result.json(),'firebase-rest-json',10000);
   console.info('drive-video stage: firebase-rest-done');
