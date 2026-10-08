@@ -3806,6 +3806,33 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContai
 }
 @media(prefers-reduced-motion:reduce){body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-iframe-ambient{animation:none!important}}
 </style>
+
+<style id="amorri-v556-unified-player-geometry">
+/* Single final geometry authority. Earlier container-query 16:9 guesses are superseded. */
+body[data-client-gallery="true"] #clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer {
+  margin-left:30px!important;width:calc(100% - 30px)!important;max-width:calc(100% - 30px)!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-review-layout {
+  display:grid!important;grid-template-columns:minmax(0,1fr) 310px!important;
+  grid-template-rows:auto!important;align-items:start!important;container-type:normal!important;gap:12px!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-frame {
+  aspect-ratio:var(--vr-media-ratio,1.7777778)!important;
+  width:min(100%,calc(75dvh * var(--vr-media-ratio,1.7777778)))!important;
+  max-width:100%!important;height:auto!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel {
+  height:var(--vr-measured-player-height,auto)!important;
+  min-height:0!important;max-height:none!important;align-self:start!important;overflow:hidden!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-list-wrap {min-height:0!important;flex:1 1 0!important;overflow:hidden!important}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-list {min-height:0!important;overflow-y:auto!important;max-height:none!important}
+@media(max-width:850px){
+ body[data-client-gallery="true"] #clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer {margin-left:0!important;width:100%!important;max-width:100%!important}
+ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-review-layout {grid-template-columns:minmax(0,1fr)!important}
+ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel {height:auto!important;min-height:300px!important;max-height:none!important}
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -5101,6 +5128,23 @@ async function initClientGallery() {
           video?.addEventListener('resize',apply);
           apply();
         });
+        // Match each review panel to the actual rendered player height, not a 16:9 CSS guess.
+        // One-way observation of the player avoids feedback loops with comment content.
+        if(window._amorriPanelHeightObserver){window._amorriPanelHeightObserver.disconnect();window._amorriPanelHeightObserver=null;}
+        if(window._amorriPanelHeightCleanup){window._amorriPanelHeightCleanup();window._amorriPanelHeightCleanup=null;}
+        {
+          const resizeObserver=new ResizeObserver(entries=>{
+            for(const entry of entries){
+              const card=entry.target.closest('.client-video-card');
+              const panel=card?.querySelector('.vr-panel');
+              if(!panel || !card?.isConnected)continue;
+              const px=Math.max(0,Math.round(entry.target.getBoundingClientRect().height));
+              if(px>0 && panel.style.getPropertyValue('--vr-measured-player-height')!==px+'px') panel.style.setProperty('--vr-measured-player-height',px+'px');
+            }
+          });
+          videoContainer.querySelectorAll('.client-video-card .client-video-frame').forEach(frame=>resizeObserver.observe(frame));
+          window._amorriPanelHeightObserver=resizeObserver;
+        }
         // Set the gallery mode before browser paints. Player size is CSS-only.
         const gallery = videoContainer.closest('.gallery-container');
         if (gallery) {
@@ -5116,6 +5160,7 @@ async function initClientGallery() {
             window._amorriVideoLayoutObserver = null;
         }
     } else {
+        if(window._amorriPanelHeightObserver){window._amorriPanelHeightObserver.disconnect();window._amorriPanelHeightObserver=null;}
         stopVideoReviewListeners();
         if(window._amorriVideoLayoutObserver) window._amorriVideoLayoutObserver.disconnect();
         videoContainer.style.display='none';
