@@ -3833,6 +3833,32 @@ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoC
  body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel {height:auto!important;min-height:300px!important;max-height:none!important}
 }
 </style>
+
+<style id="amorri-v557-youtube-ambient-visibility">
+/* Single predictable paint order for iframe Ambient. These overrides do not
+   affect geometry, playback controls, or review panel height. */
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card .client-video-left {
+  position:relative!important; isolation:isolate!important; overflow:visible!important;
+}
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card .client-video-left > .vr-iframe-ambient {
+  position:absolute!important; inset:-14% -11% -17%!important; display:block!important;
+  z-index:0!important; pointer-events:none!important;
+  opacity:0!important; visibility:hidden!important;
+  background-image:radial-gradient(ellipse at 25% 42%,rgba(157,86,120,.85),transparent 65%),radial-gradient(ellipse at 75% 60%,rgba(64,105,168,.8),transparent 70%),linear-gradient(115deg,#2f172d,#1b2942)!important;
+  filter:blur(58px) saturate(1.5)!important;
+  transition:opacity .4s ease,visibility .4s ease!important;
+}
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card .client-video-left > .client-video-frame {
+  position:relative!important; z-index:2!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card.vr-ambient-playing .client-video-left > .vr-iframe-ambient {
+  opacity:.9!important; visibility:visible!important;
+  animation:amorri-iframe-glow-motion 11s ease-in-out infinite alternate!important;
+}
+@media(prefers-reduced-motion:reduce){
+ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card.vr-ambient-playing .client-video-left > .vr-iframe-ambient{animation:none!important}
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -4831,11 +4857,11 @@ function initVideoReviewPanels() {
             const frame=card.querySelector('iframe');
             vrYoutubeAPI().then(()=>{
                 if(!card.isConnected)return;
-                yt=new YT.Player(frame,{events:{onReady:()=>{duration=yt.getDuration()||0;renderMarkers();refreshTime()},onStateChange:(e)=>{
+                yt=new YT.Player(frame,{events:{onReady:(e)=>{duration=e.target.getDuration()||0;renderMarkers();refreshTime();window.amorriSetIframeCinema?.(e.target.getIframe(),e.target.getPlayerState()===YT.PlayerState.PLAYING)},onStateChange:(e)=>{
                     if(e.data===YT.PlayerState.PAUSED)capturedAt=currentTime();
                     if(e.data===YT.PlayerState.PLAYING)capturedAt=null;
                     if(e.data===YT.PlayerState.PLAYING || e.data===YT.PlayerState.PAUSED || e.data===YT.PlayerState.ENDED){
-                        window.amorriSetIframeCinema?.(card.querySelector('iframe'),e.data===YT.PlayerState.PLAYING);
+                        window.amorriSetIframeCinema?.(e.target?.getIframe?.() || card.querySelector('iframe'),e.data===YT.PlayerState.PLAYING);
                     }
                     duration=yt.getDuration()||duration;refreshTime();renderMarkers();
                 }}});vrPlayers.set(productKey,yt);
@@ -8021,8 +8047,9 @@ initApp();
  }
  window.amorriSetIframeCinema=(frame,playing)=>{
    if(!frame)return;
-   setCinema(frame,playing);
    const card=frame.closest('.client-video-card');
+   if(!card)return;
+   setCinema(frame,playing);
    card?.classList.toggle('vr-ambient-playing',!!playing);
    // Cross-origin YouTube iframes cannot be sampled. Animated lighting is deliberately
    // synthetic (NOT video-frame color sampling) and follows real YouTube play/pause.
