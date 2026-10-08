@@ -2854,6 +2854,66 @@ body {
   #clientGalleryView .gallery-container.amorri-video-only{padding-bottom:12px !important}
 }
 </style>
+
+<style id="amorri-v521-comment-fix-button">
+/* Keep Edit and Fix on the same row, with an invariant button width. */
+#cgVideoContainer .vr-comment-top{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:7px;
+}
+#cgVideoContainer .vr-comment-meta{min-width:0;overflow:hidden}
+#cgVideoContainer .vr-comment-actions{
+  grid-column:3;
+  display:inline-flex;
+  flex-wrap:nowrap;
+  white-space:nowrap;
+  align-items:center;
+  gap:5px;
+  min-width:max-content;
+  justify-self:end;
+}
+#cgVideoContainer .vr-comment-actions .vr-edit,
+#cgVideoContainer .vr-comment-actions .vr-resolve{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  flex-shrink:0;
+  height:30px;
+  margin:0;
+  padding:0 9px;
+  border-radius:8px;
+  font-size:11px;
+  line-height:1;
+  font-weight:800;
+}
+#cgVideoContainer .vr-comment-actions .vr-edit{width:42px}
+#cgVideoContainer .vr-comment-actions .vr-resolve{
+  width:70px;
+  background:#fff0ef;
+  border:1px solid #e9b7b1;
+  color:#b42318;
+}
+#cgVideoContainer .vr-comment-actions .vr-resolve.is-fixed{
+  background:#eaf7ee;
+  border-color:#abd8b8;
+  color:#18733b;
+}
+/* Compact fallback keeps the two actions together without wrapping. */
+@media(max-width:620px){
+  #cgVideoContainer .vr-comment-top{grid-template-columns:auto minmax(0,1fr) auto}
+  #cgVideoContainer .vr-comment-actions{grid-column:3;justify-self:end}
+  #cgVideoContainer .vr-comment-actions .vr-edit{width:38px;padding:0 6px}
+  #cgVideoContainer .vr-comment-actions .vr-resolve{width:64px;padding:0 5px}
+}
+/* Add back 50px of breathing room only for video-only galleries. */
+#clientGalleryView .gallery-container.amorri-video-only{padding-bottom:62px !important}
+@media(max-width:700px){
+  #clientGalleryView .gallery-container.amorri-video-only{padding-bottom:62px !important}
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -3886,7 +3946,9 @@ function initVideoReviewPanels() {
                 // Only signed-in staff can remove a resolved comment.
                 if(firebase.auth().currentUser){
                     const fixed=document.createElement('button');fixed.type='button';fixed.className='vr-resolve';fixed.textContent='✓ Fix';
-                    fixed.textContent=c.resolved?'↶ Bỏ fix':'✓ Đã fix';
+                    fixed.textContent=c.resolved?'Đã fix':'Fix';
+                    fixed.classList.toggle('is-fixed', !!c.resolved);
+                    fixed.setAttribute('aria-pressed', c.resolved?'true':'false');
                     fixed.onclick=async()=>{
                         fixed.disabled=true;
                         try{
