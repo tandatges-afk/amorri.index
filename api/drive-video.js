@@ -1,8 +1,9 @@
 
 // Amorri Studio - Google Drive timeline-ready video endpoint
 // Requires: npm install firebase-admin google-auth-library
-// Environment: DRIVE_SERVICE_ACCOUNT_JSON, DRIVE_REVIEW_FOLDER_ID,
-//              FIREBASE_PROJECT_ID, DRIVE_VIDEO_SIGNING_SECRET
+// Environment: DRIVE_SERVICE_ACCOUNT_JSON, FIREBASE_PROJECT_ID,
+//              FIREBASE_DATABASE_URL, DRIVE_VIDEO_SIGNING_SECRET
+// Per-customer folder authorization derives from studioPlanner_v1/events/{products.url}.
 import crypto from 'node:crypto';
 import { Readable } from 'node:stream';
 import admin from 'firebase-admin';
@@ -18,15 +19,15 @@ const auth = new GoogleAuth({
 });
 
 function requiredConfig() {
-  const missing = ['DRIVE_SERVICE_ACCOUNT_JSON', 'DRIVE_REVIEW_FOLDER_ID',
-    'FIREBASE_PROJECT_ID', 'DRIVE_VIDEO_SIGNING_SECRET'].filter(k => !process.env[k]);
+  const missing = ['DRIVE_SERVICE_ACCOUNT_JSON', 'FIREBASE_PROJECT_ID',
+    'DRIVE_VIDEO_SIGNING_SECRET'].filter(k => !process.env[k]);
   if (missing.length) throw Object.assign(new Error(`Missing environment variables: ${missing.join(', ')}`), { status: 503 });
 }
 function signature(value) {
   return crypto.createHmac('sha256', process.env.DRIVE_VIDEO_SIGNING_SECRET).update(value).digest('base64url');
 }
-function mintTicket(fileId, uid) {
-  const body = Buffer.from(JSON.stringify({ id: fileId, uid, exp: Math.floor(Date.now() / 1000) + TOKEN_SECONDS })).toString('base64url');
+function mintTicket(fileId, uid, clientGallery, productId) {
+  const body = Buffer.from(JSON.stringify({ id: fileId, uid, clientGallery, productId, exp: Math.floor(Date.now() / 1000) + TOKEN_SECONDS })).toString('base64url');
   return `${body}.${signature(body)}`;
 }
 function verifyTicket(ticket, requestedId) {
@@ -38,7 +39,7 @@ function verifyTicket(ticket, requestedId) {
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false;
   try {
     const data = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
-    return data.id === requestedId && typeof data.uid === 'string' && data.exp > Date.now()/1000;
+    return data.id === requestedId && typeof data.uid === 'string' && typeof data.clientGallery === 'string' && typeof data.productId === 'string' && data.exp > Date.now()/1000 ? data : false;
   } catch { return false; }
 }
 function getFirebase() {
@@ -61,25 +62,6 @@ async function getMetadata(id, headers) {
   if (!r.ok) throw Object.assign(new Error(`Drive metadata request failed (${r.status})`), { status: r.status === 404 ? 404 : 502 });
   return r.json();
 }
-async function ensureInReviewFolder(file, headers) {
-  const allowed = process.env.DRIVE_REVIEW_FOLDER_ID;
-  // Recursively check ancestry; avoid allowing arbitrary Drive files that the service account can read.
-  const seen = new Set();
-  let layer = file.parents || [];
-  for (let depth = 0; depth < 15 && layer.length; depth++) {
-    if (layer.includes(allowed)) return true;
-    const next = [];
-    for (const id of layer) {
-      if (seen.has(id)) continue;
-      seen.add(id);
-      const folder = await getMetadata(id, headers);
-      next.push(...(folder.parents || []));
-    }
-    layer = next;
-  }
-  return false;
-}
-
 function driveIdFromUrl(input, folder=false) {
   const s=String(input||'');
   const m=folder ? s.match(/(?:folders\/|[?&]id=)([\w-]{10,200})/) : s.match(/(?:file\/d\/|[?&]id=)([\w-]{10,200})/);
@@ -89,6 +71,7 @@ async function authorizeGallery(clientGallery, productId, fileId, headers, metad
   if (typeof clientGallery!=='string'||!clientGallery||clientGallery.length>160||typeof productId!=='string'||!productId||productId.length>160) return false;
   // The existing client URL is a bearer capability. Unpredictable IDs must remain private.
   // For stronger security, issue independently signed, expiring per-gallery links.
+  getFirebase();
   const snapshot=await admin.database().ref('studioPlanner_v1/events').once('value');
   const records=snapshot.val();
   const events=Array.isArray(records)?records:Object.values(records||{});
@@ -134,7 +117,6 @@ export default async function handler(req, res) {
       const meta = await getMetadata(id, headers);
       if (!meta.mimeType?.startsWith('video/')) return sendError(res, 415, 'File is not a video');
       if (meta.capabilities?.canDownload === false) return sendError(res, 403, 'Downloading disabled in Google Drive');
-      if (!await ensureInReviewFolder(meta, headers)) return sendError(res, 403, 'File outside authorized review folder');
       const bearer = /^Bearer (.+)$/i.exec(req.headers.authorization || '');
       let uid = '';
       if (bearer) {
@@ -147,17 +129,18 @@ export default async function handler(req, res) {
       // Login alone does not authorize access; gallery/product membership is mandatory.
       if (!permitted) return sendError(res, 403, 'Video does not belong to this client gallery/product');
       uid ||= 'gallery:'+clientGallery;
-      const ticket = mintTicket(id, uid);
+      const ticket = mintTicket(id, uid, clientGallery, productId);
       const url = `/api/drive-video?id=${encodeURIComponent(id)}&ticket=${encodeURIComponent(ticket)}`;
       return res.status(200).json({ success: true, url, expiresIn: TOKEN_SECONDS, mimeType: meta.mimeType });
     }
 
-    if (!verifyTicket(req.query.ticket, id)) return sendError(res, 401, 'Missing or expired playback ticket');
+    const ticketData = verifyTicket(req.query.ticket, id);
+    if (!ticketData) return sendError(res, 401, 'Missing or expired playback ticket');
     const headers = await getDriveHeaders();
     const meta = await getMetadata(id, headers);
     if (!meta.mimeType?.startsWith('video/')) return sendError(res, 415, 'Not a video');
     if (meta.capabilities?.canDownload === false) return sendError(res, 403, 'Downloading disabled');
-    if (!await ensureInReviewFolder(meta, headers)) return sendError(res, 403, 'Not allowed');
+    if (!await authorizeGallery(ticketData.clientGallery, ticketData.productId, id, headers, meta)) return sendError(res, 403, 'Video no longer belongs to this client gallery/product');
     const total = Number(meta.size);
     if (!Number.isSafeInteger(total) || total < 1) return sendError(res, 422, 'Invalid or unknown video size');
     let start = 0, end = Math.min(total - 1, CHUNK_BYTES - 1);

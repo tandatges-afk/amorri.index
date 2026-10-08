@@ -3330,7 +3330,7 @@ function initVideoReviewPanels() {
                 const id=card.dataset.vrFileId;
                 const body={id,clientGallery:clientIdParam,productId:card.dataset.vrRawProduct};
                 try{
-                    driveFailureMessage='Đang xác thực quyền xem video...';updateMode();
+                    driveFailureMessage='Đang kiểm tra thư mục video của khách trong Firebase...';updateMode();
                     const user=firebase.auth().currentUser;
                     const headers={'Content-Type':'application/json'};
                     if(user)headers.Authorization='Bearer '+await user.getIdToken();
