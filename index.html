@@ -3263,10 +3263,11 @@ function initVideoReviewPanels() {
         let capturedAt=null, referenceSeconds=0, synced=kind!=='drive';
         const driveFrame=card.querySelector('[data-vr-drive-frame]');
         let dragging=false;
+        let driveFailureMessage='';
         const durationStore='amorri_review_duration_'+productKey;
         const updateMode=()=>{
-            mode.textContent=synced?'· Đồng bộ tự động':'· Chọn mốc thủ công';
-            modeNote.textContent=synced?'Kéo timeline hoặc dừng video để gắn bình luận. Bấm vào góp ý để tua video.':'Google Drive đang chạy trong khung nhúng: kéo thanh mốc bên dưới hoặc nhập mm:ss sau khi dừng video trong Drive. Timeline này không điều khiển được iframe Drive.';
+            mode.textContent=synced?'· ĐÃ ĐỒNG BỘ':'· CHƯA ĐỒNG BỘ';
+            modeNote.textContent=synced?'Đã kết nối trình phát đồng bộ. Dừng video để ghi nhận mốc hoặc bấm bình luận để tua.':'CHƯA ĐỒNG BỘ GOOGLE DRIVE — '+(driveFailureMessage||'Chưa tải được video qua API.')+' Trình phát Drive dự phòng không cho phép tự đọc thời gian; hãy nhập mốc mm:ss nếu cần.';
             card.querySelector('[data-vr-drive-duration-label]').style.display=kind==='drive'&&!synced?'':'none';
             durationInput.style.display=kind==='drive'&&!synced?'':'none';
             card.querySelector('[data-vr-hint]').textContent=synced?'Thời gian được lấy tự động từ video.':'Mốc được chọn trên timeline bình luận; không tự đọc từ trình phát Google Drive.';
@@ -3310,14 +3311,19 @@ function initVideoReviewPanels() {
             try{const v=localStorage.getItem(durationStore);duration=v?Number(v):0}catch(_){}
             durationInput.value=duration?vrFormat(duration):'';
             durationInput.addEventListener('change',()=>{let n=vrParse(durationInput.value);if(n===null||n<=0){showToast('Nhập tổng thời lượng video đúng dạng mm:ss');return;}duration=n;try{localStorage.setItem(durationStore,String(n))}catch(_){}renderMarkers();refreshTime()});
-            const fallback=()=>{
+            const fallback=(reason)=>{
+                driveFailureMessage=reason||'API không trả về video có thể phát.';
                 synced=false;htmlVideo.style.display='none';htmlVideo.removeAttribute('src');htmlVideo.load();
                 driveFrame.style.display='block';updateMode();refreshTime();
             };
-            htmlVideo.addEventListener('error',fallback,{once:true});
+            htmlVideo.addEventListener('error',async()=>{
+                let reason='';
+                try{const response=await fetch('/api/drive-video?id='+encodeURIComponent(card.dataset.vrFileId)+'&check=1',{cache:'no-store'});const json=await response.json();reason=json.message||json.error||('API trả HTTP '+response.status)}catch(_){reason='Không tìm thấy API /api/drive-video trên Vercel hoặc lỗi mạng.'}
+                fallback(reason);
+            },{once:true});
             htmlVideo.addEventListener('loadedmetadata',()=>{
-                if(!Number.isFinite(htmlVideo.duration)||htmlVideo.duration<=0){fallback();return;}
-                synced=true;htmlVideo.style.display='block';driveFrame.style.display='none';
+                if(!Number.isFinite(htmlVideo.duration)||htmlVideo.duration<=0){fallback('Video không có thời lượng hợp lệ; kiểm tra codec (ưu tiên MP4 H.264/AAC).');return;}
+                synced=true;driveFailureMessage='';htmlVideo.style.display='block';driveFrame.style.display='none';
                 duration=htmlVideo.duration;updateMode();renderMarkers();refreshTime();
             });
             // A Drive HTML5 endpoint is optional. The original iframe remains available on failure.
@@ -3325,6 +3331,7 @@ function initVideoReviewPanels() {
         }
         if(htmlVideo){
             htmlVideo.addEventListener('timeupdate',()=>{if(synced)refreshTime()});
+            htmlVideo.addEventListener('play',()=>{capturedAt=null});
             htmlVideo.addEventListener('pause',()=>{if(synced){capturedAt=currentTime();refreshTime()}});
             htmlVideo.addEventListener('durationchange',()=>{if(synced&&Number.isFinite(htmlVideo.duration)){duration=htmlVideo.duration||0;renderMarkers();refreshTime()}});
             if(kind!=='drive')duration=htmlVideo.duration||0;
@@ -3372,7 +3379,7 @@ function initVideoReviewPanels() {
         message.addEventListener('focus',()=>{
             if(htmlVideo&&!htmlVideo.paused)htmlVideo.pause();
             if(yt){try{yt.pauseVideo()}catch(_){}}
-            capturedAt=currentTime();refreshTime();
+            capturedAt=(kind==='drive'&&!synced)?referenceSeconds:currentTime();refreshTime();
         });
         button.addEventListener('click',async()=>{
             const content=message.value.trim();const name=input.value.trim();
@@ -3496,7 +3503,7 @@ async function initClientGallery() {
                 frame=`<video controls playsinline preload="metadata" src="${safeUrl(v.url)}"></video>`;
             }
             const vrKey = reviewKey(v.productId || v.id);
-            return `<section class="client-video-card" data-vr-product="${escapeHtml(vrKey)}" data-vr-type="${escapeHtml(v.externalType==='youtube'?'youtube':v.source==='drive'?'drive':'direct')}">
+            return `<section class="client-video-card" data-vr-product="${escapeHtml(vrKey)}" data-vr-file-id="${escapeHtml(v.id||'')}" data-vr-type="${escapeHtml(v.externalType==='youtube'?'youtube':v.source==='drive'?'drive':'direct')}">
                 <div class="client-video-head"><div class="client-video-title">${escapeHtml(v.name||'Video bàn giao')}</div><div class="client-video-tag">VIDEO REVIEW</div></div>
                 <div class="client-video-frame">${frame}</div>
                 <div class="vr-panel">
