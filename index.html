@@ -3834,37 +3834,48 @@ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoC
 }
 </style>
 
-<style id="amorri-v559-youtube-ambient">
-/* YouTube IFrame API never exposes video pixels. A blurred source poster gives
-   a real video-specific glow without CORS canvas reads or fixed purple/blue colors.
-   Cinema / glow visibility is controlled by the actual PLAYING state only. */
+<style id="amorri-v561-youtube-ambient">
+/* YouTube iframe forbids frame pixel sampling. Render a restrained, animated halo
+   only when active; never use static thumbnail as an ambient-frame substitute. */
 body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left{
   position:relative!important;overflow:visible!important;isolation:isolate!important;
 }
 body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left::before{
-  content:none!important;display:none!important;/* Remove the old fallback halo. */
+  content:none!important;display:none!important;
 }
 body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-frame{
   position:relative!important;z-index:2!important;
 }
 body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left > .vr-iframe-ambient{
-  display:block!important;position:absolute!important;inset:-16% -12% -22%!important;
+  display:block!important;position:absolute!important;inset:-18% -13% -23%!important;
   width:auto!important;height:auto!important;z-index:1!important;pointer-events:none!important;
-  border-radius:20%!important;background-color:#292623!important;
-  /* Neutral fallback remains visible even when i.ytimg.com is blocked. */
-  background-image:radial-gradient(ellipse at 26% 48%,rgba(197,155,112,.31),transparent 63%),radial-gradient(ellipse at 79% 65%,rgba(106,137,128,.29),transparent 66%),var(--vr-yt-poster,linear-gradient(115deg,#987563,#56716b))!important;
-  background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;
-  filter:blur(clamp(38px,5vw,86px)) saturate(1.65) brightness(1.03)!important;
-  transform:translateZ(0) scale(1.02)!important;animation:none!important;
+  border-radius:26%!important;background-color:transparent!important;
+  background-image:
+    radial-gradient(ellipse 50% 60% at 24% 40%, rgba(180,120,106,.74),transparent 86%),
+    radial-gradient(ellipse 62% 66% at 74% 65%, rgba(82,121,142,.7),transparent 84%),
+    radial-gradient(ellipse 57% 44% at 52% 24%, rgba(137,110,133,.36),transparent 86%)!important;
+  background-size:140% 135%,150% 140%,135% 140%!important;
+  background-position:0% 40%,100% 70%,50% 0%!important;
+  background-repeat:no-repeat!important;
+  filter:blur(clamp(38px,5vw,84px)) saturate(1.28) brightness(.95)!important;
+  transform:translateZ(0) scale(1.015)!important;
+  animation:none!important;
   opacity:0!important;visibility:hidden!important;
-  transition:opacity .5s ease,visibility 0s linear .5s!important;
+  transition:opacity .3s ease, visibility 0s linear .3s!important;
 }
 body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"].vr-ambient-playing .client-video-left > .vr-iframe-ambient{
-  opacity:.94!important;visibility:visible!important;
-  transition:opacity .5s ease,visibility 0s!important;
+  opacity:.87!important;visibility:visible!important;
+  transition:opacity .3s ease,visibility 0s!important;
+  animation:amorri-v561-yt-halo-flow 18s ease-in-out infinite alternate!important;
+}
+@keyframes amorri-v561-yt-halo-flow{
+  from{background-position:0% 40%,100% 65%,45% 0%;transform:scale(1.015)}
+  to{background-position:95% 50%,5% 38%,65% 80%;transform:scale(1.055)}
 }
 @media(prefers-reduced-motion:reduce){
- body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left > .vr-iframe-ambient{transition:none!important}
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left > .vr-iframe-ambient{
+    animation:none!important;transition:none!important;
+  }
 }
 </style>
 </head>
@@ -4755,7 +4766,7 @@ function vrParse(str) {
 function stopVideoReviewListeners() {
     vrListeners.splice(0).forEach(({ref,callback})=>ref.off('value',callback));
     vrPlayers.forEach(player=>{try{player.destroy()}catch(_){}});vrPlayers.clear();
-    document.querySelectorAll(".client-video-card").forEach(card=>{if(card._driveRefreshTimer)clearTimeout(card._driveRefreshTimer);if(card._ytAmbientPoll)clearInterval(card._ytAmbientPoll);window.amorriSetIframeCinema?.(card,false)});
+    document.querySelectorAll(".client-video-card").forEach(card=>{if(card._driveRefreshTimer)clearTimeout(card._driveRefreshTimer);if(card._ytAmbientPoll)clearInterval(card._ytAmbientPoll);card._ytClearAmbientStop?.();window.amorriSetIframeCinema?.(card,false)});
 }
 function vrYoutubeAPI() {
     if (typeof window.YT?.Player === 'function') return Promise.resolve();
@@ -4929,48 +4940,74 @@ function initVideoReviewPanels() {
         }
         if(kind==='youtube'){
             const frame=card.querySelector('iframe');
-            let lastAmbientState=null;
-            const syncAmbient=(playing)=>{
+            let lastAmbientState=false, hadPlayed=false, stopTimer=null, ytReady=false;
+            const clearStop=()=>{if(stopTimer!==null){clearTimeout(stopTimer);stopTimer=null;}};
+            card._ytClearAmbientStop=clearStop;
+            const setAmbient=(active)=>{
+                if(!card.isConnected || lastAmbientState===active)return;
+                lastAmbientState=active;
+                window.amorriSetIframeCinema?.(card,active);
+            };
+            const reconcileState=(state)=>{
                 if(!card.isConnected)return;
-                if(lastAmbientState===playing)return;
-                lastAmbientState=playing;
-                // Target the stable card, not an iframe that the YouTube API may replace.
-                window.amorriSetIframeCinema?.(card,playing);
+                const S=YT.PlayerState;
+                if(state===S.PLAYING){
+                    clearStop();hadPlayed=true;setAmbient(true);return;
+                }
+                if(state===S.BUFFERING){
+                    // Seeking and network buffering MUST preserve the last active cinema state.
+                    clearStop();return;
+                }
+                if(state===S.ENDED){
+                    clearStop();hadPlayed=false;setAmbient(false);return;
+                }
+                if(state===S.PAUSED || state===S.CUED || state===S.UNSTARTED){
+                    if(!hadPlayed){setAmbient(false);return;}
+                    // YouTube sometimes emits a momentary PAUSED around a seek. Wait
+                    // for a stable pause before hiding the whole-site cinema overlay.
+                    if(stopTimer===null){
+                        stopTimer=setTimeout(()=>{
+                            stopTimer=null;
+                            if(!card.isConnected)return;
+                            let observed=state;
+                            try{if(ytReady)observed=yt.getPlayerState()}catch(_){}
+                            if(observed===S.PLAYING || observed===S.BUFFERING)return;
+                            hadPlayed=false;setAmbient(false);
+                        },1000);
+                    }
+                }
             };
             vrYoutubeAPI().then(()=>{
                 if(!card.isConnected)return;
                 yt=new YT.Player(frame.id||frame,{
                     events:{
                         onReady:(e)=>{
+                            ytReady=true;
                             duration=Number(e.target.getDuration?.())||0;
                             renderMarkers();refreshTime();
-                            syncAmbient(e.target.getPlayerState?.()===YT.PlayerState.PLAYING);
+                            reconcileState(e.target.getPlayerState?.());
                         },
                         onStateChange:(e)=>{
                             if(e.data===YT.PlayerState.PAUSED)capturedAt=currentTime();
                             if(e.data===YT.PlayerState.PLAYING)capturedAt=null;
-                            syncAmbient(e.data===YT.PlayerState.PLAYING);
+                            reconcileState(e.data);
                             duration=Number(e.target?.getDuration?.())||duration;
                             refreshTime();renderMarkers();
                         },
                         onError:(e)=>{
-                            syncAmbient(false);
+                            clearStop();hadPlayed=false;setAmbient(false);
                             console.warn('[Amorri] YouTube player error:',e.data);
                         }
                     }
                 });
                 vrPlayers.set(productKey,yt);
-                // State polling complements onStateChange (e.g. API stalls during buffering).
-                // Only writes the DOM when PLAYING state actually changes.
+                // Reconciliation handles missed events without treating BUFFERING as PAUSED.
                 card._ytAmbientPoll=setInterval(()=>{
-                    if(!card.isConnected){clearInterval(card._ytAmbientPoll);return;}
-                    try {
-                        if(typeof yt?.getPlayerState==='function')
-                            syncAmbient(yt.getPlayerState()===YT.PlayerState.PLAYING);
-                    } catch(_) {}
+                    if(!card.isConnected){clearInterval(card._ytAmbientPoll);clearStop();return;}
+                    try{if(ytReady && typeof yt?.getPlayerState==='function')reconcileState(yt.getPlayerState());}catch(_){}
                 },450);
             }).catch(err=>{
-                syncAmbient(false);
+                clearStop();hadPlayed=false;setAmbient(false);
                 console.warn('[Amorri] YouTube Ambient/Timeline unavailable:',err);
                 const hint=card.querySelector('[data-vr-hint]');
                 if(hint)hint.textContent='Không kết nối được YouTube API; chức năng tự đồng bộ và Ambient chưa sẵn sàng.';
@@ -5224,9 +5261,7 @@ async function initClientGallery() {
             } else if(v.url) {
                 frame=`<video controls playsinline preload="metadata" src="${safeUrl(v.url)}"></video>`;
             }
-            const ytPosterStyle=(v.externalType==='youtube' && /^[a-zA-Z0-9_-]{11}$/.test(v.videoId||''))
-                ? ` style="--vr-yt-poster:url('https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg')" data-vr-poster-ready="1"` : '';
-            return `<section class="client-video-card"${ytPosterStyle} data-vr-product="${escapeHtml(vrKey)}" data-vr-file-id="${escapeHtml(v.id||'')}" data-vr-raw-product="${escapeHtml(v.productId||'')}" data-vr-type="${escapeHtml(v.externalType==='youtube'?'youtube':v.source==='drive'?'drive':'direct')}" data-vr-default-ratio="${v.isShort?'9/16':'16/9'}" data-vr-video-id="${escapeHtml(v.videoId||'')}">
+            return `<section class="client-video-card" data-vr-product="${escapeHtml(vrKey)}" data-vr-file-id="${escapeHtml(v.id||'')}" data-vr-raw-product="${escapeHtml(v.productId||'')}" data-vr-type="${escapeHtml(v.externalType==='youtube'?'youtube':v.source==='drive'?'drive':'direct')}" data-vr-default-ratio="${v.isShort?'9/16':'16/9'}" data-vr-video-id="${escapeHtml(v.videoId||'')}">
                 <div class="client-video-review-layout">
                   <div class="client-video-left">
                     ${v.externalType==='youtube'?'<div class="vr-iframe-ambient" aria-hidden="true"></div>':''}
@@ -8174,12 +8209,6 @@ initApp();
    const card=node?.closest?.('.client-video-card');
    if(!card || !card.isConnected)return;
    const active=!!playing;
-   // Attach an image-specific blurred poster to the light layer. No canvas/CORS.
-   const id=card.dataset.vrVideoId||'';
-   if(/^[a-zA-Z0-9_-]{11}$/.test(id) && !card.dataset.vrPosterReady){
-     card.dataset.vrPosterReady='1';
-     card.style.setProperty('--vr-yt-poster',`url("https://i.ytimg.com/vi/${id}/hqdefault.jpg")`);
-   }
    card.classList.toggle('vr-ambient-playing',active);
    if(!active){
      const otherPlayer=[...gallery.querySelectorAll('.client-video-card.vr-ambient-playing')].some(el=>el!==card);
