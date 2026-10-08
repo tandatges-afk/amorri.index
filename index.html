@@ -3834,23 +3834,38 @@ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoC
 }
 </style>
 
-<style id="amorri-v558-youtube-ambient">
-/* YouTube cannot expose live frames to this page: adapt the glow to its poster
-   palette when CORS permits, while syncing visibility strictly to YT playback. */
-body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-left{position:relative!important;isolation:isolate!important;overflow:visible!important}
-body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-left > .client-video-frame{position:relative!important;z-index:2!important}
-body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-left > .vr-iframe-ambient{
- position:absolute!important;inset:-14% -10% -19%!important;z-index:1!important;pointer-events:none!important;
- opacity:0!important;visibility:hidden!important;transition:opacity .35s ease,visibility .35s ease!important;
- background-image:radial-gradient(ellipse at 24% 43%,rgba(var(--vr-yt-color-a,152,111,95),.85),transparent 65%),radial-gradient(ellipse at 78% 58%,rgba(var(--vr-yt-color-b,88,102,83),.83),transparent 68%)!important;
- background-size:145% 145%,145% 145%!important;background-repeat:no-repeat!important;
- filter:blur(60px) saturate(1.4)!important;animation:none!important;
+<style id="amorri-v559-youtube-ambient">
+/* YouTube IFrame API never exposes video pixels. A blurred source poster gives
+   a real video-specific glow without CORS canvas reads or fixed purple/blue colors.
+   Cinema / glow visibility is controlled by the actual PLAYING state only. */
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left{
+  position:relative!important;overflow:visible!important;isolation:isolate!important;
 }
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card.vr-ambient-playing .client-video-left > .vr-iframe-ambient{
- opacity:1!important;visibility:visible!important;animation:amorri-yt-palette-drift 13s ease-in-out infinite alternate!important;
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left::before{
+  content:none!important;display:none!important;/* Remove the old fallback halo. */
 }
-@keyframes amorri-yt-palette-drift{from{background-position:0% 30%,100% 70%}to{background-position:100% 60%,0% 25%}}
-@media(prefers-reduced-motion:reduce){body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-left > .vr-iframe-ambient{animation:none!important}}
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-frame{
+  position:relative!important;z-index:2!important;
+}
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left > .vr-iframe-ambient{
+  display:block!important;position:absolute!important;inset:-16% -12% -22%!important;
+  width:auto!important;height:auto!important;z-index:1!important;pointer-events:none!important;
+  border-radius:20%!important;background-color:#292623!important;
+  /* Neutral fallback remains visible even when i.ytimg.com is blocked. */
+  background-image:radial-gradient(ellipse at 26% 48%,rgba(197,155,112,.31),transparent 63%),radial-gradient(ellipse at 79% 65%,rgba(106,137,128,.29),transparent 66%),var(--vr-yt-poster,linear-gradient(115deg,#987563,#56716b))!important;
+  background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;
+  filter:blur(clamp(38px,5vw,86px)) saturate(1.65) brightness(1.03)!important;
+  transform:translateZ(0) scale(1.02)!important;animation:none!important;
+  opacity:0!important;visibility:hidden!important;
+  transition:opacity .5s ease,visibility 0s linear .5s!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"].vr-ambient-playing .client-video-left > .vr-iframe-ambient{
+  opacity:.94!important;visibility:visible!important;
+  transition:opacity .5s ease,visibility 0s!important;
+}
+@media(prefers-reduced-motion:reduce){
+ body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .client-video-left > .vr-iframe-ambient{transition:none!important}
+}
 </style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
@@ -4690,18 +4705,34 @@ function vrParse(str) {
 function stopVideoReviewListeners() {
     vrListeners.splice(0).forEach(({ref,callback})=>ref.off('value',callback));
     vrPlayers.forEach(player=>{try{player.destroy()}catch(_){}});vrPlayers.clear();
-    document.querySelectorAll(".client-video-card").forEach(card=>{if(card._driveRefreshTimer)clearTimeout(card._driveRefreshTimer)});
+    document.querySelectorAll(".client-video-card").forEach(card=>{if(card._driveRefreshTimer)clearTimeout(card._driveRefreshTimer);if(card._ytAmbientPoll)clearInterval(card._ytAmbientPoll);window.amorriSetIframeCinema?.(card,false)});
 }
 function vrYoutubeAPI() {
-    if(window.YT?.Player)return Promise.resolve();
-    if(vrYoutubePromise)return vrYoutubePromise;
-    vrYoutubePromise=new Promise((resolve,reject)=>{
-        const old=window.onYouTubeIframeAPIReady;
-        window.onYouTubeIframeAPIReady=()=>{if(typeof old==='function')old();resolve();};
-        const script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';
-        script.onerror=()=>reject(new Error('Không tải được YouTube Player API'));
-        document.head.appendChild(script);
-    });return vrYoutubePromise;
+    if (typeof window.YT?.Player === 'function') return Promise.resolve();
+    if (vrYoutubePromise) return vrYoutubePromise;
+    vrYoutubePromise = new Promise((resolve, reject) => {
+        let settled = false;
+        const prev = window.onYouTubeIframeAPIReady;
+        const finish = () => {
+            if (settled || typeof window.YT?.Player !== 'function') return;
+            settled = true; clearTimeout(timeout); resolve();
+        };
+        window.onYouTubeIframeAPIReady = () => {
+            try { if (typeof prev === 'function') prev(); } catch (err) { console.warn('YouTube ready callback:', err); }
+            finish();
+        };
+        const timeout = setTimeout(() => {
+            if (!settled) { settled = true; reject(new Error('YouTube Player API không phản hồi trong 12 giây')); }
+        }, 12000);
+        if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+            const script = document.createElement('script');
+            script.src = 'https://www.youtube.com/iframe_api';
+            script.onerror = () => { if (!settled) { settled=true; clearTimeout(timeout); reject(new Error('Không tải được YouTube Player API')); } };
+            document.head.appendChild(script);
+        }
+        finish();
+    }).catch(err => { vrYoutubePromise = null; throw err; });
+    return vrYoutubePromise;
 }
 function initVideoReviewPanels() {
     const panels=[...document.querySelectorAll('#cgVideoContainer .client-video-card')];
@@ -4848,17 +4879,52 @@ function initVideoReviewPanels() {
         }
         if(kind==='youtube'){
             const frame=card.querySelector('iframe');
+            let lastAmbientState=null;
+            const syncAmbient=(playing)=>{
+                if(!card.isConnected)return;
+                if(lastAmbientState===playing)return;
+                lastAmbientState=playing;
+                // Target the stable card, not an iframe that the YouTube API may replace.
+                window.amorriSetIframeCinema?.(card,playing);
+            };
             vrYoutubeAPI().then(()=>{
                 if(!card.isConnected)return;
-                yt=new YT.Player(frame,{events:{onReady:(e)=>{duration=e.target.getDuration()||0;renderMarkers();refreshTime();window.amorriSetIframeCinema?.(card.querySelector('iframe') || e.target.getIframe(),e.target.getPlayerState()===YT.PlayerState.PLAYING)},onStateChange:(e)=>{
-                    if(e.data===YT.PlayerState.PAUSED)capturedAt=currentTime();
-                    if(e.data===YT.PlayerState.PLAYING)capturedAt=null;
-                    if(e.data===YT.PlayerState.PLAYING || e.data===YT.PlayerState.PAUSED || e.data===YT.PlayerState.ENDED){
-                        window.amorriSetIframeCinema?.(card.querySelector('iframe') || e.target?.getIframe?.(),e.data===YT.PlayerState.PLAYING);
+                yt=new YT.Player(frame.id||frame,{
+                    events:{
+                        onReady:(e)=>{
+                            duration=Number(e.target.getDuration?.())||0;
+                            renderMarkers();refreshTime();
+                            syncAmbient(e.target.getPlayerState?.()===YT.PlayerState.PLAYING);
+                        },
+                        onStateChange:(e)=>{
+                            if(e.data===YT.PlayerState.PAUSED)capturedAt=currentTime();
+                            if(e.data===YT.PlayerState.PLAYING)capturedAt=null;
+                            syncAmbient(e.data===YT.PlayerState.PLAYING);
+                            duration=Number(e.target?.getDuration?.())||duration;
+                            refreshTime();renderMarkers();
+                        },
+                        onError:(e)=>{
+                            syncAmbient(false);
+                            console.warn('[Amorri] YouTube player error:',e.data);
+                        }
                     }
-                    duration=yt.getDuration()||duration;refreshTime();renderMarkers();
-                }}});vrPlayers.set(productKey,yt);
-            }).catch(()=>{card.querySelector('[data-vr-hint]').textContent='Không đọc được YouTube timeline. Hãy tải lại trang.'});
+                });
+                vrPlayers.set(productKey,yt);
+                // State polling complements onStateChange (e.g. API stalls during buffering).
+                // Only writes the DOM when PLAYING state actually changes.
+                card._ytAmbientPoll=setInterval(()=>{
+                    if(!card.isConnected){clearInterval(card._ytAmbientPoll);return;}
+                    try {
+                        if(typeof yt?.getPlayerState==='function')
+                            syncAmbient(yt.getPlayerState()===YT.PlayerState.PLAYING);
+                    } catch(_) {}
+                },450);
+            }).catch(err=>{
+                syncAmbient(false);
+                console.warn('[Amorri] YouTube Ambient/Timeline unavailable:',err);
+                const hint=card.querySelector('[data-vr-hint]');
+                if(hint)hint.textContent='Không kết nối được YouTube API; chức năng tự đồng bộ và Ambient chưa sẵn sàng.';
+            });
             const loop=()=>{if(!card.isConnected)return;if(!dragging)refreshTime();setTimeout(loop,600)};loop();
         }
         updateMode();refreshTime();
@@ -5091,17 +5157,21 @@ async function initClientGallery() {
         stopVideoReviewListeners();
         videoContainer.innerHTML = videos.map(v => {
             let frame='';
+            const vrKey = reviewKey(String(v.productId || "") + "::" + String(v.id || ""));
             if(v.externalType==='youtube') {
-                frame=`<iframe src="https://www.youtube.com/embed/${encodeURIComponent(v.videoId)}?enablejsapi=1" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+                const ytOrigin=/^https?:$/.test(location.protocol)?'&origin='+encodeURIComponent(location.origin):'';
+                frame=`<iframe id="vr-yt-${vrKey}" src="https://www.youtube.com/embed/${encodeURIComponent(v.videoId)}?enablejsapi=1&playsinline=1${ytOrigin}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
             } else if(v.source === 'drive') {
                 frame=`<video controls playsinline preload="metadata" data-vr-drive-video style="display:none" ></video><iframe data-vr-drive-frame src="${safeUrl(v.previewUrl || `https://drive.google.com/file/d/${encodeURIComponent(v.id)}/preview`)}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
             } else if(v.url) {
                 frame=`<video controls playsinline preload="metadata" src="${safeUrl(v.url)}"></video>`;
             }
-            const vrKey = reviewKey(String(v.productId || "") + "::" + String(v.id || ""));
-            return `<section class="client-video-card" data-vr-product="${escapeHtml(vrKey)}" data-vr-file-id="${escapeHtml(v.id||'')}" data-vr-raw-product="${escapeHtml(v.productId||'')}" data-vr-type="${escapeHtml(v.externalType==='youtube'?'youtube':v.source==='drive'?'drive':'direct')}" data-vr-default-ratio="${v.isShort?'9/16':'16/9'}" data-vr-video-id="${escapeHtml(v.videoId||'')}">
+            const ytPosterStyle=(v.externalType==='youtube' && /^[a-zA-Z0-9_-]{11}$/.test(v.videoId||''))
+                ? ` style="--vr-yt-poster:url('https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg')" data-vr-poster-ready="1"` : '';
+            return `<section class="client-video-card"${ytPosterStyle} data-vr-product="${escapeHtml(vrKey)}" data-vr-file-id="${escapeHtml(v.id||'')}" data-vr-raw-product="${escapeHtml(v.productId||'')}" data-vr-type="${escapeHtml(v.externalType==='youtube'?'youtube':v.source==='drive'?'drive':'direct')}" data-vr-default-ratio="${v.isShort?'9/16':'16/9'}" data-vr-video-id="${escapeHtml(v.videoId||'')}">
                 <div class="client-video-review-layout">
                   <div class="client-video-left">
+                    ${v.externalType==='youtube'?'<div class="vr-iframe-ambient" aria-hidden="true"></div>':''}
                     <div class="client-video-frame">${frame}</div>
 
                   </div>
@@ -8038,53 +8108,24 @@ initApp();
     gallery.classList.remove('amorri-cinema-active');
   }
  }
- window.amorriSetIframeCinema=(frame,playing)=>{
-   if(!frame)return;
-   const card=frame.closest('.client-video-card');
-   if(!card)return;
-   setCinema(frame,playing);
-   card?.classList.toggle('vr-ambient-playing',!!playing);
-   if(playing)tuneYouTubeGlow(card);
-   // Cross-origin YouTube iframes cannot be sampled. Animated lighting is deliberately
-   // synthetic (NOT video-frame color sampling) and follows real YouTube play/pause.
-   if(playing && card){
-     const host=card.querySelector('.client-video-left');
-     if(host && !host.querySelector('.vr-iframe-ambient')){
-       const light=document.createElement('div');light.className='vr-iframe-ambient';
-       light.setAttribute('aria-hidden','true');host.prepend(light);
-     }
+ window.amorriSetIframeCinema=(node,playing)=>{
+   const card=node?.closest?.('.client-video-card');
+   if(!card || !card.isConnected)return;
+   const active=!!playing;
+   // Attach an image-specific blurred poster to the light layer. No canvas/CORS.
+   const id=card.dataset.vrVideoId||'';
+   if(/^[a-zA-Z0-9_-]{11}$/.test(id) && !card.dataset.vrPosterReady){
+     card.dataset.vrPosterReady='1';
+     card.style.setProperty('--vr-yt-poster',`url("https://i.ytimg.com/vi/${id}/hqdefault.jpg")`);
    }
+   card.classList.toggle('vr-ambient-playing',active);
+   if(!active){
+     const otherPlayer=[...gallery.querySelectorAll('.client-video-card.vr-ambient-playing')].some(el=>el!==card);
+     const nativePlaying=[...gallery.querySelectorAll(videoSelector)].some(el=>!el.paused&&!el.ended);
+     if(otherPlayer || nativePlaying)return;
+   }
+   setCinema(card.querySelector('.client-video-frame')||card,active);
  };
- // Read a YouTube preview palette once; never claim this samples live iframe pixels.
- const ytPaletteRequested=new WeakSet();
- function tuneYouTubeGlow(card){
-   if(!card || ytPaletteRequested.has(card))return;
-   ytPaletteRequested.add(card);
-   const id=card.dataset.vrVideoId;
-   if(!/^[\w-]{11}$/.test(id||''))return;
-   const image=new Image();image.crossOrigin='anonymous';
-   image.onload=()=>{
-     try{
-       const cv=document.createElement('canvas');cv.width=48;cv.height=27;
-       const context=cv.getContext('2d',{willReadFrequently:true});
-       context.drawImage(image,0,0,48,27);
-       const data=context.getImageData(0,0,48,27).data;
-       const region=[[],[]];
-       for(let y=3;y<24;y+=2)for(let x=3;x<45;x+=2){
-         const at=(y*48+x)*4, r=data[at],g=data[at+1],b=data[at+2];
-         if(Math.max(r,g,b)<30 || Math.min(r,g,b)>225)continue;
-         region[x<24?0:1].push([r,g,b]);
-       }
-       for(let i=0;i<2;i++){
-         const a=region[i];if(!a.length)continue;
-         const mean=[0,1,2].map(k=>Math.round(a.reduce((sum,v)=>sum+v[k],0)/a.length));
-         const boosted=mean.map(v=>Math.min(235,Math.max(65,Math.round(v*.88+27))));
-         card.style.setProperty(i?'--vr-yt-color-b':'--vr-yt-color-a',boosted.join(','));
-       }
-     }catch(_){ /* CORS-blocked previews use the neutral fallback. */ }
-   };
-   image.src='https://i.ytimg.com/vi/'+encodeURIComponent(id)+'/hqdefault.jpg';
- }
  function createAmbient(video){
   const host=video.closest('.client-video-left');if(!host || ambient.has(video))return;
   const glow=document.createElement('canvas');glow.className='amorri-ambient-canvas';glow.style.background='radial-gradient(ellipse,#876653,#332a29 64%,#141313)';glow.width=160;glow.height=90;
