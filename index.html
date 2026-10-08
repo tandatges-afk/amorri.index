@@ -3225,6 +3225,70 @@ button:focus-visible,a:focus-visible{outline:2px solid #a88964;outline-offset:2p
   body .app > .sidebar { transition: none !important; }
 }
 </style>
+
+<style id="amorri-v528-calm-luxury">
+/* Gentle visual finish; no continuously running animations or functional layout changes. */
+:root{
+  --bg:#f5f3ef;--panel:#fffefa;--text:#302d28;--muted:#726c63;
+  --line:#e7e1d8;--primary:#44443b;--primary-hover:#58564b;
+  --champagne:#ad8a67;
+}
+html{scroll-behavior:smooth}
+body{background:#f5f3ef !important;color:#302d28}
+/* Calm layered glow behind app; the mask never intercepts touch or clicks. */
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 65vw 35vw at 12% -9%,rgba(194,163,126,.075),transparent 72%),
+    radial-gradient(ellipse 49vw 38vw at 98% 94%,rgba(149,147,129,.055),transparent 74%);
+}
+body>.app,body>#clientGalleryView{position:relative;z-index:1}
+.topbar{background:rgba(255,254,250,.96) !important;border-color:#e9e3da !important}
+.card,.panel,.side-card,.stat,.modal-content,.modal-box{
+  background-color:#fffefa;border-color:#ebe5db !important;
+  box-shadow:0 2px 7px rgba(48,38,25,.024),0 13px 34px rgba(48,38,25,.045) !important;
+}
+input:not([type=checkbox]):not([type=radio]),textarea,select{
+  border-color:#e2dbd0;transition:border-color .18s ease,box-shadow .18s ease;
+}
+input:not([type=checkbox]):not([type=radio]):focus,textarea:focus,select:focus{
+  border-color:#b49a7b !important;box-shadow:0 0 0 3px rgba(180,154,123,.105);
+}
+.btn,.nav-btn,.icon-btn,.client-photo-card,.client-media-card,.vr-comment{
+  transition:background-color .20s ease,border-color .20s ease,box-shadow .22s ease,transform .22s cubic-bezier(.2,.7,.25,1);
+}
+@media(hover:hover) and (pointer:fine){
+  .btn:not(:disabled):hover{transform:translateY(-1px)}
+  .client-photo-card:hover,.client-media-card:hover{box-shadow:0 15px 34px rgba(45,37,27,.09) !important}
+}
+#clientGalleryView{background:#f5f3ef !important}
+#clientGalleryView .gallery-container{background:transparent}
+#clientGalleryView .client-video-card{box-shadow:0 16px 36px rgba(44,35,25,.075) !important}
+#clientGalleryView .vr-panel{background:#fffefa !important}
+#clientGalleryView .vr-comment{background:#faf8f4 !important}
+/* Preserve strong contrast in gallery cover and meaningful Fix/unfixed states. */
+@media(max-width:768px){
+  html{scroll-behavior:auto}
+  body .app>.sidebar{
+    transition:transform 420ms cubic-bezier(.25,.8,.25,1),opacity 350ms ease !important;
+    transform:translate3d(0,0,0);
+    backface-visibility:hidden;
+    will-change:transform,opacity;
+    box-shadow:0 -5px 26px rgba(54,46,34,.07) !important;
+  }
+  body.amorri-nav-scroll-hidden .app>.sidebar{
+    transform:translate3d(0,calc(100% + env(safe-area-inset-bottom) + 14px),0) !important;
+    opacity:0 !important;
+    pointer-events:none;
+  }
+  .card,.panel,.side-card,.stat{box-shadow:0 4px 16px rgba(48,38,25,.038) !important}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .btn,.nav-btn,.icon-btn,.client-photo-card,.client-media-card,.vr-comment,
+  body .app>.sidebar{transition:none !important;animation:none !important}
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -7281,41 +7345,49 @@ initApp();
 })();
 </script>
 
-<script id="amorri-v527-smart-mobile-navigation-script">
+<script id="amorri-v528-smart-mobile-navigation-script">
 (() => {
   const mq = window.matchMedia('(max-width: 768px)');
-  const cls = 'amorri-nav-scroll-hidden';
   const sidebar = document.querySelector('.app > .sidebar');
   if (!sidebar) return;
-  let previousY = window.scrollY || 0;
-  let distance = 0;
-  let direction = 0;
-  let scheduled = false;
-  const show = () => { document.body.classList.remove(cls); distance = 0; };
-  const interactive = (node) => !!node?.closest?.('input, textarea, select, [contenteditable="true"], [role="textbox"]');
-  function update() {
-    scheduled = false;
+  const hiddenClass = 'amorri-nav-scroll-hidden';
+  const isTextEntry = el => !!el?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]');
+  const isDialogOpen = () => !!document.querySelector('.modal-overlay.active, .modal-backdrop.active, .modal.show, dialog[open]');
+  let lastY = Math.max(0, window.scrollY || 0);
+  let accumulated = 0;
+  let lastDirection = 0;
+  let pending = false;
+  let lastSwitch = 0;
+  function show() { document.body.classList.remove(hiddenClass); accumulated = 0; }
+  function onFrame() {
+    pending = false;
     const y = Math.max(0, window.scrollY || document.documentElement.scrollTop || 0);
-    const dy = y - previousY;
-    previousY = y;
-    if (!mq.matches || y < 90 || interactive(document.activeElement) ||
-        document.querySelector('.modal-overlay.active, .modal-backdrop.active')) {
-      show(); return;
+    const delta = y - lastY;
+    lastY = y;
+    if (!mq.matches || y < 72 || isTextEntry(document.activeElement) || isDialogOpen()) {
+      show(); lastDirection = 0; return;
     }
-    if (Math.abs(dy) < 2) return;
-    const next = Math.sign(dy);
-    distance = next === direction ? Math.min(100, distance + Math.abs(dy)) : Math.abs(dy);
-    direction = next;
-    if (next > 0 && distance >= 35) document.body.classList.add(cls);
-    else if (next < 0 && distance >= 18) show();
+    if (Math.abs(delta) < 2 || Math.abs(delta) > 180) return;
+    const dir = Math.sign(delta);
+    accumulated = dir === lastDirection ? Math.min(160, accumulated + Math.abs(delta)) : Math.abs(delta);
+    lastDirection = dir;
+    // Direction hysteresis prevents flicker from tiny accidental movements.
+    if (performance.now() - lastSwitch < 360) return;
+    if (dir > 0 && accumulated >= 65 && !document.body.classList.contains(hiddenClass)) {
+      document.body.classList.add(hiddenClass); lastSwitch = performance.now(); accumulated = 0;
+    } else if (dir < 0 && accumulated >= 28 && document.body.classList.contains(hiddenClass)) {
+      show(); lastSwitch = performance.now();
+    }
   }
   window.addEventListener('scroll', () => {
-    if (!scheduled) { scheduled = true; requestAnimationFrame(update); }
-  }, { passive: true });
-  window.addEventListener('resize', () => { previousY = window.scrollY || 0; show(); }, { passive: true });
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(onFrame);
+  }, {passive:true});
+  window.addEventListener('resize', () => { lastY = window.scrollY || 0; lastDirection = 0; show(); }, {passive:true});
   sidebar.addEventListener('click', show);
-  document.addEventListener('focusin', (event) => { if (interactive(event.target)) show(); });
-  document.addEventListener('touchstart', () => { if (!mq.matches) show(); }, { passive: true, once: true });
+  document.addEventListener('focusin', e => { if (isTextEntry(e.target)) show(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { lastY=window.scrollY||0; show(); } });
   show();
 })();
 </script>
