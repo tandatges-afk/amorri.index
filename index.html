@@ -3463,7 +3463,8 @@ body[data-client-gallery="true"] .studio-credit-pill{
   background:transparent!important;border:0!important;box-shadow:none!important;
   backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
 }
-body.amorri-cinema[data-client-gallery="true"] .studio-credit{background:#08090c!important;color:#aaa39b!important;}
+/* v5.48: remove full-width cinema footer strip; credit wrapper stays transparent. */
+body.amorri-cinema[data-client-gallery="true"] .studio-credit{background:transparent!important;color:#aaa39b!important;}
 body.amorri-cinema[data-client-gallery="true"] .studio-credit-pill{color:#aaa39b!important;}
 body.amorri-cinema[data-client-gallery="true"] .studio-credit-pill strong{color:#d8d0c5!important;}
 /* Ambient glow is only visible after playback begins. */
@@ -3522,10 +3523,23 @@ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoC
 body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-list-toolbar {
   border-color:rgba(91,77,60,.13)!important;
 }
-/* Add exactly 50px after the video delivery block, not below every
-   page footer and not to the video frame's aspect-ratio geometry. */
+/* v5.48: real 50px footer bottom space, after the studio credit pill.
+   Previous #cgVideoContainer padding did not add space beneath the footer. */
 body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer {
-  padding-bottom:50px!important;
+  padding-bottom:0!important;
+}
+body[data-client-gallery="true"] .studio-credit {
+  background:transparent!important;
+  background-image:none!important;
+  padding:5px 18px 59px!important; /* 9px original bottom + 50px requested */
+}
+body.amorri-cinema[data-client-gallery="true"] .studio-credit {
+  background:transparent!important;
+  background-image:none!important;
+}
+body[data-client-gallery="true"] .studio-credit-pill {
+  position:relative;
+  z-index:1;
 }
 </style>
 </head>
