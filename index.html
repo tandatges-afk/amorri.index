@@ -2629,9 +2629,10 @@ body {
   #cgVideoContainer .vr-list-wrap{max-height:260px}
 }
 
-/* v5.12: video ~15% smaller than v5.11, keep its right-hand alignment */
+/* v5.13: 85%-width video centered inside its player column. */
 @media(min-width:1001px){
-  #cgVideoContainer .client-video-frame{width:85%;max-width:100%;margin-left:auto;margin-right:0}
+  #cgVideoContainer .client-video-left{justify-content:center;padding-left:8px;padding-right:8px}
+  #cgVideoContainer .client-video-frame{width:85%;max-width:100%;margin-left:auto;margin-right:auto;flex:0 0 auto}
 }
 </style>
 </head>
