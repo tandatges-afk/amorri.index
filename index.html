@@ -3435,6 +3435,31 @@ body[data-client-gallery="true"] #panda-mascot{width:50px !important;height:50px
  #clientGalleryView #cgVideoContainer .client-video-left::before{transition:none!important}
 }
 </style>
+<style id="amorri-v532-cinema">
+/* Cinema mode is isolated to video-only client galleries. */
+body.amorri-cinema #clientGalleryView{background:#08090b!important;transition:background-color .65s ease!important}
+body.amorri-cinema #clientGalleryView .gallery-cover{opacity:.10!important;transform:translateY(-12px);filter:blur(5px);pointer-events:none;transition:opacity .7s,filter .7s,transform .7s}
+body.amorri-cinema #clientGalleryView #cgVideoContainer{position:relative;z-index:2}
+#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-review-layout{grid-template-columns:minmax(0,1fr) 310px!important;gap:8px!important;align-items:center!important}
+#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-left{padding:20px 2px 48px!important}
+#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .vr-panel{margin:0!important;align-self:stretch!important;background:rgba(245,242,236,.63)!important;backdrop-filter:blur(24px) saturate(115%)!important;-webkit-backdrop-filter:blur(24px) saturate(115%)!important;border:1px solid rgba(197,181,161,.30)!important;box-shadow:0 12px 32px #0002!important}
+body.amorri-cinema #clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .vr-panel{background:rgba(35,35,38,.70)!important;color:#f3eee6!important;border-color:rgba(255,255,255,.13)!important}
+body.amorri-cinema #clientGalleryView .vr-heading strong,body.amorri-cinema #clientGalleryView .vr-list-toolbar strong{color:#f3eee6!important}
+body.amorri-cinema #clientGalleryView .vr-comment{background:rgba(255,255,255,.10)!important;color:#fff!important;border-color:#ffffff18!important}
+body.amorri-cinema #clientGalleryView .vr-comment-body{color:#f8f7f5!important}
+body.amorri-cinema #clientGalleryView .vr-sub{color:#d1cbc4!important}
+body.amorri-cinema #clientGalleryView .gallery-container.amorri-video-only{background:transparent!important}
+/* Crisp enlarged light-field behind player, matching sampled frame colors. */
+#clientGalleryView #cgVideoContainer .client-video-left{isolation:isolate!important}
+#clientGalleryView #cgVideoContainer .client-video-left::before{opacity:.20!important;transition:opacity .55s ease!important}
+#clientGalleryView #cgVideoContainer .amorri-ambient-canvas{position:absolute;z-index:-1;pointer-events:none;inset:-15% -9% -35%;width:118%;height:150%;object-fit:fill;opacity:.60;filter:blur(54px) saturate(1.2) brightness(.83);transform:translate3d(0,0,0);border-radius:16%;}
+body.amorri-cinema #clientGalleryView #cgVideoContainer .amorri-ambient-canvas{opacity:.85;filter:blur(67px) saturate(1.35) brightness(.92)}
+body.amorri-cinema .studio-credit{background:transparent!important;box-shadow:none!important;border:0!important}
+body.amorri-cinema,body.amorri-cinema::before{background:#08090b!important}
+@media(max-width:1080px){#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-review-layout{grid-template-columns:1fr!important;gap:0!important}#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .vr-panel{margin-top:10px!important}}
+@media(prefers-reduced-motion:reduce){body.amorri-cinema #clientGalleryView .gallery-cover{transition:none!important}body.amorri-cinema #clientGalleryView{transition:none!important}}
+</style>
+<style id="amorri-v532-credit-bg">body[data-client-gallery="true"]:has(.gallery-container.amorri-video-only) .studio-credit{background:transparent!important;box-shadow:none!important;border:0!important}body[data-client-gallery="true"]:has(.gallery-container.amorri-video-only){background:#f5f3ef}body.amorri-cinema[data-client-gallery="true"]{background:#08090b!important}</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -7530,43 +7555,56 @@ initApp();
   setOffset(0);
 })();
 </script>
-<script id="amorri-v529-video-ambient">
-(() => {
-  const selector = '#cgVideoContainer .client-video-card';
-  const canvas = document.createElement('canvas'); canvas.width=24; canvas.height=14;
-  const ctx = canvas.getContext('2d', {willReadFrequently:true});
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let lastUpdate=0;
-  function apply(card, video) {
-    if (!ctx || !video || video.readyState < 2 || video.videoWidth < 1) return;
-    try {
-      ctx.drawImage(video,0,0,canvas.width,canvas.height);
-      const rgba=ctx.getImageData(0,0,canvas.width,canvas.height).data;
-      let r=0,g=0,b=0,n=0;
-      for(let i=0;i<rgba.length;i+=16){ r+=rgba[i];g+=rgba[i+1];b+=rgba[i+2];n++; }
-      if(!n)return;
-      r=Math.round(r/n);g=Math.round(g/n);b=Math.round(b/n);
-      // Blend actual footage into a calm, muted palette; avoid sharp color jumps.
-      const previous = card._amorriAmbient || [169,133,102];
-      const target = [r,g,b].map((value,i)=>Math.round(value*.48 + [161,124,91][i]*.52));
-      const blended = target.map((v,i)=>Math.round(previous[i]*.78+v*.22));
-      card._amorriAmbient = blended;
-      card.style.setProperty('--vr-ambient-rgb', blended.join(','));
-    } catch (_) {
-      // Browser blocks canvas reads from cross-origin media: keep CSS fallback.
-    }
+
+<script id="amorri-v532-cinema-behavior">
+(()=>{
+ const gallery=document.getElementById('clientGalleryView');
+ const videoSelector='#cgVideoContainer .client-video-card video';
+ const ambient=new WeakMap();
+ let cinemaVideo=null, scrollLock=0;
+ function isVideoGallery(){return gallery?.style.display!=='none' && !!gallery?.querySelector('.gallery-container.amorri-video-only');}
+ function setCinema(video,on){
+  if(!isVideoGallery())return;
+  if(on){cinemaVideo=video;document.body.classList.add('amorri-cinema');centerPlayer(video);}
+  else if(![...document.querySelectorAll(videoSelector)].some(v=>!v.paused && !v.ended)){
+    if(cinemaVideo===video)cinemaVideo=null;
+    document.body.classList.remove('amorri-cinema');
   }
-  document.addEventListener('timeupdate', e => {
-    const video=e.target;
-    if (!(video instanceof HTMLVideoElement) || !video.closest(selector)) return;
-    if (reduced.matches || document.hidden) return;
-    const now=performance.now();if(now-lastUpdate < 260)return;lastUpdate=now;
-    const card=video.closest(selector);if(card)apply(card,video);
-  },true);
-  document.addEventListener('loadeddata',e=>{
-    const video=e.target;if(!(video instanceof HTMLVideoElement))return;
-    const card=video.closest(selector);if(card)apply(card,video);
-  },true);
+ }
+ function centerPlayer(video){
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  if(Date.now()-scrollLock<2500)return;
+  scrollLock=Date.now();
+  const frame=video.closest('.client-video-left');if(!frame)return;
+  const rect=frame.getBoundingClientRect(), viewport=window.innerHeight;
+  const diff=(rect.top+rect.height/2)-(viewport/2);
+  if(Math.abs(diff)>Math.max(55,viewport*.12))window.scrollBy({top:diff,behavior:'smooth'});
+ }
+ function createAmbient(video){
+  const host=video.closest('.client-video-left');if(!host || ambient.has(video))return;
+  const glow=document.createElement('canvas');glow.className='amorri-ambient-canvas';glow.style.background='radial-gradient(ellipse,#876653,#332a29 64%,#141313)';glow.width=96;glow.height=54;
+  host.insertBefore(glow,host.firstChild);
+  const ctx=glow.getContext('2d',{alpha:false});
+  const state={glow,ctx,active:false,last:0,failed:false,frame:0};ambient.set(video,state);
+  function render(ts){
+   if(!state.active)return;
+   // 10 fps max; draw directly, avoids sluggish averaged gradients.
+   if(ts-state.last>=100 && !document.hidden && !state.failed && video.readyState>=2){
+    state.last=ts;
+    try{ctx.drawImage(video,0,0,glow.width,glow.height)}catch(e){state.failed=true;glow.style.background='radial-gradient(ellipse,#aa785c,#4c3534 63%,transparent)'}
+   }
+   state.frame=requestAnimationFrame(render);
+  }
+  state.start=()=>{if(state.active)return;state.active=true;state.frame=requestAnimationFrame(render)};
+  state.stop=()=>{state.active=false;cancelAnimationFrame(state.frame)};
+  if(video.readyState>=2){state.start();if(video.paused)state.stop()}
+ }
+ document.addEventListener('play',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;createAmbient(v);ambient.get(v)?.start();setCinema(v,true)},true);
+ document.addEventListener('pause',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;ambient.get(v)?.stop();setCinema(v,false)},true);
+ document.addEventListener('ended',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;ambient.get(v)?.stop();setCinema(v,false)},true);
+ document.addEventListener('loadeddata',e=>{const v=e.target;if(v instanceof HTMLVideoElement && v.matches(videoSelector))createAmbient(v)},true);
+ const observer=new MutationObserver(()=>{if(!isVideoGallery()){document.body.classList.remove('amorri-cinema');return;}document.querySelectorAll(videoSelector).forEach(v=>{if(v.readyState>=2)createAmbient(v)})});
+ observer.observe(document.getElementById('cgVideoContainer'),{childList:true,subtree:true});
 })();
 </script>
 </body>
