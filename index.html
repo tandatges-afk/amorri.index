@@ -2511,6 +2511,43 @@ body {
 }
 </style>
 
+<style id="amorri-v58-clean-review">
+/* V5.8: Frame-style layout; preserve Amorri's original light palette */
+.gallery-container{max-width:1680px}
+#cgVideoContainer{gap:16px}
+.client-video-review-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;align-items:stretch;background:#fff}
+.client-video-card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 12px 35px rgba(15,23,42,.07)}
+.client-video-head{padding:12px 16px;background:#fff}
+.client-video-left{padding:8px;background:#f8fafc;display:flex;align-items:flex-start;min-width:0}
+.client-video-frame{width:100%;aspect-ratio:16/9;border:0;border-radius:10px;background:#020617;box-shadow:none}
+.vr-panel{background:#fff;color:#20252c;border-left:1px solid #e5e7eb;border-top:0;display:flex;flex-direction:column;gap:0;padding:0;min-width:0;min-height:100%}
+.vr-heading{margin:0;padding:13px 15px;border-bottom:1px solid #eceef0;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.vr-heading strong{font-size:14px;color:#1f2937}
+.vr-status[data-vr-status]{font-size:10px;color:#64748b;background:#f8fafc;border:0}
+.vr-list-wrap{display:flex;flex-direction:column;gap:0;flex:1;min-height:150px;background:#fff;border:0;padding:0;border-radius:0;box-shadow:none}
+.vr-list-toolbar{padding:10px 15px 8px;border-bottom:1px solid #eceef0}
+.vr-list-toolbar strong{font-size:12px;color:#374151}
+.vr-list{display:flex;flex-direction:column;gap:0;max-height:420px;overflow:auto;margin:0;padding:0}
+.vr-comment{background:#fff;border:0;border-bottom:1px solid #edf0f3;border-radius:0;box-shadow:none;padding:12px 15px}
+.vr-comment.vr-selected{background:#faf7f0;border-color:#e6d8c4;box-shadow:none}
+.vr-comment-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0}
+.vr-comment-top small{flex:1 1 95px;order:0;font-size:10px;color:#6b7280}
+.vr-comment-body{font-size:12px;line-height:1.5;color:#293241;margin-top:7px}
+.vr-jump{background:#f4efe6;border:1px solid #e6dacf;color:#73573c;padding:5px 7px;height:29px;min-width:auto}
+.vr-edit,.vr-resolve{padding:5px 7px;height:29px;background:#fff;border:1px solid #e2e8f0;color:#475569;font-size:10px}
+.vr-resolve{background:#f0fdf4;border-color:#d6efdd;color:#15803d}
+.vr-compose{margin-top:auto;padding:12px;border-top:1px solid #e5e7eb;background:#fff}
+.vr-entry{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;margin:0}
+.vr-time{height:36px;padding:7px 5px;border-radius:9px;background:#f4efe6;border:1px solid #e9ddcb;color:#6b5133;font-weight:800;font-size:12px}
+.vr-name{height:36px;padding:8px 10px;background:#fff;border:1px solid #dce2e8;border-radius:9px;color:#111827;min-width:0}
+.vr-message{width:100%;min-height:72px;height:88px;margin-top:8px;padding:10px;border-radius:10px;background:#fff;border:1px solid #dce2e8;color:#111827;font-size:12px;resize:vertical}
+.vr-actions{display:flex;justify-content:flex-end;margin:8px 0 0}
+.vr-btn{background:#1b1b19;color:#fff;box-shadow:none;padding:9px 15px;min-height:36px;border-radius:9px}
+.vr-aux{display:none !important}
+#eventProductsList .product-row [data-video-review-action]{display:none}
+@media(max-width:1050px){.client-video-review-layout{grid-template-columns:1fr}.vr-panel{border-left:0;border-top:1px solid #e5e7eb}.vr-list{max-height:380px}.client-video-left{padding:7px}}
+@media(max-width:700px){.vr-comment-top{display:flex}.vr-jump{width:auto;flex:0 0 auto}.vr-edit,.vr-resolve{width:auto;flex:0 0 auto}.vr-panel{padding:0}.vr-entry{grid-template-columns:72px minmax(0,1fr)}}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -3524,11 +3561,11 @@ function initVideoReviewPanels() {
                 jumpBtn.title='Tua đến mốc và mở bình luận để chỉnh sửa';
                 jumpBtn.onclick=()=>openCommentEditor(c);top.appendChild(jumpBtn);
                 const author=document.createElement('small');author.textContent=(c.name||'Khách hàng')+' · '+new Date(c.createdAt||Date.now()).toLocaleString('vi-VN');top.appendChild(author);
-                const edit=document.createElement('button');edit.type='button';edit.className='vr-edit';edit.textContent='✏️ Chỉnh sửa';
+                const edit=document.createElement('button');edit.type='button';edit.className='vr-edit';edit.textContent='Sửa';
                 edit.onclick=()=>openCommentEditor(c);top.appendChild(edit);
                 // Only signed-in staff can remove a resolved comment.
                 if(firebase.auth().currentUser){
-                    const fixed=document.createElement('button');fixed.type='button';fixed.className='vr-resolve';fixed.textContent='✓ Đã fix';
+                    const fixed=document.createElement('button');fixed.type='button';fixed.className='vr-resolve';fixed.textContent='✓ Fix';
                     fixed.onclick=async()=>{
                         if(!confirm('Xác nhận đã sửa và XÓA bình luận này khỏi Firebase? Không thể hoàn tác.'))return;
                         fixed.disabled=true;
@@ -3617,6 +3654,9 @@ async function initClientGallery() {
         const youtubeVideoId = extractYouTubeVideoId(rawUrl);
         if (youtubeVideoId) {
             media.push({id:`yt_${p.id}`,name:p.name||'Video',isVideo:true,externalType:'youtube',videoId:youtubeVideoId,productId:p.id});
+        } else if (extractDriveFileId(rawUrl) && /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(String(p.name||''))) {
+            const driveImageId = extractDriveFileId(rawUrl);
+            media.push({id:driveImageId,name:p.name||'Ảnh',isVideo:false,productId:p.id,thumb:`https://drive.google.com/thumbnail?id=${encodeURIComponent(driveImageId)}&sz=w1200`,url:rawUrl});
         } else if (extractDriveFileId(rawUrl)) {
             const driveFileId = extractDriveFileId(rawUrl);
             media.push({
@@ -3654,6 +3694,7 @@ async function initClientGallery() {
             }
         } catch(err) {
             console.error('Drive folder error:', p.name, err);
+            showToast('Không tải được ảnh từ thư mục: '+(p.name||'Google Drive')+' (xem Network > get-drive-images)');
         }
     }
 
@@ -3699,28 +3740,23 @@ async function initClientGallery() {
                     <div class="client-video-frame">${frame}</div>
                   </div>
                   <aside class="vr-panel">
-                    <div class="vr-heading"><div><strong>💬 Video review</strong><p class="vr-sub">Gọn hơn, tập trung vào timeline và danh sách góp ý như kiểu panel review.</p></div><span class="vr-status" data-vr-status>Đang kết nối...</span></div>
-                    <div class="vr-shell">
-                      <div class="vr-card">
-                        <div class="vr-card-title"><strong>Timeline</strong><span class="vr-chip">Quick review</span></div>
-                        <div class="vr-timeline-box">
-                           <div class="vr-timeline-top"><span data-vr-mode>Timeline</span><span><b data-vr-current>00:00</b> / <span data-vr-total>--:--</span></span></div>
-                           <div class="vr-scrub-wrap"><input class="vr-scrub" type="range" min="0" max="100" step="1" value="0" data-vr-scrub aria-label="Chọn vị trí góp ý trên timeline"><div class="vr-timeline-dots" data-vr-dots></div></div>
-                           <div class="vr-time-tools"><label>Jump to</label><input data-vr-seek-input placeholder="01:25" aria-label="Mốc thời gian"><button class="vr-inline-btn" data-vr-seek type="button">Đi tới</button><label data-vr-drive-duration-label style="display:none">Duration</label><input data-vr-drive-duration style="display:none" placeholder="04:30" aria-label="Tổng thời lượng video"></div>
-                           <div class="vr-mode-note" data-vr-mode-note></div>
-                        </div>
+                    <div class="vr-heading"><strong>Góp ý video</strong><span class="vr-status" data-vr-status>Đang kết nối...</span></div>
+                    <div class="vr-list-wrap">
+                      <div class="vr-list-toolbar"><strong>Bình luận</strong></div>
+                      <div class="vr-list" data-vr-list></div>
+                    </div>
+                    <div class="vr-compose">
+                      <div class="vr-entry"><span class="vr-time" data-vr-current-secondary>00:00</span><input class="vr-name" data-vr-name maxlength="60" placeholder="Tên của bạn" aria-label="Tên người góp ý"></div>
+                      <textarea class="vr-message" data-vr-message maxlength="2000" placeholder="Viết góp ý tại mốc đang phát..." aria-label="Nội dung góp ý"></textarea>
+                      <div class="vr-actions"><button type="button" class="vr-btn" data-vr-send>Gửi góp ý</button></div>
+                    </div>
+                    <div class="vr-aux" aria-hidden="true">
+                      <div class="vr-timeline-box"><div class="vr-timeline-top"><span data-vr-mode></span><span><b data-vr-current>00:00</b> / <span data-vr-total>--:--</span></span></div>
+                        <div class="vr-scrub-wrap"><input class="vr-scrub" type="range" min="0" max="100" step="1" value="0" data-vr-scrub aria-label="Mốc thời gian"><div data-vr-dots></div></div>
+                        <div class="vr-time-tools"><input data-vr-seek-input aria-label="Mốc thời gian"><button data-vr-seek type="button">Đi tới</button><span data-vr-drive-duration-label></span><input data-vr-drive-duration aria-label="Độ dài video"></div>
+                        <div data-vr-mode-note></div>
                       </div>
-                      <div class="vr-card">
-                        <div class="vr-card-title"><strong>Góp ý nhanh</strong><span class="vr-chip">Comment composer</span></div>
-                        <div class="vr-entry"><span class="vr-time" data-vr-current-secondary>00:00</span><input class="vr-name" data-vr-name maxlength="60" placeholder="Tên người góp ý" aria-label="Tên người góp ý"></div>
-                        <textarea class="vr-message" data-vr-message maxlength="2000" placeholder="Nhập góp ý tại đúng mốc thời gian này..." aria-label="Nội dung góp ý"></textarea>
-                        <div class="vr-actions"><span class="vr-status" data-vr-hint>${v.source==='drive'?'Video Drive: nhập thời gian mm:ss hoặc hh:mm:ss từ trình phát.':'Thời gian được lấy từ vị trí đang phát.'}</span><button type="button" class="vr-btn" data-vr-send>Gửi góp ý</button></div>
-                        <div class="vr-markers" data-vr-markers hidden></div>
-                      </div>
-                      <div class="vr-card vr-list-wrap">
-                        <div class="vr-list-toolbar"><strong>Comments</strong><span>▶ nhảy • ✏️ sửa • ✓ fix</span></div>
-                        <div class="vr-list" data-vr-list></div>
-                      </div>
+                      <span data-vr-hint></span><div data-vr-markers></div>
                     </div>
                   </aside>
                 </div>
@@ -5349,8 +5385,8 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
               🔗 <span class="prod-view-name">${escapeHtml(name || 'Link Bàn Giao')}</span>
            </a>
            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateSingleClientLink('${prodId}')">🔗 Gửi Khách</button>
-               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px;font-size:12px;border:1px solid #b59a72;color:#79603e;font-weight:700" onclick="window.openVideoReviews('${prodId}')">✓ Đã fix</button>
+               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateSingleClientLink('${prodId}')">🔗 Copy link</button>
+               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px;font-size:12px;border:1px solid #b59a72;color:#79603e;font-weight:700" data-video-review-action="true" onclick="window.openVideoReviews('${prodId}')">💬 Góp ý video</button>
                <button type="button" class="btn ghost admin-only-flex product-copy-favorites" data-product-id="${prodId}" style="display:none; padding:6px 10px; font-size:12px; border:1px solid #86efac; color:#15803d; font-weight:700;">📋 Copy tên ảnh</button>
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.closest('.product-row').querySelector('.prod-view').style.display='none'; this.closest('.product-row').querySelector('.prod-edit').style.display='flex'">✏️ Sửa</button>
            </div>
@@ -5383,11 +5419,12 @@ window.getProductFavoriteCount = function(prodId) {
     return ev.favoritePhotoItems.filter(x => String(x.productId || '') === String(prodId) && x.name).length;
 };
 
-window.detectProductMediaType = async function(rawUrl) {
+window.detectProductMediaType = async function(rawUrl, productName = '') {
     const url = String(rawUrl || '').trim();
     const lower = url.toLowerCase();
     if (!url) return 'unknown';
-    if (extractYouTubeVideoId(url) || extractDriveFileId(url) || /\.(mp4|webm|mov|m4v|avi|mkv|ogg)(?:[?#].*)?$/i.test(url)) return 'video';
+    if (extractYouTubeVideoId(url) || /\.(mp4|webm|mov|m4v|avi|mkv|ogg)(?:[?#].*)?$/i.test(url)) return 'video';
+    if (extractDriveFileId(url)) { const title=String(productName||''); return /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(title) ? 'image' : /(?:video|clip|teaser|highlight|phim|film)/i.test(title) ? 'video' : 'unknown'; } // For ambiguous Drive-file links, do not guess.
     if (/\.(jpe?g|png|gif|webp|heic|heif)(?:[?#].*)?$/i.test(url)) return 'image';
     if (isDriveFolderUrl(url)) {
         try {
@@ -5426,6 +5463,7 @@ window.refreshOpenEventProductActions = async function() {
 window.refreshProductMediaRow = async function(row, prodId, rawUrl) {
     if (!row) return;
 
+    const reviewBtn = row.querySelector('[data-video-review-action]');
     const copyBtn = row.querySelector('.product-copy-favorites');
     const favoriteCount = window.getProductFavoriteCount(prodId);
     const canCopy = favoriteCount > 0;
@@ -5433,8 +5471,9 @@ window.refreshProductMediaRow = async function(row, prodId, rawUrl) {
     // Media detection chỉ phục vụ hiển thị loại nội dung, không ảnh hưởng chức năng copy.
     if (rawUrl) {
         try {
-            const mediaType = await window.detectProductMediaType(rawUrl);
+            const mediaType = await window.detectProductMediaType(rawUrl, row.querySelector('.prod-name')?.value || row.querySelector('.prod-view-name')?.textContent || '');
             row.dataset.mediaType = mediaType;
+            if (reviewBtn) reviewBtn.style.display = (mediaType === 'video' || mediaType === 'mixed') ? 'inline-flex' : 'none';
         } catch (_) {
             row.dataset.mediaType = 'unknown';
         }
