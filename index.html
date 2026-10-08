@@ -6898,5 +6898,44 @@ window.addEventListener('online', () => {
 
 initApp();
 </script>
+
+<script id="amorri-space-play-pause">
+// Space controls the gallery video while the viewer is not typing or operating UI controls.
+(() => {
+  document.addEventListener('keydown', (event) => {
+    if (event.code !== 'Space' || event.repeat || event.defaultPrevented ||
+        event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing) return;
+
+    const gallery = document.getElementById('clientGalleryView');
+    if (!gallery || getComputedStyle(gallery).display === 'none' || !gallery.getClientRects().length) return;
+
+    // Preserve normal typing, textarea spaces, and keyboard button activation.
+    const active = document.activeElement;
+    const origin = event.target instanceof Element ? event.target : active;
+    if (origin?.closest('input, textarea, select, button, a, summary, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="button"], [role="slider"], [role="combobox"], [role="menuitem"], [role="checkbox"], [role="radio"]') ||
+        active?.closest?.('input, textarea, select, button, a, summary, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="button"], [role="slider"], [role="combobox"]')) return;
+
+    const visible = (element) => !!element && !!element.getClientRects().length &&
+      getComputedStyle(element).display !== 'none' && getComputedStyle(element).visibility !== 'hidden';
+    const videos = [...gallery.querySelectorAll('#cgVideoContainer .client-video-card video')]
+      .filter(video => visible(video) && !!video.currentSrc);
+    if (!videos.length) return; // Google Drive fallback iframes cannot be controlled this way.
+
+    const playing = videos.find(video => !video.paused && !video.ended);
+    const inViewport = videos.find(video => {
+      const r=video.getBoundingClientRect();
+      return r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+    });
+    const video = playing || inViewport || videos[0];
+    event.preventDefault();
+    if (video.paused || video.ended) {
+      const playback = video.play();
+      playback?.catch?.(() => {});
+    } else {
+      video.pause();
+    }
+  });
+})();
+</script>
 </body>
 </html>
