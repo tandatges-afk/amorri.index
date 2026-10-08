@@ -2814,6 +2814,27 @@ body {
   #cgVideoContainer .vr-comment-actions{grid-column:1/-1;justify-self:start}
 }
 </style>
+
+<style id="amorri-v517-video-size-height-scroll">
+/* Expand the review unit by ~10% relative to 1320px, without blank height around the player. */
+#cgVideoContainer{width:min(100%,1452px)!important;max-width:1452px!important;margin-inline:auto!important}
+#cgVideoContainer .client-video-review-layout{align-items:start!important;grid-template-columns:minmax(0,1fr) 310px!important}
+#cgVideoContainer .client-video-left{display:block!important;align-self:start!important;height:auto!important;min-height:0!important;padding:8px!important}
+#cgVideoContainer .client-video-frame{display:block!important;width:100%!important;height:auto!important;aspect-ratio:16/9!important;margin:0!important;max-width:none!important}
+#cgVideoContainer .client-video-frame video,#cgVideoContainer .client-video-frame iframe{display:block;object-fit:contain}
+/* Comments take exactly the video height on desktop; internal list scrolls. */
+#cgVideoContainer .vr-panel{height:auto;min-height:0!important;max-height:none;align-self:start!important;overflow:hidden}
+#cgVideoContainer .vr-list-wrap{flex:1 1 auto!important;min-height:0!important;overflow:hidden!important;max-height:none!important}
+#cgVideoContainer .vr-list{max-height:none!important;min-height:0!important;overflow-y:auto!important}
+#cgVideoContainer .vr-compose{flex:0 0 auto!important}
+@media(max-width:950px){
+ #cgVideoContainer{width:min(100%,900px)!important}
+ #cgVideoContainer .client-video-review-layout{grid-template-columns:minmax(0,1fr)!important}
+ #cgVideoContainer .vr-panel{height:auto!important;max-height:none!important;overflow:visible!important}
+ #cgVideoContainer .vr-list-wrap{max-height:320px!important}
+ #cgVideoContainer .vr-list{max-height:320px!important}
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -4051,9 +4072,41 @@ async function initClientGallery() {
             </section>`;
         }).join('');
         initVideoReviewPanels();
+        // Keep the right review column flush with the actual 16:9 video height.
+        // When a gallery contains videos only, allow the final scroll position
+        // to leave the video centered vertically in the viewport.
+        const syncVideoReviewLayout = () => {
+            const firstCard = videoContainer.querySelector('.client-video-card');
+            const firstFrame = firstCard?.querySelector('.client-video-frame');
+            if(!firstCard || !firstFrame) return;
+            const frameHeight = firstFrame.getBoundingClientRect().height;
+            videoContainer.querySelectorAll('.client-video-card').forEach(card => {
+                const frame = card.querySelector('.client-video-frame');
+                const panel = card.querySelector('.vr-panel');
+                if(!frame || !panel) return;
+                if(window.innerWidth > 950){
+                    panel.style.height = Math.round(frame.getBoundingClientRect().height + 16) + 'px';
+                } else {
+                    panel.style.removeProperty('height');
+                }
+            });
+            const gallery = videoContainer.closest('.gallery-container');
+            if(gallery){
+                // Padding is only used for video-only links, never photo delivery.
+                gallery.style.paddingBottom = images.length === 0
+                    ? Math.max(24, Math.round((window.innerHeight - frameHeight) / 2)) + 'px'
+                    : '';
+            }
+        };
+        syncVideoReviewLayout();
+        if(window._amorriVideoLayoutResize) window.removeEventListener('resize',window._amorriVideoLayoutResize);
+        window._amorriVideoLayoutResize = syncVideoReviewLayout;
+        window.addEventListener('resize',syncVideoReviewLayout,{passive:true});
     } else {
         stopVideoReviewListeners();
         videoContainer.style.display='none';
+        const gallery = videoContainer.closest('.gallery-container');
+        if(gallery) gallery.style.paddingBottom='';
     }
 
     if(images.length) {
