@@ -3709,6 +3709,62 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-
   outline-offset:2px;
 }
 </style>
+
+<style id="amorri-v554-player-aspect-ambient-contrast">
+/* Playback text: prior .40 -> requested .55, without dimming the whole panel. */
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel,
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-heading,.vr-list-toolbar,.vr-comment-body,.vr-comment-author,.vr-time,.vr-status,.vr-comment-date,.vr-compose,.vr-comment small,.vr-heading strong,.vr-list-toolbar strong,.vr-name,.vr-message,.vr-comment-meta,.vr-comment-top,button,.vr-btn,.vr-edit,.vr-resolve,.vr-delete,.vr-jump,.vr-inline-btn,.vr-cancel){
+  color:rgba(59,50,43,.55)!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-name,.vr-message)::placeholder{color:rgba(59,50,43,.55)!important}
+/* Existing player declarations enforce 16:9 with !important. Override at one clearly scoped point. */
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-frame{
+  aspect-ratio:var(--vr-media-ratio,16/9)!important;
+  width:min(100%,calc(75vh * var(--vr-media-ratio,1.777778)))!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow:hidden!important;
+  margin:0 auto!important;
+  flex:0 0 auto;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-frame.vr-portrait-frame{
+  width:min(100%,calc(75vh * var(--vr-media-ratio,0.5625)))!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-frame > :is(video,iframe){
+  width:100%!important;height:100%!important;object-fit:contain!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel{
+  height:auto!important;max-height:75vh!important;min-height:0!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-aspect-tools{
+  display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:7px 4px 0;
+  font-size:11px;color:#8b8075;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-aspect-tools select{
+  font:inherit;max-width:110px;padding:4px 7px;border-radius:7px;
+  border:1px solid rgba(154,139,121,.3);background:rgba(248,244,238,.75);color:#544a40;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-aspect-tools{
+  color:rgba(220,207,192,.7)
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-aspect-tools select{
+  background:rgba(35,32,34,.7);color:#d7d0c8;border-color:rgba(200,188,173,.25)
+}
+/* Iframe background glow: static thumbnail (YouTube), only while actively playing. */
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-iframe-ambient{
+  pointer-events:none;position:absolute;inset:-10% -9% -13%;z-index:0;
+  background-repeat:no-repeat;background-position:center;background-size:cover;
+  filter:blur(clamp(36px,5vw,84px)) saturate(1.65) brightness(.92);
+  opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s ease;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-card.vr-ambient-playing .vr-iframe-ambient{
+  opacity:.83;visibility:visible;
+}
+/* Scope BOTH ambient layers to the currently playing card (rather than every player). */
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-card:not(.vr-ambient-playing) :is(.amorri-ambient-canvas,.vr-iframe-ambient){opacity:0!important;visibility:hidden!important;animation:none!important}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-card:not(.vr-ambient-playing) .client-video-left::before{opacity:0!important;visibility:hidden!important;animation:none!important}
+@media (max-width:850px){body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel{max-height:none!important}}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -4858,7 +4914,7 @@ async function initClientGallery() {
         const lower = rawUrl.toLowerCase();
         const youtubeVideoId = extractYouTubeVideoId(rawUrl);
         if (youtubeVideoId) {
-            media.push({id:`yt_${p.id}`,name:p.name||'Video',isVideo:true,externalType:'youtube',videoId:youtubeVideoId,productId:p.id});
+            media.push({id:`yt_${p.id}`,name:p.name||'Video',isVideo:true,externalType:'youtube',videoId:youtubeVideoId,isShort:/youtube\.com\/shorts\//i.test(rawUrl),productId:p.id});
         } else if (extractDriveFileId(rawUrl) && /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(String(p.name||''))) {
             const driveImageId = extractDriveFileId(rawUrl);
             media.push({id:driveImageId,name:p.name||'Ảnh',isVideo:false,productId:p.id,thumb:`https://drive.google.com/thumbnail?id=${encodeURIComponent(driveImageId)}&sz=w1200`,url:rawUrl});
@@ -4938,10 +4994,11 @@ async function initClientGallery() {
                 frame=`<video controls playsinline preload="metadata" src="${safeUrl(v.url)}"></video>`;
             }
             const vrKey = reviewKey(String(v.productId || "") + "::" + String(v.id || ""));
-            return `<section class="client-video-card" data-vr-product="${escapeHtml(vrKey)}" data-vr-file-id="${escapeHtml(v.id||'')}" data-vr-raw-product="${escapeHtml(v.productId||'')}" data-vr-type="${escapeHtml(v.externalType==='youtube'?'youtube':v.source==='drive'?'drive':'direct')}">
+            return `<section class="client-video-card" data-vr-product="${escapeHtml(vrKey)}" data-vr-file-id="${escapeHtml(v.id||'')}" data-vr-raw-product="${escapeHtml(v.productId||'')}" data-vr-type="${escapeHtml(v.externalType==='youtube'?'youtube':v.source==='drive'?'drive':'direct')}" data-vr-default-ratio="${v.isShort?'9/16':'16/9'}" data-vr-video-id="${escapeHtml(v.videoId||'')}">
                 <div class="client-video-review-layout">
                   <div class="client-video-left">
                     <div class="client-video-frame">${frame}</div>
+                    <div class="vr-aspect-tools"><label for="vr-aspect-${escapeHtml(vrKey)}">Tỷ lệ video</label><select id="vr-aspect-${escapeHtml(vrKey)}" data-vr-aspect aria-label="Chọn tỷ lệ hiển thị video"><option value="auto">Tự động</option><option value="16/9">16:9</option><option value="9/16">9:16</option><option value="4/3">4:3</option><option value="1/1">1:1</option><option value="21/9">21:9</option></select></div>
                   </div>
                   <aside class="vr-panel">
                     <div class="vr-heading"><strong>Góp ý video</strong><span class="vr-status" data-vr-status>Đang kết nối...</span></div>
@@ -4967,6 +5024,26 @@ async function initClientGallery() {
             </section>`;
         }).join('');
         initVideoReviewPanels();
+        // Stable aspect ratio: metadata for native video; fallbacks and manual control for iframes.
+        videoContainer.querySelectorAll('.client-video-card').forEach(card=>{
+          const frame=card.querySelector('.client-video-frame');
+          const select=card.querySelector('[data-vr-aspect]');
+          const video=frame?.querySelector('video');
+          if(!frame||!select)return;
+          const nativeRatio=()=>video?.videoWidth>0 && video?.videoHeight>0 ? video.videoWidth/video.videoHeight : null;
+          const apply=()=>{
+            const chosen=select.value;
+            const fallback=card.dataset.vrDefaultRatio||'16/9';
+            const ratio=chosen==='auto' ? (nativeRatio()||fallback.split('/').map(Number).reduce((a,b)=>a/b)) : chosen.split('/').map(Number).reduce((a,b)=>a/b);
+            const safe=Number.isFinite(ratio)&&ratio>0 ? Math.min(4,Math.max(.35,ratio)):16/9;
+            frame.style.setProperty('--vr-media-ratio',String(safe));
+            frame.classList.toggle('vr-portrait-frame',safe<.95);
+          };
+          select.addEventListener('change',apply);
+          video?.addEventListener('loadedmetadata',apply);
+          video?.addEventListener('resize',apply);
+          apply();
+        });
         // Set the gallery mode before browser paints. Player size is CSS-only.
         const gallery = videoContainer.closest('.gallery-container');
         if (gallery) {
@@ -7840,7 +7917,22 @@ initApp();
     gallery.classList.remove('amorri-cinema-active');
   }
  }
- window.amorriSetIframeCinema=(frame,playing)=>{if(frame)setCinema(frame,playing)};
+ window.amorriSetIframeCinema=(frame,playing)=>{
+   if(!frame)return;
+   setCinema(frame,playing);
+   const card=frame.closest('.client-video-card');
+   card?.classList.toggle('vr-ambient-playing',!!playing);
+   // iframe frames are cross-origin; use video thumbnail as a static light source.
+   const videoId=card?.dataset.vrVideoId;
+   if(playing && videoId){
+     const host=card.querySelector('.client-video-left');
+     if(host && !host.querySelector('.vr-iframe-ambient')){
+       const light=document.createElement('div');light.className='vr-iframe-ambient';light.setAttribute('aria-hidden','true');
+       light.style.backgroundImage='url("https://i.ytimg.com/vi/'+encodeURIComponent(videoId)+'/hqdefault.jpg")';
+       host.prepend(light);
+     }
+   }
+ };
  function createAmbient(video){
   const host=video.closest('.client-video-left');if(!host || ambient.has(video))return;
   const glow=document.createElement('canvas');glow.className='amorri-ambient-canvas';glow.style.background='radial-gradient(ellipse,#876653,#332a29 64%,#141313)';glow.width=160;glow.height=90;
@@ -7860,11 +7952,11 @@ initApp();
   state.stop=()=>{state.active=false;cancelAnimationFrame(state.frame)};
   /* Ambient starts exclusively in the play event. */
  }
- document.addEventListener('play',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;createAmbient(v);ambient.get(v)?.start();setCinema(v,true)},true);
- document.addEventListener('pause',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;ambient.get(v)?.stop();setCinema(v,false)},true);
- document.addEventListener('ended',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;ambient.get(v)?.stop();setCinema(v,false)},true);
+ document.addEventListener('play',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;createAmbient(v);ambient.get(v)?.start();v.closest('.client-video-card')?.classList.add('vr-ambient-playing');setCinema(v,true)},true);
+ document.addEventListener('pause',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;ambient.get(v)?.stop();v.closest('.client-video-card')?.classList.remove('vr-ambient-playing');setCinema(v,false)},true);
+ document.addEventListener('ended',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;ambient.get(v)?.stop();v.closest('.client-video-card')?.classList.remove('vr-ambient-playing');setCinema(v,false)},true);
  // Ambient is intentionally not initialized at loadeddata: playback alone enables it.
- const observer=new MutationObserver(()=>{if(!isVideoGallery()){document.body.classList.remove('amorri-cinema');gallery.classList.remove('amorri-cinema-active');cinemaVideo=null;return;}document.querySelectorAll(videoSelector).forEach(v=>{if(!v.paused && !v.ended){createAmbient(v);ambient.get(v)?.start();setCinema(v,true);}else{ambient.get(v)?.stop();}})});
+ const observer=new MutationObserver(()=>{if(!isVideoGallery()){document.body.classList.remove('amorri-cinema');gallery.classList.remove('amorri-cinema-active');cinemaVideo=null;return;}document.querySelectorAll(videoSelector).forEach(v=>{if(!v.paused && !v.ended){createAmbient(v);ambient.get(v)?.start();v.closest('.client-video-card')?.classList.add('vr-ambient-playing');setCinema(v,true);}else{ambient.get(v)?.stop();v.closest('.client-video-card')?.classList.remove('vr-ambient-playing');}})});
  observer.observe(document.getElementById('cgVideoContainer'),{childList:true,subtree:false});
 })();
 </script>
