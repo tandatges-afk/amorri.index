@@ -2544,6 +2544,14 @@ body {
 .vr-actions{display:flex;justify-content:flex-end;margin:8px 0 0}
 .vr-btn{background:#1b1b19;color:#fff;box-shadow:none;padding:9px 15px;min-height:36px;border-radius:9px}
 .vr-aux{display:none !important}
+
+/* v5.10: review action buttons grouped beside Edit, brand-style and responsive */
+.vr-comment-top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:7px}
+.vr-comment-top small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vr-comment-actions{display:inline-flex;align-items:center;justify-content:flex-end;gap:5px;white-space:nowrap}
+.vr-comment-actions .vr-edit,.vr-comment-actions .vr-resolve{width:auto;margin:0;height:29px;padding:0 9px;border-radius:8px;font-size:11px}
+@media(max-width:620px){.vr-comment-top{grid-template-columns:auto minmax(0,1fr)}.vr-comment-actions{grid-column:1/-1;justify-content:flex-start}.vr-comment-top small{white-space:normal}}
+
 #eventProductsList .product-row [data-video-review-action]{display:none}
 @media(max-width:1050px){.client-video-review-layout{grid-template-columns:1fr}.vr-panel{border-left:0;border-top:1px solid #e5e7eb}.vr-list{max-height:380px}.client-video-left{padding:7px}}
 @media(max-width:700px){.vr-comment-top{display:flex}.vr-jump{width:auto;flex:0 0 auto}.vr-edit,.vr-resolve{width:auto;flex:0 0 auto}.vr-panel{padding:0}.vr-entry{grid-template-columns:72px minmax(0,1fr)}}
@@ -2584,6 +2592,14 @@ body {
 .vr-btn{background:linear-gradient(135deg,#806142,#a98860);border-radius:9px;font-weight:800}
 .vr-btn:hover{filter:brightness(1.06)}
 .vr-aux{display:none!important}
+
+/* v5.10: review action buttons grouped beside Edit, brand-style and responsive */
+.vr-comment-top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:7px}
+.vr-comment-top small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vr-comment-actions{display:inline-flex;align-items:center;justify-content:flex-end;gap:5px;white-space:nowrap}
+.vr-comment-actions .vr-edit,.vr-comment-actions .vr-resolve{width:auto;margin:0;height:29px;padding:0 9px;border-radius:8px;font-size:11px}
+@media(max-width:620px){.vr-comment-top{grid-template-columns:auto minmax(0,1fr)}.vr-comment-actions{grid-column:1/-1;justify-content:flex-start}.vr-comment-top small{white-space:normal}}
+
 #eventProductsList .product-row [data-video-review-action]{display:none}
 @media(max-width:1100px){.client-video-review-layout{grid-template-columns:minmax(0,1fr) 260px}}
 @media(max-width:850px){.client-video-review-layout{grid-template-columns:1fr}.vr-panel{border-left:0;border-top:1px solid #eee3d6}.vr-list{max-height:340px}.client-video-left{padding:6px}}
@@ -3452,7 +3468,12 @@ function initVideoReviewPanels() {
         const mode=card.querySelector('[data-vr-mode]'),modeNote=card.querySelector('[data-vr-mode-note]');
         const secondTime=card.querySelector('[data-vr-current-secondary]');
         const list=card.querySelector('[data-vr-list]'),markers=card.querySelector('[data-vr-markers]');
-        try{input.value=localStorage.getItem('amorri_video_review_name')||''}catch(_){}
+        const reviewNameStore='amorri_video_review_name_v2';
+        const loadReviewName=()=>{try{return localStorage.getItem(reviewNameStore)||''}catch(_){return ''}};
+        const saveReviewName=()=>{if(editingCommentId)return;const name=input.value.trim();try{if(name)localStorage.setItem(reviewNameStore,name.slice(0,60))}catch(_){}};
+        input.value=loadReviewName();
+        input.addEventListener('change',saveReviewName);
+        input.addEventListener('blur',saveReviewName);
         let yt=null;const htmlVideo=card.querySelector('video');let duration=0,comments=[];
         let capturedAt=null, referenceSeconds=0, synced=kind!=='drive';
         const driveFrame=card.querySelector('[data-vr-drive-frame]');
@@ -3503,7 +3524,7 @@ function initVideoReviewPanels() {
             renderComments();
         }
         function closeCommentEditor(){
-            editingCommentId=null;capturedAt=null;message.value='';
+            editingCommentId=null;capturedAt=null;message.value='';input.value=loadReviewName();
             button.textContent='Gửi góp ý tại mốc này ↗';
             const cancel=card.querySelector('[data-vr-cancel]');if(cancel)cancel.hidden=true;
             renderComments();
@@ -3593,7 +3614,7 @@ function initVideoReviewPanels() {
         function renderComments(){
             list.replaceChildren();
             const visible=[...comments].sort((a,b)=>Number(a.resolved)-Number(b.resolved));
-            if(!visible.length){const empty=document.createElement('p');empty.className='vr-sub';empty.textContent='Chưa có góp ý cho video này.';list.appendChild(empty);}
+            // Do not display an empty-state message when no comments exist.
             for(const c of visible){
                 const el=document.createElement('div');el.className='vr-comment'+(editingCommentId===c.id?' vr-selected':'')+(c.resolved?' done':'');
                 const top=document.createElement('div');top.className='vr-comment-top';
@@ -3602,7 +3623,8 @@ function initVideoReviewPanels() {
                 jumpBtn.onclick=()=>openCommentEditor(c);top.appendChild(jumpBtn);
                 const author=document.createElement('small');author.textContent=(c.name||'Khách hàng')+' · '+new Date(c.createdAt||Date.now()).toLocaleString('vi-VN');top.appendChild(author);
                 const edit=document.createElement('button');edit.type='button';edit.className='vr-edit';edit.textContent='Sửa';
-                edit.disabled=!!c.resolved;edit.onclick=()=>openCommentEditor(c);top.appendChild(edit);
+                edit.disabled=!!c.resolved;edit.onclick=()=>openCommentEditor(c);
+                const commentActions=document.createElement('span');commentActions.className='vr-comment-actions';commentActions.appendChild(edit);
                 // Only signed-in staff can remove a resolved comment.
                 if(firebase.auth().currentUser){
                     const fixed=document.createElement('button');fixed.type='button';fixed.className='vr-resolve';fixed.textContent='✓ Fix';
@@ -3615,8 +3637,9 @@ function initVideoReviewPanels() {
                             showToast(c.resolved?'Đã chuyển về chưa fix':'Đã đánh dấu đã fix (vẫn lưu bình luận)');
                         }catch(err){showToast('Không cập nhật được: '+err.message)}
                         finally{fixed.disabled=false;}
-                    };top.appendChild(fixed);
+                    };commentActions.appendChild(fixed);
                 }
+                top.appendChild(commentActions);
                 const content=document.createElement('div');content.className='vr-comment-body';content.textContent=(c.resolved?'✓ Đã fix · ':'')+c.text;
                 el.append(top,content);list.appendChild(el);
             }
@@ -3649,16 +3672,15 @@ function initVideoReviewPanels() {
                     if(!target)throw new Error('Bình luận không còn tồn tại hoặc đã fix');
                     // Retain original comment timestamp and marker when updating text.
                     await ref.child(editingCommentId).update({
-                        name:name.slice(0,60),text:content.slice(0,2000),
+                        text:content.slice(0,2000),
                         seconds:Math.floor(target.seconds),editedAt:firebase.database.ServerValue.TIMESTAMP
                     });
                     showToast('Đã cập nhật góp ý tại '+vrFormat(target.seconds));
                     closeCommentEditor();
                 }else{
                     await ref.push({name:name.slice(0,60),text:content.slice(0,2000),seconds:Math.floor(seconds),createdAt:firebase.database.ServerValue.TIMESTAMP,resolved:false});
-                    message.value='';capturedAt=null;showToast('Đã gửi góp ý tại '+vrFormat(seconds));
+                    saveReviewName();message.value='';capturedAt=null;showToast('Đã gửi góp ý tại '+vrFormat(seconds));
                 }
-                try{localStorage.setItem('amorri_video_review_name',name)}catch(_){}
             }catch(err){status.textContent='Lưu thất bại';showToast('Không lưu được góp ý: '+err.message);console.error(err)}
             finally{button.disabled=false;}
         });
