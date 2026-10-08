@@ -3296,6 +3296,52 @@ body[data-client-gallery="true"] #panda-mascot-container{display:none!important}
  body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-list-wrap{max-height:280px!important}
 }
 </style>
+
+<style id="amorri-v541-ambient-contrast-cover">
+/* The ambient layer is visual only, never takes layout space. */
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-left{isolation:isolate!important;overflow:visible!important}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-left::before{
+ content:""!important;display:block!important;position:absolute!important;
+ inset:-9% -6% -13%!important;z-index:-1!important;pointer-events:none!important;
+ border-radius:25%!important;background:radial-gradient(ellipse at center,rgba(172,136,106,.60),rgba(111,89,85,.27) 53%,transparent 78%)!important;
+ filter:blur(clamp(20px,3.2vw,52px))!important;opacity:.66!important;
+ transition:opacity .35s ease!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-left::before{opacity:.95!important}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .amorri-ambient-canvas{
+ position:absolute!important;inset:-7% -5% -9%!important;
+ width:110%!important;height:116%!important;display:block!important;
+ z-index:-1!important;pointer-events:none!important;
+ border-radius:20%!important;filter:blur(clamp(22px,3.8vw,58px)) saturate(1.12)!important;
+ opacity:.35!important;transition:opacity .4s ease!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .amorri-ambient-canvas{opacity:.78!important}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-frame{position:relative!important;z-index:1!important}
+/* Keep the warm review panel and its text readable even during playback. */
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel{
+ opacity:1!important;background:rgba(249,246,239,.96)!important;
+ border-color:rgba(174,152,125,.42)!important;
+ color:#38332e!important;
+ transition:background-color .35s ease,border-color .35s ease,filter .35s ease!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-cinema-active .amorri-video-only #cgVideoContainer .vr-panel{
+ opacity:1!important;background:rgba(230,223,212,.88)!important;
+ border-color:rgba(180,162,141,.38)!important;filter:brightness(.91)!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-cinema-active .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-heading,.vr-list-wrap,.vr-list,.vr-list-toolbar,.vr-comment,.vr-compose){background-color:transparent!important}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-heading strong,.vr-list-toolbar strong,.vr-comment-body,.vr-comment-author,.vr-time){color:#38332e!important}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-status,.vr-comment small,.vr-comment-date){color:#716459!important}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(input,textarea){color:#38332e!important;background:#fffcf7!important}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(input,textarea)::placeholder{color:#81776e!important}
+/* Hide all branding, title, logo and stats in the cover while playing. */
+body[data-client-gallery="true"] #clientGalleryView .gallery-cover-inner{
+ opacity:1;visibility:visible;transition:opacity .32s ease,visibility .32s ease!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView.amorri-cinema-active .gallery-cover-inner{
+ opacity:0!important;visibility:hidden!important;pointer-events:none!important;
+}
+@media(prefers-reduced-motion:reduce){body[data-client-gallery="true"] #clientGalleryView .gallery-cover-inner{transition:none!important}}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -7415,7 +7461,7 @@ initApp();
  document.addEventListener('pause',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;ambient.get(v)?.stop();setCinema(v,false)},true);
  document.addEventListener('ended',e=>{const v=e.target;if(!(v instanceof HTMLVideoElement)||!v.matches(videoSelector))return;ambient.get(v)?.stop();setCinema(v,false)},true);
  document.addEventListener('loadeddata',e=>{const v=e.target;if(v instanceof HTMLVideoElement && v.matches(videoSelector))createAmbient(v)},true);
- const observer=new MutationObserver(()=>{if(!isVideoGallery()){document.body.classList.remove('amorri-cinema');gallery.classList.remove('amorri-cinema-active');return;}document.querySelectorAll(videoSelector).forEach(v=>{if(v.readyState>=2)createAmbient(v); if(!v.paused && !v.ended)document.body.classList.add('amorri-cinema');})});
+ const observer=new MutationObserver(()=>{if(!isVideoGallery()){document.body.classList.remove('amorri-cinema');gallery.classList.remove('amorri-cinema-active');return;}document.querySelectorAll(videoSelector).forEach(v=>{if(v.readyState>=2)createAmbient(v); if(!v.paused && !v.ended)setCinema(v,true);})});
  observer.observe(document.getElementById('cgVideoContainer'),{childList:true,subtree:false});
 })();
 </script>
