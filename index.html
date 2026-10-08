@@ -3883,6 +3883,85 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContai
  body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"].vr-ambient-playing .client-video-left > .vr-iframe-ambient{animation:none!important}
 }
 </style>
+
+<style id="amorri-v563-ambient-stage-and-cinema">
+/* A single ambient stage is inserted in the gallery layer, not inside the
+   iframe/frame. The stage cannot be clipped by player overflow or transform. */
+body[data-client-gallery="true"] #clientGalleryView .gallery-container{isolation:isolate!important;}
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer{position:relative!important;z-index:2!important;}
+#clientGalleryView #amorri-ambient-stage{
+  position:fixed!important;inset:0!important;z-index:1!important;
+  pointer-events:none!important;contain:layout style!important;
+  opacity:0!important;visibility:hidden!important;
+  transition:opacity .78s cubic-bezier(.22,1,.36,1),visibility 0s linear .78s!important;
+}
+#clientGalleryView #amorri-ambient-stage.ambient-active{
+  opacity:1!important;visibility:visible!important;
+  transition:opacity .8s cubic-bezier(.22,1,.36,1),visibility 0s!important;
+}
+@property --ambient-c1-color{syntax:"<color>";inherits:true;initial-value:rgb(166,106,83)}
+@property --ambient-c2-color{syntax:"<color>";inherits:true;initial-value:rgb(74,134,118)}
+@property --ambient-c3-color{syntax:"<color>";inherits:true;initial-value:rgb(121,91,144)}
+#clientGalleryView #amorri-ambient-stage{
+ transition:--ambient-c1-color 6s ease,--ambient-c2-color 6s ease,--ambient-c3-color 6s ease,
+            opacity .78s cubic-bezier(.22,1,.36,1),visibility 0s linear .78s!important;
+}
+#clientGalleryView #amorri-ambient-stage.ambient-active{
+ transition:--ambient-c1-color 6s ease,--ambient-c2-color 6s ease,--ambient-c3-color 6s ease,
+            opacity .8s cubic-bezier(.22,1,.36,1),visibility 0s!important;
+}
+#clientGalleryView #amorri-ambient-stage::before,
+#clientGalleryView #amorri-ambient-stage::after{
+  content:""!important;display:block!important;position:absolute!important;
+  left:var(--ambient-x,48%)!important;top:var(--ambient-y,46%)!important;
+  width:var(--ambient-width,68vw)!important;height:var(--ambient-height,54vh)!important;
+  border-radius:46%!important;pointer-events:none!important;
+  transform:translate(-50%,-50%) scale(1.28)!important;
+  filter:blur(clamp(48px,7vw,110px)) saturate(1.4)!important;
+  will-change:opacity,transform!important;
+  background:
+    radial-gradient(ellipse at 22% 48%,color-mix(in srgb,var(--ambient-c1-color) 90%,transparent),transparent 63%),
+    radial-gradient(ellipse at 82% 44%,color-mix(in srgb,var(--ambient-c2-color) 88%,transparent),transparent 62%),
+    radial-gradient(ellipse at 49% 78%,color-mix(in srgb,var(--ambient-c3-color) 60%,transparent),transparent 72%)!important;
+}
+#clientGalleryView #amorri-ambient-stage::after{
+  opacity:.55!important;transform:translate(-50%,-50%) scale(1.7) rotate(6deg)!important;
+  filter:blur(clamp(60px,9vw,140px)) saturate(1.25)!important;
+}
+#clientGalleryView #amorri-ambient-stage.ambient-active::before{animation:amorri-v563-halo 18s ease-in-out infinite alternate!important;}
+#clientGalleryView #amorri-ambient-stage.ambient-active::after{animation:amorri-v563-halo-b 23s ease-in-out infinite alternate!important;}
+@keyframes amorri-v563-halo{
+ from{transform:translate(-51%,-50%) scale(1.27) rotate(-3deg)}
+ to{transform:translate(-49%,-52%) scale(1.43) rotate(5deg)}
+}
+@keyframes amorri-v563-halo-b{
+ from{transform:translate(-50%,-49%) scale(1.6) rotate(6deg)}
+ to{transform:translate(-50%,-52%) scale(1.8) rotate(-4deg)}
+}
+/* Remove redundant glows in YouTube cards; native video keeps its pixel canvas. */
+#clientGalleryView #cgVideoContainer .client-video-card[data-vr-type="youtube"] .vr-iframe-ambient{display:none!important;}
+#clientGalleryView #amorri-cinema-overlay{
+ transition:opacity .8s cubic-bezier(.22,1,.36,1),visibility 0s linear .8s!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #amorri-cinema-overlay{
+ transition:opacity .8s cubic-bezier(.22,1,.36,1),visibility 0s!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .gallery-cover-inner{
+ transition:opacity .75s ease,visibility 0s linear .75s!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-cover-inner{
+ transition:opacity .75s ease,visibility 0s linear .75s!important;
+}
+@media(prefers-reduced-motion:reduce){
+ #clientGalleryView #amorri-ambient-stage,
+ #clientGalleryView #amorri-ambient-stage.ambient-active,
+ #clientGalleryView #amorri-cinema-overlay,
+ body.amorri-cinema #clientGalleryView #amorri-cinema-overlay,
+ #clientGalleryView .gallery-cover-inner{transition:none!important;animation:none!important;}
+ #clientGalleryView #amorri-ambient-stage::before,
+ #clientGalleryView #amorri-ambient-stage::after{animation:none!important;}
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -4773,7 +4852,7 @@ function vrParse(str) {
 function stopVideoReviewListeners() {
     vrListeners.splice(0).forEach(({ref,callback})=>ref.off('value',callback));
     vrPlayers.forEach(player=>{try{player.destroy()}catch(_){}});vrPlayers.clear();
-    document.querySelectorAll(".client-video-card").forEach(card=>{if(card._driveRefreshTimer)clearTimeout(card._driveRefreshTimer);if(card._ytAmbientPoll)clearInterval(card._ytAmbientPoll);card._ytClearAmbientStop?.();window.amorriSetIframeCinema?.(card,false)});
+    document.querySelectorAll(".client-video-card").forEach(card=>{if(card._driveRefreshTimer)clearTimeout(card._driveRefreshTimer);if(card._ytAmbientPoll)clearInterval(card._ytAmbientPoll);card._ytClearAmbientStop?.();card._ytCleanup?.();window.amorriSetIframeCinema?.(card,false)});
 }
 function vrYoutubeAPI() {
     if (typeof window.YT?.Player === 'function') return Promise.resolve();
@@ -4905,8 +4984,15 @@ function initVideoReviewPanels() {
                 driveFrame.style.display='block';updateMode();refreshTime();
             };
             htmlVideo.addEventListener('error',()=>{
-                if(synced || !card.isConnected)return;
-                fallback('Trình duyệt không phát được video. Kiểm tra codec MP4/H.264 và quyền Google Drive.');
+                if(!card.isConnected)return;
+                // A ticket can expire during very long playback. Retry its URL only
+                // after a real media error, NEVER periodically while video is playing.
+                if(Date.now() - (card._lastDriveRetry||0) > 300000){
+                    card._lastDriveRetry=Date.now();
+                    startDrivePlayback(true);
+                    return;
+                }
+                fallback('Không tải được dữ liệu video. Kiểm tra quyền Drive, codec H.264/AAC hoặc Vercel logs.');
             });
             htmlVideo.addEventListener('loadedmetadata',()=>{
                 if(!Number.isFinite(htmlVideo.duration)||htmlVideo.duration<=0){fallback('Không đọc được thời lượng. Video có thể chưa được chuyển mã H.264/AAC.');return;}
@@ -4941,11 +5027,11 @@ function initVideoReviewPanels() {
                     }
                     htmlVideo.style.display='block';
                     driveFrame.style.display='none';
-                    // Renew expiring tickets when the viewer returns to the player.
-                    const delay=Math.max(15,Number(result.expiresIn||3600)-120)*1000;
-                    const refreshTimer=setTimeout(()=>{if(card.isConnected)startDrivePlayback();},delay);
+                    // Signed playback URLs are long-lived. Never replace video.src on a
+                    // timer: it destroys the browser buffer, forcing rebuffering/seek.
+                    card._driveTicketExpiresAt=Date.now()+Math.max(900,Number(result.expiresIn)||21600)*1000;
                     card._driveRefreshTimer && clearTimeout(card._driveRefreshTimer);
-                    card._driveRefreshTimer=refreshTimer;
+                    card._driveRefreshTimer=null;
                 }catch(err){fallback(err.message||'Không cấp được ticket phát video');}
             }
             startDrivePlayback();
@@ -4978,7 +5064,7 @@ function initVideoReviewPanels() {
             };
             const reconcileState=(state)=>{
                 if(!card.isConnected)return;
-                const S=YT.PlayerState;
+                const S=window.YT?.PlayerState||{UNSTARTED:-1,ENDED:0,PLAYING:1,PAUSED:2,BUFFERING:3,CUED:5};
                 if(state===S.PLAYING){
                     clearStop();hadPlayed=true;setAmbient(true);return;
                 }
@@ -5005,6 +5091,20 @@ function initVideoReviewPanels() {
                     }
                 }
             };
+            // Independent validated postMessage bridge. Some browsers/extensions
+            // suppress a YT.Player callback while the iframe is still playing.
+            const onYoutubeMessage=(event)=>{
+                if(!card.isConnected || event.source!==card.querySelector('.client-video-frame iframe')?.contentWindow)return;
+                if(!/^https:\/\/(?:www\.)?youtube(?:-nocookie)?\.com$/.test(event.origin))return;
+                try {
+                    const data=typeof event.data==='string'?JSON.parse(event.data):event.data;
+                    if(data?.event==='onStateChange' && Number.isInteger(Number(data.info))) {
+                        reconcileState(Number(data.info));
+                    }
+                }catch(_){}
+            };
+            window.addEventListener('message',onYoutubeMessage);
+            card._ytCleanup=()=>window.removeEventListener('message',onYoutubeMessage);
             vrYoutubeAPI().then(()=>{
                 if(!card.isConnected)return;
                 yt=new YT.Player(frame.id||frame,{
@@ -5030,6 +5130,7 @@ function initVideoReviewPanels() {
                     }
                 });
                 vrPlayers.set(productKey,yt);
+                window.__amorriYtPlayers=vrPlayers;
                 // Reconciliation handles missed events without treating BUFFERING as PAUSED.
                 card._ytAmbientPoll=setInterval(()=>{
                     if(!card.isConnected){clearInterval(card._ytAmbientPoll);clearStop();return;}
@@ -5288,14 +5389,14 @@ async function initClientGallery() {
                 const ytOrigin=/^https?:$/.test(location.protocol)?'&origin='+encodeURIComponent(location.origin):'';
                 frame=`<iframe id="vr-yt-${vrKey}" src="https://www.youtube.com/embed/${encodeURIComponent(v.videoId)}?enablejsapi=1&playsinline=1${ytOrigin}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
             } else if(v.source === 'drive') {
-                frame=`<video controls playsinline preload="metadata" data-vr-drive-video style="display:none" ></video><iframe data-vr-drive-frame src="${safeUrl(v.previewUrl || `https://drive.google.com/file/d/${encodeURIComponent(v.id)}/preview`)}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+                frame=`<video controls playsinline preload="auto" data-vr-drive-video style="display:none" ></video><iframe data-vr-drive-frame src="${safeUrl(v.previewUrl || `https://drive.google.com/file/d/${encodeURIComponent(v.id)}/preview`)}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
             } else if(v.url) {
                 frame=`<video controls playsinline preload="metadata" src="${safeUrl(v.url)}"></video>`;
             }
             return `<section class="client-video-card" data-vr-product="${escapeHtml(vrKey)}" data-vr-file-id="${escapeHtml(v.id||'')}" data-vr-raw-product="${escapeHtml(v.productId||'')}" data-vr-type="${escapeHtml(v.externalType==='youtube'?'youtube':v.source==='drive'?'drive':'direct')}" data-vr-default-ratio="${v.isShort?'9/16':'16/9'}" data-vr-video-id="${escapeHtml(v.videoId||'')}">
                 <div class="client-video-review-layout">
                   <div class="client-video-left">
-                    ${v.externalType==='youtube'?'<div class="vr-iframe-ambient" aria-hidden="true"></div>':''}
+                    
                     <div class="client-video-frame">${frame}</div>
 
                   </div>
@@ -8287,6 +8388,122 @@ initApp();
  // Ambient is intentionally not initialized at loadeddata: playback alone enables it.
  const observer=new MutationObserver(()=>{if(!isVideoGallery()){document.body.classList.remove('amorri-cinema');gallery.classList.remove('amorri-cinema-active');cinemaVideo=null;return;}document.querySelectorAll(videoSelector).forEach(v=>{if(!v.paused && !v.ended){createAmbient(v);ambient.get(v)?.start();v.closest('.client-video-card')?.classList.add('vr-ambient-playing');setCinema(v,true);}else{ambient.get(v)?.stop();v.closest('.client-video-card')?.classList.remove('vr-ambient-playing');}})});
  observer.observe(document.getElementById('cgVideoContainer'),{childList:true,subtree:false});
+})();
+</script>
+
+<script id="amorri-v563-unified-ambient-controller">
+(()=>{
+  'use strict';
+  const gallery=document.getElementById('clientGalleryView');
+  if(!gallery)return;
+  let isActive=false,activeCard=null,lastPaletteBucket=-1,paletteTimer=null;
+  const reduced=window.matchMedia('(prefers-reduced-motion:reduce)');
+  const stage=document.createElement('div');
+  stage.id='amorri-ambient-stage';stage.setAttribute('aria-hidden','true');
+  const mountingHost=gallery.querySelector('.gallery-container');
+  if(mountingHost)mountingHost.prepend(stage);
+  function ensureHost(){
+    const host=gallery.querySelector('.gallery-container');
+    if(host&&stage.parentElement!==host)host.prepend(stage);
+  }
+  function getCards(){return [...gallery.querySelectorAll('#cgVideoContainer .client-video-card')];}
+  function isVisible(){return getComputedStyle(gallery).display!=='none';}
+  function moveStage(){
+    if(!activeCard?.isConnected)return;
+    const frame=activeCard.querySelector('.client-video-frame');
+    if(!frame)return;
+    const r=frame.getBoundingClientRect();
+    if(r.width<10||r.height<10)return;
+    stage.style.setProperty('--ambient-x',((r.left+r.width/2)/window.innerWidth*100).toFixed(2)+'%');
+    stage.style.setProperty('--ambient-y',((r.top+r.height/2)/window.innerHeight*100).toFixed(2)+'%');
+    stage.style.setProperty('--ambient-width',Math.min(window.innerWidth*1.45,Math.max(520,r.width*1.46)).toFixed(0)+'px');
+    stage.style.setProperty('--ambient-height',Math.min(window.innerHeight*1.7,Math.max(340,r.height*1.65)).toFixed(0)+'px');
+  }
+  function palette(){
+    if(!isActive||!activeCard || activeCard.dataset.vrType!=='youtube'||reduced.matches)return;
+    // YouTube cross-origin video pixels are inaccessible. These smoothly changing
+    // hues are a simulated halo. Never show thumbnails as a fake video frame.
+    let time=0;
+    try{
+      const key=activeCard.dataset.vrProduct;
+      const p=window.__amorriYtPlayers?.get?.(key);
+      time=Number(p?.getCurrentTime?.())||0;
+    }catch(_){}
+    const bucket=Math.floor(time/9);
+    if(bucket===lastPaletteBucket)return;
+    lastPaletteBucket=bucket;
+    const palettes=[
+      ['166,106,83','74,134,118','121,91,144'],
+      ['146,119,81','75,111,172','135,90,116'],
+      ['125,100,150','64,120,139','190,110,85'],
+      ['170,96,94','78,100,150','135,128,94']
+    ];
+    const selected=palettes[bucket%palettes.length];
+    stage.style.setProperty('--ambient-c1-color','rgb('+selected[0]+')');
+    stage.style.setProperty('--ambient-c2-color','rgb('+selected[1]+')');
+    stage.style.setProperty('--ambient-c3-color','rgb('+selected[2]+')');
+  }
+  function refresh(){
+    ensureHost();
+    if(!isVisible()){
+      isActive=false;activeCard=null;
+    }else{
+      const cards=getCards();
+      const playing=cards.find(c=>c.classList.contains('vr-ambient-playing'));
+      isActive=!!playing;
+      activeCard=playing||null;
+    }
+    stage.classList.toggle('ambient-active',isActive && activeCard?.dataset.vrType==='youtube');
+    document.body.classList.toggle('amorri-cinema',isActive);
+    gallery.classList.toggle('amorri-cinema-active',isActive);
+    if(!isActive){
+      lastPaletteBucket=-1;
+      if(paletteTimer){clearInterval(paletteTimer);paletteTimer=null;}
+    }else{
+      moveStage();palette();
+      if(!paletteTimer)paletteTimer=setInterval(()=>{if(isActive){moveStage();palette();}},850);
+    }
+  }
+  let centerLast=0;
+  function center(card){
+    if(reduced.matches||Date.now()-centerLast<1800)return;
+    centerLast=Date.now();
+    requestAnimationFrame(()=>{
+      const r=card.querySelector('.client-video-frame')?.getBoundingClientRect();
+      if(!r)return;
+      const dest=Math.max(0,scrollY+r.top+r.height/2-innerHeight/2);
+      if(Math.abs(dest-scrollY)>36)window.scrollTo({top:dest,behavior:'smooth'});
+    });
+  }
+  // Preserve the v5.60 event-level Firebase logic. Only change presentation state.
+  window.amorriSetIframeCinema=(node,playing)=>{
+    const card=node?.closest?.('.client-video-card');
+    if(!card?.isConnected)return;
+    const wasActive=isActive;
+    card.classList.toggle('vr-ambient-playing',!!playing);
+    refresh();
+    if(playing&&!wasActive)center(card);
+  };
+  const srcSelector='#cgVideoContainer .client-video-card video';
+  document.addEventListener('play',e=>{
+    const video=e.target;if(!(video instanceof HTMLVideoElement)||!video.matches(srcSelector))return;
+    video.closest('.client-video-card')?.classList.add('vr-ambient-playing');refresh();
+  },true);
+  document.addEventListener('pause',e=>{
+    const video=e.target;if(!(video instanceof HTMLVideoElement)||!video.matches(srcSelector))return;
+    video.closest('.client-video-card')?.classList.remove('vr-ambient-playing');refresh();
+  },true);
+  document.addEventListener('ended',e=>{
+    const video=e.target;if(!(video instanceof HTMLVideoElement)||!video.matches(srcSelector))return;
+    video.closest('.client-video-card')?.classList.remove('vr-ambient-playing');refresh();
+  },true);
+  // Geometry follows page scrolling/resizing without re-rendering the video.
+  window.addEventListener('scroll',()=>{if(isActive)moveStage();},{passive:true});
+  window.addEventListener('resize',()=>{if(isActive)moveStage();},{passive:true});
+  // MutationObserver only watches card creations/removals, not inner text/comments.
+  const cardsContainer=document.getElementById('cgVideoContainer');
+  if(cardsContainer)new MutationObserver(()=>refresh()).observe(cardsContainer,{childList:true,subtree:false});
+  refresh();
 })();
 </script>
 </body>
