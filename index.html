@@ -3477,6 +3477,60 @@ body[data-client-gallery="true"]:has(.amorri-video-only) .studio-credit{position
 @media(max-width:1080px){#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-review-layout{grid-template-columns:minmax(0,1fr)!important;gap:10px!important}#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .vr-panel{height:auto!important}}
 @media(prefers-reduced-motion:reduce){#clientGalleryView #cgVideoContainer .amorri-ambient-canvas{transition:none!important}}
 </style>
+
+<style id="amorri-v535-responsive-cinema-fix">
+/* Single video-only surface: do not let the outer app create a contrasting white footer. */
+html:has(body[data-client-gallery="true"] .amorri-video-only),
+body[data-client-gallery="true"]:has(.amorri-video-only),
+body[data-client-gallery="true"]:has(.amorri-video-only) .app,
+body[data-client-gallery="true"]:has(.amorri-video-only) .app-main,
+body[data-client-gallery="true"]:has(.amorri-video-only) #clientGalleryView {
+ background-color:#f5f3ef!important; background-image:none!important;
+ transition:background-color .42s ease!important;
+}
+html:has(body.amorri-cinema .amorri-video-only),
+body.amorri-cinema[data-client-gallery="true"]:has(.amorri-video-only),
+body.amorri-cinema[data-client-gallery="true"]:has(.amorri-video-only) .app,
+body.amorri-cinema[data-client-gallery="true"]:has(.amorri-video-only) .app-main,
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView {
+ background-color:#08090b!important;background-image:none!important;
+}
+/* The viewer stretches without shrinking to the older 85% size. */
+#clientGalleryView .gallery-container.amorri-video-only{width:100%!important;max-width:1680px!important;box-sizing:border-box;padding-inline:clamp(12px,1.5vw,24px)!important}
+#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer,
+#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-card{width:100%!important;max-width:none!important;min-width:0!important}
+#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-review-layout{
+ display:grid!important;grid-template-columns:minmax(0,1fr) minmax(275px,310px)!important;
+ align-items:start!important;gap:9px!important;width:100%!important;
+}
+#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-left{
+ display:block!important;padding:0!important;width:100%!important;min-width:0!important;
+}
+#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-frame{
+ width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;aspect-ratio:16/9!important;
+}
+#clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .vr-panel{
+ margin:0!important;min-width:0!important;max-width:100%!important;
+ background:rgba(248,246,240,.94)!important;
+ transition:background-color .46s ease,background .46s ease!important;
+}
+/* Preserve form colors, ink and buttons while the panel itself fades. */
+body.amorri-cinema #clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .vr-panel{
+ background:rgba(248,246,240,.46)!important;
+ color:#342f2a!important;
+}
+/* Do not cover the video when devtools reduces available viewport width. */
+@media(max-width:760px){
+ #clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-review-layout{grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
+ #clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .vr-panel{height:auto!important;max-height:none!important}
+}
+/* Remove the giant detached footer caused by minimum viewport heights. */
+body[data-client-gallery="true"]:has(.amorri-video-only) #clientGalleryView,
+body[data-client-gallery="true"]:has(.amorri-video-only) .gallery-container.amorri-video-only{
+ min-height:0!important;margin-bottom:0!important;
+}
+body[data-client-gallery="true"]:has(.amorri-video-only) .studio-credit{background:transparent!important;box-shadow:none!important}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -4725,7 +4779,7 @@ async function initClientGallery() {
                 const frame = card.querySelector('.client-video-frame');
                 const panel = card.querySelector('.vr-panel');
                 if(!frame || !panel) return;
-                if(window.innerWidth > 950){
+                if(window.innerWidth > 760){
                     panel.style.height = Math.round(frame.getBoundingClientRect().height) + 'px';
                 } else {
                     panel.style.removeProperty('height');
