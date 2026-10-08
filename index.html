@@ -2548,6 +2548,46 @@ body {
 @media(max-width:1050px){.client-video-review-layout{grid-template-columns:1fr}.vr-panel{border-left:0;border-top:1px solid #e5e7eb}.vr-list{max-height:380px}.client-video-left{padding:7px}}
 @media(max-width:700px){.vr-comment-top{display:flex}.vr-jump{width:auto;flex:0 0 auto}.vr-edit,.vr-resolve{width:auto;flex:0 0 auto}.vr-panel{padding:0}.vr-entry{grid-template-columns:72px minmax(0,1fr)}}
 </style>
+
+<style id="amorri-v59-review-polish">
+/* Brand-aligned editorial video review. Single scrubber: native player only. */
+.gallery-container{max-width:1920px;width:100%;padding-left:12px;padding-right:12px}
+#cgVideoContainer{gap:20px}
+.client-video-card{border:1px solid #e8dfd4;border-radius:18px;overflow:hidden;box-shadow:0 14px 46px rgba(46,35,23,.09)}
+.client-video-head{padding:14px 18px;background:linear-gradient(180deg,#fff,#fbf8f4);border-bottom:1px solid #eee5da}
+.client-video-title{font-size:14px;color:#362e28}
+.client-video-tag{background:#f5ede1;color:#8a6b46;border:1px solid #e8d8c3}
+.client-video-review-layout{grid-template-columns:minmax(0,1fr) 290px;background:#fff}
+.client-video-left{padding:5px;background:#f7f3ed;display:flex;align-items:flex-start}
+.client-video-frame{aspect-ratio:16/9;border-radius:10px;box-shadow:0 7px 20px rgba(33,30,26,.11)}
+.vr-panel{background:#fffdfb;color:#352b25;border-left:1px solid #eee3d6}
+.vr-heading{padding:13px 14px;background:#fffdfb;border-bottom:1px solid #f0e8de}
+.vr-heading strong{font-size:14px;color:#46372a}
+.vr-status[data-vr-status]{color:#8e7861;background:#f7f1e9;border:1px solid #ebdfcf;border-radius:999px;padding:4px 7px}
+.vr-list-toolbar{padding:11px 14px;border-bottom:1px solid #f0e8de}
+.vr-list-toolbar strong{font-size:12px;color:#67523c}
+.vr-list{max-height:min(60vh,680px);background:#fffdfb}
+.vr-comment{padding:12px 14px;border-bottom:1px solid #f0e7db;background:#fffdfb}
+.vr-comment:hover{background:#fcf8f1}
+.vr-comment.vr-selected{background:#fbf1e3;border-color:#e6cfaa}
+.vr-comment.done{opacity:.72;background:#f6f5f1}
+.vr-comment-body{font-size:12px;line-height:1.65;color:#4a4035}
+.vr-comment-top small{color:#948778;font-size:10px}
+.vr-jump{background:#f4ebdd;color:#7d5a35;border:1px solid #e4d2b8;border-radius:8px}
+.vr-edit{background:#fff;color:#74634d;border:1px solid #e8dccb;border-radius:8px}
+.vr-edit:disabled{opacity:.4;cursor:not-allowed}
+.vr-resolve{background:#edf7eb;border-color:#d2e8d0;color:#3c7f3f;border-radius:8px}
+.vr-compose{background:#fffdfb;border-top:1px solid #eee3d6;padding:12px 13px}
+.vr-time{background:#f4ecdf;color:#795a3b;border-color:#e8d7bd}
+.vr-name,.vr-message{background:#fff;border-color:#e4d9ca;color:#382e26}
+.vr-message:focus,.vr-name:focus{outline:none;border-color:#bd9a6d;box-shadow:0 0 0 3px rgba(189,154,109,.16)}
+.vr-btn{background:linear-gradient(135deg,#806142,#a98860);border-radius:9px;font-weight:800}
+.vr-btn:hover{filter:brightness(1.06)}
+.vr-aux{display:none!important}
+#eventProductsList .product-row [data-video-review-action]{display:none}
+@media(max-width:1100px){.client-video-review-layout{grid-template-columns:minmax(0,1fr) 260px}}
+@media(max-width:850px){.client-video-review-layout{grid-template-columns:1fr}.vr-panel{border-left:0;border-top:1px solid #eee3d6}.vr-list{max-height:340px}.client-video-left{padding:6px}}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -3552,34 +3592,35 @@ function initVideoReviewPanels() {
         updateMode();refreshTime();
         function renderComments(){
             list.replaceChildren();
-            const visible=comments.filter(c=>!c.resolved);
-            if(!visible.length){const empty=document.createElement('p');empty.className='vr-sub';empty.textContent='Không còn góp ý cần chỉnh sửa.';list.appendChild(empty);}
+            const visible=[...comments].sort((a,b)=>Number(a.resolved)-Number(b.resolved));
+            if(!visible.length){const empty=document.createElement('p');empty.className='vr-sub';empty.textContent='Chưa có góp ý cho video này.';list.appendChild(empty);}
             for(const c of visible){
-                const el=document.createElement('div');el.className='vr-comment'+(editingCommentId===c.id?' vr-selected':'');
+                const el=document.createElement('div');el.className='vr-comment'+(editingCommentId===c.id?' vr-selected':'')+(c.resolved?' done':'');
                 const top=document.createElement('div');top.className='vr-comment-top';
                 const jumpBtn=document.createElement('button');jumpBtn.type='button';jumpBtn.className='vr-jump';jumpBtn.textContent='▶ '+vrFormat(c.seconds);
                 jumpBtn.title='Tua đến mốc và mở bình luận để chỉnh sửa';
                 jumpBtn.onclick=()=>openCommentEditor(c);top.appendChild(jumpBtn);
                 const author=document.createElement('small');author.textContent=(c.name||'Khách hàng')+' · '+new Date(c.createdAt||Date.now()).toLocaleString('vi-VN');top.appendChild(author);
                 const edit=document.createElement('button');edit.type='button';edit.className='vr-edit';edit.textContent='Sửa';
-                edit.onclick=()=>openCommentEditor(c);top.appendChild(edit);
+                edit.disabled=!!c.resolved;edit.onclick=()=>openCommentEditor(c);top.appendChild(edit);
                 // Only signed-in staff can remove a resolved comment.
                 if(firebase.auth().currentUser){
                     const fixed=document.createElement('button');fixed.type='button';fixed.className='vr-resolve';fixed.textContent='✓ Fix';
+                    fixed.textContent=c.resolved?'↶ Bỏ fix':'✓ Đã fix';
                     fixed.onclick=async()=>{
-                        if(!confirm('Xác nhận đã sửa và XÓA bình luận này khỏi Firebase? Không thể hoàn tác.'))return;
                         fixed.disabled=true;
                         try{
-                            await ref.child(c.id).remove();
+                            await ref.child(c.id).update({resolved:!Boolean(c.resolved),resolvedAt:c.resolved?null:firebase.database.ServerValue.TIMESTAMP});
                             if(editingCommentId===c.id)closeCommentEditor();
-                            showToast('Đã fix và xóa góp ý tại '+vrFormat(c.seconds));
-                        }catch(err){fixed.disabled=false;showToast('Không có quyền xóa: '+err.message)}
+                            showToast(c.resolved?'Đã chuyển về chưa fix':'Đã đánh dấu đã fix (vẫn lưu bình luận)');
+                        }catch(err){showToast('Không cập nhật được: '+err.message)}
+                        finally{fixed.disabled=false;}
                     };top.appendChild(fixed);
                 }
-                const content=document.createElement('div');content.className='vr-comment-body';content.textContent=c.text;
+                const content=document.createElement('div');content.className='vr-comment-body';content.textContent=(c.resolved?'✓ Đã fix · ':'')+c.text;
                 el.append(top,content);list.appendChild(el);
             }
-            renderMarkers();status.textContent=visible.length+' góp ý chưa fix';
+            renderMarkers();status.textContent=comments.filter(c=>!c.resolved).length+' cần sửa · '+comments.filter(c=>c.resolved).length+' đã fix';
         }
         // Separate Firebase branch; no local-only "success" on network/permission failures.
         if(typeof firebase==='undefined'||!firebase.apps.length){status.textContent='Chưa kết nối Firebase';button.disabled=true;continue;}
@@ -5386,7 +5427,7 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
            </a>
            <div style="display:flex; gap:6px; flex-wrap:wrap;">
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateSingleClientLink('${prodId}')">🔗 Copy link</button>
-               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px;font-size:12px;border:1px solid #b59a72;color:#79603e;font-weight:700" data-video-review-action="true" onclick="window.openVideoReviews('${prodId}')">💬 Góp ý video</button>
+               <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px;font-size:12px;border:1px solid #b59a72;color:#79603e;font-weight:700" data-video-review-action="true" onclick="window.clearVideoReviewsForProduct('${prodId}')">✓ Đã fix</button>
                <button type="button" class="btn ghost admin-only-flex product-copy-favorites" data-product-id="${prodId}" style="display:none; padding:6px 10px; font-size:12px; border:1px solid #86efac; color:#15803d; font-weight:700;">📋 Copy tên ảnh</button>
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.closest('.product-row').querySelector('.prod-view').style.display='none'; this.closest('.product-row').querySelector('.prod-edit').style.display='flex'">✏️ Sửa</button>
            </div>
@@ -5489,6 +5530,34 @@ window.refreshProductMediaRow = async function(row, prodId, rawUrl) {
             ? `Copy ${favoriteCount} tên ảnh khách đã chọn`
             : 'Chưa có ảnh khách chọn';
     }
+};
+
+window.clearVideoReviewsForProduct = async function(prodId) {
+    const eventId=document.getElementById('eventId')?.value;
+    if (!eventId || !prodId) {showToast('Chưa xác định lịch hoặc sản phẩm');return;}
+    const event=data.events.find(e=>String(e.id)===String(eventId));
+    const product=event?.products?.find(p=>String(p.id)===String(prodId));
+    if(!product){showToast('Không tìm thấy sản phẩm');return;}
+    const row=[...document.querySelectorAll('#eventProductsList .product-row')].find(e=>e.dataset.id===String(prodId));
+    const mediaType=row?.dataset.mediaType || await window.detectProductMediaType(product.url||'',product.name||'');
+    if(mediaType!=='video'&&mediaType!=='mixed') {showToast('Chỉ có thể làm mới góp ý của sản phẩm video');return;}
+    if(!firebase.auth().currentUser){showToast('Vui lòng đăng nhập tài khoản quản trị');return;}
+    const ok=confirm('Xác nhận video đã fix và XÓA TOÀN BỘ bình luận cũ của sản phẩm "'+(product.name||'Video')+'"?\n\nThao tác này không thể hoàn tác. Các sản phẩm khác không bị ảnh hưởng.');
+    if(!ok)return;
+    const btn=row?.querySelector('[data-video-review-action]');
+    if(btn)btn.disabled=true;
+    try {
+       const root=firebase.database().ref('videoReviews_v1/'+reviewKey(eventId));
+       const snap=await root.once('value');
+       const prefix=reviewKey(String(prodId)+'::');
+       const legacyKey=reviewKey(String(prodId));
+       const targets=Object.keys(snap.val()||{}).filter(key=>key.startsWith(prefix)||key===legacyKey);
+       if(!targets.length){showToast('Sản phẩm này chưa có bình luận để xóa');return;}
+       const updates={};for(const key of targets)updates[key]=null;
+       await root.update(updates);
+       showToast('Đã xóa bình luận cũ của '+targets.length+' video. Khách có thể góp ý bản mới.');
+    }catch(err){console.error('Video reset failed:',err);showToast('Không xóa được bình luận: '+err.message)}
+    finally{if(btn)btn.disabled=false;}
 };
 
 window.openVideoReviews = function(prodId) {
