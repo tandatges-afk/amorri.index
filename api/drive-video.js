@@ -84,15 +84,40 @@ function driveIdFromUrl(input, folder=false) {
   const m=folder ? s.match(/(?:folders\/|[?&]id=)([\w-]{10,200})/) : s.match(/(?:file\/d\/|[?&]id=)([\w-]{10,200})/);
   return m?.[1]||null;
 }
+// Read RTDB using authenticated REST: avoid long-lived Firebase SDK connection in a serverless invocation.
+const databaseAuth = new GoogleAuth({
+  credentials: JSON.parse(process.env.DRIVE_SERVICE_ACCOUNT_JSON || '{}'),
+  scopes: [
+    'https://www.googleapis.com/auth/firebase.database',
+    'https://www.googleapis.com/auth/userinfo.email'
+  ]
+});
+async function readGalleryEvents() {
+  const databaseURL = String(process.env.FIREBASE_DATABASE_URL || '').trim().replace(/\/+$/, '');
+  if (!/^https:\/\/[a-z0-9.-]+\.(?:firebaseio\.com|firebasedatabase\.app)$/i.test(databaseURL)) {
+    throw Object.assign(new Error('Invalid FIREBASE_DATABASE_URL: use the Realtime Database URL'), {status:503,step:'firebase-url'});
+  }
+  console.info('drive-video stage: firebase-rest-auth-start');
+  const client = await withTimeout(databaseAuth.getClient(), 'firebase-rest-auth', 10000);
+  const access = await withTimeout(client.getAccessToken(), 'firebase-rest-token', 10000);
+  if (!access.token) throw Object.assign(new Error('Firebase REST access token unavailable'),{status:502,step:'firebase-rest-token'});
+  console.info('drive-video stage: firebase-rest-fetch-start');
+  const result = await googleFetch(`${databaseURL}/studioPlanner_v1/events.json`, {
+    headers: {Authorization: `Bearer ${access.token}`, Accept:'application/json'}
+  }, 'firebase-rest-fetch');
+  if (!result.ok) {
+    console.error('drive-video Firebase REST HTTP:', result.status);
+    throw Object.assign(new Error(`Firebase REST returned HTTP ${result.status}; check IAM and database URL`),{status:502,step:'firebase-rest-http'});
+  }
+  const events = await withTimeout(result.json(),'firebase-rest-json',10000);
+  console.info('drive-video stage: firebase-rest-done');
+  return events;
+}
 async function authorizeGallery(clientGallery, productId, fileId, headers, metadata) {
   if (typeof clientGallery!=='string'||!clientGallery||clientGallery.length>160||typeof productId!=='string'||!productId||productId.length>160) return false;
   // The existing client URL is a bearer capability. Unpredictable IDs must remain private.
   // For stronger security, issue independently signed, expiring per-gallery links.
-  getFirebase();
-  console.info('drive-video stage: firebase-events-start');
-  const snapshot=await withTimeout(admin.database().ref('studioPlanner_v1/events').once('value'), 'firebase-events', 12000);
-  console.info('drive-video stage: firebase-events-done');
-  const records=snapshot.val();
+  const records=await readGalleryEvents();
   const events=Array.isArray(records)?records:Object.values(records||{});
   const event=events.find(e=>e&&String(e.id)===clientGallery);
   if(!event)return false;
