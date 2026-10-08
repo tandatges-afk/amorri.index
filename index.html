@@ -3546,7 +3546,7 @@ body[data-client-gallery="true"] .studio-credit-pill {
 <style id="amorri-v549-spacing-review-palette">
 /* v5.49: exactly +50px below the video gallery, not below studio credit. */
 body[data-client-gallery="true"] #clientGalleryView .gallery-container.amorri-video-only {
-  padding-bottom:62px!important; /* previous 12px + 50px */
+  padding-bottom:72px!important; /* 12px base + 60px requested */
 }
 /* One translucent review palette for idle and cinema; internal structural
    regions inherit the SAME backing surface and never paint opaque strips. */
@@ -3604,6 +3604,30 @@ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoC
 body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-time {
   background:rgba(255,255,255,.25)!important;
   border:1px solid var(--vr-divider)!important;
+}
+</style>
+
+<style id="amorri-v550-cinema-review-transparency">
+/* Play-only: adjust paint alpha, never parent opacity (which would dim controls/video). */
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel {
+  background:rgba(224,214,202,.5)!important;
+  border-color:rgba(147,124,103,.5)!important;
+  --vr-divider:rgba(102,79,57,.5);
+  --vr-input-border:rgba(147,124,103,.5);
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-comment,.vr-status[data-vr-status],.vr-time) {
+  background-color:rgba(255,255,255,.5)!important;
+}
+/* User requested text alpha .3 specifically during playback. */
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-heading,.vr-list-toolbar,.vr-comment-body,.vr-comment-author,.vr-time,.vr-status,.vr-comment-date,.vr-compose,.vr-comment small,.vr-heading strong,.vr-list-toolbar strong,.vr-name,.vr-message) {
+  color:rgba(59,50,43,.3)!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-name,.vr-message)::placeholder {
+  color:rgba(59,50,43,.3)!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-name,.vr-message) {
+  background-color:rgba(247,242,233,.5)!important;
+  border-color:rgba(147,124,103,.5)!important;
 }
 </style>
 </head>
