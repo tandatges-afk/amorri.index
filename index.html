@@ -3546,7 +3546,7 @@ body[data-client-gallery="true"] .studio-credit-pill {
 <style id="amorri-v549-spacing-review-palette">
 /* v5.49: exactly +50px below the video gallery, not below studio credit. */
 body[data-client-gallery="true"] #clientGalleryView .gallery-container.amorri-video-only {
-  padding-bottom:72px!important; /* 12px base + 60px requested */
+  padding-bottom:68px!important; /* requested 68px under video */
 }
 /* One translucent review palette for idle and cinema; internal structural
    regions inherit the SAME backing surface and never paint opaque strips. */
@@ -3682,6 +3682,31 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-
 body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-comment.vr-selected {
   background:rgba(151,115,79,.055)!important;
   box-shadow:inset 3px 0 0 rgba(151,115,79,.30)!important;
+}
+</style>
+
+<style id="amorri-v553-final-tuning">
+/* Align video and review together without clipping the right edge. */
+body[data-client-gallery="true"] #clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer {
+  margin-left:10px!important;
+  width:calc(100% - 10px)!important;
+  max-width:calc(100% - 10px)!important;
+}
+/* Playback-only soft controls: use RGBA paints instead of dimming whole UI. */
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(button,.vr-btn,.vr-edit,.vr-resolve,.vr-delete,.vr-jump,.vr-inline-btn,.vr-cancel) {
+  background:rgba(224,214,202,.30)!important;
+  background-image:none!important;
+  border-color:rgba(147,124,103,.30)!important;
+  color:rgba(59,50,43,.40)!important;
+  box-shadow:none!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(button,.vr-btn,.vr-edit,.vr-resolve,.vr-delete,.vr-jump,.vr-inline-btn,.vr-cancel):hover:not(:disabled) {
+  background:rgba(224,214,202,.43)!important;
+  color:rgba(59,50,43,.75)!important;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(button,.vr-btn,.vr-edit,.vr-resolve,.vr-delete,.vr-jump,.vr-inline-btn,.vr-cancel):focus-visible {
+  outline:2px solid rgba(151,115,79,.75)!important;
+  outline-offset:2px;
 }
 </style>
 </head>
