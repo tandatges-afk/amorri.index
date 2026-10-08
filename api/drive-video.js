@@ -13,6 +13,23 @@ const CHUNK_BYTES = 1024 * 1024; // 1 MiB, safely below Vercel's 4.5 MB response
 const TOKEN_SECONDS = 60 * 60;
 const ID_PATTERN = /^[\w-]{10,200}$/;
 const DRIVE = 'https://www.googleapis.com/drive/v3/files/';
+const TIMEOUT_MS = 10000;
+function withTimeout(promise, label, ms=TIMEOUT_MS) {
+  let timer;
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise((_,reject)=> {timer=setTimeout(()=> reject(Object.assign(new Error(`${label} timed out after ${ms}ms`),{status:504,step:label})),ms);})
+  ]).finally(()=>clearTimeout(timer));
+}
+async function googleFetch(url, options={}, step='google-fetch') {
+  try {
+    return await fetch(url, {...options, signal:AbortSignal.timeout(TIMEOUT_MS)});
+  } catch(err) {
+    if (err.name==='TimeoutError'||err.name==='AbortError') throw Object.assign(new Error(`${step} timed out`),{status:504,step});
+    throw Object.assign(new Error(`${step}: network request failed`),{status:502,step});
+  }
+}
+
 const auth = new GoogleAuth({
   credentials: JSON.parse(process.env.DRIVE_SERVICE_ACCOUNT_JSON || '{}'),
   scopes: ['https://www.googleapis.com/auth/drive.readonly']
@@ -51,14 +68,14 @@ function getFirebase() {
   return admin.auth();
 }
 async function getDriveHeaders() {
-  const client = await auth.getClient();
-  const result = await client.getAccessToken();
+  const client = await withTimeout(auth.getClient(), 'google-auth-client');
+  const result = await withTimeout(client.getAccessToken(), 'google-access-token');
   if (!result.token) throw Object.assign(new Error('Could not obtain Google access token'), { status: 502 });
   return { Authorization: `Bearer ${result.token}` };
 }
 async function getMetadata(id, headers) {
   const url = `${DRIVE}${encodeURIComponent(id)}?fields=id,name,mimeType,size,parents,capabilities(canDownload)&supportsAllDrives=true`;
-  const r = await fetch(url, { headers });
+  const r = await googleFetch(url, { headers }, 'drive-metadata');
   if (!r.ok) throw Object.assign(new Error(`Drive metadata request failed (${r.status})`), { status: r.status === 404 ? 404 : 502 });
   return r.json();
 }
@@ -72,7 +89,9 @@ async function authorizeGallery(clientGallery, productId, fileId, headers, metad
   // The existing client URL is a bearer capability. Unpredictable IDs must remain private.
   // For stronger security, issue independently signed, expiring per-gallery links.
   getFirebase();
-  const snapshot=await admin.database().ref('studioPlanner_v1/events').once('value');
+  console.info('drive-video stage: firebase-events-start');
+  const snapshot=await withTimeout(admin.database().ref('studioPlanner_v1/events').once('value'), 'firebase-events', 12000);
+  console.info('drive-video stage: firebase-events-done');
   const records=snapshot.val();
   const events=Array.isArray(records)?records:Object.values(records||{});
   const event=events.find(e=>e&&String(e.id)===clientGallery);
@@ -129,8 +148,11 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
+      console.info('drive-video stage: access-token-start');
       const headers = await getDriveHeaders();
+      console.info('drive-video stage: access-token-done');
       const meta = await getMetadata(id, headers);
+      console.info('drive-video stage: metadata-done');
       if (!meta.mimeType?.startsWith('video/')) return sendError(res, 415, 'File is not a video');
       if (meta.capabilities?.canDownload === false) return sendError(res, 403, 'Downloading disabled in Google Drive');
       const bearer = /^Bearer (.+)$/i.exec(req.headers.authorization || '');
@@ -142,6 +164,7 @@ export default async function handler(req, res) {
       const clientGallery = payload.clientGallery;
       const productId = payload.productId;
       const permitted = await authorizeGallery(clientGallery,productId,id,headers,meta);
+      console.info('drive-video stage: gallery-authorization-done');
       // Login alone does not authorize access; gallery/product membership is mandatory.
       if (!permitted) return sendError(res, 403, 'Video does not belong to this client gallery/product');
       uid ||= 'gallery:'+clientGallery;
@@ -182,9 +205,9 @@ export default async function handler(req, res) {
       if (match[1] && match[2]) end = Math.min(end, Number(match[2]));
       if (end < start) return sendError(res, 416, 'Invalid Range end');
     }
-    const upstream = await fetch(`${DRIVE}${encodeURIComponent(id)}?alt=media&supportsAllDrives=true`, {
+    const upstream = await googleFetch(`${DRIVE}${encodeURIComponent(id)}?alt=media&supportsAllDrives=true`, {
       headers: { ...headers, Range: `bytes=${start}-${end}` }
-    });
+    }, 'drive-media');
     if (upstream.status !== 206 || !upstream.body) {
       const snippet = (await upstream.text()).slice(0, 300);
       console.error('Drive media download failed:', upstream.status, snippet);
@@ -204,8 +227,8 @@ export default async function handler(req, res) {
       stream.pipe(res);
     });
   } catch (error) {
-    console.error('drive-video:', error);
-    if (!res.headersSent) return sendError(res, error.status || (error.code === 'auth/id-token-expired' ? 401 : 500), error.status ? error.message : 'Drive API error; check Vercel function logs');
+    console.error('drive-video:', {message:error.message,step:error.step||'unknown',status:error.status||500});
+    if (!res.headersSent) return sendError(res, error.status || 500, error.status===504 ? error.message : error.status ? error.message : 'Drive API error; check Vercel function logs');
     res.destroy(error);
   }
 }
