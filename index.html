@@ -1635,6 +1635,63 @@ body.sidebar-closed .nav-btn.active { box-shadow: inset 0 -2px 0 var(--champagne
 .vr-markers{position:relative;min-height:12px;background:#e8e1d6;border-radius:20px;margin:14px 2px 0}
 .vr-marker{position:absolute;top:0;width:10px;height:12px;transform:translateX(-50%);border:0;border-radius:12px;background:#b59a72;cursor:pointer;padding:0}
 @media(max-width:700px){.vr-panel{padding:12px}.vr-time{width:100%}.vr-name{flex:1}.vr-manual{max-width:none}}
+
+/* === Video review workspace UX v5.6 === */
+.client-video-card{overflow:hidden}
+.client-video-review-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(360px,.9fr);align-items:start}
+.client-video-left{padding:14px;background:linear-gradient(180deg,#fff, #fcfaf6)}
+.client-video-frame{border:1px solid rgba(148,163,184,.18);border-radius:18px;overflow:hidden;box-shadow:0 12px 32px rgba(15,23,42,.08)}
+.vr-panel{padding:16px 16px 18px;border-top:0;border-left:1px solid var(--line);background:linear-gradient(180deg,#fffdf9 0%,#fff 100%);display:flex;flex-direction:column;gap:12px;min-height:100%}
+.vr-heading{margin:0;align-items:flex-start}
+.vr-heading strong{display:block;font-size:16px;line-height:1.3}
+.vr-sub{margin:2px 0 0;font-size:12px;color:#6b7280}
+.vr-shell{display:grid;gap:12px}
+.vr-card{border:1px solid #ece3d7;background:#ffffff;border-radius:16px;padding:14px;box-shadow:0 8px 18px rgba(15,23,42,.04)}
+.vr-card-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.vr-card-title strong{font-size:13px;color:#3b3022;letter-spacing:.1px}
+.vr-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#f7f1e7;border:1px solid #e7d7bf;color:#6b5133;font-size:11px;font-weight:800}
+.vr-timeline-box{padding:0;margin:0;border:0;background:transparent}
+.vr-timeline-top{margin-bottom:10px}
+.vr-time-tools{padding-top:4px}
+.vr-time-tools input{height:38px;border-radius:12px}
+.vr-inline-btn{height:38px;padding:0 12px;border-radius:12px;background:#fff7ed}
+.vr-entry{display:grid;grid-template-columns:108px minmax(0,1fr);gap:10px;margin:0}
+.vr-time,.vr-name,.vr-manual{height:42px;display:flex;align-items:center}
+.vr-time{justify-content:center;font-size:14px;border-radius:12px;background:#f7f1e7;color:#6b5133}
+.vr-name{width:100%;min-width:0}
+.vr-message{min-height:120px;border-radius:14px;padding:14px;margin-top:10px}
+.vr-actions{margin-top:10px;align-items:stretch}
+.vr-actions .vr-status{flex:1 1 220px;display:flex;align-items:center;padding:10px 12px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0}
+.vr-btn{min-height:44px;padding:11px 16px;border-radius:12px;background:linear-gradient(180deg,#1f2937,#111827);box-shadow:0 10px 20px rgba(17,24,39,.12)}
+.vr-markers{margin:10px 0 0;background:#efe7d8;height:14px}
+.vr-list-wrap{display:grid;gap:10px}
+.vr-list-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.vr-list-toolbar span{font-size:12px;color:#7c6d5b}
+.vr-list{display:grid;gap:10px;margin-top:0;max-height:560px;overflow:auto;padding-right:2px}
+.vr-comment{border-radius:14px;background:#fffaf2;border:1px solid #ecdcc6;padding:13px;box-shadow:0 6px 14px rgba(15,23,42,.03)}
+.vr-comment-top{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center}
+.vr-jump{height:34px;padding:0 12px;border-radius:10px;background:#fff;border-color:#dfc9a5}
+.vr-comment small{display:block;margin-top:2px}
+.vr-comment-body{margin-top:8px;font-size:13px;line-height:1.6;color:#292524}
+.vr-edit,.vr-resolve{height:34px;padding:0 11px;border-radius:10px;font-size:11px;font-weight:800}
+.vr-edit{border-color:#d8dee8;background:#fff}
+.vr-resolve{border-color:#cfe0c5;background:#f6fff1;color:#305b27;margin-left:0}
+.vr-selected{box-shadow:0 0 0 2px rgba(181,154,114,.35)}
+.vr-status[data-vr-status]{padding:6px 10px;border-radius:999px;background:#f8fafc;border:1px solid #e5e7eb;font-size:11px;font-weight:800}
+@media (max-width: 1080px){
+  .client-video-review-layout{grid-template-columns:1fr}
+  .vr-panel{border-left:0;border-top:1px solid var(--line)}
+}
+@media (max-width: 700px){
+  .client-video-left{padding:10px}
+  .vr-panel{padding:12px}
+  .vr-entry{grid-template-columns:1fr}
+  .vr-list{max-height:none}
+  .vr-comment-top{grid-template-columns:1fr 1fr}
+  .vr-jump{grid-column:1/-1;justify-self:start}
+  .vr-edit,.vr-resolve{width:100%}
+}
+
 </style>
 
 
@@ -3578,22 +3635,35 @@ async function initClientGallery() {
             const vrKey = reviewKey(String(v.productId || "") + "::" + String(v.id || ""));
             return `<section class="client-video-card" data-vr-product="${escapeHtml(vrKey)}" data-vr-file-id="${escapeHtml(v.id||'')}" data-vr-raw-product="${escapeHtml(v.productId||'')}" data-vr-type="${escapeHtml(v.externalType==='youtube'?'youtube':v.source==='drive'?'drive':'direct')}">
                 <div class="client-video-head"><div class="client-video-title">${escapeHtml(v.name||'Video bàn giao')}</div><div class="client-video-tag">VIDEO REVIEW</div></div>
-                <div class="client-video-frame">${frame}</div>
-                <div class="vr-panel">
-                    <div class="vr-heading"><strong>💬 Góp ý chỉnh sửa theo timeline</strong><span class="vr-status" data-vr-status>Đang kết nối...</span></div>
-                    <p class="vr-sub">Dừng video tại đoạn cần sửa, ghi nhận xét và bấm Gửi. Editor có thể bấm vào mốc thời gian để xem lại.</p>
-                    <div class="vr-timeline-box">
-                       <div class="vr-timeline-top"><span>Timeline góp ý <span data-vr-mode></span></span><span><b data-vr-current>00:00</b> / <span data-vr-total>--:--</span></span></div>
-                       <div class="vr-scrub-wrap"><input class="vr-scrub" type="range" min="0" max="100" step="1" value="0" data-vr-scrub aria-label="Chọn vị trí góp ý trên timeline"><div class="vr-timeline-dots" data-vr-dots></div></div>
-                       <div class="vr-time-tools"><label>Thời điểm</label><input data-vr-seek-input placeholder="01:25" aria-label="Mốc thời gian"><button class="vr-inline-btn" data-vr-seek type="button">Chọn mốc</button><label data-vr-drive-duration-label style="display:none">Độ dài video</label><input data-vr-drive-duration style="display:none" placeholder="04:30" aria-label="Tổng thời lượng video"></div>
-                       <div class="vr-mode-note" data-vr-mode-note></div>
+                <div class="client-video-review-layout">
+                  <div class="client-video-left">
+                    <div class="client-video-frame">${frame}</div>
+                  </div>
+                  <aside class="vr-panel">
+                    <div class="vr-heading"><div><strong>💬 Góp ý chỉnh sửa theo timeline</strong><p class="vr-sub">Khách hàng và editor có thể chọn đúng mốc thời gian, chỉnh sửa lại góp ý và xử lý nhanh hơn ngay bên phải video.</p></div><span class="vr-status" data-vr-status>Đang kết nối...</span></div>
+                    <div class="vr-shell">
+                      <div class="vr-card">
+                        <div class="vr-card-title"><strong>1. Chọn mốc thời gian</strong><span class="vr-chip">Theo timeline video</span></div>
+                        <div class="vr-timeline-box">
+                           <div class="vr-timeline-top"><span>Timeline góp ý <span data-vr-mode></span></span><span><b data-vr-current>00:00</b> / <span data-vr-total>--:--</span></span></div>
+                           <div class="vr-scrub-wrap"><input class="vr-scrub" type="range" min="0" max="100" step="1" value="0" data-vr-scrub aria-label="Chọn vị trí góp ý trên timeline"><div class="vr-timeline-dots" data-vr-dots></div></div>
+                           <div class="vr-time-tools"><label>Thời điểm</label><input data-vr-seek-input placeholder="01:25" aria-label="Mốc thời gian"><button class="vr-inline-btn" data-vr-seek type="button">Chọn mốc</button><label data-vr-drive-duration-label style="display:none">Độ dài video</label><input data-vr-drive-duration style="display:none" placeholder="04:30" aria-label="Tổng thời lượng video"></div>
+                           <div class="vr-mode-note" data-vr-mode-note></div>
+                        </div>
+                      </div>
+                      <div class="vr-card">
+                        <div class="vr-card-title"><strong>2. Viết góp ý / chỉnh sửa</strong><span class="vr-chip">Dễ nhập • Dễ sửa</span></div>
+                        <div class="vr-entry"><span class="vr-time" data-vr-current-secondary>00:00</span><input class="vr-name" data-vr-name maxlength="60" placeholder="Tên người góp ý" aria-label="Tên người góp ý"></div>
+                        <textarea class="vr-message" data-vr-message maxlength="2000" placeholder="Ví dụ: Giây này chỉnh màu sáng hơn, cắt chuyển cảnh chậm lại..." aria-label="Nội dung góp ý"></textarea>
+                        <div class="vr-actions"><span class="vr-status" data-vr-hint>${v.source==='drive'?'Video Drive: nhập thời gian mm:ss hoặc hh:mm:ss từ trình phát.':'Thời gian được lấy từ vị trí đang phát.'}</span><button type="button" class="vr-btn" data-vr-send>Gửi góp ý tại mốc này ↗</button></div>
+                        <div class="vr-markers" data-vr-markers hidden></div>
+                      </div>
+                      <div class="vr-card vr-list-wrap">
+                        <div class="vr-list-toolbar"><strong>3. Danh sách góp ý cần xử lý</strong><span>Bấm ▶ để nhảy đúng đoạn, ✏️ để sửa, ✓ để đánh dấu đã fix.</span></div>
+                        <div class="vr-list" data-vr-list></div>
+                      </div>
                     </div>
-                    <div class="vr-entry"><span class="vr-time" data-vr-current-secondary>00:00</span><input class="vr-name" data-vr-name maxlength="60" placeholder="Tên người góp ý" aria-label="Tên người góp ý">
-                    </div>
-                    <textarea class="vr-message" data-vr-message maxlength="2000" placeholder="Ví dụ: Giây này chỉnh màu sáng hơn, cắt chuyển cảnh chậm lại..." aria-label="Nội dung góp ý"></textarea>
-                    <div class="vr-actions"><span class="vr-status" data-vr-hint>${v.source==='drive'?'Video Drive: nhập thời gian mm:ss hoặc hh:mm:ss từ trình phát.':'Thời gian được lấy từ vị trí đang phát.'}</span><button type="button" class="vr-btn" data-vr-send>Gửi góp ý tại mốc này ↗</button></div>
-                    <div class="vr-markers" data-vr-markers hidden></div>
-                    <div class="vr-list" data-vr-list></div>
+                  </aside>
                 </div>
             </section>`;
         }).join('');
