@@ -2964,6 +2964,63 @@ body {
   #cgPhotoGrid .client-photo-card .photo-card-backdrop { filter:blur(16px) brightness(.78) !important; }
 }
 </style>
+
+<style id="amorri-v524-photos-and-mobile">
+/* Uniform photo cards; selected hearts never move or scale. */
+#cgPhotoGrid .client-photo-card { min-width:0; contain:layout; }
+#cgPhotoGrid .client-photo-card[hidden] { display:none !important; }
+#cgPhotoGrid .client-photo-card .heart-btn,
+#cgPhotoGrid .client-photo-card.selected .heart-btn {
+  position:absolute !important;top:12px !important;right:12px !important;
+  left:auto !important;bottom:auto !important;
+  width:36px !important;height:36px !important;min-width:36px !important;
+  padding:0 !important;margin:0 !important;
+  display:grid !important;place-items:center !important;
+  line-height:1 !important;transform:none !important;
+  translate:none !important;scale:1 !important;
+  box-sizing:border-box;z-index:7 !important;
+  transition:background-color .18s,color .18s,border-color .18s !important;
+}
+#cgPhotoGrid .client-photo-card.selected {animation:none !important;transform:none !important;}
+#cgPhotoGrid .client-photo-card.selected .heart-btn {background:#b59a72 !important;color:#fff !important;border-color:#b59a72 !important;}
+#cgPhotoGrid .client-photo-card .photo-card-backdrop {pointer-events:none}
+/* Controls immediately adjacent to submit, not floating in the image grid. */
+#cgBottomBar {width:min(780px,calc(100vw - 24px)) !important;max-width:calc(100vw - 24px);box-sizing:border-box;}
+#cgBottomBar .cg-gallery-actions {display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;}
+#cgBottomBar .cg-photo-filters {display:flex;gap:5px;align-items:center;}
+#cgBottomBar .cg-filter-btn {appearance:none;white-space:nowrap;min-height:38px;padding:8px 11px;border-radius:10px;border:1px solid rgba(255,255,255,.23);background:rgba(255,255,255,.08);color:#fff;font:inherit;font-size:12px;font-weight:750;cursor:pointer;}
+#cgBottomBar .cg-filter-btn.active {background:#f5ead9;color:#55422e;border-color:#f5ead9;}
+#cgBottomBar .cg-submit-photos {min-height:38px;white-space:nowrap;}
+@media(max-width:900px){
+  #clientGalleryView .gallery-container{max-width:100%;min-width:0;padding-inline:14px !important;}
+  #cgPhotoGrid{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:10px !important;}
+  #cgBottomBar {gap:9px;}
+}
+@media(max-width:650px){
+  #clientGalleryView, #clientGalleryView * {box-sizing:border-box;}
+  #clientGalleryView .gallery-container {padding-inline:10px !important;}
+  #cgPhotoGrid {grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:8px !important;}
+  #cgPhotoGrid .client-photo-card {border-radius:12px !important;}
+  #cgPhotoGrid .client-photo-card .heart-btn,
+  #cgPhotoGrid .client-photo-card.selected .heart-btn {top:8px !important;right:8px !important;width:32px !important;height:32px !important;min-width:32px !important;font-size:17px !important;}
+  #cgBottomBar {width:calc(100vw - 16px) !important;max-width:calc(100vw - 16px);bottom:max(8px,env(safe-area-inset-bottom)) !important;padding:10px !important;display:flex;flex-direction:column;align-items:stretch;gap:8px;border-radius:14px !important;}
+  #cgBottomBar .count-info {text-align:center;font-size:11px !important;}
+  #cgBottomBar .cg-gallery-actions {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;width:100%;}
+  #cgBottomBar .cg-photo-filters {display:grid;grid-template-columns:1fr 1fr;gap:5px;min-width:0;}
+  #cgBottomBar .cg-filter-btn {padding:9px 5px;font-size:11px;min-width:0;}
+  #cgBottomBar .cg-submit-photos {padding:9px 10px !important;font-size:11px !important;white-space:normal;max-width:142px;line-height:1.25;}
+  #clientGalleryView:not(:has(.gallery-container.amorri-video-only)) {padding-bottom:130px !important;}
+  #cgVideoContainer .client-video-review-layout{grid-template-columns:minmax(0,1fr) !important;}
+  #cgVideoContainer .client-video-frame{width:100% !important;max-width:100% !important;}
+  #cgVideoContainer .vr-panel{min-width:0;max-width:100%;}
+  #cgVideoContainer .vr-actions{display:flex;flex-wrap:wrap;}
+}
+@media(max-width:370px){
+  #cgBottomBar .cg-gallery-actions{grid-template-columns:1fr;}
+  #cgBottomBar .cg-submit-photos{max-width:none;width:100%;}
+  #clientGalleryView:not(:has(.gallery-container.amorri-video-only)){padding-bottom:175px !important;}
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -3014,7 +3071,13 @@ body {
 
     <div class="client-bottom-bar" id="cgBottomBar">
         <div class="count-info">Đã chọn: <span id="cgSelectedCount">0</span> ảnh</div>
-        <button class="btn primary" style="background:#ef4444;color:#fff;" onclick="window.submitClientFavorites()">Gửi Studio chỉnh sửa</button>
+        <div class="cg-gallery-actions">
+          <div class="cg-photo-filters" role="group" aria-label="Lọc ảnh theo trạng thái chọn">
+            <button type="button" class="cg-filter-btn" data-photo-filter="unselected" aria-pressed="false">Chưa chọn</button>
+            <button type="button" class="cg-filter-btn" data-photo-filter="selected" aria-pressed="false">Đã chọn</button>
+          </div>
+          <button class="btn primary cg-submit-photos" style="background:#ef4444;color:#fff;" onclick="window.submitClientFavorites()">Gửi Studio chỉnh sửa</button>
+        </div>
     </div>
 
 </div>
@@ -4256,6 +4319,28 @@ async function initClientGallery() {
     }
 }
 
+let clientPhotoFilter = 'all';
+function updateClientPhotoFilterButtons() {
+    document.querySelectorAll('#cgBottomBar [data-photo-filter]').forEach(btn => {
+        const active = btn.dataset.photoFilter === clientPhotoFilter;
+        btn.classList.toggle('active',active);
+        btn.setAttribute('aria-pressed',String(active));
+    });
+}
+function filterClientPhotoCards() {
+    document.querySelectorAll('#cgPhotoGrid .client-photo-card').forEach(card => {
+        const selected = card.classList.contains('selected');
+        card.hidden = clientPhotoFilter === 'selected' ? !selected : clientPhotoFilter === 'unselected' ? selected : false;
+    });
+    updateClientPhotoFilterButtons();
+}
+document.getElementById('cgBottomBar')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-photo-filter]');
+    if (!button) return;
+    const next = button.dataset.photoFilter;
+    clientPhotoFilter = clientPhotoFilter === next ? 'all' : next;
+    filterClientPhotoCards();
+});
 function renderClientGrid() {
     const grid = document.getElementById('cgPhotoGrid');
     const images = (currentClientEvent.galleryPhotos || []).filter(p => !p.isVideo);
@@ -4270,6 +4355,7 @@ function renderClientGrid() {
         </div>`;
     }).join('');
     updateClientBottomBar();
+    filterClientPhotoCards();
 }
 
 window.toggleClientPhoto = function(encodedKey) {
@@ -4282,6 +4368,7 @@ window.toggleClientPhoto = function(encodedKey) {
         if(card) card.classList.toggle('selected', clientSelectedPhotos.has(key));
     }
     updateClientBottomBar();
+    filterClientPhotoCards();
 };
 
 function updateClientBottomBar() {
