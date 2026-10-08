@@ -3207,6 +3207,24 @@ button:focus-visible,a:focus-visible{outline:2px solid #a88964;outline-offset:2p
  #clientGalleryView .gallery-head-status{justify-content:flex-start}
 }
 </style>
+
+<style id="amorri-v527-smart-mobile-navigation">
+/* Mobile-only: retract the bottom navigation without changing desktop sidebar. */
+@media (max-width: 768px) {
+  body .app > .sidebar {
+    transition: transform 240ms cubic-bezier(.22,1,.36,1), opacity 240ms ease !important;
+    will-change: transform;
+  }
+  body.amorri-nav-scroll-hidden .app > .sidebar {
+    transform: translate3d(0, calc(100% + 8px), 0) !important;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body .app > .sidebar { transition: none !important; }
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -7260,6 +7278,45 @@ initApp();
       video.pause();
     }
   });
+})();
+</script>
+
+<script id="amorri-v527-smart-mobile-navigation-script">
+(() => {
+  const mq = window.matchMedia('(max-width: 768px)');
+  const cls = 'amorri-nav-scroll-hidden';
+  const sidebar = document.querySelector('.app > .sidebar');
+  if (!sidebar) return;
+  let previousY = window.scrollY || 0;
+  let distance = 0;
+  let direction = 0;
+  let scheduled = false;
+  const show = () => { document.body.classList.remove(cls); distance = 0; };
+  const interactive = (node) => !!node?.closest?.('input, textarea, select, [contenteditable="true"], [role="textbox"]');
+  function update() {
+    scheduled = false;
+    const y = Math.max(0, window.scrollY || document.documentElement.scrollTop || 0);
+    const dy = y - previousY;
+    previousY = y;
+    if (!mq.matches || y < 90 || interactive(document.activeElement) ||
+        document.querySelector('.modal-overlay.active, .modal-backdrop.active')) {
+      show(); return;
+    }
+    if (Math.abs(dy) < 2) return;
+    const next = Math.sign(dy);
+    distance = next === direction ? Math.min(100, distance + Math.abs(dy)) : Math.abs(dy);
+    direction = next;
+    if (next > 0 && distance >= 35) document.body.classList.add(cls);
+    else if (next < 0 && distance >= 18) show();
+  }
+  window.addEventListener('scroll', () => {
+    if (!scheduled) { scheduled = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  window.addEventListener('resize', () => { previousY = window.scrollY || 0; show(); }, { passive: true });
+  sidebar.addEventListener('click', show);
+  document.addEventListener('focusin', (event) => { if (interactive(event.target)) show(); });
+  document.addEventListener('touchstart', () => { if (!mq.matches) show(); }, { passive: true, once: true });
+  show();
 })();
 </script>
 </body>
