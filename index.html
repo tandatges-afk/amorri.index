@@ -3542,6 +3542,70 @@ body[data-client-gallery="true"] .studio-credit-pill {
   z-index:1;
 }
 </style>
+
+<style id="amorri-v549-spacing-review-palette">
+/* v5.49: exactly +50px below the video gallery, not below studio credit. */
+body[data-client-gallery="true"] #clientGalleryView .gallery-container.amorri-video-only {
+  padding-bottom:62px!important; /* previous 12px + 50px */
+}
+/* One translucent review palette for idle and cinema; internal structural
+   regions inherit the SAME backing surface and never paint opaque strips. */
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel,
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel {
+  --vr-fg:#3b322b;
+  --vr-muted:#706358;
+  --vr-divider:rgba(102,79,57,.19);
+  --vr-input:#f7f2e9;
+  --vr-input-border:#d8c9b6;
+  --vr-accent:#97734f;
+  background:rgba(224,214,202,.84)!important;
+  color:var(--vr-fg)!important;
+  opacity:1!important;
+  border-color:rgba(147,124,103,.35)!important;
+  backdrop-filter:blur(16px)!important;
+  -webkit-backdrop-filter:blur(16px)!important;
+  transition:background-color .2s ease,border-color .2s ease!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-heading,.vr-list-wrap,.vr-list-toolbar,.vr-list,.vr-compose,.vr-entry,.vr-actions) {
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-heading,.vr-list-toolbar,.vr-compose) {
+  border-color:var(--vr-divider)!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-heading strong,.vr-list-toolbar strong,.vr-comment-body,.vr-comment-author,.vr-time),
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-heading strong,.vr-list-toolbar strong,.vr-comment-body,.vr-comment-author,.vr-time) {
+  color:var(--vr-fg)!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-status,.vr-comment small,.vr-comment-date) {
+  color:var(--vr-muted)!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-status[data-vr-status] {
+  background:rgba(255,255,255,.26)!important;
+  border:1px solid var(--vr-divider)!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-comment {
+  background:rgba(255,255,255,.18)!important;
+  border-color:var(--vr-divider)!important;
+  box-shadow:none!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-comment.vr-selected {
+  background:rgba(255,248,236,.52)!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-name,.vr-message) {
+  color:var(--vr-fg)!important;
+  background:var(--vr-input)!important;
+  border:1px solid var(--vr-input-border)!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel :is(.vr-name,.vr-message)::placeholder {
+  color:#8c7c6d!important;
+}
+body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-time {
+  background:rgba(255,255,255,.25)!important;
+  border:1px solid var(--vr-divider)!important;
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
