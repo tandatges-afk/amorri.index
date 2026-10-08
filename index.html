@@ -2738,6 +2738,82 @@ body {
 }
 </style>
 
+
+<style id="amorri-v515-tight-review-workspace">
+/* Entire video+review unit is centered and shrink-wrapped together. */
+.gallery-container:has(#cgVideoContainer .client-video-card){
+  max-width:none!important;
+  width:100%!important;
+  padding-inline:clamp(12px,2vw,28px)!important;
+  box-sizing:border-box;
+}
+#cgVideoContainer{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  width:min(100%,1320px)!important;
+  max-width:1320px!important;
+  margin:0 auto 18px!important;
+  gap:16px;
+}
+#cgVideoContainer .client-video-card{
+  width:100%!important;
+  max-width:100%!important;
+  margin:0 auto!important;
+  box-sizing:border-box;
+}
+#cgVideoContainer .client-video-review-layout{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 310px!important;
+  gap:0!important;
+  align-items:stretch;
+  width:100%!important;
+}
+#cgVideoContainer .client-video-left{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:0!important;
+  width:100%!important;
+  padding:12px!important;
+  box-sizing:border-box;
+}
+#cgVideoContainer .client-video-frame{
+  width:100%!important;
+  height:auto!important;
+  max-width:none!important;
+  aspect-ratio:16/9!important;
+  flex:0 1 auto!important;
+  margin:0 auto!important;
+  box-sizing:border-box;
+}
+#cgVideoContainer .vr-panel{
+  width:100%!important;
+  min-width:0!important;
+  border-left:1px solid var(--line)!important;
+  border-top:0!important;
+  box-sizing:border-box;
+}
+#cgVideoContainer .vr-list{overflow-y:auto;overscroll-behavior:contain}
+@media (max-width:950px){
+  #cgVideoContainer{width:min(100%,830px)!important}
+  #cgVideoContainer .client-video-review-layout{grid-template-columns:minmax(0,1fr)!important}
+  #cgVideoContainer .vr-panel{border-left:0!important;border-top:1px solid var(--line)!important}
+  #cgVideoContainer .client-video-left{padding:10px!important}
+}
+</style>
+
+<style id="amorri-v516-comment-meta">
+/* Time/date on top, commenter name underneath. Buttons remain beside the metadata. */
+#cgVideoContainer .vr-comment-top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center}
+#cgVideoContainer .vr-comment-meta{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:0;line-height:1.3}
+#cgVideoContainer .vr-comment-date{font-size:11px;font-weight:700;color:#705e4c;white-space:nowrap}
+#cgVideoContainer .vr-comment-author{font-size:12px;color:#9a8977;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#cgVideoContainer .vr-comment-actions{display:inline-flex;align-items:center;gap:5px}
+@media(max-width:620px){
+  #cgVideoContainer .vr-comment-top{grid-template-columns:auto minmax(0,1fr)}
+  #cgVideoContainer .vr-comment-actions{grid-column:1/-1;justify-self:start}
+}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -3755,7 +3831,15 @@ function initVideoReviewPanels() {
                 const jumpBtn=document.createElement('button');jumpBtn.type='button';jumpBtn.className='vr-jump';jumpBtn.textContent='▶ '+vrFormat(c.seconds);
                 jumpBtn.title='Tua đến mốc và mở bình luận để chỉnh sửa';
                 jumpBtn.onclick=()=>openCommentEditor(c);top.appendChild(jumpBtn);
-                const author=document.createElement('small');author.textContent=(c.name||'Khách hàng')+' · '+new Date(c.createdAt||Date.now()).toLocaleString('vi-VN');top.appendChild(author);
+                const author=document.createElement('div');author.className='vr-comment-meta';
+                const dateLine=document.createElement('span');dateLine.className='vr-comment-date';
+                const stamp=Number(c.createdAt);
+                dateLine.textContent=Number.isFinite(stamp)&&stamp>0
+                    ?new Date(stamp).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric',hour12:false})
+                    :'Chưa có thời gian';
+                const nameLine=document.createElement('span');nameLine.className='vr-comment-author';
+                nameLine.textContent=c.name||'Khách hàng';
+                author.append(dateLine,nameLine);top.appendChild(author);
                 const edit=document.createElement('button');edit.type='button';edit.className='vr-edit';edit.textContent='Sửa';
                 edit.disabled=!!c.resolved;edit.onclick=()=>openCommentEditor(c);
                 const commentActions=document.createElement('span');commentActions.className='vr-comment-actions';commentActions.appendChild(edit);
