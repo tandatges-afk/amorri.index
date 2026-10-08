@@ -3765,6 +3765,47 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-
 body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .client-video-card:not(.vr-ambient-playing) .client-video-left::before{opacity:0!important;visibility:hidden!important;animation:none!important}
 @media (max-width:850px){body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel{max-height:none!important}}
 </style>
+
+<style id="amorri-v555-review-layout-and-ambient">
+/* Stable review list: CSS versions before v5.55 constrained its flex height to zero. */
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-list-wrap{
+  display:flex!important;flex-direction:column!important;min-height:110px!important;
+  flex:1 1 auto!important;overflow:hidden!important;
+}
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-list{
+  display:flex!important;flex-direction:column!important;flex:1 1 auto!important;
+  min-height:95px!important;overflow-y:auto!important;overflow-x:hidden!important;
+  visibility:visible!important;opacity:1!important;
+}
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-comment{
+  flex:0 0 auto!important;display:block!important;visibility:visible!important;
+}
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-review-error{
+  padding:12px;color:#76512e;font-size:12px;line-height:1.5;
+}
+@media (min-width:851px){
+ body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel{
+   min-height:300px!important;
+ }
+}
+/* A moving, subtle dual-color field for cross-origin iframe embeds. */
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-iframe-ambient{
+ background-image:radial-gradient(ellipse at 25% 42%,rgba(157,86,120,.85),transparent 65%),
+ radial-gradient(ellipse at 75% 60%,rgba(64,105,168,.8),transparent 70%),
+ linear-gradient(115deg,#2f172d,#1b2942)!important;
+ background-size:130% 135%,140% 145%,100% 100%!important;
+ background-position:0% 35%,100% 70%,center!important;
+ animation:none!important;will-change:auto;
+}
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card.vr-ambient-playing .vr-iframe-ambient{
+ animation:amorri-iframe-glow-motion 11s ease-in-out infinite alternate!important;
+}
+@keyframes amorri-iframe-glow-motion{
+ from{background-position:0% 35%,100% 70%,center;filter:blur(65px) saturate(1.3)}
+ to{background-position:100% 65%,0% 20%,center;filter:blur(75px) saturate(1.6)}
+}
+@media(prefers-reduced-motion:reduce){body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-iframe-ambient{animation:none!important}}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -4798,7 +4839,7 @@ function initVideoReviewPanels() {
                 edit.disabled=!!c.resolved;edit.onclick=()=>openCommentEditor(c);
                 const commentActions=document.createElement('span');commentActions.className='vr-comment-actions';commentActions.appendChild(edit);
                 // Only signed-in staff can remove a resolved comment.
-                if(firebase.auth().currentUser){
+                if(Boolean(firebase.auth().currentUser)){
                     const fixed=document.createElement('button');fixed.type='button';fixed.className='vr-resolve';fixed.textContent='✓ Fix';
                     fixed.textContent=c.resolved?'✓':'Fix';
                     fixed.title=c.resolved?'Đã fix — nhấn để mở lại':'Đánh dấu đã fix';
@@ -4834,16 +4875,34 @@ function initVideoReviewPanels() {
                 const content=document.createElement('div');content.className='vr-comment-body';content.textContent=c.text;
                 el.append(top,content);list.appendChild(el);
             }
-            renderMarkers();status.textContent=comments.filter(c=>!c.resolved).length+' cần sửa · '+comments.filter(c=>c.resolved).length+' đã fix';
+            try { renderMarkers(); } catch(error) { console.warn('[Video reviews] Timeline markers:',error); }
+            status.textContent=comments.filter(c=>!c.resolved).length+' cần sửa · '+comments.filter(c=>c.resolved).length+' đã fix';
         }
         // Separate Firebase branch; no local-only "success" on network/permission failures.
         if(typeof firebase==='undefined'||!firebase.apps.length){status.textContent='Chưa kết nối Firebase';button.disabled=true;continue;}
         const ref=firebase.database().ref('videoReviews_v1/'+reviewKey(clientIdParam)+'/'+productKey);
         const listener=(snap)=>{
-            comments=Object.entries(snap.val()||{}).filter(([,v])=>v&&typeof v==='object').map(([id,v])=>({...v,id})).sort((a,b)=>(a.seconds||0)-(b.seconds||0)||(a.createdAt||0)-(b.createdAt||0));
-            renderComments();
+            try {
+                const raw=snap.val();
+                comments=raw && typeof raw==='object' ? Object.entries(raw)
+                  .filter(([,v])=>v && typeof v==='object' && !Array.isArray(v))
+                  .map(([id,v])=>({...v,id,seconds:Number(v.seconds)||0,text:String(v.text||''),resolved:!!v.resolved}))
+                  .sort((a,b)=>a.seconds-b.seconds||(Number(a.createdAt)||0)-(Number(b.createdAt)||0)) : [];
+                renderComments();
+            } catch(error) {
+                console.error('[Video reviews] Không dựng được bình luận:',error);
+                status.textContent='Lỗi hiển thị bình luận';
+                list.replaceChildren();
+                const warning=document.createElement('div');warning.className='vr-review-error';
+                warning.textContent='Không thể hiển thị bình luận. Vui lòng tải lại trang.';
+                list.append(warning);
+            }
         };
-        ref.on('value',listener,err=>{status.textContent='Không có quyền đọc bình luận';console.error(err)});
+        ref.on('value',listener,err=>{
+            status.textContent='Không đọc được bình luận từ Firebase';
+            list.textContent='Không thể tải bình luận. Kiểm tra quyền truy cập và kết nối mạng.';
+            console.error('[Video reviews] Firebase:',err);
+        });
         vrListeners.push({ref,callback:listener});
         message.addEventListener('focus',()=>{
             if(htmlVideo&&!htmlVideo.paused)htmlVideo.pause();
@@ -4998,7 +5057,7 @@ async function initClientGallery() {
                 <div class="client-video-review-layout">
                   <div class="client-video-left">
                     <div class="client-video-frame">${frame}</div>
-                    <div class="vr-aspect-tools"><label for="vr-aspect-${escapeHtml(vrKey)}">Tỷ lệ video</label><select id="vr-aspect-${escapeHtml(vrKey)}" data-vr-aspect aria-label="Chọn tỷ lệ hiển thị video"><option value="auto">Tự động</option><option value="16/9">16:9</option><option value="9/16">9:16</option><option value="4/3">4:3</option><option value="1/1">1:1</option><option value="21/9">21:9</option></select></div>
+
                   </div>
                   <aside class="vr-panel">
                     <div class="vr-heading"><strong>Góp ý video</strong><span class="vr-status" data-vr-status>Đang kết nối...</span></div>
@@ -5027,19 +5086,17 @@ async function initClientGallery() {
         // Stable aspect ratio: metadata for native video; fallbacks and manual control for iframes.
         videoContainer.querySelectorAll('.client-video-card').forEach(card=>{
           const frame=card.querySelector('.client-video-frame');
-          const select=card.querySelector('[data-vr-aspect]');
           const video=frame?.querySelector('video');
-          if(!frame||!select)return;
-          const nativeRatio=()=>video?.videoWidth>0 && video?.videoHeight>0 ? video.videoWidth/video.videoHeight : null;
+          if(!frame)return;
           const apply=()=>{
-            const chosen=select.value;
             const fallback=card.dataset.vrDefaultRatio||'16/9';
-            const ratio=chosen==='auto' ? (nativeRatio()||fallback.split('/').map(Number).reduce((a,b)=>a/b)) : chosen.split('/').map(Number).reduce((a,b)=>a/b);
+            const dimensions=video?.videoWidth>0 && video?.videoHeight>0 ? video.videoWidth/video.videoHeight : null;
+            const fallbackParts=fallback.split('/').map(Number);
+            const ratio=dimensions || (fallbackParts[0]/fallbackParts[1]);
             const safe=Number.isFinite(ratio)&&ratio>0 ? Math.min(4,Math.max(.35,ratio)):16/9;
             frame.style.setProperty('--vr-media-ratio',String(safe));
             frame.classList.toggle('vr-portrait-frame',safe<.95);
           };
-          select.addEventListener('change',apply);
           video?.addEventListener('loadedmetadata',apply);
           video?.addEventListener('resize',apply);
           apply();
@@ -7922,14 +7979,13 @@ initApp();
    setCinema(frame,playing);
    const card=frame.closest('.client-video-card');
    card?.classList.toggle('vr-ambient-playing',!!playing);
-   // iframe frames are cross-origin; use video thumbnail as a static light source.
-   const videoId=card?.dataset.vrVideoId;
-   if(playing && videoId){
+   // Cross-origin YouTube iframes cannot be sampled. Animated lighting is deliberately
+   // synthetic (NOT video-frame color sampling) and follows real YouTube play/pause.
+   if(playing && card){
      const host=card.querySelector('.client-video-left');
      if(host && !host.querySelector('.vr-iframe-ambient')){
-       const light=document.createElement('div');light.className='vr-iframe-ambient';light.setAttribute('aria-hidden','true');
-       light.style.backgroundImage='url("https://i.ytimg.com/vi/'+encodeURIComponent(videoId)+'/hqdefault.jpg")';
-       host.prepend(light);
+       const light=document.createElement('div');light.className='vr-iframe-ambient';
+       light.setAttribute('aria-hidden','true');host.prepend(light);
      }
    }
  };
