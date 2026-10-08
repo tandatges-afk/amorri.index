@@ -3834,30 +3834,23 @@ body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoC
 }
 </style>
 
-<style id="amorri-v557-youtube-ambient-visibility">
-/* Single predictable paint order for iframe Ambient. These overrides do not
-   affect geometry, playback controls, or review panel height. */
-body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card .client-video-left {
-  position:relative!important; isolation:isolate!important; overflow:visible!important;
+<style id="amorri-v558-youtube-ambient">
+/* YouTube cannot expose live frames to this page: adapt the glow to its poster
+   palette when CORS permits, while syncing visibility strictly to YT playback. */
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-left{position:relative!important;isolation:isolate!important;overflow:visible!important}
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-left > .client-video-frame{position:relative!important;z-index:2!important}
+body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-left > .vr-iframe-ambient{
+ position:absolute!important;inset:-14% -10% -19%!important;z-index:1!important;pointer-events:none!important;
+ opacity:0!important;visibility:hidden!important;transition:opacity .35s ease,visibility .35s ease!important;
+ background-image:radial-gradient(ellipse at 24% 43%,rgba(var(--vr-yt-color-a,152,111,95),.85),transparent 65%),radial-gradient(ellipse at 78% 58%,rgba(var(--vr-yt-color-b,88,102,83),.83),transparent 68%)!important;
+ background-size:145% 145%,145% 145%!important;background-repeat:no-repeat!important;
+ filter:blur(60px) saturate(1.4)!important;animation:none!important;
 }
-body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card .client-video-left > .vr-iframe-ambient {
-  position:absolute!important; inset:-14% -11% -17%!important; display:block!important;
-  z-index:0!important; pointer-events:none!important;
-  opacity:0!important; visibility:hidden!important;
-  background-image:radial-gradient(ellipse at 25% 42%,rgba(157,86,120,.85),transparent 65%),radial-gradient(ellipse at 75% 60%,rgba(64,105,168,.8),transparent 70%),linear-gradient(115deg,#2f172d,#1b2942)!important;
-  filter:blur(58px) saturate(1.5)!important;
-  transition:opacity .4s ease,visibility .4s ease!important;
+body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card.vr-ambient-playing .client-video-left > .vr-iframe-ambient{
+ opacity:1!important;visibility:visible!important;animation:amorri-yt-palette-drift 13s ease-in-out infinite alternate!important;
 }
-body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card .client-video-left > .client-video-frame {
-  position:relative!important; z-index:2!important;
-}
-body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card.vr-ambient-playing .client-video-left > .vr-iframe-ambient {
-  opacity:.9!important; visibility:visible!important;
-  animation:amorri-iframe-glow-motion 11s ease-in-out infinite alternate!important;
-}
-@media(prefers-reduced-motion:reduce){
- body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card.vr-ambient-playing .client-video-left > .vr-iframe-ambient{animation:none!important}
-}
+@keyframes amorri-yt-palette-drift{from{background-position:0% 30%,100% 70%}to{background-position:100% 60%,0% 25%}}
+@media(prefers-reduced-motion:reduce){body.amorri-cinema[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-left > .vr-iframe-ambient{animation:none!important}}
 </style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
@@ -4857,11 +4850,11 @@ function initVideoReviewPanels() {
             const frame=card.querySelector('iframe');
             vrYoutubeAPI().then(()=>{
                 if(!card.isConnected)return;
-                yt=new YT.Player(frame,{events:{onReady:(e)=>{duration=e.target.getDuration()||0;renderMarkers();refreshTime();window.amorriSetIframeCinema?.(e.target.getIframe(),e.target.getPlayerState()===YT.PlayerState.PLAYING)},onStateChange:(e)=>{
+                yt=new YT.Player(frame,{events:{onReady:(e)=>{duration=e.target.getDuration()||0;renderMarkers();refreshTime();window.amorriSetIframeCinema?.(card.querySelector('iframe') || e.target.getIframe(),e.target.getPlayerState()===YT.PlayerState.PLAYING)},onStateChange:(e)=>{
                     if(e.data===YT.PlayerState.PAUSED)capturedAt=currentTime();
                     if(e.data===YT.PlayerState.PLAYING)capturedAt=null;
                     if(e.data===YT.PlayerState.PLAYING || e.data===YT.PlayerState.PAUSED || e.data===YT.PlayerState.ENDED){
-                        window.amorriSetIframeCinema?.(e.target?.getIframe?.() || card.querySelector('iframe'),e.data===YT.PlayerState.PLAYING);
+                        window.amorriSetIframeCinema?.(card.querySelector('iframe') || e.target?.getIframe?.(),e.data===YT.PlayerState.PLAYING);
                     }
                     duration=yt.getDuration()||duration;refreshTime();renderMarkers();
                 }}});vrPlayers.set(productKey,yt);
@@ -8051,6 +8044,7 @@ initApp();
    if(!card)return;
    setCinema(frame,playing);
    card?.classList.toggle('vr-ambient-playing',!!playing);
+   if(playing)tuneYouTubeGlow(card);
    // Cross-origin YouTube iframes cannot be sampled. Animated lighting is deliberately
    // synthetic (NOT video-frame color sampling) and follows real YouTube play/pause.
    if(playing && card){
@@ -8061,6 +8055,36 @@ initApp();
      }
    }
  };
+ // Read a YouTube preview palette once; never claim this samples live iframe pixels.
+ const ytPaletteRequested=new WeakSet();
+ function tuneYouTubeGlow(card){
+   if(!card || ytPaletteRequested.has(card))return;
+   ytPaletteRequested.add(card);
+   const id=card.dataset.vrVideoId;
+   if(!/^[\w-]{11}$/.test(id||''))return;
+   const image=new Image();image.crossOrigin='anonymous';
+   image.onload=()=>{
+     try{
+       const cv=document.createElement('canvas');cv.width=48;cv.height=27;
+       const context=cv.getContext('2d',{willReadFrequently:true});
+       context.drawImage(image,0,0,48,27);
+       const data=context.getImageData(0,0,48,27).data;
+       const region=[[],[]];
+       for(let y=3;y<24;y+=2)for(let x=3;x<45;x+=2){
+         const at=(y*48+x)*4, r=data[at],g=data[at+1],b=data[at+2];
+         if(Math.max(r,g,b)<30 || Math.min(r,g,b)>225)continue;
+         region[x<24?0:1].push([r,g,b]);
+       }
+       for(let i=0;i<2;i++){
+         const a=region[i];if(!a.length)continue;
+         const mean=[0,1,2].map(k=>Math.round(a.reduce((sum,v)=>sum+v[k],0)/a.length));
+         const boosted=mean.map(v=>Math.min(235,Math.max(65,Math.round(v*.88+27))));
+         card.style.setProperty(i?'--vr-yt-color-b':'--vr-yt-color-a',boosted.join(','));
+       }
+     }catch(_){ /* CORS-blocked previews use the neutral fallback. */ }
+   };
+   image.src='https://i.ytimg.com/vi/'+encodeURIComponent(id)+'/hqdefault.jpg';
+ }
  function createAmbient(video){
   const host=video.closest('.client-video-left');if(!host || ambient.has(video))return;
   const glow=document.createElement('canvas');glow.className='amorri-ambient-canvas';glow.style.background='radial-gradient(ellipse,#876653,#332a29 64%,#141313)';glow.width=160;glow.height=90;
