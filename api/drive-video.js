@@ -1,1 +1,168 @@
 
+// Amorri Studio - Google Drive timeline-ready video endpoint
+// Requires: npm install firebase-admin google-auth-library
+// Environment: DRIVE_SERVICE_ACCOUNT_JSON, DRIVE_REVIEW_FOLDER_ID,
+//              FIREBASE_PROJECT_ID, DRIVE_VIDEO_SIGNING_SECRET
+import crypto from 'node:crypto';
+import { Readable } from 'node:stream';
+import admin from 'firebase-admin';
+import { GoogleAuth } from 'google-auth-library';
+
+const CHUNK_BYTES = 1024 * 1024; // 1 MiB, safely below Vercel's 4.5 MB response limit
+const TOKEN_SECONDS = 60 * 60;
+const ID_PATTERN = /^[\w-]{10,200}$/;
+const DRIVE = 'https://www.googleapis.com/drive/v3/files/';
+const auth = new GoogleAuth({
+  credentials: JSON.parse(process.env.DRIVE_SERVICE_ACCOUNT_JSON || '{}'),
+  scopes: ['https://www.googleapis.com/auth/drive.readonly']
+});
+
+function requiredConfig() {
+  const missing = ['DRIVE_SERVICE_ACCOUNT_JSON', 'DRIVE_REVIEW_FOLDER_ID',
+    'FIREBASE_PROJECT_ID', 'DRIVE_VIDEO_SIGNING_SECRET'].filter(k => !process.env[k]);
+  if (missing.length) throw Object.assign(new Error(`Missing environment variables: ${missing.join(', ')}`), { status: 503 });
+}
+function signature(value) {
+  return crypto.createHmac('sha256', process.env.DRIVE_VIDEO_SIGNING_SECRET).update(value).digest('base64url');
+}
+function mintTicket(fileId, uid) {
+  const body = Buffer.from(JSON.stringify({ id: fileId, uid, exp: Math.floor(Date.now() / 1000) + TOKEN_SECONDS })).toString('base64url');
+  return `${body}.${signature(body)}`;
+}
+function verifyTicket(ticket, requestedId) {
+  if (typeof ticket !== 'string') return false;
+  const [body, mac, extra] = ticket.split('.');
+  if (!body || !mac || extra) return false;
+  const expected = signature(body);
+  const a = Buffer.from(mac); const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false;
+  try {
+    const data = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    return data.id === requestedId && typeof data.uid === 'string' && data.exp > Date.now()/1000;
+  } catch { return false; }
+}
+function getFirebase() {
+  if (!admin.apps.length) {
+    // Uses the same service-account credentials; give it Firebase Auth verification permission.
+    const sa = JSON.parse(process.env.DRIVE_SERVICE_ACCOUNT_JSON);
+    admin.initializeApp({ credential: admin.credential.cert(sa), projectId: process.env.FIREBASE_PROJECT_ID });
+  }
+  return admin.auth();
+}
+async function getDriveHeaders() {
+  const client = await auth.getClient();
+  const result = await client.getAccessToken();
+  if (!result.token) throw Object.assign(new Error('Could not obtain Google access token'), { status: 502 });
+  return { Authorization: `Bearer ${result.token}` };
+}
+async function getMetadata(id, headers) {
+  const url = `${DRIVE}${encodeURIComponent(id)}?fields=id,name,mimeType,size,parents,capabilities(canDownload)&supportsAllDrives=true`;
+  const r = await fetch(url, { headers });
+  if (!r.ok) throw Object.assign(new Error(`Drive metadata request failed (${r.status})`), { status: r.status === 404 ? 404 : 502 });
+  return r.json();
+}
+async function ensureInReviewFolder(file, headers) {
+  const allowed = process.env.DRIVE_REVIEW_FOLDER_ID;
+  // Recursively check ancestry; avoid allowing arbitrary Drive files that the service account can read.
+  const seen = new Set();
+  let layer = file.parents || [];
+  for (let depth = 0; depth < 15 && layer.length; depth++) {
+    if (layer.includes(allowed)) return true;
+    const next = [];
+    for (const id of layer) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const folder = await getMetadata(id, headers);
+      next.push(...(folder.parents || []));
+    }
+    layer = next;
+  }
+  return false;
+}
+function sendError(res, status, message) {
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(status).json({ error: message });
+}
+export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  if (!['GET', 'POST'].includes(req.method)) return sendError(res, 405, 'Method Not Allowed');
+  try {
+    requiredConfig();
+    const id = String(req.method === 'POST' ? req.body?.id || '' : req.query.id || '');
+    if (!ID_PATTERN.test(id)) return sendError(res, 400, 'Invalid Drive file ID');
+
+    if (req.method === 'POST') {
+      const bearer = /^Bearer (.+)$/i.exec(req.headers.authorization || '');
+      if (!bearer) return sendError(res, 401, 'Firebase login required');
+      const user = await getFirebase().verifyIdToken(bearer[1], true);
+      // IMPORTANT: Add project-specific booking authorization here before production.
+      // Firebase login alone does NOT prove permission to view a given client's video.
+      const headers = await getDriveHeaders();
+      const meta = await getMetadata(id, headers);
+      if (!meta.mimeType?.startsWith('video/')) return sendError(res, 415, 'File is not a video');
+      if (meta.capabilities?.canDownload === false) return sendError(res, 403, 'Downloading disabled in Google Drive');
+      if (!await ensureInReviewFolder(meta, headers)) return sendError(res, 403, 'File outside authorized review folder');
+      const ticket = mintTicket(id, user.uid);
+      const url = `/api/drive-video?id=${encodeURIComponent(id)}&ticket=${encodeURIComponent(ticket)}`;
+      return res.status(200).json({ success: true, url, expiresIn: TOKEN_SECONDS, mimeType: meta.mimeType });
+    }
+
+    if (!verifyTicket(req.query.ticket, id)) return sendError(res, 401, 'Missing or expired playback ticket');
+    const headers = await getDriveHeaders();
+    const meta = await getMetadata(id, headers);
+    if (!meta.mimeType?.startsWith('video/')) return sendError(res, 415, 'Not a video');
+    if (meta.capabilities?.canDownload === false) return sendError(res, 403, 'Downloading disabled');
+    if (!await ensureInReviewFolder(meta, headers)) return sendError(res, 403, 'Not allowed');
+    const total = Number(meta.size);
+    if (!Number.isSafeInteger(total) || total < 1) return sendError(res, 422, 'Invalid or unknown video size');
+    let start = 0, end = Math.min(total - 1, CHUNK_BYTES - 1);
+    const range = req.headers.range;
+    if (range) {
+      const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+      if (!match || (!match[1] && !match[2])) {
+        res.setHeader('Content-Range', `bytes */${total}`);
+        return sendError(res, 416, 'Invalid Range');
+      }
+      if (!match[1]) { // suffix byte request
+        const suffix = Number(match[2]);
+        if (!Number.isSafeInteger(suffix) || suffix <= 0) return sendError(res, 416, 'Invalid suffix');
+        start = Math.max(0, total - suffix);
+      } else {
+        start = Number(match[1]);
+        if (!Number.isSafeInteger(start) || start >= total) {
+          res.setHeader('Content-Range', `bytes */${total}`);
+          return sendError(res, 416, 'Range out of bounds');
+        }
+      }
+      end = Math.min(total - 1, start + CHUNK_BYTES - 1);
+      if (match[1] && match[2]) end = Math.min(end, Number(match[2]));
+      if (end < start) return sendError(res, 416, 'Invalid Range end');
+    }
+    const upstream = await fetch(`${DRIVE}${encodeURIComponent(id)}?alt=media&supportsAllDrives=true`, {
+      headers: { ...headers, Range: `bytes=${start}-${end}` }
+    });
+    if (upstream.status !== 206 || !upstream.body) {
+      const snippet = (await upstream.text()).slice(0, 300);
+      console.error('Drive media download failed:', upstream.status, snippet);
+      return sendError(res, 502, `Google Drive did not return partial media (HTTP ${upstream.status})`);
+    }
+    res.status(206);
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Content-Range', `bytes ${start}-${end}/${total}`);
+    res.setHeader('Content-Length', String(end - start + 1));
+    res.setHeader('Content-Type', meta.mimeType);
+    // Pipe small bounded ranges, not the entire file.
+    await new Promise((resolve, reject) => {
+      const stream = Readable.fromWeb(upstream.body);
+      stream.on('error', reject);
+      res.on('error', reject);
+      res.on('finish', resolve);
+      stream.pipe(res);
+    });
+  } catch (error) {
+    console.error('drive-video:', error);
+    if (!res.headersSent) return sendError(res, error.status || (error.code === 'auth/id-token-expired' ? 401 : 500), error.status ? error.message : 'Drive API error; check Vercel function logs');
+    res.destroy(error);
+  }
+}
