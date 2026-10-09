@@ -3962,7 +3962,7 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-cover
  #clientGalleryView #amorri-ambient-stage::after{animation:none!important;}
 }
 </style>
-<style id="amorri-v564-mobile-canonical">
+<style id="amorri-v565-mobile-stable">
 /* Mobile interface only. Desktop declarations remain untouched. */
 @media (min-width:769px) and (max-width:1024px) {
   body:not([data-client-gallery="true"]) .main{padding:22px!important;}
@@ -3971,7 +3971,7 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-cover
   body:not([data-client-gallery="true"]) .side-card{min-width:0;}
   #clientGalleryView .gallery-container{padding-inline:20px!important;}
 }
-@media (max-width:768px) {
+@media (max-width:900px) {
   :root { --am-mobile-paper:#f5f2ed;--am-mobile-card:#fffcf7;--am-mobile-border:#e5dcd0;--am-mobile-ink:#2e2923;--am-mobile-muted:#72675b;--am-mobile-accent:#967451; }
   html {scroll-padding-top:12px;}
   body {max-width:100%;overflow-x:hidden!important;-webkit-text-size-adjust:100%;background:var(--am-mobile-paper)!important;}
@@ -3980,19 +3980,19 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-cover
   button, .field, .nav-btn, .icon-btn {touch-action:manipulation;}
   button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,[data-date]:focus-visible{outline:2px solid #977550!important;outline-offset:2px;}
   body:not([data-client-gallery="true"]) .app {display:block!important;width:100%!important;min-width:0!important;min-height:100dvh!important;padding:0!important;background:transparent!important;}
-  body:not([data-client-gallery="true"]) .main {display:block!important;width:100%!important;min-width:0!important;padding:14px 12px calc(92px + env(safe-area-inset-bottom))!important;}
+  body:not([data-client-gallery="true"]) .main {display:flex!important;flex-direction:column!important;align-items:stretch!important;width:100%!important;min-width:0!important;padding:14px 12px calc(92px + env(safe-area-inset-bottom))!important;}
   body:not([data-client-gallery="true"]) .topbar {display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:12px!important;margin:0 0 14px!important;padding:15px 15px 13px!important;background:var(--am-mobile-card)!important;border:1px solid var(--am-mobile-border)!important;border-radius:19px!important;box-shadow:0 8px 22px rgba(64,48,30,.045)!important;}
   body:not([data-client-gallery="true"]) .topbar-left{width:100%;min-width:0;}
   body:not([data-client-gallery="true"]) .title {font-size:clamp(21px,5.8vw,26px)!important;line-height:1.18!important;color:var(--am-mobile-ink)!important;letter-spacing:-.6px!important;}
   body:not([data-client-gallery="true"]) .subtitle {font-size:12px!important;line-height:1.5!important;color:var(--am-mobile-muted)!important;}
   body:not([data-client-gallery="true"]) .actions {display:flex!important;width:100%!important;min-width:0!important;gap:8px!important;overflow-x:auto!important;padding:2px 0 4px!important;scrollbar-width:none;scroll-snap-type:x proximity;}
   body:not([data-client-gallery="true"]) .actions>.btn{flex:0 0 auto!important;min-height:43px!important;padding:9px 13px!important;font-size:12px!important;white-space:nowrap!important;border-radius:11px!important;scroll-snap-align:start;}
-  body:not([data-client-gallery="true"]) .grid-stats{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;margin:0 0 14px!important;}
+  body:not([data-client-gallery="true"]) .grid-stats{order:2!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;margin:0 0 14px!important;}
   body:not([data-client-gallery="true"]) .stat{min-width:0!important;min-height:111px!important;padding:15px!important;border:1px solid var(--am-mobile-border)!important;border-radius:17px!important;background:var(--am-mobile-card)!important;box-shadow:0 6px 18px rgba(46,37,28,.035)!important;}
   body:not([data-client-gallery="true"]) .stat-label{font-size:11px!important;line-height:1.4!important;letter-spacing:.02em!important;color:#73675b!important;}
   body:not([data-client-gallery="true"]) .stat-num{font-size:28px!important;line-height:1.2!important;margin-top:8px!important;}
   body:not([data-client-gallery="true"]) .stat-meta{font-size:11px!important;margin-top:4px!important;}
-  body:not([data-client-gallery="true"]) .layout{display:flex!important;flex-direction:column!important;gap:14px!important;min-width:0!important;}
+  body:not([data-client-gallery="true"]) .layout{order:1!important;display:flex!important;flex-direction:column!important;gap:14px!important;min-width:0!important;}
   body:not([data-client-gallery="true"]) .layout>.panel{width:100%!important;max-width:100%!important;min-width:0!important;overflow:hidden!important;border-radius:18px!important;}
   body:not([data-client-gallery="true"]) .side-panel{display:flex!important;flex-direction:column!important;order:initial!important;width:100%!important;gap:14px!important;padding-bottom:0!important;}
   body:not([data-client-gallery="true"]) .side-card{min-width:0!important;padding:16px!important;border-radius:18px!important;overflow:hidden;}
@@ -4139,24 +4139,66 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-cover
   body[data-client-gallery="true"] .studio-credit{padding-bottom:calc(15px + env(safe-area-inset-bottom))!important;}
   /* Actual mobile list-height fix: older high-specificity CSS sets flex:1 1 0 and overflow:hidden,
      collapsing comments to zero even though Firebase rendered them. */
-  body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel{
-    display:flex!important;flex-direction:column!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;
+  /* Review list never collapses: the parent is content-sized, only comments scroll. */
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-review-layout .vr-panel{
+    display:flex!important;flex-direction:column!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden!important;
   }
-  body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-list-wrap{
-    flex:0 0 auto!important;display:block!important;height:auto!important;min-height:0!important;
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-review-layout .vr-panel .vr-list-wrap{
+    display:block!important;flex:none!important;height:auto!important;min-height:0!important;
     max-height:none!important;overflow:visible!important;
   }
-  body[data-client-gallery="true"] #clientGalleryView .amorri-video-only #cgVideoContainer .vr-panel .vr-list{
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-review-layout .vr-panel .vr-list{
     display:flex!important;flex-direction:column!important;flex:0 0 auto!important;
-    height:auto!important;min-height:80px!important;max-height:320px!important;overflow-y:auto!important;overflow-x:hidden!important;
+    height:auto!important;min-height:84px!important;max-height:min(42dvh,380px)!important;
+    overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;
   }
-  body:not([data-client-gallery="true"]) .layout>.panel{order:0!important;}
-  body:not([data-client-gallery="true"]) .layout>.side-panel{order:1!important;}
+  /* Also cover single video cards that do not have the optional review-layout wrapper. */
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-list-wrap{flex:none!important;min-height:0!important;overflow:visible!important;}
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-list{flex:0 0 auto!important;min-height:84px!important;max-height:min(42dvh,380px)!important;overflow-y:auto!important;}
+
+  body:not([data-client-gallery="true"]) .layout{display:contents!important;}
+  body:not([data-client-gallery="true"]) .main>.layout>.panel{order:1!important;width:100%!important;}
+  body:not([data-client-gallery="true"]) .main>.layout>.side-panel{order:3!important;width:100%!important;}
+  body:not([data-client-gallery="true"]) .main>.grid-stats{order:2!important;}
   html:has(body[data-client-gallery="true"]){overflow-x:clip!important;}
   body[data-client-gallery="true"]{overflow-x:clip!important;}
   body[data-client-gallery="true"] #clientGalleryView .gallery-cover{max-width:100%!important;overflow-x:clip!important;}
+  body[data-client-gallery="true"] #clientGalleryView #amorri-cinema-overlay,
+  body[data-client-gallery="true"] #clientGalleryView #amorri-ambient-stage{
+    width:100vw!important;max-width:100vw!important;right:auto!important;box-sizing:border-box!important;
+  }
+  /* Prevent keyboard from hiding the active field behind the fixed bottom navigation. */
+  body:not([data-client-gallery="true"]):has(input:focus,textarea:focus,select:focus) .app>.sidebar{
+    transform:translateY(110%)!important;opacity:0!important;pointer-events:none!important;
+  }
+  body:not([data-client-gallery="true"]) .side-card>div:first-child{min-width:0;max-width:100%;}
+  body:not([data-client-gallery="true"]) :is(#staffMonthM,#staffMonthY,#summaryMonthM,#summaryMonthY){min-width:0!important;max-width:120px!important;}
+  body:not([data-client-gallery="true"]) .side-card>div:first-child:has(select){gap:8px!important;align-items:flex-start!important;}
+  body:not([data-client-gallery="true"]) .side-card>div:first-child:has(select)>div{max-width:100%!important;min-width:0!important;flex-wrap:wrap!important;}
+  /* One scroll owner for a modal, avoiding sticky footer jumping or dual scrollbars. */
+  .modal{display:flex!important;flex-direction:column!important;overflow:hidden!important;max-height:calc(100dvh - 12px)!important;}
+  .modal-head,.modal-foot{flex:0 0 auto!important;}
+  .modal-body{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;}
+  .modal-foot{max-width:100%!important;}
+  .modal :is(.staff-modal-item,.staff-link-container){min-width:0!important;max-width:100%!important;}
+  .modal .staff-modal-item>div,.modal .staff-link-container{flex-wrap:wrap!important;margin-left:0!important;}
+  .modal .staff-modal-item>div>div,.modal .staff-modal-item label{min-width:0!important;max-width:100%!important;}
+  .modal .staff-modal-item input,.modal .staff-modal-item select{max-width:100%!important;}
+  .modal .staff-link-container>*{min-width:0!important;max-width:100%!important;}
+  .modal-foot button{max-width:100%!important;}
+  @supports(height:100dvh){.modal-backdrop.show{height:100dvh!important;}}
+  @media (prefers-reduced-motion: reduce){.client-video-frame, .sidebar, .modal{scroll-behavior:auto!important;}}
+
+  body[data-client-gallery="true"] #clientGalleryView:has(#cgPhotoGrid .client-photo-card){
+    padding-bottom:calc(116px + env(safe-area-inset-bottom))!important;
+  }
   /* Bigger, useful tap targets in feedback and a stable mobile viewport. */
 
+}
+@media (min-width:851px) and (max-width:900px) {
+  body[data-client-gallery="true"] #clientGalleryView .gallery-container #cgVideoContainer .client-video-card .client-video-review-layout{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto!important;}
+  body[data-client-gallery="true"] #clientGalleryView .gallery-container #cgVideoContainer .client-video-card .client-video-left{width:100%!important;max-width:100%!important;}
+  body[data-client-gallery="true"] #clientGalleryView .gallery-container #cgVideoContainer .client-video-card .vr-panel{width:100%!important;max-width:100%!important;height:auto!important;min-height:0!important;}
 }
 @media (max-width:390px) {
   body:not([data-client-gallery="true"]) .main{padding-inline:9px!important;}
@@ -4297,7 +4339,7 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-cover
           </select>
         </div>
         
-        <div class="calendar-mobile-hint" aria-hidden="true">Vuốt ngang để xem đủ 7 ngày và chi tiết lịch →</div>
+        <div class="calendar-mobile-hint" aria-hidden="true">Chạm một ngày để xem lịch chi tiết phía dưới</div>
         <div class="calendar-wrap">
           <div class="calendar" id="calendar"></div>
           <div class="agenda" id="agenda"></div>
@@ -6770,6 +6812,7 @@ function renderMonth(){
 }
 
 document.addEventListener('dblclick', (e) => {
+    if (window.matchMedia('(max-width:900px)').matches) return; // mobile: tap selects a date, never opens a booking by double-tap
     if (currentUserRole !== 'admin') return;
     if (e.target.closest('.event-chip') || e.target.closest('.blackout-chip') || e.target.closest('button') || e.target.closest('a')) return;
     
@@ -8715,12 +8758,12 @@ initApp();
   refresh();
 })();
 </script>
-<script id="amorri-v564-mobile-calendar">
+<script id="amorri-v565-mobile-calendar">
 /* Progressive enhancement, mobile only: compact month + accessible selected-day details.
    Does not modify Firebase listeners or the desktop calendar. */
 (() => {
   'use strict';
-  const mq = window.matchMedia('(max-width: 768px)');
+  const mq = window.matchMedia('(max-width: 900px)');
   const calendar = document.getElementById('calendar');
   if (!calendar) return;
   let selectedDate = '';
@@ -8791,12 +8834,20 @@ initApp();
       const events=day ? [...day.querySelectorAll(':scope > .event-chip')] : [];
       const extraLine=day && [...day.children].find(n => /^\+\d+ lịch khác/.test(n.textContent.trim()));
       const extra=extraLine ? Number((extraLine.textContent.match(/\d+/) || [0])[0]) : 0;
-      count.textContent=`${events.length+extra} lịch`;head.append(title,count);region.append(head);
       const list=document.createElement('div');list.className='am-day-list';
-      for (const event of events) {const clone=event.cloneNode(true);clone.removeAttribute('style');clone.tabIndex=0;clone.setAttribute('role','button');list.append(clone);}
+      let allItems=null;
+      try {
+        if (typeof getFilteredEvents==='function' && typeof chip==='function') {
+          allItems=getFilteredEvents().filter(e=>e.date===selectedDate).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+          list.innerHTML=allItems.map(chip).join('');
+          list.querySelectorAll('.event-chip').forEach(el=>{el.tabIndex=0;el.setAttribute('role','button');});
+        }
+      } catch(e) {console.warn('Mobile agenda fallback:',e);allItems=null;list.replaceChildren();}
+      if(!allItems)for (const event of events) {const clone=event.cloneNode(true);clone.tabIndex=0;clone.setAttribute('role','button');list.append(clone);}
+      count.textContent=`${allItems?allItems.length:events.length+extra} lịch`;head.append(title,count);region.append(head);
       const blackout=day?.querySelector(':scope > .blackout-chip');
       if (blackout) {const info=document.createElement('div');info.className='am-empty';info.textContent=blackout.textContent.trim();list.append(info);}
-      if (extra) {const info=document.createElement('div');info.className='am-empty';info.textContent=`Còn ${extra} lịch khác trong ngày; sử dụng bộ lọc để xem chi tiết.`;list.append(info);}
+      if (extra && !allItems) {const info=document.createElement('div');info.className='am-empty';info.textContent=`Còn ${extra} lịch khác trong ngày; sử dụng bộ lọc để xem chi tiết.`;list.append(info);}
       if (!list.childElementCount) {const empty=document.createElement('div');empty.className='am-empty';empty.textContent='Ngày này chưa có lịch trong bộ lọc hiện tại.';list.append(empty);}
       region.append(list);
     } finally {rendering=false;}
