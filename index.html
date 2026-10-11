@@ -4386,6 +4386,19 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-cover
 <!-- =========================================
      GIAO DIỆN PHÒNG CHỌN ẢNH (CLIENT GALLERY)
 ========================================== -->
+<style id="amorri-gallery-v567-styles">
+.type-tet {background:#fff4ec!important;border-color:#edc9aa!important;}
+.type-tet .time,.type-tet .name{color:#86482d!important;}
+.cg-gallery-message{grid-column:1/-1;border:1px solid #dfd3c4;background:#faf5ee;border-radius:14px;padding:16px;color:#645342;font-size:13px;line-height:1.5;}
+.cg-gallery-message button{margin-top:10px;border-radius:9px;background:#867258;color:#fff;padding:9px 13px;font-weight:700;}
+.cg-gallery-message small{display:block;margin-top:6px;opacity:.85;}
+.cg-filter-empty[hidden]{display:none!important;}
+.cg-gallery-notice{margin:10px 0;padding:10px 13px;color:#715639;background:#faf1e6;border:1px solid #e9d2b5;border-radius:11px;font-size:12px;line-height:1.6;}
+.cg-gallery-notice[hidden]{display:none!important;}
+.cg-photo-count-caption{font-size:11px;opacity:.85;}
+#cgPhotoGrid .photo-filename{pointer-events:auto;}
+#cgPhotoGrid .photo-filename a{position:relative;z-index:6;}
+</style>
 <div id="clientGalleryView">
   <div id="amorri-cinema-overlay" aria-hidden="true"></div>
     <div class="gallery-cover">
@@ -4410,6 +4423,7 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-cover
 
     <div class="gallery-container">
         <div id="cgVideoContainer"></div>
+        <div id="cgGalleryNotice" class="cg-gallery-notice" hidden role="status"></div>
         <div class="photo-grid-client" id="cgPhotoGrid"></div>
     </div>
 
@@ -4594,6 +4608,7 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-cover
              </button>
              <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:15px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Pre-wedding', '')">🖼️ Chụp cổng - Prewedding</button>
              <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:15px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Sự kiện', '')">🎉 Sự kiện</button>
+             <button class="btn ghost" style="justify-content:flex-start; padding:16px; font-size:15px; border:1px solid var(--line)" onclick="window.proceedWithEventType('Tết', '')">🧧 Tết</button>
          </div>
          
          <div id="weddingSubGrid" style="display:none; gap:12px;">
@@ -4651,6 +4666,7 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-cover
                   <option value="Tốt nghiệp">🎓 Tốt nghiệp</option>
                   <option value="Concept">✨ Concept</option>
                   <option value="Sự kiện">🎉 Sự kiện / Tiệc</option>
+                  <option value="Tết">🧧 Tết</option>
                   <option value="Khác">Khác</option>
               </select>
           </div>
@@ -5087,7 +5103,7 @@ function clientMediaFingerprint(event) {
     const visible = prodIdParam
         ? products.filter(p => String(p.id) === String(prodIdParam))
         : products;
-    return JSON.stringify(visible.map(p => [String(p.id || ''), String(p.name || ''), String(p.url || '')]));
+    return JSON.stringify(visible.map(p => [String(p.id || ''), String(p.name || ''), String(p.url || ''),String(p.mediaType||'auto')]));
 }
 function updateClientDeliveryMetadata(event) {
     if (!event) return;
@@ -5123,7 +5139,12 @@ function handleClientEventSnapshot(snapshot) {
         // Only this delivery link, and only when its visible media changed.
         initClientGallery().catch(err => console.error('Scoped client gallery render failed:', err));
     } else {
+        const previousFavorites=JSON.stringify(currentClientEvent?.favoritePhotoItems||[]);
         updateClientDeliveryMetadata(incoming);
+        if(incoming && previousFavorites!==JSON.stringify(incoming.favoritePhotoItems||[])){
+            restoreSelectionsForMedia(currentClientEvent?.galleryPhotos||[]);
+            if(document.querySelector('#cgPhotoGrid .client-photo-card'))renderClientGrid();
+        }
     }
 }
 
@@ -5134,95 +5155,148 @@ if (isClientMode) {
     document.body.setAttribute('data-client-gallery', 'true');
 }
 
+// v5.67: Normalize a Drive identity independently of URL tracking parameters.
+function driveUrlParts(raw) {
+    try {
+        const u = new URL(String(raw||'').trim(), location.href);
+        const host=u.hostname.toLowerCase();
+        if (host!=='drive.google.com') return {folderId:'',fileId:''};
+        const path=u.pathname;
+        const folder=path.match(/\/folders\/([\w-]{10,})/i);
+        if(folder)return {folderId:folder[1],fileId:''};
+        const file=path.match(/\/file\/d\/([\w-]{10,})/i);
+        if(file)return {folderId:'',fileId:file[1]};
+        const id=u.searchParams.get('id')||'';
+        if(!/^[\w-]{10,200}$/.test(id))return {folderId:'',fileId:''};
+        if(/folderview/i.test(path))return {folderId:id,fileId:''};
+        return {folderId:'',fileId:id};
+    } catch(_) {return {folderId:'',fileId:''};}
+}
+function isDriveFolderUrl(url) {return !!driveUrlParts(url).folderId;}
+function extractDriveFileId(url) {return driveUrlParts(url).fileId||null;}
+function mediaSourceKey(url) {
+    const parts=driveUrlParts(url);
+    if(parts.folderId)return 'folder:'+parts.folderId;
+    if(parts.fileId)return 'file:'+parts.fileId;
+    try {const u=new URL(String(url||''),location.href);return 'url:'+u.origin+u.pathname;}
+    catch(_){return 'url:'+String(url||'').split('?')[0];}
+}
+function productMediaSource(product) {return mediaSourceKey(product?.url||'');}
+function productById(event, id) {return normalizeCollection(event?.products).find(p=>String(p.id)===String(id));}
 function photoStableId(p) {
-    return String(
-        p?.id ?? p?.fileId ?? p?.file_id ?? p?.driveFileId ?? p?.webViewLink ?? p?.url ?? ''
-    ).trim();
+    const direct=String(p?.fileId||p?.file_id||p?.driveFileId||p?.id||'').trim();
+    const legacy=String(p?.key||p?.favoriteKey||'').match(/::id:([^:]+)/);
+    return extractDriveFileId(p?.webViewLink||p?.url||'')||direct||(legacy?legacy[1]:'');
 }
-
 function photoKey(p) {
-    const productId = String(p?.productId || 'root');
-    const explicit = String(p?.favoriteKey || p?.key || '').trim();
-    if (explicit) return explicit;
-    const stableId = photoStableId(p);
-    if (stableId) return `${productId}::id:${stableId}`;
-    return `${productId}::name:${String(p?.name || '')}`;
+    const pid=String(p?.productId||'root');
+    const id=photoStableId(p);
+    return id?`${pid}::id:${id}`:`${pid}::name:${String(p?.name||'')}`;
 }
-
-function favoriteItemKeys(item) {
-    if (!item) return [];
-    const productId = String(item.productId || 'root');
-    const name = String(item.name || '');
-    const keys = [];
-    if (item.key) keys.push(String(item.key));
-    if (item.favoriteKey) keys.push(String(item.favoriteKey));
-    const stableId = photoStableId(item);
-    if (stableId) {
-        keys.push(`${productId}::id:${stableId}`);
-        keys.push(`${productId}::${stableId}`);
+function favoriteItemMatchesPhoto(item,photo) {
+    if(!item||!photo||String(item.productId||'')!==String(photo.productId||''))return false;
+    if(item.sourceKey && photo.sourceKey && item.sourceKey!==photo.sourceKey)return false;
+    const a=photoStableId(item),b=photoStableId(photo);
+    if(a&&b)return a===b;
+    // Name-only legacy favorites. Do not match two different known Drive IDs by name.
+    return Boolean(!a && item.name && String(item.name)===String(photo.name||''));
+}
+function getSelectedFavoriteItems(event,productId=null) {
+    const items=normalizeCollection(event?.favoritePhotoItems);
+    return productId===null||productId===undefined||productId===''?items:items.filter(i=>String(i.productId||'')===String(productId));
+}
+function sourceForFavoriteItem(item,event) {
+    return String(item.sourceKey||'') || productMediaSource(productById(event,item.productId));
+}
+// A favorite from an old URL is a historical selection, not a selected current photo.
+function renderSelectedKeySet(event,productId=null) {
+    const visible=new Set();
+    const media=event?.galleryPhotos||[];
+    for(const photo of media){if(photo.isVideo)continue;
+        if(productId!=null && String(photo.productId)!==String(productId))continue;
+        if(getSelectedFavoriteItems(event,photo.productId).some(item=>favoriteItemMatchesPhoto(item,photo)))visible.add(photoKey(photo));
     }
-    if (name) {
-        keys.push(`${productId}::name:${name}`);
-        keys.push(`${productId}::${name}`); // legacy key
-        keys.push(name);                    // legacy favoritePhotos fallback
+    return visible;
+}
+const clientPhotoDirtyKeys=new Set();
+const galleryFolderStatus=new Map();
+function galleryDraftKey(photo){return 'amorri_gallery_draft_v3:'+clientIdParam+':'+String(photo.productId||'')+':'+encodeURIComponent(photo.sourceKey||'');}
+function restorePhotoDraft(photo){
+    try {const raw=localStorage.getItem(galleryDraftKey(photo));if(!raw)return null;
+        const draft=JSON.parse(raw);if(!draft||Date.now()-Number(draft.at)>90*86400000)return null;
+        return new Set(Array.isArray(draft.ids)?draft.ids:[]);
+    } catch(_){return null;}
+}
+function persistPhotoDraft(photo){
+    const all=(currentClientEvent?.galleryPhotos||[]).filter(x=>!x.isVideo&&x.productId===photo.productId&&x.sourceKey===photo.sourceKey);
+    const keys=all.filter(x=>clientSelectedPhotos.has(photoKey(x))).map(photoKey);
+    try {localStorage.setItem(galleryDraftKey(photo),JSON.stringify({at:Date.now(),ids:keys}));}catch(_){}
+}
+function restoreSelectionsForMedia(items) {
+    for(const photo of items) {
+        if(photo.isVideo)continue;
+        const key=photoKey(photo);
+        if(clientPhotoDirtyKeys.has(key))continue;
+        const draft=restorePhotoDraft(photo);
+        if(draft){if(draft.has(key))clientSelectedPhotos.add(key);else clientSelectedPhotos.delete(key);continue;}
+        const saved=getSelectedFavoriteItems(currentClientEvent,photo.productId);
+        const legacyAllowed=saved.length===0 && normalizeCollection(currentClientEvent?.products).length===1;
+        const legacyMatch=legacyAllowed && (currentClientEvent?.favoritePhotos||[]).includes(photo.name);
+        if(saved.some(x=>favoriteItemMatchesPhoto(x,photo)) || legacyMatch)clientSelectedPhotos.add(key);
+        else clientSelectedPhotos.delete(key);
     }
-    return [...new Set(keys.filter(Boolean))];
 }
-
-function favoriteItemMatchesPhoto(item, photo) {
-    if (!item || !photo) return false;
-    if (String(item.productId || '') !== String(photo.productId || '')) return false;
-    const itemKeys = favoriteItemKeys(item);
-    const pKey = photoKey(photo);
-    if (itemKeys.includes(pKey)) return true;
-    const photoStable = photoStableId(photo);
-    const itemStable = photoStableId(item);
-    if (photoStable && itemStable && photoStable === itemStable) return true;
-    return !!item.name && String(item.name) === String(photo.name || '');
+function normalizeFolderMedia(item, product) {
+    if(!item||typeof item!=='object')return null;
+    const id=photoStableId(item);
+    const name=String(item.name||item.filename||item.title||'').trim()||'Không có tên';
+    const mime=String(item.mimeType||item.mime_type||'').toLowerCase();
+    if(mime==='application/vnd.google-apps.folder')return null;
+    const suffix=/\.(jpe?g|png|gif|webp|bmp|heic|heif|avif)$/i.test(name);
+    const videoSuffix=/\.(mp4|webm|mov|m4v|mkv|avi|ogg)$/i.test(name);
+    const video=mime.startsWith('video/')||videoSuffix||(!mime&&item.isVideo===true);
+    const image=mime.startsWith('image/')||suffix||(!video&&Boolean(item.thumb||item.thumbnailLink));
+    if(!video&&!image)return null;
+    const url=item.webViewLink||item.url||(id?`https://drive.google.com/file/d/${encodeURIComponent(id)}/view`:'');
+    const thumb=item.thumb||item.thumbnailLink||(id?`https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1200`:url);
+    return {...item,id:id||String(item.id||name),name,isVideo:!!video,productId:String(product.id),productName:product.name||'Bàn giao',sourceKey:productMediaSource(product),url,webViewLink:url,thumb,
+        ...(video?{source:'drive',previewUrl:id?`https://drive.google.com/file/d/${encodeURIComponent(id)}/preview`:url}:{})};
 }
-
-function getSelectedFavoriteItems(event, productId = null) {
-    const items = Array.isArray(event?.favoritePhotoItems) ? event.favoritePhotoItems : [];
-    if (productId === null || productId === undefined || productId === '') return items;
-    return items.filter(item => String(item.productId || '') === String(productId));
+function galleryListingCacheKey(product){
+    return `amorri_gallery_media_v3:${clientIdParam}:${encodeURIComponent(productMediaSource(product))}`;
 }
-
-function renderSelectedKeySet(event, productId = null) {
-    // IMPORTANT: this Set must contain exactly ONE canonical key per selected image.
-    // Older code stored several aliases for one image, which made the selected count wrong
-    // and prevented a customer from reliably unselecting a previously-selected photo.
-    const set = new Set();
-    const items = getSelectedFavoriteItems(event, productId);
-    for (const item of items) {
-        const key = String(item?.key || item?.favoriteKey || '').trim();
-        if (key) {
-            set.add(key);
-            continue;
-        }
-        const stableId = photoStableId(item);
-        const pid = String(item?.productId || 'root');
-        if (stableId) set.add(`${pid}::id:${stableId}`);
-        else if (item?.name) set.add(`${pid}::name:${String(item.name)}`);
+function getCachedGalleryListing(product){
+    try{
+        const snapshot=JSON.parse(localStorage.getItem(galleryListingCacheKey(product))||'null');
+        if(!snapshot||Date.now()-Number(snapshot.at)>12*3600000||!Array.isArray(snapshot.media))return [];
+        return snapshot.media.map(item=>({...item,productId:String(product.id),productName:product.name||'Ảnh',sourceKey:productMediaSource(product)}));
+    }catch(_){return [];}
+}
+function cacheGalleryListing(product,media){
+    try{localStorage.setItem(galleryListingCacheKey(product),JSON.stringify({at:Date.now(),media:media.slice(0,600).map(p=>({id:p.id,name:p.name,mimeType:p.mimeType,isVideo:p.isVideo,url:p.url,webViewLink:p.webViewLink,previewUrl:p.previewUrl,thumb:p.thumb,source:p.source}))}));}catch(_){}
+}
+async function fetchDriveGalleryFolder(product,{attempts=3}={}){
+    let lastError;
+    for(let index=0;index<attempts;index++){
+        const controller=new AbortController();
+        const timer=setTimeout(()=>controller.abort(),20000);
+        try {
+            const response=await fetch(`/api/get-drive-images?folderUrl=${encodeURIComponent(product.url)}`,{signal:controller.signal,cache:'no-store'});
+            if(!response.ok)throw new Error(`API Drive HTTP ${response.status}`);
+            const result=await response.json();
+            if(result.error)throw new Error(String(result.error));
+            if(!Array.isArray(result.images))throw new Error('API không trả về mảng images');
+            const list=result.images.map(i=>normalizeFolderMedia(i,product)).filter(Boolean);
+            return list;
+        }catch(err){lastError=err; if(index+1<attempts)await new Promise(resolve=>setTimeout(resolve,650*(2**index)));}
+        finally{clearTimeout(timer);}
     }
-
-    // Legacy data only had favoritePhotos. Resolve names to actual gallery items later
-    // in initClientGallery, after media has been loaded, rather than adding name aliases here.
-    return set;
+    throw lastError||new Error('Không tải được thư mục Drive');
 }
-
-function isDriveFolderUrl(url) {
-    return /drive\.google\.com\/(?:drive\/u\/\d+\/)?folders\/[a-zA-Z0-9_-]+/i.test(url || '') || /drive\.google\.com\/folderview/i.test(url || '');
+function galleryNotice(message=''){
+    const el=document.getElementById('cgGalleryNotice');if(!el)return;
+    el.textContent=message;el.hidden=!message;
 }
-
-function extractDriveFileId(url) {
-    const raw = String(url || '');
-    const m1 = raw.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
-    if (m1) return m1[1];
-    const m2 = raw.match(/[?&]id=([a-zA-Z0-9_-]+)/i);
-    if (m2 && /drive\.google\.com/i.test(raw)) return m2[1];
-    return null;
-}
-
 function extractYouTubeVideoId(url) {
     const raw = String(url || '').trim();
     const patterns = [
@@ -5262,7 +5336,7 @@ function vrParse(str) {
 function stopVideoReviewListeners() {
     vrListeners.splice(0).forEach(({ref,callback})=>ref.off('value',callback));
     vrPlayers.forEach(player=>{try{player.destroy()}catch(_){}});vrPlayers.clear();
-    document.querySelectorAll(".client-video-card").forEach(card=>{if(card._driveRefreshTimer)clearTimeout(card._driveRefreshTimer);if(card._ytAmbientPoll)clearInterval(card._ytAmbientPoll);card._ytClearAmbientStop?.();card._ytCleanup?.();window.amorriSetIframeCinema?.(card,false)});
+    document.querySelectorAll(".client-video-card").forEach(card=>{card._vrOwnSizeObserver?.disconnect();if(card._driveRefreshTimer)clearTimeout(card._driveRefreshTimer);if(card._ytAmbientPoll)clearInterval(card._ytAmbientPoll);card._ytClearAmbientStop?.();card._ytCleanup?.();window.amorriSetIframeCinema?.(card,false)});
 }
 function vrYoutubeAPI() {
     if (typeof window.YT?.Player === 'function') return Promise.resolve();
@@ -5294,6 +5368,8 @@ function vrYoutubeAPI() {
 function initVideoReviewPanels() {
     const panels=[...document.querySelectorAll('#cgVideoContainer .client-video-card')];
     for(const card of panels){
+        if(card.dataset.vrInitialized==='1')continue;
+        card.dataset.vrInitialized='1';
         const productKey=card.dataset.vrProduct, kind=card.dataset.vrType;
         const status=card.querySelector('[data-vr-status]'), time=card.querySelector('[data-vr-current]');
         const input=card.querySelector('[data-vr-name]'), message=card.querySelector('[data-vr-message]');
@@ -5708,7 +5784,10 @@ async function initClientGallery() {
 
     document.getElementById('cgTitle').textContent = currentClientEvent.name || 'Bộ bàn giao của bạn';
     document.title = (currentClientEvent.name || 'Amorri Studio') + ' - Bàn giao';
-    clientSelectedPhotos = renderSelectedKeySet(currentClientEvent, prodIdParam || null);
+    clientSelectedPhotos = new Set();
+    clientPhotoDirtyKeys.clear();
+    galleryFolderStatus.clear();
+    galleryNotice('');
 
     const allProducts = Array.isArray(currentClientEvent.products) ? currentClientEvent.products : [];
     const products = prodIdParam ? allProducts.filter(p => String(p.id) === String(prodIdParam)) : allProducts;
@@ -5723,9 +5802,9 @@ async function initClientGallery() {
         const youtubeVideoId = extractYouTubeVideoId(rawUrl);
         if (youtubeVideoId) {
             media.push({id:`yt_${p.id}`,name:p.name||'Video',isVideo:true,externalType:'youtube',videoId:youtubeVideoId,isShort:/youtube\.com\/shorts\//i.test(rawUrl),productId:p.id});
-        } else if (extractDriveFileId(rawUrl) && /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(String(p.name||''))) {
+        } else if (extractDriveFileId(rawUrl) && (p.mediaType==='image'||(p.mediaType!=='video' && (/\.(jpe?g|png|gif|webp|heic|heif)$/i.test(String(p.name||'')) || /(?:^|\s)(?:ảnh|hình|photo|album|raw|images?)(?:\s|$)/i.test(String(p.name||'')))))) {
             const driveImageId = extractDriveFileId(rawUrl);
-            media.push({id:driveImageId,name:p.name||'Ảnh',isVideo:false,productId:p.id,thumb:`https://drive.google.com/thumbnail?id=${encodeURIComponent(driveImageId)}&sz=w1200`,url:rawUrl});
+            media.push({id:driveImageId,name:p.name||'Ảnh',isVideo:false,productId:p.id,sourceKey:productMediaSource(p),thumb:`https://drive.google.com/thumbnail?id=${encodeURIComponent(driveImageId)}&sz=w1200`,url:rawUrl});
         } else if (extractDriveFileId(rawUrl)) {
             const driveFileId = extractDriveFileId(rawUrl);
             media.push({
@@ -5737,12 +5816,12 @@ async function initClientGallery() {
                 webViewLink:`https://drive.google.com/file/d/${encodeURIComponent(driveFileId)}/view`,
                 url:`https://drive.google.com/file/d/${encodeURIComponent(driveFileId)}/view`,
                 productId:p.id,
-                productName:p.name||'Clip'
+                productName:p.name||'Clip',sourceKey:productMediaSource(p)
             });
-        } else if (/\.(mp4|webm|mov|m4v|avi|mkv|ogg)(?:[?#].*)?$/i.test(rawUrl)) {
+        } else if (/\.(mp4|webm|mov|m4v|avi|mkv|ogg)(?:[?#].*)?$/i.test(rawUrl) || p.mediaType==='video' && !/\.(jpe?g|png|gif|webp)(?:[?#].*)?$/i.test(rawUrl)) {
             media.push({id:`direct_${p.id}`,name:p.name||'Video',isVideo:true,url:rawUrl,productId:p.id});
-        } else if (/\.(jpeg|jpg|gif|png|webp|heic|heif)(?:[?#].*)?$/i.test(rawUrl)) {
-            media.push({id:`img_${p.id}`,name:p.name||'Ảnh',isVideo:false,url:rawUrl,thumb:rawUrl,productId:p.id});
+        } else if (/\.(jpeg|jpg|gif|png|webp|heic|heif)(?:[?#].*)?$/i.test(rawUrl) || p.mediaType==='image') {
+            media.push({id:`img_${p.id}`,name:p.name||'Ảnh',isVideo:false,url:rawUrl,thumb:rawUrl,productId:p.id,sourceKey:productMediaSource(p)});
         }
     }
 
@@ -5752,17 +5831,7 @@ async function initClientGallery() {
     if (thisLoad !== clientGalleryLoadVersion) return;
     currentClientEvent.galleryPhotos = media;
 
-    // Resolve very old favoritePhotos (name-only storage) to canonical keys now that
-    // the actual gallery is available. This keeps one Set entry per selected image.
-    const scopedFavoriteItems = getSelectedFavoriteItems(currentClientEvent, prodIdParam || null);
-    if (!scopedFavoriteItems.length && Array.isArray(currentClientEvent.favoritePhotos)) {
-        const legacyNames = new Set(currentClientEvent.favoritePhotos.map(String));
-        const scopedProducts = prodIdParam ? new Set([String(prodIdParam)]) : null;
-        media.filter(m => !m.isVideo).forEach(m => {
-            if (scopedProducts && !scopedProducts.has(String(m.productId || ''))) return;
-            if (legacyNames.has(String(m.name || ''))) clientSelectedPhotos.add(photoKey(m));
-        });
-    }
+    restoreSelectionsForMedia(media);
 
     const videos = media.filter(m => m.isVideo);
     const images = media.filter(m => !m.isVideo);
@@ -5890,51 +5959,108 @@ async function initClientGallery() {
         bottomBar.style.display='none';
     }
 
-    // v5.66: background photo fetches MUST NOT re-create a running player.
-    if (folderProducts.length) {
-      if (!videos.length && !images.length) {
-        photoGrid.style.display='grid';
-        photoGrid.innerHTML='<div class="am-gallery-loading" role="status">Đang tải ảnh bàn giao…</div>';
-      }
-      void (async () => {
-        const folders=await Promise.all(folderProducts.map(async p => {
-          const controller=new AbortController();
-          const timer=setTimeout(()=>controller.abort(),18000);
+    // v5.67: Folder listing runs independently. Failure must never clear saved choices.
+    if(folderProducts.length){
+      const showLoading=()=>{
+          const count=(currentClientEvent?.galleryPhotos||[]).filter(m=>!m.isVideo).length;
+          if(!count){photoGrid.style.display='grid';photoGrid.innerHTML='<div class="am-gallery-loading" role="status">Đang kết nối thư mục ảnh Drive…</div>';}
+      };
+      showLoading();
+      const loadFolder=async product=>{
+          const key=String(product.id);galleryFolderStatus.set(key,'loading');
+          const cache=getCachedGalleryListing(product);
+          if(cache.length && thisLoad===clientGalleryLoadVersion){
+              const before=(currentClientEvent.galleryPhotos||[]).filter(m=>String(m.productId)!==key);
+              currentClientEvent.galleryPhotos=[...before,...cache];
+              restoreSelectionsForMedia(cache);
+              refreshGalleryPhotoDisplay();
+              appendRemoteFolderVideos(cache.filter(m=>m.isVideo),videoContainer);
+              galleryNotice('Đang cập nhật danh sách Drive; tạm hiển thị ảnh đã tải gần đây của đúng thư mục.');
+          }
           try {
-            const response=await fetch(`/api/get-drive-images?folderUrl=${encodeURIComponent(p.url)}`,{signal:controller.signal});
-            if(!response.ok)throw new Error('HTTP '+response.status);
-            const result=await response.json();
-            if(result.error)throw new Error(String(result.error));
-            return (result.images||[]).map(item=>({...item,
-              productId:p.id,productName:p.name||'Thư mục ảnh',
-              favoriteKey:`${p.id||'root'}::id:${photoStableId(item)||item.name||item.url||'unknown'}`
-            }));
+              const result=await fetchDriveGalleryFolder(product);
+              cacheGalleryListing(product,result);
+              if(thisLoad!==clientGalleryLoadVersion)return;
+              galleryFolderStatus.set(key,'ready');
+              // Replace ONLY media from this product, preserving other photos and running players.
+              const retained=(currentClientEvent.galleryPhotos||[]).filter(m=>String(m.productId)!==key);
+              const merged=[...retained,...result];
+              currentClientEvent.galleryPhotos=merged;
+              restoreSelectionsForMedia(result);
+              const missingSaved=getSelectedFavoriteItems(currentClientEvent,key).filter(item=>
+                  (!item.sourceKey||item.sourceKey===productMediaSource(product)) &&
+                  !result.some(p=>!p.isVideo&&favoriteItemMatchesPhoto(item,p)));
+              galleryNotice(missingSaved.length?`Có ${missingSaved.length} ảnh từng đánh dấu nhưng không còn trong danh sách Drive của “${product.name||'thư mục'}”. Lựa chọn đã lưu vẫn được giữ; hãy kiểm tra quyền truy cập hoặc file đã chuyển đi.`:'');
+              refreshGalleryPhotoDisplay();
+              // Mixed folders are displayed as separate videos and photos. No replacement of
+              // already playing video nodes: append only newly discovered cards if necessary.
+              const newVideos=result.filter(p=>p.isVideo && p.id && p.source==='drive');
+              if(newVideos.length) appendRemoteFolderVideos(newVideos,videoContainer);
           } catch(err){
-            console.warn('[Amorri] Drive folder:',p.name,err);
-            return [];
-          } finally {clearTimeout(timer);}
-        }));
-        if(thisLoad!==clientGalleryLoadVersion || !videoContainer.isConnected)return;
-        const remote=folders.flat();
-        media.push(...remote);
-        currentClientEvent.galleryPhotos=media;
-        const legacy=new Set(Array.isArray(currentClientEvent.favoritePhotos)?currentClientEvent.favoritePhotos.map(String):[]);
-        const scoped=new Set(getSelectedFavoriteItems(currentClientEvent,prodIdParam||null).map(x=>x.name));
-        for(const item of remote){if(legacy.has(String(item.name||''))&& !scoped.has(item.name))clientSelectedPhotos.add(photoKey(item));}
-        const photoCount=media.filter(item=>!item.isVideo).length;
-        document.getElementById('cgImageCount').textContent=String(photoCount);
-        const imageStats=document.getElementById('cgImageStats');
-        if(imageStats)imageStats.style.display=photoCount?'flex':'none';
-        if(photoCount){photoGrid.style.display='grid';bottomBar.style.display='flex';renderClientGrid();}
-        else if(!videos.length){
-          photoGrid.style.display='grid';
-          photoGrid.innerHTML='<div class="am-gallery-loading">Không tải được ảnh. Kiểm tra kết nối rồi thử tải lại trang.</div>';
-        }
-        // Crucially do NOT call initClientGallery(), initVideoReviewPanels(), or replace videoContainer.
-      })();
+              if(thisLoad!==clientGalleryLoadVersion)return;
+              galleryFolderStatus.set(key,'error');
+              console.warn('[Amorri Gallery] Không tải được Drive:',product.url,err);
+              const remaining=(currentClientEvent.galleryPhotos||[]).filter(m=>!m.isVideo).length;
+              if(!remaining){
+                  photoGrid.style.display='grid';
+                  photoGrid.innerHTML=`<div class="cg-gallery-message">Không thể tải ảnh từ “${escapeHtml(product.name||'Google Drive')}”. Ảnh đã chọn trước đó vẫn được lưu, không bị xóa.<small>${escapeHtml(err.message||'Kiểm tra API Drive hoặc quyền chia sẻ thư mục.')}</small><button type="button" data-cg-retry="${escapeHtml(key)}">Thử tải lại ảnh</button></div>`;
+              }
+              galleryNotice(cache.length?'Đang xem danh sách ảnh đã lưu trên thiết bị. Kết nối Drive hiện lỗi; cần tải lại thành công trước khi gửi lựa chọn.':'Tạm thời không đọc được thư mục Drive. Ảnh đã chọn vẫn được giữ trong Firebase; hãy thử tải lại.');
+          }
+      };
+      const run=async()=>Promise.all(folderProducts.map(loadFolder));
+      window._amorriRetryGalleryFolder=(id)=>{
+          const product=folderProducts.find(p=>String(p.id)===String(id));
+          if(product){showLoading();void loadFolder(product);}
+      };
+      void run();
     }
+
 }
 
+function refreshGalleryPhotoDisplay(){
+    const items=(currentClientEvent?.galleryPhotos||[]).filter(m=>!m.isVideo);
+    document.getElementById('cgImageCount').textContent=String(items.length);
+    document.getElementById('cgImageStats').style.display=items.length?'flex':'none';
+    const grid=document.getElementById('cgPhotoGrid'),bar=document.getElementById('cgBottomBar');
+    if(items.length){grid.style.display='grid';bar.style.display='flex';renderClientGrid();}
+    else {bar.style.display='none';if(document.querySelector('#cgVideoContainer .client-video-card')){grid.style.display='none';grid.innerHTML='';}else{grid.style.display='grid';grid.innerHTML='<div class="cg-gallery-message">Không có ảnh trong sản phẩm này. Nếu bạn vừa cập nhật Drive, vui lòng kiểm tra thư mục đã chia sẻ và tải lại.</div>';}}
+}
+function appendRemoteFolderVideos(videos,host){
+    // Folder-media video support without restarting any currently playing player.
+    const added=videos.filter(v=>!host.querySelector(`[data-vr-file-id="${CSS.escape(String(v.id))}"]`));
+    if(!added.length)return;
+    const gallery=host.closest('.gallery-container');
+    if(gallery)gallery.classList.remove('amorri-video-only');
+    for(const v of added){
+        const key=reviewKey(String(v.productId||'')+'::'+String(v.id||''));
+        const node=document.createElement('section');node.className='client-video-card';
+        node.dataset.vrProduct=key;node.dataset.vrRawProduct=v.productId;
+        node.dataset.vrFileId=v.id;node.dataset.vrType='drive';node.dataset.vrDefaultRatio='16/9';
+        node.innerHTML=`<div class="client-video-review-layout"><div class="client-video-left"><div class="client-video-frame"><video controls playsinline webkit-playsinline preload="metadata" data-vr-drive-video style="display:none"></video><iframe data-vr-drive-frame src="${safeUrl(v.previewUrl)}" title="${escapeHtml(v.name)}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div><a class="am-mobile-source-link" href="${safeUrl(v.webViewLink)}" target="_blank" rel="noopener noreferrer">Mở video gốc ↗</a></div><aside class="vr-panel"><div class="vr-heading"><strong>Góp ý video</strong><span class="vr-status" data-vr-status>Đang kết nối...</span></div><div class="vr-list-wrap"><div class="vr-list-toolbar"><strong>Bình luận</strong></div><div class="vr-list" data-vr-list></div></div><div class="vr-compose"><div class="vr-entry"><span class="vr-time" data-vr-current-secondary>00:00</span><input class="vr-name" data-vr-name maxlength="60" placeholder="Tên của bạn"></div><textarea class="vr-message" data-vr-message maxlength="2000" placeholder="Viết góp ý tại mốc đang phát..."></textarea><div class="vr-actions"><button class="vr-btn" type="button" data-vr-send>Gửi góp ý</button></div></div><div class="vr-aux" aria-hidden="true"><span data-vr-mode></span><span data-vr-current>00:00</span><span data-vr-total>--:--</span><input data-vr-scrub type="range" min="0" max="100" value="0"><div data-vr-dots></div><input data-vr-seek-input><button data-vr-seek>Đi tới</button><span data-vr-drive-duration-label></span><input data-vr-drive-duration><span data-vr-mode-note></span><span data-vr-hint></span><div data-vr-markers></div></div></aside></div>`;
+        host.appendChild(node);
+        const frame=node.querySelector('.client-video-frame');
+        frame.style.setProperty('--vr-media-ratio', '1.7777777778');
+        const resize=new ResizeObserver(()=>{
+          const h=Math.round(frame.getBoundingClientRect().height);
+          if(h>0)node.querySelector('.vr-panel')?.style.setProperty('--vr-measured-player-height',h+'px');
+        });resize.observe(frame);node._vrOwnSizeObserver=resize;
+    }
+    host.style.display='grid';
+    initVideoReviewPanels();
+}
+document.getElementById('cgPhotoGrid')?.addEventListener('click',event=>{
+    const b=event.target.closest('[data-cg-retry]');
+    if(b){window._amorriRetryGalleryFolder?.(b.dataset.cgRetry);return;}
+    if(event.target.closest('a'))return;
+    const card=event.target.closest('[data-cg-photo-key]');
+    if(card)window.toggleClientPhoto?.(card.dataset.cgPhotoKey);
+});
+document.getElementById('cgPhotoGrid')?.addEventListener('keydown',event=>{
+    if(!['Enter',' '].includes(event.key))return;
+    const card=event.target.closest('[data-cg-photo-key]');
+    if(card){event.preventDefault();window.toggleClientPhoto?.(card.dataset.cgPhotoKey);}
+});
 let clientPhotoFilter = 'all';
 function updateClientPhotoFilterButtons() {
     document.querySelectorAll('#cgBottomBar [data-photo-filter]').forEach(btn => {
@@ -5944,10 +6070,20 @@ function updateClientPhotoFilterButtons() {
     });
 }
 function filterClientPhotoCards() {
-    document.querySelectorAll('#cgPhotoGrid .client-photo-card').forEach(card => {
-        const selected = card.classList.contains('selected');
-        card.hidden = clientPhotoFilter === 'selected' ? !selected : clientPhotoFilter === 'unselected' ? selected : false;
+    const grid=document.getElementById('cgPhotoGrid');
+    const cards=[...grid.querySelectorAll('.client-photo-card')];
+    let visible=0;
+    cards.forEach(card=>{
+        const selected=card.classList.contains('selected');
+        card.hidden=clientPhotoFilter==='selected'?!selected:clientPhotoFilter==='unselected'?selected:false;
+        if(!card.hidden)visible++;
     });
+    let notice=grid.querySelector('.cg-filter-empty');
+    if(cards.length&&visible===0&&clientPhotoFilter!=='all'){
+        if(!notice){notice=document.createElement('div');notice.className='cg-gallery-message cg-filter-empty';grid.appendChild(notice);}
+        notice.textContent=clientPhotoFilter==='selected'?'Chưa có ảnh nào được đánh dấu trong link Drive đang xem. Lựa chọn từ những link cũ vẫn nằm trong lịch sử.':'Tất cả ảnh đang hiển thị đã được chọn.';
+        notice.hidden=false;
+    } else if(notice)notice.hidden=true;
     updateClientPhotoFilterButtons();
 }
 document.getElementById('cgBottomBar')?.addEventListener('click', event => {
@@ -5963,82 +6099,93 @@ function renderClientGrid() {
     grid.innerHTML = images.map(p => {
         const key = photoKey(p);
         const imgUrl = p.thumb || p.url || `https://drive.google.com/thumbnail?id=${encodeURIComponent(p.id)}&sz=w1200`;
-        return `<div class="client-photo-card ${clientSelectedPhotos.has(key) ? 'selected' : ''}" onclick="window.toggleClientPhoto('${encodeURIComponent(key)}')" id="cp_${escapeHtml(p.id)}">
-            <img class="photo-card-backdrop" src="${safeUrl(imgUrl)}" loading="lazy" aria-hidden="true" alt="" onerror="this.onerror=null;this.src='https://drive.google.com/thumbnail?id=${encodeURIComponent(p.id)}&sz=w1200';">
-            <img class="photo-card-main" src="${safeUrl(imgUrl)}" loading="lazy" alt="${escapeHtml(p.name)}" onerror="this.onerror=null;this.src='https://drive.google.com/thumbnail?id=${encodeURIComponent(p.id)}&sz=w1200';">
+        return `<div class="client-photo-card ${clientSelectedPhotos.has(key) ? 'selected' : ''}" data-cg-photo-key="${escapeHtml(encodeURIComponent(key))}" role="button" tabindex="0" aria-pressed="${clientSelectedPhotos.has(key)?'true':'false'}" aria-label="${escapeHtml(p.name)}">
+            <img class="photo-card-backdrop" src="${safeUrl(imgUrl)}" loading="lazy" aria-hidden="true" alt="" data-cg-image-id="${escapeHtml(photoStableId(p))}" onerror="window.amorriImageFallback(this)">
+            <img class="photo-card-main" src="${safeUrl(imgUrl)}" loading="lazy" alt="${escapeHtml(p.name)}" data-cg-image-id="${escapeHtml(photoStableId(p))}" onerror="window.amorriImageFallback(this)">
             <div class="heart-btn">♥</div>
-            <div class="photo-filename">${escapeHtml(p.name)}</div>
+            <div class="photo-filename">${escapeHtml(p.name)} <a style="float:right;color:#fff;text-decoration:underline;pointer-events:auto" href="${safeUrl(p.webViewLink||p.url||'#')}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" aria-label="Mở ảnh gốc">↗</a></div>
         </div>`;
     }).join('');
     updateClientBottomBar();
     filterClientPhotoCards();
 }
 
+window.amorriImageFallback=function(img){
+    // One alternative URL, then use a local placeholder instead of an infinite image loop.
+    const id=img.dataset.cgImageId||'';const tries=Number(img.dataset.cgImageRetries||0);
+    if(id&&tries===0){img.dataset.cgImageRetries='1';img.src=`https://drive.google.com/uc?export=view&id=${encodeURIComponent(id)}`;return;}
+    img.onerror=null;img.style.background='#eee4d7';img.style.objectFit='contain';
+    img.removeAttribute('src');img.alt=img.alt||'Không xem được ảnh; mở link Drive để xem bản gốc.';
+};
 window.toggleClientPhoto = function(encodedKey) {
     const key = decodeURIComponent(encodedKey || '');
     if(!key) return;
     if(clientSelectedPhotos.has(key)) clientSelectedPhotos.delete(key); else clientSelectedPhotos.add(key);
+    clientPhotoDirtyKeys.add(key);
     const obj = (currentClientEvent.galleryPhotos || []).find(p => photoKey(p) === key || p.name === key);
     if(obj) {
-        const card = document.getElementById('cp_'+obj.id);
-        if(card) card.classList.toggle('selected', clientSelectedPhotos.has(key));
+        persistPhotoDraft(obj);
+        document.querySelectorAll('#cgPhotoGrid [data-cg-photo-key]').forEach(card=>{
+            if(decodeURIComponent(card.dataset.cgPhotoKey||'')!==key)return;
+            card.classList.toggle('selected', clientSelectedPhotos.has(key));
+            card.setAttribute('aria-pressed',String(clientSelectedPhotos.has(key)));
+        });
     }
     updateClientBottomBar();
     filterClientPhotoCards();
 };
 
 function updateClientBottomBar() {
-    document.getElementById('cgSelectedCount').textContent = clientSelectedPhotos.size;
+    const shownKeys=new Set((currentClientEvent?.galleryPhotos||[]).filter(p=>!p.isVideo).map(photoKey));
+    const validCount=[...clientSelectedPhotos].filter(k=>shownKeys.has(k)).length;
+    document.getElementById('cgSelectedCount').textContent = validCount;
     const topSelected=document.getElementById('cgSelectedTop');
-    if(topSelected) topSelected.textContent=clientSelectedPhotos.size;
+    if(topSelected) topSelected.textContent=validCount;
     const imageStats = document.getElementById('cgImageStats');
     const imageCount = (currentClientEvent?.galleryPhotos || []).filter(p => !p.isVideo).length;
     if(imageStats) imageStats.style.display = imageCount ? 'flex' : 'none';
 }
 
-window.submitClientFavorites = async function() {
-    if(!currentClientEvent) return;
-
-    const targetProductId = prodIdParam ? String(prodIdParam) : null;
-    const selectedItems = [];
-    const selectedNames = [];
-    for(const p of (currentClientEvent.galleryPhotos || [])) {
-        if(p.isVideo) continue;
-        const key = photoKey(p);
-        if(clientSelectedPhotos.has(key)) {
-            selectedItems.push({
-                key,
-                name:p.name,
-                productId:String(p.productId || ''),
-                productName:p.productName || ''
-            });
-            selectedNames.push(p.name);
-        }
+window.submitClientFavorites=async function(){
+    if(!currentClientEvent)return;
+    const event=currentClientEvent;
+    const products=normalizeCollection(event.products).filter(p=>!prodIdParam||String(p.id)===String(prodIdParam));
+    const sources=new Set(products.filter(p=>p.url).map(p=>`${p.id}|${productMediaSource(p)}`));
+    const pending=products.filter(p=>isDriveFolderUrl(p.url)&&galleryFolderStatus.get(String(p.id))!=='ready');
+    if(pending.length){
+       alert('Có '+pending.length+' thư mục Drive chưa tải đủ ảnh. Hãy thử tải lại trước khi gửi, để không thay thế nhầm các lựa chọn đã lưu.');
+       return;
     }
-
-    const previousItems = Array.isArray(currentClientEvent.favoritePhotoItems)
-        ? currentClientEvent.favoritePhotoItems
-        : [];
-
-    // Link theo từng thư mục chỉ được thay thế selection của chính thư mục đó,
-    // không được xóa selection của các thư mục khác.
-    const preservedItems = targetProductId === null
-        ? []
-        : previousItems.filter(item => String(item.productId || '') !== targetProductId);
-    const mergedItems = [...preservedItems, ...selectedItems];
-    currentClientEvent.favoritePhotoItems = mergedItems;
-    currentClientEvent.favoritePhotos = [...new Set(mergedItems.map(x => x.name).filter(Boolean))];
-
-    const saved = await dbUpdate(`events/${currentClientEvent.id}`, {
-        favoritePhotoItems: mergedItems,
-        favoritePhotos: currentClientEvent.favoritePhotos
+    const selectedItems=(event.galleryPhotos||[]).filter(p=>!p.isVideo&&clientSelectedPhotos.has(photoKey(p))).map(p=>({
+        key:photoKey(p),fileId:photoStableId(p),name:p.name,
+        productId:String(p.productId||''),productName:p.productName||'',
+        sourceKey:p.sourceKey||productMediaSource(productById(event,p.productId)),
+        sourceUrl:productById(event,p.productId)?.url||'',savedAt:Date.now()
+    }));
+    // Preserve all older product + Drive folder selections, including links replaced by admin.
+    const previous=normalizeCollection(event.favoritePhotoItems);
+    const keep=previous.filter(item=>{
+        const product=productById(event,item.productId);
+        if(!product)return true;
+        const source=item.sourceKey||productMediaSource(product);
+        if(!sources.has(`${item.productId}|${source}`))return true;
+        // Retain choices that the Drive API failed to list this time. Never delete
+        // them merely because an incomplete page of image results was returned.
+        const visible=(event.galleryPhotos||[]).filter(p=>!p.isVideo&&String(p.productId)===String(item.productId)&&p.sourceKey===source);
+        return !visible.some(p=>favoriteItemMatchesPhoto(item,p));
     });
-
-    if (saved) {
-        alert(`Cảm ơn bạn! Đã gửi thành công ${selectedItems.length} ảnh yêu thích cho Studio.`);
-    } else {
-        alert(`Đã lưu ${selectedItems.length} ảnh trên thiết bị và xếp hàng chờ đồng bộ. Vui lòng giữ kết nối mạng để Studio nhận được lựa chọn.`);
-    }
+    const unique=new Map();
+    for(const item of [...keep,...selectedItems])unique.set(`${item.productId}|${item.sourceKey||''}|${item.fileId||item.key||item.name}`,item);
+    const merged=[...unique.values()];
+    const names=[...new Set(merged.map(p=>String(p.name||'')).filter(Boolean))];
+    const updates={favoritePhotoItems:merged,favoritePhotos:names};
+    event.favoritePhotoItems=merged;event.favoritePhotos=names;
+    const saved=await dbUpdate(`events/${event.id}`,updates);
+    if(saved){
+        for(const photo of event.galleryPhotos||[])if(!photo.isVideo){try{localStorage.removeItem(galleryDraftKey(photo))}catch(_){}}
+        clientPhotoDirtyKeys.clear();
+        alert(`Đã gửi ${selectedItems.length} ảnh đang chọn. Các lựa chọn từ link Drive cũ vẫn được lưu trong lịch sử.`);
+    }else alert('Chưa đồng bộ Firebase. Bản chọn đã được giữ trên thiết bị; hãy kết nối mạng và thử lại.');
 };
 
 // ==========================================
@@ -6920,6 +7067,7 @@ function chip(e){
   else if(e.eventType === 'Tốt nghiệp') typeClass = 'type-totnghiep';
   else if(e.eventType === 'Concept') typeClass = 'type-concept';
   else if(e.eventType === 'Sự kiện') typeClass = 'type-sukien';
+  else if(e.eventType === 'Tết') typeClass = 'type-tet';
   else if(e.eventType === 'Truyền thống' || e.eventType === 'Cưới') {
       typeClass = 'type-cuoi';
       const lowerName = (e.name || '').toLowerCase();
@@ -7553,13 +7701,14 @@ window.toggleEditLink = function(sId) {
     document.getElementById('evt-link-edit-'+sId).style.display = 'flex';
 }
 
-window.addProductRow = function(name='', url='', isReadonly=false, id='') {
+window.addProductRow = function(name='', url='', isReadonly=false, id='', mediaType='auto') {
     const container = document.getElementById('eventProductsList'); if(!container) return;
     const div = document.createElement('div');
     const prodId = id || 'prod_' + uid();
     div.className = 'product-row';
     div.dataset.id = prodId;
     div.dataset.url = url || '';
+    div.dataset.mediaPref = mediaType || 'auto';
     div.style.cssText = 'display:flex; flex-direction:column; gap:8px; background:#f8fafc; padding:16px; border-radius:16px; border:1px solid var(--line)';
 
     if (isReadonly) {
@@ -7580,6 +7729,7 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid var(--blue); color:var(--blue); font-weight:700;" onclick="window.generateSingleClientLink('${prodId}')">🔗 Copy link</button>
                <button type="button" class="btn ghost admin-only-flex" style="display:inline-flex;padding:6px 10px;font-size:12px;border:1px solid #b59a72;color:#79603e;font-weight:700" data-video-review-action="true" onclick="window.clearVideoReviewsForProduct('${prodId}')">✓ Đã fix</button>
                <button type="button" class="btn ghost admin-only-flex product-copy-favorites" data-product-id="${prodId}" style="display:none; padding:6px 10px; font-size:12px; border:1px solid #86efac; color:#15803d; font-weight:700;">📋 Copy tên ảnh</button>
+               <button type="button" class="btn ghost admin-only-flex product-favorite-history" style="display:none;padding:6px 10px;font-size:12px;border:1px solid #d7c2a9;color:#836447" onclick="window.showProductFavoriteHistory(this.closest('.product-row').dataset.id)">🕘 Lịch sử chọn</button>
                <button type="button" class="btn ghost admin-only-flex" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1;" onclick="this.closest('.product-row').querySelector('.prod-view').style.display='none'; this.closest('.product-row').querySelector('.prod-edit').style.display='flex'">✏️ Sửa</button>
            </div>
        </div>
@@ -7588,6 +7738,7 @@ window.addProductRow = function(name='', url='', isReadonly=false, id='') {
            <input type="text" id="prod-name-${inputIdSafe}" aria-label="Tên sản phẩm" class="prod-name field" value="${escapeHtml(name)}" placeholder="Tên SP (VD: Video Teaser, Ảnh Gốc...)" style="flex:1; min-width:120px;">
            <label for="prod-url-${inputIdSafe}" style="display:none">Đường dẫn</label>
            <input type="url" id="prod-url-${inputIdSafe}" aria-label="Đường dẫn" class="prod-url field" value="${escapeHtml(url)}" placeholder="🔗 Dán link Youtube, Drive, mp4..." style="flex:2; min-width:150px;">
+           <select class="prod-media-type field" aria-label="Phân loại ảnh hay video" style="min-width:112px;padding:8px"><option value="auto" ${mediaType==='auto'?'selected':''}>Tự động</option><option value="image" ${mediaType==='image'?'selected':''}>🖼 Ảnh</option><option value="video" ${mediaType==='video'?'selected':''}>🎬 Video</option></select>
            <button type="button" class="btn primary" style="padding:10px 16px; font-size:13px;" onclick="window.saveProductRow(this)">Lưu</button>
            <button type="button" class="btn danger ghost" style="padding:10px 14px; font-size:13px;" onclick="this.closest('.product-row').remove()">✕</button>
        </div>
@@ -7608,7 +7759,8 @@ window.getProductFavoriteCount = function(prodId) {
     const evId = document.getElementById('eventId')?.value;
     const ev = data.events.find(e => e.id === evId);
     if(!ev || !Array.isArray(ev.favoritePhotoItems)) return 0;
-    return ev.favoritePhotoItems.filter(x => String(x.productId || '') === String(prodId) && x.name).length;
+    const product=productById(ev,prodId);const current=productMediaSource(product);
+    return ev.favoritePhotoItems.filter(x => String(x.productId||'')===String(prodId) && x.name && (!x.sourceKey||x.sourceKey===current)).length;
 };
 
 window.detectProductMediaType = async function(rawUrl, productName = '') {
@@ -7616,7 +7768,7 @@ window.detectProductMediaType = async function(rawUrl, productName = '') {
     const lower = url.toLowerCase();
     if (!url) return 'unknown';
     if (extractYouTubeVideoId(url) || /\.(mp4|webm|mov|m4v|avi|mkv|ogg)(?:[?#].*)?$/i.test(url)) return 'video';
-    if (extractDriveFileId(url)) { const title=String(productName||''); return /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(title) ? 'image' : /(?:video|clip|teaser|highlight|phim|film)/i.test(title) ? 'video' : 'unknown'; } // For ambiguous Drive-file links, do not guess.
+    if (extractDriveFileId(url)) { const title=String(productName||''); return /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(title)||/(?:ảnh|hình|photo|album|raw)/i.test(title) ? 'image' : /(?:video|clip|teaser|highlight|phim|film)/i.test(title) ? 'video' : 'unknown'; } // For ambiguous Drive-file links, do not guess.
     if (/\.(jpe?g|png|gif|webp|heic|heif)(?:[?#].*)?$/i.test(url)) return 'image';
     if (isDriveFolderUrl(url)) {
         try {
@@ -7645,11 +7797,11 @@ window.refreshOpenEventProductActions = async function() {
     const event = data.events.find(e => e.id === eventId);
     if (!event) return;
     const rows = [...document.querySelectorAll('#eventProductsList .product-row')];
-    for (const row of rows) {
-        const prodId = row.dataset.id || '';
-        const rawUrl = row.dataset.url || row.querySelector('.prod-url')?.value || '';
-        if (rawUrl) await window.refreshProductMediaRow(row, prodId, rawUrl);
-    }
+    await Promise.allSettled(rows.map(row=>{
+        const id=row.dataset.id||'';
+        const url=row.dataset.url||row.querySelector('.prod-url')?.value||'';
+        return url?window.refreshProductMediaRow(row,id,url):Promise.resolve();
+    }));
 };
 
 window.refreshProductMediaRow = async function(row, prodId, rawUrl) {
@@ -7658,12 +7810,17 @@ window.refreshProductMediaRow = async function(row, prodId, rawUrl) {
     const reviewBtn = row.querySelector('[data-video-review-action]');
     const copyBtn = row.querySelector('.product-copy-favorites');
     const favoriteCount = window.getProductFavoriteCount(prodId);
+    const historyBtn=row.querySelector('.product-favorite-history');
+    if(historyBtn){const e=data.events.find(e=>String(e.id)===String(document.getElementById('eventId')?.value));
+      const history=getSelectedFavoriteItems(e,prodId).filter(item=>item.sourceKey&&item.sourceKey!==productMediaSource(productById(e,prodId)));
+      historyBtn.style.display=history.length?'inline-flex':'none';historyBtn.textContent=`🕘 Lịch sử chọn (${history.length})`;}
     const canCopy = favoriteCount > 0;
 
-    // Media detection chỉ phục vụ hiển thị loại nội dung, không ảnh hưởng chức năng copy.
+    // Explicit classification overrides ambiguous Drive file names.
     if (rawUrl) {
         try {
-            const mediaType = await window.detectProductMediaType(rawUrl, row.querySelector('.prod-name')?.value || row.querySelector('.prod-view-name')?.textContent || '');
+            const pref=row.querySelector('.prod-media-type')?.value||row.dataset.mediaPref||'auto';
+            const mediaType=pref==='auto'?await window.detectProductMediaType(rawUrl, row.querySelector('.prod-name')?.value || row.querySelector('.prod-view-name')?.textContent || ''):pref;
             row.dataset.mediaType = mediaType;
             if (reviewBtn) reviewBtn.style.display = (mediaType === 'image') ? 'none' : 'inline-flex';
         } catch (_) {
@@ -7729,12 +7886,25 @@ window.generateSingleClientLink = function(prodId) {
     showToast('✅ Đã copy Link gửi khách cho sản phẩm này!');
 };
 
+window.showProductFavoriteHistory=function(prodId){
+    const eid=document.getElementById('eventId')?.value;
+    const ev=data.events.find(e=>String(e.id)===String(eid));
+    const items=getSelectedFavoriteItems(ev,prodId);
+    if(!items.length){showToast('Chưa có lịch sử chọn ảnh.');return;}
+    const groups=new Map();
+    for(const item of items){const source=item.sourceKey||'Dữ liệu cũ chưa rõ nguồn';
+      if(!groups.has(source))groups.set(source,[]);groups.get(source).push(item.name||item.fileId||item.key||'Ảnh');}
+    const txt=[...groups].map(([src,names])=>src+' ('+names.length+' ảnh):\n'+names.join('\n')).join('\n\n');
+    window.copyText(txt);
+    alert('Lịch sử lựa chọn theo từng nguồn Drive đã được sao chép để bạn lưu lại:\n\n'+txt.slice(0,1300)+(txt.length>1300?'\n… Xem toàn bộ trong phần đã copy.':''));
+};
 window.copyProductFavoriteNames = function(prodId) {
     const evId = document.getElementById('eventId')?.value;
     const ev = data.events.find(e => String(e.id) === String(evId));
     if(!ev) { showToast('Chưa có dữ liệu lịch.'); return; }
     const items = Array.isArray(ev.favoritePhotoItems) ? ev.favoritePhotoItems : [];
-    const names = items.filter(x => String(x.productId || '') === String(prodId)).map(x => x.name).filter(Boolean);
+    const source=productMediaSource(productById(ev,prodId));
+    const names=items.filter(x=>String(x.productId||'')===String(prodId)&&(!x.sourceKey||x.sourceKey===source)).map(x=>x.name).filter(Boolean);
     if(names.length) {
         window.copyText(names.join('\n'));
         showToast(`Đã copy ${names.length} tên ảnh của thư mục này.`);
@@ -7742,7 +7912,7 @@ window.copyProductFavoriteNames = function(prodId) {
     }
     // Dữ liệu cũ không có productId thì chỉ fallback an toàn khi event chỉ có đúng 1 sản phẩm.
     const productCount = Array.isArray(ev.products) ? ev.products.length : 0;
-    if(productCount === 1 && Array.isArray(ev.favoritePhotos) && ev.favoritePhotos.length) {
+    if(productCount === 1 && items.length===0 && Array.isArray(ev.favoritePhotos) && ev.favoritePhotos.length) {
         window.copyText(ev.favoritePhotos.join('\n'));
         showToast('Dữ liệu cũ chưa lưu theo thư mục; đã copy tên ảnh của bộ duy nhất.');
     } else {
@@ -7761,6 +7931,7 @@ window.saveProductRow = function(btn) {
     row.querySelector('.prod-view-link').href = validatedUrl;
     row.querySelector('.prod-view-name').textContent = nameInput || 'Link Bàn Giao';
     row.dataset.url = validatedUrl;
+    row.dataset.mediaPref=row.querySelector('.prod-media-type')?.value||'auto';
     row.querySelector('.prod-edit').style.display = 'none';
     row.querySelector('.prod-view').style.display = 'flex';
     window.refreshProductMediaRow(row, row.dataset.id, validatedUrl);
@@ -8064,7 +8235,8 @@ window.runSmartPaste = function() {
         setSafeValue('eventDeposit', money(val));
     }
 
-    if(lowerTxt.includes('phóng sự') || lowerTxt.includes('ps')) setSafeValue('eventType', 'Phóng sự');
+    if(/(?:^|\W)tết(?:\W|$)|tet nguyen dan|chup tet/i.test(lowerTxt)) setSafeValue('eventType', 'Tết');
+    else if(lowerTxt.includes('phóng sự') || lowerTxt.includes('ps')) setSafeValue('eventType', 'Phóng sự');
     else if(lowerTxt.includes('pre') || lowerTxt.includes('cổng')) setSafeValue('eventType', 'Pre-wedding');
     else if(lowerTxt.includes('em bé') || lowerTxt.includes('thôi nôi')) setSafeValue('eventType', 'Em bé');
     else if(lowerTxt.includes('tiệc') || lowerTxt.includes('sự kiện')) setSafeValue('eventType', 'Sự kiện');
@@ -8188,7 +8360,7 @@ window.openEventModal = function(prefill={}){
   window.updateModalVisibility(); 
   window.renderEventStaffList(); 
   
-  if (e && e.products && e.products.length > 0) e.products.forEach(p => window.addProductRow(p.name, p.url, !isAdmin, p.id)); 
+  if (e && e.products && e.products.length > 0) e.products.forEach(p => window.addProductRow(p.name, p.url, !isAdmin, p.id,p.mediaType||'auto')); 
 
   window.updateDepositLabel();
   if (isAdmin && e?.products?.length) {
@@ -8418,7 +8590,8 @@ window.saveEvent = async function(){
     products:[...document.querySelectorAll('.product-row')].map(row => ({
        id: row.dataset.id || 'prod_' + uid(),
        name: row.querySelector('.prod-name')?.value.trim()||'',
-       url: row.querySelector('.prod-url')?.value.trim()||''
+       url: row.querySelector('.prod-url')?.value.trim()||'',
+       mediaType: row.querySelector('.prod-media-type')?.value||row.dataset.mediaPref||'auto'
     })).filter(p => p.url),
     status:document.getElementById('eventStatus')?.value||'pending',
     price: parseMoney(document.getElementById('eventPrice')?.value) * 1000,
