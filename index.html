@@ -4213,6 +4213,165 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-cover
   body[data-client-gallery="true"] #clientGalleryView .client-video-frame{animation:none!important;transition:none!important;}
 }
 </style>
+
+<style id="amorri-v566-mobile-landscape" >
+/* v5.66 — MOBILE VIDEO LANDSCAPE ONLY: leaves portrait and desktop unmodified. */
+@media (orientation:landscape) and (hover:none) and (pointer:coarse) and (max-height:600px) and (max-width:1200px) {
+  body[data-client-gallery="true"] #clientGalleryView {overflow-x:clip!important;width:100%!important;}
+  body[data-client-gallery="true"] #clientGalleryView .gallery-cover {min-height:0!important;}
+  body[data-client-gallery="true"] #clientGalleryView .gallery-cover-inner {
+    padding:8px max(12px,env(safe-area-inset-left)) 9px!important;
+    max-width:100%!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView .gallery-brand {margin:0 0 3px!important;gap:5px!important;font-size:10px!important;}
+  body[data-client-gallery="true"] #clientGalleryView .gallery-brand img {width:21px!important;height:21px!important;}
+  body[data-client-gallery="true"] #clientGalleryView .gallery-cover h1 {font-size:clamp(16px,2.8vw,21px)!important;line-height:1.2!important;}
+  body[data-client-gallery="true"] #clientGalleryView .gallery-cover p,
+  body[data-client-gallery="true"] #clientGalleryView .gallery-head-status {display:none!important;}
+  body[data-client-gallery="true"] #clientGalleryView .gallery-container,
+  body[data-client-gallery="true"] #clientGalleryView .gallery-container.amorri-video-only {
+    padding:9px max(10px,env(safe-area-inset-right)) 25px max(10px,env(safe-area-inset-left))!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    margin:0!important;transform:none!important;translate:none!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer,
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card {
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    margin:0!important;transform:none!important;translate:none!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-left {
+    padding:0!important;min-width:0!important;max-width:100%!important;
+    display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-frame,
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-frame.vr-portrait-frame {
+    box-sizing:border-box!important;
+    width:min(100%,calc((100svh - 90px) * var(--vr-media-ratio,1.77778)))!important;
+    max-width:100%!important;max-height:calc(100svh - 90px)!important;
+    height:auto!important;aspect-ratio:var(--vr-media-ratio,16/9)!important;
+    margin:0 auto!important;transform:none!important;border-radius:10px!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-frame>video,
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-frame>iframe {
+    position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+    object-fit:contain!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-review-layout {
+    width:100%!important;max-width:100%!important;
+    align-items:start!important;gap:10px!important;
+    container-type:normal!important;transform:none!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel {
+    box-sizing:border-box!important;width:100%!important;max-width:100%!important;
+    min-width:0!important;min-height:0!important;
+    border-radius:10px!important;margin:0!important;overflow:hidden!important;
+    display:flex!important;flex-direction:column!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-heading {
+    flex:0 0 auto!important;padding:8px 10px!important;min-height:0!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-list-wrap {
+    flex:1 1 0!important;display:flex!important;flex-direction:column!important;
+    min-height:0!important;max-height:none!important;overflow:hidden!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-list {
+    flex:1 1 0!important;min-height:0!important;max-height:none!important;height:auto!important;
+    overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-list-toolbar{flex:0 0 auto!important;padding:5px 10px!important;}
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-compose {flex:0 0 auto!important;padding:8px 10px!important;}
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-message{min-height:44px!important;height:44px!important;resize:vertical!important;}
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-entry{grid-template-columns:61px minmax(0,1fr)!important;gap:6px!important;}
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-time,
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-name{height:34px!important;min-height:34px!important;padding:6px 7px!important;}
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-btn {min-height:32px!important;padding:5px 10px!important;}
+  body[data-client-gallery="true"] #clientGalleryView .studio-credit {padding-block:8px max(13px,env(safe-area-inset-bottom))!important;}
+  body[data-client-gallery="true"] #clientGalleryView .photo-grid-client{gap:8px!important;}
+}
+/* Wide landscape phones: show the review next to a viewport-fitted player. */
+@media (orientation:landscape) and (hover:none) and (pointer:coarse) and (min-width:700px) and (max-width:1200px) and (max-height:600px) {
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-review-layout {
+    display:grid!important;
+    grid-template-columns:minmax(0,1.75fr) minmax(236px,1fr)!important;
+    grid-template-rows:minmax(0,auto)!important;
+    gap:10px!important;
+    align-items:start!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel {
+    height:var(--vr-measured-player-height,calc(100svh - 90px))!important;
+    max-height:calc(100svh - 90px)!important;
+    min-height:0!important;
+    align-self:start!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-list {min-height:0!important;}
+}
+/* Smaller landscape phones: keep review below rather than squashing form into 190px width. */
+@media (orientation:landscape) and (hover:none) and (pointer:coarse) and (max-width:699px) and (max-height:600px) {
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-review-layout {
+    display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel {
+    height:auto!important;max-height:none!important;min-height:0!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-list-wrap {
+    display:block!important;flex:none!important;overflow:visible!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .vr-panel .vr-list {
+    flex:none!important;min-height:82px!important;max-height:180px!important;overflow-y:auto!important;
+  }
+}
+/* Reassert landscape rules over earlier v5.x high-specificity mobile/desktop declarations. */
+@media (orientation:landscape) and (hover:none) and (pointer:coarse) and (min-width:700px) and (max-width:1200px) and (max-height:600px){
+  body[data-client-gallery="true"] #clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-card .client-video-review-layout{
+    display:grid!important;grid-template-columns:minmax(0,1.75fr) minmax(236px,1fr)!important;
+    grid-template-rows:minmax(0,auto)!important;gap:10px!important;align-items:start!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-card .client-video-left{
+    width:100%!important;max-width:100%!important;padding:0!important;min-width:0!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-card .client-video-frame{
+    width:min(100%,calc((100svh - 90px)*var(--vr-media-ratio,1.77778)))!important;
+    max-height:calc(100svh - 90px)!important;aspect-ratio:var(--vr-media-ratio,16/9)!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-card .client-video-review-layout .vr-panel{
+    display:flex!important;flex-direction:column!important;flex:0 0 auto!important;
+    height:var(--vr-measured-player-height,calc(100svh - 90px))!important;
+    max-height:calc(100svh - 90px)!important;min-height:0!important;
+    padding:0!important;align-self:start!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-card .client-video-review-layout .vr-panel .vr-list-wrap{
+    display:flex!important;flex-direction:column!important;flex:1 1 0!important;
+    height:auto!important;max-height:none!important;min-height:0!important;overflow:hidden!important;
+  }
+  body[data-client-gallery="true"] #clientGalleryView .gallery-container.amorri-video-only #cgVideoContainer .client-video-card .client-video-review-layout .vr-panel .vr-list{
+    display:flex!important;flex-direction:column!important;flex:1 1 0!important;
+    min-height:0!important;max-height:none!important;height:auto!important;overflow-y:auto!important;
+  }
+}
+/* Gallery load diagnostics and fallback playback link, mobile-only. */
+@media (max-width:900px), (orientation:landscape) and (hover:none) and (pointer:coarse) {
+  .am-gallery-loading{padding:22px 16px;margin:10px 0;border:1px solid #d9cbb9;border-radius:12px;
+    background:#fffaf4;color:#554532;font-family:inherit;font-weight:600;font-size:13px;line-height:1.55;text-align:center;}
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .am-mobile-source-link {
+    display:inline-flex;align-self:flex-start;margin:6px 0 0;padding:4px 7px;
+    color:#9d805d!important;font-size:11px!important;line-height:1.3!important;
+    text-decoration:none!important;opacity:.85;
+  }
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-card.vr-load-error .am-mobile-source-link{
+    color:#69402b!important;opacity:1;text-decoration:underline!important;
+  }
+}
+@media (min-width:901px) and (orientation:portrait) {
+  #cgVideoContainer .am-mobile-source-link{display:none!important;}
+}
+@media (prefers-reduced-motion:reduce){
+  body[data-client-gallery="true"] #clientGalleryView #cgVideoContainer .client-video-frame{transition:none!important;}
+}
+</style>
+
+<style id="amorri-v566-desktop-link-visibility">
+@media (min-width:901px) and (hover:hover){#cgVideoContainer .am-mobile-source-link{display:none!important;}}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -5231,11 +5390,12 @@ function initVideoReviewPanels() {
             durationInput.addEventListener('change',()=>{let n=vrParse(durationInput.value);if(n===null||n<=0){showToast('Nhập tổng thời lượng video đúng dạng mm:ss');return;}duration=n;try{localStorage.setItem(durationStore,String(n))}catch(_){}renderMarkers();refreshTime()});
             const fallback=(reason)=>{
                 driveFailureMessage=reason||'API không trả về video có thể phát.';
-                synced=false;htmlVideo.style.display='none';htmlVideo.removeAttribute('src');htmlVideo.load();
+                synced=false;card.classList.add('vr-load-error');
+                htmlVideo.style.display='none';htmlVideo.removeAttribute('src');htmlVideo.load();
                 driveFrame.style.display='block';updateMode();refreshTime();
             };
             htmlVideo.addEventListener('error',()=>{
-                if(!card.isConnected)return;
+                if(!card.isConnected || !htmlVideo.getAttribute('src'))return;
                 // A ticket can expire during very long playback. Retry its URL only
                 // after a real media error, NEVER periodically while video is playing.
                 if(Date.now() - (card._lastDriveRetry||0) > 300000){
@@ -5247,7 +5407,8 @@ function initVideoReviewPanels() {
             });
             htmlVideo.addEventListener('loadedmetadata',()=>{
                 if(!Number.isFinite(htmlVideo.duration)||htmlVideo.duration<=0){fallback('Không đọc được thời lượng. Video có thể chưa được chuyển mã H.264/AAC.');return;}
-                synced=true;driveFailureMessage='';htmlVideo.style.display='block';driveFrame.style.display='none';
+                synced=true;driveFailureMessage='';card.classList.remove('vr-load-error');
+                htmlVideo.style.display='block';driveFrame.style.display='none';
                 duration=htmlVideo.duration;updateMode();renderMarkers();refreshTime();
             });
             async function startDrivePlayback(){
@@ -5390,7 +5551,7 @@ function initVideoReviewPanels() {
             }).catch(err=>{
                 clearStop();hadPlayed=false;setAmbient(false);
                 console.warn('[Amorri] YouTube Ambient/Timeline unavailable:',err);
-                card.dataset.vrYoutubeReady='error';
+                card.dataset.vrYoutubeReady='error';card.classList.add('vr-load-error');
                 card.dataset.vrAmbientStatus='api-unavailable';
                 const hint=card.querySelector('[data-vr-hint]');
                 if(hint)hint.textContent='Không kết nối được YouTube API; chức năng tự đồng bộ và Ambient chưa sẵn sàng.';
@@ -5585,28 +5746,9 @@ async function initClientGallery() {
         }
     }
 
-    // Tải tất cả các thư mục Drive thay vì chỉ thư mục đầu tiên.
-    for (const p of folderProducts) {
-        try {
-            const response = await fetch(`/api/get-drive-images?folderUrl=${encodeURIComponent(p.url)}`);
-            if(!response.ok) throw new Error('HTTP '+response.status);
-            const result = await response.json();
-            if (thisLoad !== clientGalleryLoadVersion) return; // A newer media version superseded this fetch.
-            if(result.error) throw new Error(result.error);
-            for(const item of (result.images || [])) {
-                media.push({
-                    ...item,
-                    productId:p.id,
-                    productName:p.name || 'Thư mục ảnh',
-                    favoriteKey:`${p.id || 'root'}::id:${photoStableId(item) || item.name || item.url || 'unknown'}`
-                });
-            }
-        } catch(err) {
-            console.error('Drive folder error:', p.name, err);
-            showToast('Không tải được ảnh từ thư mục: '+(p.name||'Google Drive')+' (xem Network > get-drive-images)');
-        }
-    }
-
+    // v5.66: do NOT wait for remote Drive folders before mounting a video.
+    // Folder requests can take many seconds or fail on mobile networks.
+    // Photos load in parallel after the video and comments are ready.
     if (thisLoad !== clientGalleryLoadVersion) return;
     currentClientEvent.galleryPhotos = media;
 
@@ -5640,16 +5782,17 @@ async function initClientGallery() {
                 const ytOrigin=/^https?:$/.test(location.protocol)?'&origin='+encodeURIComponent(location.origin):'';
                 frame=`<iframe id="vr-yt-${vrKey}" src="https://www.youtube.com/embed/${encodeURIComponent(v.videoId)}?enablejsapi=1&playsinline=1${ytOrigin}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
             } else if(v.source === 'drive') {
-                frame=`<video controls playsinline preload="auto" data-vr-drive-video style="display:none" ></video><iframe data-vr-drive-frame src="${safeUrl(v.previewUrl || `https://drive.google.com/file/d/${encodeURIComponent(v.id)}/preview`)}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+                frame=`<video controls playsinline webkit-playsinline preload="metadata" data-vr-drive-video style="display:none"></video><iframe data-vr-drive-frame src="${safeUrl(v.previewUrl || `https://drive.google.com/file/d/${encodeURIComponent(v.id)}/preview`)}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
             } else if(v.url) {
-                frame=`<video controls playsinline preload="metadata" src="${safeUrl(v.url)}"></video>`;
+                frame=`<video controls playsinline webkit-playsinline preload="metadata" src="${safeUrl(v.url)}"></video>`;
             }
             return `<section class="client-video-card" data-vr-product="${escapeHtml(vrKey)}" data-vr-file-id="${escapeHtml(v.id||'')}" data-vr-raw-product="${escapeHtml(v.productId||'')}" data-vr-type="${escapeHtml(v.externalType==='youtube'?'youtube':v.source==='drive'?'drive':'direct')}" data-vr-default-ratio="${v.isShort?'9/16':'16/9'}" data-vr-video-id="${escapeHtml(v.videoId||'')}">
                 <div class="client-video-review-layout">
                   <div class="client-video-left">
                     
                     <div class="client-video-frame">${frame}</div>
-
+                    <a class="am-mobile-source-link" target="_blank" rel="noopener noreferrer"
+                       href="${safeUrl(v.externalType==='youtube'?'https://www.youtube.com/watch?v='+encodeURIComponent(v.videoId):v.webViewLink||v.url||'')}">Không xem được? Mở video gốc ↗</a>
                   </div>
                   <aside class="vr-panel">
                     <div class="vr-heading"><strong>Góp ý video</strong><span class="vr-status" data-vr-status>Đang kết nối...</span></div>
@@ -5745,6 +5888,50 @@ async function initClientGallery() {
         photoGrid.style.display='none';
         photoGrid.innerHTML = '';
         bottomBar.style.display='none';
+    }
+
+    // v5.66: background photo fetches MUST NOT re-create a running player.
+    if (folderProducts.length) {
+      if (!videos.length && !images.length) {
+        photoGrid.style.display='grid';
+        photoGrid.innerHTML='<div class="am-gallery-loading" role="status">Đang tải ảnh bàn giao…</div>';
+      }
+      void (async () => {
+        const folders=await Promise.all(folderProducts.map(async p => {
+          const controller=new AbortController();
+          const timer=setTimeout(()=>controller.abort(),18000);
+          try {
+            const response=await fetch(`/api/get-drive-images?folderUrl=${encodeURIComponent(p.url)}`,{signal:controller.signal});
+            if(!response.ok)throw new Error('HTTP '+response.status);
+            const result=await response.json();
+            if(result.error)throw new Error(String(result.error));
+            return (result.images||[]).map(item=>({...item,
+              productId:p.id,productName:p.name||'Thư mục ảnh',
+              favoriteKey:`${p.id||'root'}::id:${photoStableId(item)||item.name||item.url||'unknown'}`
+            }));
+          } catch(err){
+            console.warn('[Amorri] Drive folder:',p.name,err);
+            return [];
+          } finally {clearTimeout(timer);}
+        }));
+        if(thisLoad!==clientGalleryLoadVersion || !videoContainer.isConnected)return;
+        const remote=folders.flat();
+        media.push(...remote);
+        currentClientEvent.galleryPhotos=media;
+        const legacy=new Set(Array.isArray(currentClientEvent.favoritePhotos)?currentClientEvent.favoritePhotos.map(String):[]);
+        const scoped=new Set(getSelectedFavoriteItems(currentClientEvent,prodIdParam||null).map(x=>x.name));
+        for(const item of remote){if(legacy.has(String(item.name||''))&& !scoped.has(item.name))clientSelectedPhotos.add(photoKey(item));}
+        const photoCount=media.filter(item=>!item.isVideo).length;
+        document.getElementById('cgImageCount').textContent=String(photoCount);
+        const imageStats=document.getElementById('cgImageStats');
+        if(imageStats)imageStats.style.display=photoCount?'flex':'none';
+        if(photoCount){photoGrid.style.display='grid';bottomBar.style.display='flex';renderClientGrid();}
+        else if(!videos.length){
+          photoGrid.style.display='grid';
+          photoGrid.innerHTML='<div class="am-gallery-loading">Không tải được ảnh. Kiểm tra kết nối rồi thử tải lại trang.</div>';
+        }
+        // Crucially do NOT call initClientGallery(), initVideoReviewPanels(), or replace videoContainer.
+      })();
     }
 }
 
@@ -6467,6 +6654,16 @@ function initApp() {
         isFirstLoad = false;
     };
     setTimeout(hideLoading, 3000);
+    // Mobile offline/slow network: show a previously cached gallery while Firebase connects.
+    if(isClientMode) setTimeout(()=>{
+      if(clientGalleryServerReady)return;
+      const cached=data.events.find(e=>String(e.id)===String(clientIdParam));
+      if(cached) handleClientEventSnapshot({val:()=>cached});
+      else {
+        const videoHost=document.getElementById('cgVideoContainer');
+        if(videoHost && !videoHost.children.length) videoHost.innerHTML='<div class="am-gallery-loading" role="status">Đang kết nối bộ bàn giao. Nếu mạng yếu, vui lòng thử lại hoặc mở bằng trình duyệt Safari/Chrome.</div>';
+      }
+    },4200);
 
     try {
         if (typeof firebase !== 'undefined' && !firebase.apps.length) {
