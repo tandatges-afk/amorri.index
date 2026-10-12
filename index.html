@@ -4372,6 +4372,17 @@ body.amorri-cinema[data-client-gallery="true"] #clientGalleryView .gallery-cover
 <style id="amorri-v566-desktop-link-visibility">
 @media (min-width:901px) and (hover:hover){#cgVideoContainer .am-mobile-source-link{display:none!important;}}
 </style>
+<style id="amorri-v568-drive-loading">
+/* Show loading only while a Drive proxy ticket/metadata is pending. */
+.client-video-card.vr-drive-loading .client-video-frame::after {
+  content: "Đang chuẩn bị video…";
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:#09090c;color:#d6d3cf;font-size:13px;font-weight:600;
+  letter-spacing:.02em;pointer-events:none;z-index:2;
+}
+.client-video-card.vr-drive-loading .client-video-frame iframe,
+.client-video-card.vr-drive-loading .client-video-frame video {pointer-events:none;}
+</style>
 </head>
 <body class="role-guest"> <!-- Mặc định Khách -->
 
@@ -5365,6 +5376,25 @@ function vrYoutubeAPI() {
     }).catch(err => { vrYoutubePromise = null; throw err; });
     return vrYoutubePromise;
 }
+// v5.68: a bounded authorization queue prevents all folder videos competing for
+// Drive/Realtime Database bandwidth at once. Actual media bytes stream normally.
+const amorriDriveTicketQueue = [];
+let amorriDriveTicketActive = 0;
+function amorriQueueDriveTicket(request) {
+    return new Promise((resolve,reject)=>{
+        amorriDriveTicketQueue.push({request,resolve,reject});
+        const drain=()=>{
+            while(amorriDriveTicketActive<2 && amorriDriveTicketQueue.length){
+                const item=amorriDriveTicketQueue.shift();
+                amorriDriveTicketActive++;
+                Promise.resolve().then(item.request).then(item.resolve,item.reject).finally(()=>{
+                    amorriDriveTicketActive--;drain();
+                });
+            }
+        };
+        drain();
+    });
+}
 function initVideoReviewPanels() {
     const panels=[...document.querySelectorAll('#cgVideoContainer .client-video-card')];
     for(const card of panels){
@@ -5461,14 +5491,16 @@ function initVideoReviewPanels() {
         seekBtn.addEventListener('click',()=>{const n=vrParse(seekInput.value);if(n===null){showToast('Nhập thời gian dạng mm:ss');return;}jump(n);});
         seekInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();seekBtn.click()}});
         if(kind==='drive'){
+            card.classList.add('vr-drive-loading');
             try{const v=localStorage.getItem(durationStore);duration=v?Number(v):0}catch(_){}
             durationInput.value=duration?vrFormat(duration):'';
             durationInput.addEventListener('change',()=>{let n=vrParse(durationInput.value);if(n===null||n<=0){showToast('Nhập tổng thời lượng video đúng dạng mm:ss');return;}duration=n;try{localStorage.setItem(durationStore,String(n))}catch(_){}renderMarkers();refreshTime()});
             const fallback=(reason)=>{
                 driveFailureMessage=reason||'API không trả về video có thể phát.';
-                synced=false;card.classList.add('vr-load-error');
+                synced=false;card.classList.add('vr-load-error');card.classList.remove('vr-drive-loading');
                 htmlVideo.style.display='none';htmlVideo.removeAttribute('src');htmlVideo.load();
-                driveFrame.style.display='block';updateMode();refreshTime();
+                if(driveFrame?.dataset.vrFallbackSrc && !driveFrame.getAttribute('src'))driveFrame.src=driveFrame.dataset.vrFallbackSrc;
+                if(driveFrame)driveFrame.style.display='block';updateMode();refreshTime();
             };
             htmlVideo.addEventListener('error',()=>{
                 if(!card.isConnected || !htmlVideo.getAttribute('src'))return;
@@ -5483,46 +5515,87 @@ function initVideoReviewPanels() {
             });
             htmlVideo.addEventListener('loadedmetadata',()=>{
                 if(!Number.isFinite(htmlVideo.duration)||htmlVideo.duration<=0){fallback('Không đọc được thời lượng. Video có thể chưa được chuyển mã H.264/AAC.');return;}
-                synced=true;driveFailureMessage='';card.classList.remove('vr-load-error');
+                synced=true;driveFailureMessage='';card.classList.remove('vr-load-error','vr-drive-loading');
                 htmlVideo.style.display='block';driveFrame.style.display='none';
                 duration=htmlVideo.duration;updateMode();renderMarkers();refreshTime();
             });
-            async function startDrivePlayback(){
-                const id=card.dataset.vrFileId;
-                const body={id,clientGallery:clientIdParam,productId:card.dataset.vrRawProduct};
-                try{
-                    driveFailureMessage='Đang kiểm tra thư mục video của khách trong Firebase...';updateMode();
-                    const user=firebase.auth().currentUser;
-                    const headers={'Content-Type':'application/json'};
-                    if(user)headers.Authorization='Bearer '+await user.getIdToken();
-                    const response=await fetch('/api/drive-video',{method:'POST',headers,body:JSON.stringify(body),cache:'no-store'});
-                    const result=await response.json().catch(()=>({}));
-                    if(!response.ok||!result.url)throw new Error(result.error||('API HTTP '+response.status));
-                    if(!card.isConnected)return;
-                    const wasPlaying=!htmlVideo.paused&&!htmlVideo.ended;
-                    const previousTime=Number(htmlVideo.currentTime)||0;
-                    const oldSource=htmlVideo.currentSrc||htmlVideo.src;
-                    if(oldSource!==result.url){
-                        if(previousTime>0||wasPlaying){
-                            htmlVideo.addEventListener('loadedmetadata',()=>{
-                                try {if(Number.isFinite(htmlVideo.duration)) htmlVideo.currentTime=Math.min(previousTime,Math.max(0,htmlVideo.duration-.1));}
-                                catch(_){}
-                                if(wasPlaying)htmlVideo.play()?.catch?.(()=>{});
-                            },{once:true});
+            async function startDrivePlayback(force=false){
+                if(card._driveLoadingPromise) return card._driveLoadingPromise;
+                if(!card.isConnected)return;
+                card._driveLoadingPromise=(async()=>{
+                    const id=card.dataset.vrFileId;
+                    const body={id,clientGallery:clientIdParam,productId:card.dataset.vrRawProduct};
+                    driveFailureMessage='Đang chuẩn bị nguồn video Drive…';updateMode();
+                    try{
+                        const user=firebase.auth().currentUser;
+                        const headers={'Content-Type':'application/json'};
+                        if(user)headers.Authorization='Bearer '+await user.getIdToken();
+                        const result=await amorriQueueDriveTicket(async()=>{
+                          let authorized=null;
+                          for(let attempt=0;attempt<2;attempt++){
+                            const controller=new AbortController();
+                            const timeout=setTimeout(()=>controller.abort(),24000);
+                            try{
+                                const response=await fetch('/api/drive-video',{
+                                    method:'POST',headers,body:JSON.stringify(body),cache:'no-store',signal:controller.signal
+                                });
+                                const payload=await response.json().catch(()=>({}));
+                                if(!response.ok||!payload.url){
+                                    const err=new Error(payload.error||('API HTTP '+response.status));
+                                    err.retryable=response.status>=500||response.status===429;
+                                    throw err;
+                                }
+                                authorized=payload;
+                                break;
+                            }catch(err){
+                                if(attempt===0 && (err.retryable||err.name==='AbortError'||err instanceof TypeError)){
+                                    await new Promise(r=>setTimeout(r,700));continue;
+                                }
+                                throw err;
+                            }finally{clearTimeout(timeout);}
+                          }
+                          return authorized;
+                        });
+                        if(!result||!card.isConnected)return;
+                        const wasPlaying=!htmlVideo.paused&&!htmlVideo.ended;
+                        const previousTime=Number(htmlVideo.currentTime)||0;
+                        if((htmlVideo.currentSrc||htmlVideo.src)!==result.url){
+                            if(previousTime>0||wasPlaying){
+                                htmlVideo.addEventListener('loadedmetadata',()=>{
+                                    try{if(Number.isFinite(htmlVideo.duration))htmlVideo.currentTime=Math.min(previousTime,Math.max(0,htmlVideo.duration-.1));}catch(_){}
+                                    if(wasPlaying)htmlVideo.play()?.catch?.(()=>{});
+                                },{once:true});
+                            }
+                            htmlVideo.src=result.url;
+                            htmlVideo.load();
                         }
-                        htmlVideo.src=result.url;
-                        htmlVideo.load();
+                        htmlVideo.style.display='block';
+                        if(driveFrame)driveFrame.style.display='none';
+                        card._driveTicketExpiresAt=Date.now()+Math.max(900,Number(result.expiresIn)||21600)*1000;
+                        if(card._driveRefreshTimer)clearTimeout(card._driveRefreshTimer);
+                        card._driveRefreshTimer=null;
+                    }catch(err){
+                        if(card.isConnected)fallback(err.message||'Không cấp được ticket phát video');
                     }
-                    htmlVideo.style.display='block';
-                    driveFrame.style.display='none';
-                    // Signed playback URLs are long-lived. Never replace video.src on a
-                    // timer: it destroys the browser buffer, forcing rebuffering/seek.
-                    card._driveTicketExpiresAt=Date.now()+Math.max(900,Number(result.expiresIn)||21600)*1000;
-                    card._driveRefreshTimer && clearTimeout(card._driveRefreshTimer);
-                    card._driveRefreshTimer=null;
-                }catch(err){fallback(err.message||'Không cấp được ticket phát video');}
+                })();
+                try{return await card._driveLoadingPromise;}
+                finally{card._driveLoadingPromise=null;}
             }
-            startDrivePlayback();
+            // Load only videos near the viewport. This prevents dozens of concurrent
+            // Firebase/Drive authorizations and Range downloads in mixed folders.
+            if(typeof IntersectionObserver==='function'){
+                const observer=new IntersectionObserver(entries=>{
+                    if(entries.some(e=>e.isIntersecting)){
+                        observer.disconnect();card._driveIntersectionObserver=null;
+                        void startDrivePlayback();
+                    }
+                },{rootMargin:'350px 0px'});
+                card._driveIntersectionObserver=observer;
+                observer.observe(card);
+            }else{
+                void startDrivePlayback();
+            }
+
         }
         if(htmlVideo){
             htmlVideo.addEventListener('timeupdate',()=>{if(synced)refreshTime()});
@@ -5851,7 +5924,7 @@ async function initClientGallery() {
                 const ytOrigin=/^https?:$/.test(location.protocol)?'&origin='+encodeURIComponent(location.origin):'';
                 frame=`<iframe id="vr-yt-${vrKey}" src="https://www.youtube.com/embed/${encodeURIComponent(v.videoId)}?enablejsapi=1&playsinline=1${ytOrigin}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
             } else if(v.source === 'drive') {
-                frame=`<video controls playsinline webkit-playsinline preload="metadata" data-vr-drive-video style="display:none"></video><iframe data-vr-drive-frame src="${safeUrl(v.previewUrl || `https://drive.google.com/file/d/${encodeURIComponent(v.id)}/preview`)}" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+                frame=`<video controls playsinline webkit-playsinline preload="metadata" data-vr-drive-video style="display:none"></video><iframe data-vr-drive-frame data-vr-fallback-src="${safeUrl(v.previewUrl || `https://drive.google.com/file/d/${encodeURIComponent(v.id)}/preview`)}" loading="lazy" style="display:none" title="${escapeHtml(v.name)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
             } else if(v.url) {
                 frame=`<video controls playsinline webkit-playsinline preload="metadata" src="${safeUrl(v.url)}"></video>`;
             }
@@ -6037,7 +6110,7 @@ function appendRemoteFolderVideos(videos,host){
         const node=document.createElement('section');node.className='client-video-card';
         node.dataset.vrProduct=key;node.dataset.vrRawProduct=v.productId;
         node.dataset.vrFileId=v.id;node.dataset.vrType='drive';node.dataset.vrDefaultRatio='16/9';
-        node.innerHTML=`<div class="client-video-review-layout"><div class="client-video-left"><div class="client-video-frame"><video controls playsinline webkit-playsinline preload="metadata" data-vr-drive-video style="display:none"></video><iframe data-vr-drive-frame src="${safeUrl(v.previewUrl)}" title="${escapeHtml(v.name)}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div><a class="am-mobile-source-link" href="${safeUrl(v.webViewLink)}" target="_blank" rel="noopener noreferrer">Mở video gốc ↗</a></div><aside class="vr-panel"><div class="vr-heading"><strong>Góp ý video</strong><span class="vr-status" data-vr-status>Đang kết nối...</span></div><div class="vr-list-wrap"><div class="vr-list-toolbar"><strong>Bình luận</strong></div><div class="vr-list" data-vr-list></div></div><div class="vr-compose"><div class="vr-entry"><span class="vr-time" data-vr-current-secondary>00:00</span><input class="vr-name" data-vr-name maxlength="60" placeholder="Tên của bạn"></div><textarea class="vr-message" data-vr-message maxlength="2000" placeholder="Viết góp ý tại mốc đang phát..."></textarea><div class="vr-actions"><button class="vr-btn" type="button" data-vr-send>Gửi góp ý</button></div></div><div class="vr-aux" aria-hidden="true"><span data-vr-mode></span><span data-vr-current>00:00</span><span data-vr-total>--:--</span><input data-vr-scrub type="range" min="0" max="100" value="0"><div data-vr-dots></div><input data-vr-seek-input><button data-vr-seek>Đi tới</button><span data-vr-drive-duration-label></span><input data-vr-drive-duration><span data-vr-mode-note></span><span data-vr-hint></span><div data-vr-markers></div></div></aside></div>`;
+        node.innerHTML=`<div class="client-video-review-layout"><div class="client-video-left"><div class="client-video-frame"><video controls playsinline webkit-playsinline preload="metadata" data-vr-drive-video style="display:none"></video><iframe data-vr-drive-frame data-vr-fallback-src="${safeUrl(v.previewUrl)}" loading="lazy" style="display:none" title="${escapeHtml(v.name)}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div><a class="am-mobile-source-link" href="${safeUrl(v.webViewLink)}" target="_blank" rel="noopener noreferrer">Mở video gốc ↗</a></div><aside class="vr-panel"><div class="vr-heading"><strong>Góp ý video</strong><span class="vr-status" data-vr-status>Đang kết nối...</span></div><div class="vr-list-wrap"><div class="vr-list-toolbar"><strong>Bình luận</strong></div><div class="vr-list" data-vr-list></div></div><div class="vr-compose"><div class="vr-entry"><span class="vr-time" data-vr-current-secondary>00:00</span><input class="vr-name" data-vr-name maxlength="60" placeholder="Tên của bạn"></div><textarea class="vr-message" data-vr-message maxlength="2000" placeholder="Viết góp ý tại mốc đang phát..."></textarea><div class="vr-actions"><button class="vr-btn" type="button" data-vr-send>Gửi góp ý</button></div></div><div class="vr-aux" aria-hidden="true"><span data-vr-mode></span><span data-vr-current>00:00</span><span data-vr-total>--:--</span><input data-vr-scrub type="range" min="0" max="100" value="0"><div data-vr-dots></div><input data-vr-seek-input><button data-vr-seek>Đi tới</button><span data-vr-drive-duration-label></span><input data-vr-drive-duration><span data-vr-mode-note></span><span data-vr-hint></span><div data-vr-markers></div></div></aside></div>`;
         host.appendChild(node);
         const frame=node.querySelector('.client-video-frame');
         frame.style.setProperty('--vr-media-ratio', '1.7777777778');
@@ -6488,7 +6561,7 @@ async function withFirebaseTimeout(promise, timeout = FIREBASE_WRITE_TIMEOUT) {
 }
 
 async function flushPendingWrites() {
-    if (isFlushingPendingWrites || !window.dbRef) return false;
+    if (isFlushingPendingWrites || !window.dbRef || amorriDeletingCollections.size) return false;
     let list = readPendingWrites();
     if (!list.length) return true;
     isFlushingPendingWrites = true;
@@ -6559,6 +6632,62 @@ async function dbRemove(path) {
         queuePendingWrite('remove', path, null);
         showToast('Đã xóa trên máy và xếp hàng chờ đồng bộ.');
         return false;
+    }
+}
+
+// v5.68 - Persistent record deletion. Older Firebase data may use numeric array keys
+// while each record has an independent .id. Removing `collection/<id>` alone does
+// NOT remove `collection/0`, so records appeared again after F5.
+const amorriDeletingCollections = new Set();
+function amorriRemovePendingWritesForRecords(collection, keys) {
+    const ids = new Set([...keys].map(String));
+    const prefix = collection + '/';
+    const remaining = readPendingWrites().filter(op => {
+        const path = String(op.path || '');
+        if (path === collection) return false; // stale collection snapshot could resurrect records
+        if (!path.startsWith(prefix)) return true;
+        return !ids.has(path.slice(prefix.length).split('/')[0]);
+    });
+    savePendingWrites(remaining);
+}
+async function amorriDeleteRecordPersistently(collection, rawId) {
+    if (!['events','blackouts'].includes(collection)) throw new Error('Loại dữ liệu không hợp lệ');
+    const id = String(rawId ?? '');
+    if (!id || /[.#$\[\]/]/.test(id)) throw new Error('ID lịch không hợp lệ');
+    if (!window.dbRef) throw new Error('Firebase chưa kết nối; chưa xóa dữ liệu.');
+    if (collection === 'events' && !(typeof firebase !== 'undefined' && firebase.auth?.().currentUser))
+        throw new Error('Bạn cần đăng nhập admin để xóa lịch.');
+    if (amorriDeletingCollections.has(collection)) throw new Error('Đang xóa một mục khác, vui lòng đợi.');
+    amorriDeletingCollections.add(collection);
+    try {
+        // Avoid an in-flight offline replay writing a stale record AFTER deletion.
+        const waitUntil = Date.now() + 15000;
+        while (isFlushingPendingWrites) {
+            if (Date.now() > waitUntil) throw new Error('Đang đồng bộ dữ liệu cũ, hãy thử xóa lại.');
+            await new Promise(resolve => setTimeout(resolve, 60));
+        }
+        const ref = window.dbRef.child(collection);
+        const snapshot = await withFirebaseTimeout(ref.once('value'), 18000);
+        const matching = new Set([id]);
+        snapshot.forEach(child => {
+            if (String(child.key) === id || (child.val() && String(child.val().id) === id)) matching.add(String(child.key));
+        });
+        // Block queued replays for all matching paths before sending the delete.
+        amorriRemovePendingWritesForRecords(collection, matching);
+        const updates = {};
+        for (const key of matching) updates[collection + '/' + key] = null;
+        await withFirebaseTimeout(window.dbRef.update(updates), 18000);
+        // Confirm from Firebase, not just the local UI, before claiming success.
+        const verified = await withFirebaseTimeout(ref.once('value'), 18000);
+        let stillPresent = false;
+        verified.forEach(child => {
+            if (String(child.key) === id || (child.val() && String(child.val().id) === id)) stillPresent = true;
+        });
+        if (stillPresent) throw new Error('Firebase vẫn còn bản ghi; kiểm tra quyền và dữ liệu cũ.');
+        amorriRemovePendingWritesForRecords(collection, matching);
+        return true;
+    } finally {
+        amorriDeletingCollections.delete(collection);
     }
 }
 
@@ -6901,18 +7030,21 @@ window.saveBlackout = async function() {
 }
 
 window.deleteBlackout = async function(bId) {
-    const blackout = data.blackouts.find(b => b.id === bId);
-    if(!blackout) return;
-
+    const blackout = data.blackouts.find(b => sameId(b.id,bId));
+    if (!blackout) return;
     const canDelete = currentUserRole === 'admin' ||
-        (currentUserRole === 'staff' && blackout.staffId === staffViewId);
-    if(!canDelete) { showToast('Bạn không có quyền hủy ngày nghỉ này.'); return; }
-    if(!confirm('Hủy ngày nghỉ này?')) return;
-
-    data.blackouts = data.blackouts.filter(b => b.id !== bId);
-    const removed = await dbRemove(`blackouts/${bId}`);
-    showToast(removed || !window.dbRef ? 'Đã hủy ngày nghỉ' : 'Đã xóa trên máy, chưa đồng bộ máy chủ.');
-    render();
+        (currentUserRole === 'staff' && sameId(blackout.staffId,staffViewId));
+    if (!canDelete) {showToast('Bạn không có quyền hủy ngày nghỉ này.'); return;}
+    if (!confirm('Xóa vĩnh viễn ngày nghỉ này khỏi Firebase?')) return;
+    try {
+        await amorriDeleteRecordPersistently('blackouts',bId);
+        data.blackouts = data.blackouts.filter(b => !sameId(b.id,bId));
+        persistLocal(); render();
+        showToast('Đã xóa ngày nghỉ trên Firebase.');
+    } catch(err) {
+        console.error('[Amorri] Delete blackout failed:',err);
+        showToast('Chưa xóa ngày nghỉ: '+(err?.message||'Lỗi Firebase'));
+    }
 }
 
 function getOldDebt(staffId, targetY, targetM) {
@@ -8688,24 +8820,33 @@ window.saveEvent = async function(){
 
 window.deleteEvent = async function(){
   if (currentUserRole !== 'admin') return;
-  const id=document.getElementById('eventId')?.value;if(!id)return;
-  const e=data.events.find(x=>sameId(x.id,id)); if(!e)return;
-  if(!confirm(`Xóa lịch "${e.name}"?`))return;
-
-  const targetStaffIds = staffIdsFromAssignments(e.assignments);
-  writeAuditLog('EVENT_DELETED', {
-      severity:'danger', category:'booking', targetType:'event', targetId:id, targetStaffIds,
-      eventName:e.name, eventDate:e.date,
-      message:`Admin vừa xoá lịch ${e.name} ngày ${e.date}`,
-      metadata:{deletedStaffIds:targetStaffIds, deletedEventSnapshot:{name:e.name, date:e.date, status:e.status}}
-  });
-
-  data.events = data.events.filter(x => !sameId(x.id, id));
-  const removed = await dbRemove(`events/${id}`);
-
-  window.smoothClose('eventModal');
-  render();
-  showToast(removed || !window.dbRef ? 'Đã xóa lịch' : 'Đã xóa trên máy, chưa đồng bộ máy chủ.');
+  const id=document.getElementById('eventId')?.value;
+  if (!id) return;
+  const event=data.events.find(x=>sameId(x.id,id));
+  if (!event || !confirm(`Xóa vĩnh viễn lịch "${event.name}" khỏi Firebase?`)) return;
+  const deleteButton=document.getElementById('deleteEvent');
+  if (deleteButton) deleteButton.disabled=true;
+  try {
+      await amorriDeleteRecordPersistently('events',id);
+      data.events=data.events.filter(e=>!sameId(e.id,id));
+      persistLocal();
+      window.smoothClose('eventModal');
+      render();
+      showToast('Đã xóa lịch trên Firebase.');
+      // Audit only after a verified server deletion; logging is not part of the delete transaction.
+      void writeAuditLog('EVENT_DELETED', {
+          severity:'danger',category:'booking',targetType:'event',targetId:id,
+          targetStaffIds:staffIdsFromAssignments(event.assignments),
+          eventName:event.name,eventDate:event.date,
+          message:`Admin vừa xoá lịch ${event.name} ngày ${event.date}`,
+          metadata:{deletedStaffIds:staffIdsFromAssignments(event.assignments),deletedEventSnapshot:{name:event.name,date:event.date,status:event.status}}
+      });
+  } catch(err) {
+      console.error('[Amorri] Delete event failed:',err);
+      showToast('Chưa xóa được lịch: '+(err?.message||'Lỗi Firebase'));
+  } finally {
+      if (deleteButton) deleteButton.disabled=false;
+  }
 }
 
 window.openSettings = function(){ 
