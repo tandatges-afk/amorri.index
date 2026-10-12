@@ -6,7 +6,7 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     app: 'Amorri Studio VNext 2.2',
-    release: 'staff-scheduling-20261013-r1',
+    release: 'staff-scheduling-20261013-r2',
     authApi: 'diagnostic-codes-enabled',
     time: new Date().toISOString()
   }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });

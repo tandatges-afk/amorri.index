@@ -38,6 +38,8 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
  },[id,user]);
  useEffect(()=>{if(!id)return;const listener=(e:KeyboardEvent)=>{if(e.key==='Escape'&&!busy)onClose();};window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener);},[id,onClose,busy]);
  if(!id)return null;
+ // Capture the guarded ID in an immutable local so callback closures retain string type.
+ const eventId: string = id;
  const set=<K extends keyof EditableChanges>(key:K,value:EditableChanges[K])=>setForm(f=>({...f,[key]:value}));
  const assignments=form.assignments||[];
  const roster=[...staff.filter(s=>s.active!==false||assignments.some(a=>a.id===s.id)),...assignments.filter(a=>!staff.some(s=>s.id===a.id)).map(a=>({id:a.id,name:`Nhân sự cũ (${a.id})`,role:'Không còn trong danh sách'}))];
@@ -50,7 +52,7 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
    // Specialized wedding entries store two independent starts and locations; do not overwrite them.
    const changes={...form};
    if(detail.isRuocDau){delete changes.start;delete changes.location;delete changes.phone;}
-   const response=await authorizedRequest(user,`/api/events/${encodeURIComponent(id)}`,{
+   const response=await authorizedRequest(user,`/api/events/${encodeURIComponent(eventId)}`,{
     method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({expectedVersion:version,changes})
    });
    const payload=await response.json();
@@ -64,7 +66,7 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
    if(!window.confirm('Xóa lịch này khỏi lịch làm việc? Dữ liệu sẽ được lưu dự phòng trên Firebase.'))return;
    setBusy(true);setError('');
    try{
-    const response=await authorizedRequest(user,`/api/events/${encodeURIComponent(id)}`,{
+    const response=await authorizedRequest(user,`/api/events/${encodeURIComponent(eventId)}`,{
       method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({expectedVersion:version,confirmName:confirmName.trim()})
     });
     const payload=await response.json();

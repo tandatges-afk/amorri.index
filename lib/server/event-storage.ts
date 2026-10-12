@@ -1,5 +1,4 @@
 import { createHash } from 'node:crypto';
-import type { DatabaseReference } from 'firebase-admin/database';
 import { eventIdValid } from '@/lib/domain/event-management';
 import { adminDatabase } from './firebase-admin';
 
@@ -12,6 +11,8 @@ function stable(value:unknown):unknown {
   return value;
 }
 export function bookingVersion(raw:unknown){return createHash('sha256').update(JSON.stringify(stable(raw))).digest('hex');}
+// Use the installed SDK's ref() return type instead of a non-exported type.
+type DatabaseReference = ReturnType<ReturnType<typeof adminDatabase>['ref']>;
 export type LocatedBooking = {ref:DatabaseReference;value:Record<string,unknown>;key:string;version:string};
 export async function findBooking(id:string):Promise<LocatedBooking>{
   if(!eventIdValid(id))throw new BookingStoreError(400,'Mã lịch không hợp lệ');

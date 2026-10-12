@@ -4,6 +4,13 @@
 
 > **Trạng thái thực tế:** đây là bản chuyển đổi nền tảng với giao diện React mới, tạo lịch và quản lý lịch cơ bản (chỉnh sửa/hủy/xóa/phân công) và workspace tương thích. KHÔNG phải bản viết lại toàn bộ 9.470 dòng nghiệp vụ cũ. Không thay thế website production trước khi chạy kiểm thử trên môi trường preview.
 
+## Bản vá 2.2.1 — Sửa lỗi kiểm tra kiểu TypeScript khi deploy Vercel
+
+- `components/EventEditor.tsx`: sau guard `if (!id) return null`, dùng `const eventId: string = id` để hai callback async PATCH/DELETE đưa `string` vào `encodeURIComponent` (không ép kiểu).
+- `lib/server/event-storage.ts`: suy ra kiểu reference từ `adminDatabase().ref()` để tương thích với kiểu Firebase Admin SDK; bỏ import `DatabaseReference` không tồn tại.
+- Không thay đổi logic đọc/ghi Firebase, quyền admin hoặc dữ liệu `studioPlanner_v1`.
+- Chạy `npm run typecheck` và `npm run build` trên Vercel Preview. Trong môi trường đóng gói không truy cập được npm registry nên chưa xác nhận full Next.js build.
+
 ## Bước mới: Nhân sự / ngày nghỉ / lịch sắp tới của thợ — VNext 2.2
 
 - Admin → **Đội ngũ**: tạo/chỉnh sửa/ngưng hoạt động staff, gắn Firebase Auth UID; quản lý ngày nghỉ; xem lịch sắp tới theo thợ.
