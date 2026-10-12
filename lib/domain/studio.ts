@@ -12,7 +12,7 @@ function amount(v: unknown): number {
 }
 export function normaliseStaff(raw: unknown): Staff[] {
   return values<Record<string, unknown>>(raw).filter(s => s.id != null)
-    .map(s => ({ id: txt(s.id, 160), name: txt(s.name), role: txt(s.role) }));
+    .map(s => ({ id: txt(s.id, 160), name: txt(s.name), role: txt(s.role), authUid:txt(s.authUid,160), active:s.active!==false }));
 }
 export function normaliseEvents(raw: unknown): StudioEvent[] {
   return values<Record<string, unknown>>(raw).filter(e => e.id != null && /^\d{4}-\d{2}-\d{2}$/.test(txt(e.date)))

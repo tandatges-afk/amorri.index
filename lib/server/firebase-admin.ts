@@ -75,7 +75,7 @@ function tokenError(error: unknown): AdminAuthFailure {
   return new AdminAuthFailure('AUTH_SERVICE_UNAVAILABLE', 503, 'Firebase Admin không xác minh được phiên đăng nhập. Kiểm tra Vercel Function Logs và service account.');
 }
 
-export async function authenticatedAdmin(request: Request): Promise<DecodedIdToken | null> {
+export async function authenticatedUser(request: Request): Promise<DecodedIdToken> {
   const match = /^Bearer ([^\s]+)$/i.exec(request.headers.get('authorization') ?? '');
   if (!match) throw new AdminAuthFailure('AUTH_TOKEN_MISSING', 401, 'Thiếu Firebase ID token. Vui lòng đăng nhập lại.');
   let token: DecodedIdToken;
@@ -84,6 +84,16 @@ export async function authenticatedAdmin(request: Request): Promise<DecodedIdTok
     if (err instanceof AdminAuthFailure) throw err;
     throw tokenError(err);
   }
-  const allowedUids = new Set((process.env.AMORRI_ADMIN_UIDS || '').split(',').map(x => x.trim()).filter(Boolean));
-  return token.admin === true || allowedUids.has(token.uid) ? token : null;
+  return token;
 }
+
+export function isAdmin(token: DecodedIdToken): boolean {
+  const allowedUids = new Set((process.env.AMORRI_ADMIN_UIDS || '').split(',').map(x => x.trim()).filter(Boolean));
+  return token.admin === true || allowedUids.has(token.uid);
+}
+
+export async function authenticatedAdmin(request: Request): Promise<DecodedIdToken | null> {
+  const token = await authenticatedUser(request);
+  return isAdmin(token) ? token : null;
+}
+

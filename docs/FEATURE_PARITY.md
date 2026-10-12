@@ -4,8 +4,8 @@
 
 | Existing feature | Next.js TypeScript screen | Preserved operational path | State |
 |---|---|---|---|
-| Calendar month, type/status filter | React read-only calendar, search | `/studio` calendar & advanced filters | Usable legacy; React read-only |
-| Create/edit/delete event, multiple locations, assignment | Read-only detail + React form tạo lịch cơ bản | `/studio` booking modal | Native create; edit/delete advanced in legacy |
+| Calendar month, type/status filter | React calendar + selection/search | `/studio` calendar & advanced filters | Usable legacy; React interactive |
+| Create/edit/delete event, multiple locations, assignment | React tạo/sửa/hủy/xóa lịch cơ bản + phân công; lưu dự phòng khi xóa | `/studio` booking modal | Native create/edit/delete basic; special two-location and delivery remain legacy |
 | Staff roster and staff-specific URL | React team listing | `/studio` staff screen | Legacy retained; staff URL is NOT secure authentication |
 | Blackout / leave reporting | -- | `/studio?staff=...` | Legacy retained |
 | Upcoming staff schedule | -- | `/studio?staff=...` | Legacy retained |
@@ -26,3 +26,9 @@
 - Monthly payroll in React excludes carried debts from earlier months; for authoritative balances use legacy payroll view until the service is ported with reconciliation tests.
 - Actual assets `logo.png`, `BG.png`, panda sprites are missing from the submitted three files. Copy from the original repository into `/public` before deployment.
 - Google Drive Range streaming is retained for compatibility; it is not a 1080p transcoding or CDN service.
+
+## VNext 2.1
+- Booking update/cancel/delete now has native React flow with server-side ID-token admin check. Original Firebase shape is preserved; products, comments and staff metadata are not replaced.
+- When deleting, encrypted archive lives at `/amorriStudioAdminArchive_v1/events/<id>` outside the app subscription; requires a separately generated 256-bit key.
+- Old offline writes may still recreate deleted items if the legacy client is open; do not assume deletion is globally final until legacy sync is migrated and RTDB rules audited.
+- Check `.indexOn: ["id"]` for events to keep ID-based lookups efficient.

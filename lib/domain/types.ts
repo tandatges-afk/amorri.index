@@ -1,6 +1,6 @@
 export type EventStatus = 'pending' | 'confirmed' | 'done' | 'cancelled';
 export type RecordList<T> = Record<string, T> | T[] | null | undefined;
-export interface Staff { id: string; name: string; role: string; }
+export interface Staff { id: string; name: string; role: string; authUid?: string; active?: boolean; }
 export interface Assignment {
   id: string;
   cost: number;

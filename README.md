@@ -1,8 +1,25 @@
-# AMORRI STUDIO VNext 2.0 — Migration Foundation (Beta)
+# AMORRI STUDIO VNext 2.2 — Staff & Scheduling (Preview)
 
 **Next.js App Router + React + TypeScript + Tailwind v4, Firebase RTDB, Vercel, Vitest + Playwright tests.**
 
-> **Trạng thái thực tế:** đây là bản chuyển đổi nền tảng với giao diện React mới, một luồng tạo lịch mới và workspace tương thích. KHÔNG phải bản viết lại toàn bộ 9.470 dòng nghiệp vụ cũ. Không thay thế website production trước khi chạy kiểm thử trên môi trường preview.
+> **Trạng thái thực tế:** đây là bản chuyển đổi nền tảng với giao diện React mới, tạo lịch và quản lý lịch cơ bản (chỉnh sửa/hủy/xóa/phân công) và workspace tương thích. KHÔNG phải bản viết lại toàn bộ 9.470 dòng nghiệp vụ cũ. Không thay thế website production trước khi chạy kiểm thử trên môi trường preview.
+
+## Bước mới: Nhân sự / ngày nghỉ / lịch sắp tới của thợ — VNext 2.2
+
+- Admin → **Đội ngũ**: tạo/chỉnh sửa/ngưng hoạt động staff, gắn Firebase Auth UID; quản lý ngày nghỉ; xem lịch sắp tới theo thợ.
+- **`/staff`**: thợ đăng nhập với Firebase Auth, xem lịch 90 ngày chỉ được phân công cho mình, báo nghỉ/xóa nghỉ. Không dùng query `?staff=...` làm cơ chế phân quyền mới.
+- **Backend**: `/api/staff`, `/api/staff/[id]`, `/api/staff/me`, `/api/staff/agenda`, `/api/blackouts`, `/api/blackouts/[id]`. Trả 403 nếu xem hoặc sửa dữ liệu nhân sự khác.
+- **Booking PATCH**: kiểm tra trùng giờ/ngày nghỉ phía server (409 `SCHEDULE_CONFLICT`), phối hợp khóa ghi giữa các API VNext.
+- **Không bổ sung biến môi trường mới** so với VNext 2.1. Cần tạo Firebase Authentication User cho từng nhân sự và liên kết UID.
+- **Giới hạn**: `/studio` JavaScript cũ vẫn ghi trực tiếp RTDB; cần tiếp tục di trú và siết Firebase Rules để loại bỏ hoàn toàn nguy cơ ghi đua và lộ dữ liệu.
+- Chi tiết và QA: [`docs/STAFF_SCHEDULING_2_2.md`](docs/STAFF_SCHEDULING_2_2.md).
+
+## Bước trước: Booking Manager 2.1
+
+- **React/TypeScript**: mở chi tiết → chỉnh sửa trạng thái, lịch, thông tin, chi phí và phân công nhân sự; hủy giữ lịch; xóa có mã hóa bản lưu dự phòng.
+- **API** `GET/PATCH/DELETE /api/events/[id]` xác minh admin phía server, tìm record theo `id` để tương thích key số, transaction chống đè cập nhật.
+- **Không yêu cầu đổi 13 biến hiện tại**; chỉ xóa lịch cần thêm khóa mã hóa `AMORRI_ARCHIVE_ENCRYPTION_KEY` (Secret).
+- **Chưa xác nhận production**; xem [`docs/BOOKING_MANAGER_2_1.md`](docs/BOOKING_MANAGER_2_1.md) về các hạn chế quan trọng và QA.
 
 ## Điều đã hoạt động trong mã nguồn
 
@@ -54,7 +71,7 @@ npm run test:e2e
 npm run build
 ```
 
-> **Trong môi trường đóng gói:** `npm test` (28 tests) và `npm run check:static` đã chạy; việc cài package từ npm registry không khả dụng, do đó **chưa** có kết quả chạy Next.js build, Vitest, Playwright hoặc xác minh tích hợp Firebase/Drive. Các file kiểm thử mới có sẵn để chạy trong CI.
+> **Trong môi trường đóng gói:** `npm test` (số lượng in trong kết quả chạy) và `npm run check:static` đã chạy; việc cài package từ npm registry không khả dụng, do đó **chưa** có kết quả chạy Next.js build, Vitest, Playwright hoặc xác minh tích hợp Firebase/Drive. Các file kiểm thử mới có sẵn để chạy trong CI.
 
 ## Deploy lên Vercel (phân biệt với VNext Stage 1)
 

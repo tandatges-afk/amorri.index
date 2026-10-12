@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { browserAuth } from '@/lib/firebase/client';
 import { NewBookingDialog } from './NewBookingDialog';
+import { EventEditor } from './EventEditor';
+import { StaffManager } from './StaffManager';
 import { buildCalendarCells, calculatePayroll, getMonthStats, monthEvents, shiftMonth, statusName } from '@/lib/domain/studio';
 import type { DashboardData, StudioEvent } from '@/lib/domain/types';
 
@@ -60,7 +62,7 @@ function Login({onLogin,error,loading}:{onLogin:(email:string,password:string)=>
   </div>;
 }
 
-function EventTable({events,staff,compact=false}:{events:StudioEvent[];staff:DashboardData['staff'];compact?:boolean}) {
+function EventTable({events,staff,compact=false,onSelect}:{events:StudioEvent[];staff:DashboardData['staff'];compact?:boolean;onSelect:(id:string)=>void}) {
   return <div className="table-scroll"><table className="data-table"><thead><tr><th>Ngày & giờ</th><th>Dự án / Khách hàng</th><th>Dịch vụ</th>{!compact&&<th>Phân công</th>}<th>Trạng thái</th><th/></tr></thead>
     <tbody>{events.length ? events.slice(0,compact?6:150).map(event=>{
       const crew=event.assignments.map(a=>staff.find(s=>s.id===a.id)?.name).filter(Boolean);
@@ -69,7 +71,7 @@ function EventTable({events,staff,compact=false}:{events:StudioEvent[];staff:Das
         <td><span className="type-pill">{event.eventType||'Khác'}</span></td>
         {!compact&&<td><div className="crew-cell">{crew.length?crew.join(', '):'Chưa phân công'}</div></td>}
         <td><Status status={event.status}/></td>
-        <td><a className="icon-link" href="/studio" title="Chỉnh sửa trong workspace"><ArrowRight size={16}/></a></td>
+        <td><button className="icon-link" onClick={()=>onSelect(event.id)} aria-label={`Chi tiết ${event.name}`} title="Xem và chỉnh sửa lịch"><ArrowRight size={16}/></button></td>
       </tr>;
     }):<tr><td colSpan={compact?5:6}><Empty title="Chưa có lịch phù hợp" detail="Dữ liệu sẽ hiển thị sau khi được đồng bộ từ Firebase."/></td></tr>}</tbody></table></div>;
 }
@@ -96,6 +98,7 @@ export function Dashboard(){
   const [menuOpen,setMenuOpen]=useState(false),[selected,setSelected]=useState<string|null>(null);
   const [reload,setReload]=useState(0),[copied,setCopied]=useState('');
   const [newBookingOpen,setNewBookingOpen]=useState(false);
+  const [editEventId,setEditEventId]=useState<string|null>(null);
 
   useEffect(()=>{
     try {
@@ -120,7 +123,7 @@ export function Dashboard(){
       const value=await resp.json();
       if(!resp.ok) {
         if(resp.status===401 && !value.code && value.error==='Không thể xác thực. Kiểm tra phiên đăng nhập/cấu hình Firebase.') {
-          throw new Error('API đang dùng bản Beta 2 cũ. Cập nhật mã nguồn Auth Fix và redeploy Production; kiểm tra /api/health có release auth-verified-20261012-r1.');
+          throw new Error('API đang dùng bản Beta 2 cũ. Cập nhật mã nguồn Auth Fix và redeploy Production; kiểm tra /api/health có release staff-scheduling-20261013-r1.');
         }
         throw new Error(`${value.error||`HTTP ${resp.status}`}${value.code?` [${value.code}]`:''}`);
       }
@@ -152,7 +155,7 @@ export function Dashboard(){
       })}</nav>
       <div className="sidebar-label section-gap">CÔNG CỤ</div>
       <div className="nav-items"><a className="nav-item" href="/studio"><Settings2 size={19}/><span>Workspace đầy đủ</span><ArrowRight size={14}/></a></div>
-      <div className="sidebar-bottom"><div className="migration-tile"><Sparkles size={21}/><strong>VNext 2.0</strong><p>Không gian mới chạy trên React & TypeScript. Tác vụ chỉnh sửa vẫn dùng workspace tương thích.</p><a href="/studio">Mở công cụ <ArrowRight size={14}/></a></div>
+      <div className="sidebar-bottom"><div className="migration-tile"><Sparkles size={21}/><strong>VNext 2.2</strong><p>Không gian mới chạy trên React & TypeScript. Chỉnh sửa, phân công và xóa lịch cơ bản trực tiếp trên React. Nghiệp vụ bàn giao/lương nâng cao vẫn dùng workspace tương thích.</p><a href="/studio">Mở công cụ <ArrowRight size={14}/></a></div>
         <div className="user-identity"><div className="user-avatar">{(user.email||'A').slice(0,1).toUpperCase()}</div><div className="user-meta"><strong>{user.email?.split('@')[0]||'Admin'}</strong><span>Firebase Admin</span></div><button title="Đăng xuất" onClick={()=>signOut(browserAuth())}><LogOut size={19}/></button></div>
       </div>
     </aside>
@@ -181,17 +184,18 @@ export function Dashboard(){
                   ['Đã chốt',stats?.confirmed||0,'var(--blue)'],['Chờ xác nhận',stats?.pending||0,'var(--amber)'],['Hoàn thành',stats?.done||0,'var(--green)']
                 ].map(([name,count,color])=><div className="breakdown-row" key={String(name)}><div className="breakdown-copy"><span>{name}</span><strong>{count}</strong></div><div className="progress-track"><div style={{width:`${stats?.total?Number(count)/stats.total*100:0}%`,background:String(color)}}/></div></div>)}<div className="breakdown-foot"><span>Nhân sự hoạt động</span><strong>{data.staff.length} thành viên</strong></div></div>
               </section></div>
-            <section className="surface"><div className="surface-title"><div><span className="eyebrow">BOOKING MANAGER</span><h3>Danh sách lịch trong tháng</h3></div><button onClick={()=>goTab('calendar')} className="text-action">Xem lịch tháng <ArrowRight size={16}/></button></div><EventTable events={filtered} staff={data.staff} compact/></section>
+            <section className="surface"><div className="surface-title"><div><span className="eyebrow">BOOKING MANAGER</span><h3>Danh sách lịch trong tháng</h3></div><button onClick={()=>goTab('calendar')} className="text-action">Xem lịch tháng <ArrowRight size={16}/></button></div><EventTable events={filtered} staff={data.staff} compact onSelect={setSelected}/></section>
           </>}
-          {tab==='calendar'&&<><div className="toolbar"><div className="search-input"><Search size={17}/><input placeholder="Tìm tên khách, loại dịch vụ, nhân sự..." value={search} onChange={e=>setSearch(e.target.value)} aria-label="Tìm kiếm lịch"/></div><div className="toolbar-right"><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,-1))}><ChevronLeft size={18}/></button><strong className="month-title">Tháng {month.slice(5)}/{month.slice(0,4)}</strong><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,1))}><ChevronRight size={18}/></button></div></div><section className="surface calendar-surface"><CalendarView data={data} filter={search} onSelect={setSelected}/></section><section className="surface"><div className="surface-title"><h3>Danh sách đặt lịch <span className="counter">{filtered.length}</span></h3><a className="text-action" href="/studio">Quản lý lịch <ArrowRight size={16}/></a></div><EventTable events={filtered} staff={data.staff}/></section></>}
-          {tab==='staff'&&<><div className="section-intro"><Users size={19}/> {data.staff.length} thành viên. Quản lý, thêm, xoá và phân công ở workspace đầy đủ.</div><div className="staff-grid">{data.staff.map(s=>{const count=data.events.filter(e=>e.status!=='cancelled'&&e.assignments.some(a=>a.id===s.id)).length;return <div className="staff-card" key={s.id}><div className="staff-card-top"><div className="staff-avatar">{s.name.trim().slice(0,1).toUpperCase()||'?'}</div><span className="staff-role">{s.role||'Nhân sự'}</span></div><h3>{s.name}</h3><p>{count} lịch được phân công trong tháng</p><div className="staff-card-bottom"><a href={`/studio?staff=${encodeURIComponent(s.id)}`}>Xem giao diện thợ <ArrowRight size={15}/></a><button onClick={()=>copy(`${window.location.origin}/studio?staff=${encodeURIComponent(s.id)}`,s.id)} title="Sao chép link staff kiểu cũ"><Copy size={15}/>{copied===s.id?'Đã copy':''}</button></div></div>;})}</div>{data.staff.length===0&&<Empty title="Chưa có nhân sự" detail="Thêm người mới từ workspace quản trị."/>}<div className="alert notice"><LockKeyhole size={16}/> Link nhân sự cũ chưa có cơ chế xác thực riêng. Chỉ chia sẻ khi hiểu rủi ro; bản mới cần triển khai Firebase Auth cho từng nhân sự.</div></>}
+          {tab==='calendar'&&<><div className="toolbar"><div className="search-input"><Search size={17}/><input placeholder="Tìm tên khách, loại dịch vụ, nhân sự..." value={search} onChange={e=>setSearch(e.target.value)} aria-label="Tìm kiếm lịch"/></div><div className="toolbar-right"><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,-1))}><ChevronLeft size={18}/></button><strong className="month-title">Tháng {month.slice(5)}/{month.slice(0,4)}</strong><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,1))}><ChevronRight size={18}/></button></div></div><section className="surface calendar-surface"><CalendarView data={data} filter={search} onSelect={setSelected}/></section><section className="surface"><div className="surface-title"><h3>Danh sách đặt lịch <span className="counter">{filtered.length}</span></h3><a className="text-action" href="/studio">Quản lý lịch <ArrowRight size={16}/></a></div><EventTable events={filtered} staff={data.staff} onSelect={setSelected}/></section></>}
+          {tab==='staff'&&<StaffManager user={user} month={month} onChanged={()=>setReload(x=>x+1)}/>}
           {tab==='payroll'&&<><div className="section-intro"><WalletCards size={19}/> Lương dự kiến theo phân công trong tháng. Số dư lũy kế và thanh toán chi tiết vẫn được tính tại workspace cũ.</div><section className="surface"><div className="surface-title"><h3>Tổng hợp lương — {month.slice(5)}/{month.slice(0,4)}</h3><a className="text-action" href="/studio">Điều chỉnh thanh toán <ArrowRight size={16}/></a></div><div className="table-scroll"><table className="data-table"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>Thu nhập tháng</th><th>Ứng trước</th><th>Đã trả</th><th>Còn lại trong tháng</th></tr></thead><tbody>{data.staff.length ? data.staff.map(s=>{const p=calculatePayroll(data,s.id);return <tr key={s.id}><td><strong>{s.name}</strong></td><td>{s.role}</td><td>{money(p.gross)}</td><td>{money(p.advance)}</td><td>{money(p.paid)}</td><td><b className={p.balance<0?'negative-amount':'positive-amount'}>{money(p.balance)}</b></td></tr>;}) : <tr><td colSpan={6}><Empty title="Chưa có dữ liệu lương" detail="Các khoản thanh toán hiện lên khi có phân công."/></td></tr>}</tbody></table></div></section></>}
           {tab==='delivery'&&<><div className="section-intro"><Film size={19}/> Các bộ bàn giao ảnh/video thuộc lịch tháng này. Xem, chọn ảnh, bình luận timeline và chốt sản phẩm trong giao diện bàn giao đang được bảo toàn.</div><div className="delivery-grid">{filtered.filter(e=>e.products.length>0).map(e=><div className="delivery-card" key={e.id}><div className="delivery-art"><Film size={34}/><span>{e.products.length} SẢN PHẨM</span></div><div className="delivery-details"><span className="hint">{dateDisplay(e.date)} / {e.eventType}</span><h3>{e.name}</h3><p>{e.products.map(p=>p.name).filter(Boolean).slice(0,3).join(' · ')||'Ảnh & Video'}</p><div className="delivery-actions"><a className="primary-button small" href={`/studio?client_gallery=${encodeURIComponent(e.id)}`}>Mở bàn giao <ArrowRight size={15}/></a><button className="secondary-button small" onClick={()=>copy(`${window.location.origin}/studio?client_gallery=${encodeURIComponent(e.id)}`,e.id)}><Copy size={15}/>{copied===e.id?'Đã copy':'Copy link'}</button></div></div></div>)}</div>{!filtered.some(e=>e.products.length>0)&&<Empty title="Không có bộ bàn giao trong tháng" detail="Các sản phẩm liên kết Google Drive sẽ xuất hiện tại đây."/>}</>}
           {tab==='activity'&&<section className="surface"><div className="surface-title"><div><span className="eyebrow">AUDIT TRAIL</span><h3>Nhật ký hoạt động gần đây</h3></div></div>{data.audit.length?<div className="activity-list">{data.audit.map((a,i)=><div key={a.id||i} className="activity-item"><div className="activity-symbol"><Activity size={17}/></div><div><strong>{a.message||a.action||'Hoạt động'}</strong><p>{a.action} · {a.createdAt ? new Date(a.createdAt<1e12?a.createdAt*1000:a.createdAt).toLocaleString('vi-VN'): 'Chưa xác định thời gian'}</p></div></div>)}</div>:<Empty title="Chưa có nhật ký" detail="Hoạt động trong Firebase sẽ được ghi nhận ở đây."/>}</section>}
         </>}
-      </div><footer className="footer">AMORRI STUDIO / VNEXT 2.0 <span>BUILT WITH NEXT.JS + TYPESCRIPT · {new Date().getFullYear()}</span></footer>
+      </div><footer className="footer">AMORRI STUDIO / VNEXT 2.2 <span>BUILT WITH NEXT.JS + TYPESCRIPT · {new Date().getFullYear()}</span></footer>
     </main>
     <NewBookingDialog open={newBookingOpen} onClose={()=>setNewBookingOpen(false)} onCreated={()=>{setReload(x=>x+1);setTab('calendar');}} user={user}/>
-    {currentEvent&&<div className="detail-backdrop" onClick={()=>setSelected(null)}><section role="dialog" aria-modal="true" aria-label="Chi tiết lịch" className="detail-panel" onClick={e=>e.stopPropagation()}><div className="detail-header"><span>CHI TIẾT LỊCH</span><button onClick={()=>setSelected(null)} aria-label="Đóng"><X size={20}/></button></div><h2>{currentEvent.name}</h2><Status status={currentEvent.status}/><dl><dt>Ngày</dt><dd>{dateDisplay(currentEvent.date)}</dd><dt>Thời gian</dt><dd>{currentEvent.start||'--'} – {currentEvent.end||'--'}</dd><dt>Loại dịch vụ</dt><dd>{currentEvent.eventType||'—'}</dd><dt>Địa điểm</dt><dd>{currentEvent.location||'—'}</dd><dt>Nhân sự</dt><dd>{currentEvent.assignments.map(a=>data?.staff.find(s=>s.id===a.id)?.name||a.id).join(', ')||'Chưa có'}</dd></dl><a className="primary-button wide" href="/studio">Mở lịch trong workspace <ArrowRight size={17}/></a></section></div>}
+    <EventEditor id={editEventId} staff={data?.staff||[]} user={user} onClose={()=>setEditEventId(null)} onChanged={(date)=>{setEditEventId(null);setSelected(null);if(date && date.slice(0,7)!==month)setMonth(date.slice(0,7));setReload(v=>v+1);}}/>
+    {currentEvent&&<div className="detail-backdrop" onClick={()=>setSelected(null)}><section role="dialog" aria-modal="true" aria-label="Chi tiết lịch" className="detail-panel" onClick={e=>e.stopPropagation()}><div className="detail-header"><span>CHI TIẾT LỊCH</span><button onClick={()=>setSelected(null)} aria-label="Đóng"><X size={20}/></button></div><h2>{currentEvent.name}</h2><Status status={currentEvent.status}/><dl><dt>Ngày</dt><dd>{dateDisplay(currentEvent.date)}</dd><dt>Thời gian</dt><dd>{currentEvent.start||'--'} – {currentEvent.end||'--'}</dd><dt>Loại dịch vụ</dt><dd>{currentEvent.eventType||'—'}</dd><dt>Địa điểm</dt><dd>{currentEvent.location||'—'}</dd><dt>Nhân sự</dt><dd>{currentEvent.assignments.map(a=>data?.staff.find(s=>s.id===a.id)?.name||a.id).join(', ')||'Chưa có'}</dd></dl><div className="flex flex-col gap-2"><button className="primary-button wide" onClick={()=>{setEditEventId(currentEvent.id);setSelected(null);}}>Chỉnh sửa / phân công / xóa lịch <ArrowRight size={17}/></button><a className="secondary-button wide" href="/studio">Mở nghiệp vụ nâng cao <ArrowRight size={17}/></a></div></section></div>}
   </div>;
 }

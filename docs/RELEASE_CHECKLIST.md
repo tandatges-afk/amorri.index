@@ -13,3 +13,13 @@
 - [ ] Preview test bảo mật: user lạ, staff của người khác, link guest không tồn tại, quyền Drive / Firebase.
 - [ ] Export dữ liệu và khôi phục DB staging; kế hoạch rollback có người phụ trách.
 - [ ] Khi tất cả đạt mới chuyển domain production.
+
+## Booking Manager 2.1 release gates
+- [ ] Add `AMORRI_ARCHIVE_ENCRYPTION_KEY` as Vercel Secret before testing DELETE, store a durable offline backup of the key.
+- [ ] Inspect `amorriStudioAdminArchive_v1` RTDB rules; deny every client read/write. Even encrypted payload must not be indexed as public metadata.
+- [ ] On staging: edit legacy numeric-key event, update status, staff task/cost, move dates, check custom fields and galleries remain intact.
+- [ ] On staging: two browsers load same event, first saves and second receives 409; no last-writer-wins overwrite.
+- [ ] On staging: unauthorized/no-token GET/PATCH/DELETE produce 401/403 and do not change Firebase.
+- [ ] On staging: delete named event, verify encrypted archive appears without plaintext fields; verify Firebase event no longer exists after F5.
+- [ ] Test archived-event manual decryption with the same key and rollback from staging.
+- [ ] Check old clients with queued offline writes do not recreate deleted bookings. Disable cross-version deletes until resolved.
