@@ -7,6 +7,7 @@
  *               DRIVE_VIDEO_CHUNK_BYTES (2097152..33554432; default 8388608)
  *
  * POST { id, clientGallery, productId } -> signed playback URL.
+ * A product may additionally authorize playback1080Url (a prepared MP4 file on Drive).
  * GET  ?id=...&ticket=... with Range -> streaming HTTP 206, with longer contiguous ranges.
  * HEAD ?id=...&ticket=... -> metadata response for clients that probe first.
  * This endpoint is meant for Google Drive *blob video files*, not Google Vids.
@@ -134,6 +135,8 @@ async function authorized(clientGallery,productId,id,driveToken,meta,event){
   if(!prod)return false;
   const url=String(prod.url||'');
   if(driveIdFromUrl(url)===id)return true;
+  // Additional protected 1080p playback file must belong to this exact product.
+  if(driveIdFromUrl(url) && driveIdFromUrl(prod.playback1080Url||'')===id)return true;
   const folderId=driveIdFromUrl(url,true);
   return !!folderId && await descendantOf(meta,folderId,driveToken);
 }
