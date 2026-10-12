@@ -4,7 +4,7 @@
  * Required env: DRIVE_SERVICE_ACCOUNT_JSON, FIREBASE_PROJECT_ID,
  *               FIREBASE_DATABASE_URL, DRIVE_VIDEO_SIGNING_SECRET
  * Optional env: DRIVE_VIDEO_TICKET_TTL_SECONDS (900..43200; default 21600),
- *               DRIVE_VIDEO_CHUNK_BYTES (8388608..134217728; default 67108864)
+ *               DRIVE_VIDEO_CHUNK_BYTES (2097152..33554432; default 8388608)
  *
  * POST { id, clientGallery, productId } -> signed playback URL.
  * GET  ?id=...&ticket=... with Range -> streaming HTTP 206, with longer contiguous ranges.
@@ -20,10 +20,10 @@ import { GoogleAuth } from 'google-auth-library';
 const API = 'https://www.googleapis.com/drive/v3/files/';
 const FILE_ID = /^[A-Za-z0-9_-]{10,200}$/;
 const GALLERY_ID = /^[A-Za-z0-9_-]{1,160}$/;
-const MEDIA_TIMEOUT_MS = 25000; // Until upstream response headers only.
+const MEDIA_TIMEOUT_MS = 20000; // Timeout until upstream response HEADERS only.
 // Avoid a new Vercel -> Drive request every ~8 MiB. Streams without buffering
 // the response in memory; tune down for extremely low bandwidth connections.
-const CHUNK_BYTES = clampInt(process.env.DRIVE_VIDEO_CHUNK_BYTES, 64 * 1024 * 1024, 8 * 1024 * 1024, 128 * 1024 * 1024);
+const CHUNK_BYTES = clampInt(process.env.DRIVE_VIDEO_CHUNK_BYTES, 8 * 1024 * 1024, 2 * 1024 * 1024, 32 * 1024 * 1024);
 const TICKET_SECONDS = clampInt(process.env.DRIVE_VIDEO_TICKET_TTL_SECONDS, 6 * 3600, 900, 12 * 3600);
 function clampInt(raw, fallback, min, max) {
   const v = Number(raw);
@@ -194,13 +194,11 @@ export default async function handler(req,res) {
     }
     const ticket=checkTicket(req.query?.ticket,id);
     if(!ticket)return sendError(res,401,'Playback ticket expired or invalid');
-    // Native HTML video requests one or several HTTP ranges. For an open-ended
-    // request we return up to 64 MiB, instead of the old 8 MiB which introduced
-    // frequent round-trips and made playback pause at each Range boundary.
+    // Keep bounded ranges: a long-running 64 MiB serverless response can remain
+    // open for too long on mobile. Dedicated media/CDN remains recommended.
     const rangeHeader=req.headers.range;
     const hasRange=typeof rangeHeader==='string' && rangeHeader.length>0;
-    const part=resolveRange(hasRange?rangeHeader:null,ticket.size,
-      hasRange?CHUNK_BYTES:ticket.size);
+    const part=resolveRange(hasRange?rangeHeader:null,ticket.size,CHUNK_BYTES);
     if(!part){
       res.setHeader('Accept-Ranges','bytes');
       res.setHeader('Content-Range',`bytes */${ticket.size}`);
@@ -210,7 +208,7 @@ export default async function handler(req,res) {
     const expectedRange=`bytes ${part.start}-${part.end}/${ticket.size}`;
     const etag=`"${ticket.tag||crypto.createHash('sha256').update(`${id}:${ticket.size}`).digest('hex').slice(0,32)}"`;
     const cacheControl='private, max-age=300, no-transform';
-    const isPartial=hasRange;
+    const isPartial=hasRange || part.end<ticket.size-1;
     const setMediaHeaders=()=>{
       res.setHeader('Accept-Ranges','bytes');
       res.setHeader('Content-Length',String(length));
@@ -226,7 +224,9 @@ export default async function handler(req,res) {
     }
     // This GET only authenticates the signed ticket. It does not reread the
     // whole gallery from Firebase on each media Range request.
+    const t0=Date.now();
     const token=await accessToken(clients().driveAuth);
+    const authMs=Date.now()-t0;
     const upstreamUrl=`${API}${encodeURIComponent(id)}?alt=media&supportsAllDrives=true`;
     const range=`bytes=${part.start}-${part.end}`;
     let upstream;
@@ -248,6 +248,13 @@ export default async function handler(req,res) {
         `Drive Range request returned HTTP ${lastStatus}`,'drive-media');
       await new Promise(resolve=>setTimeout(resolve,350));
     }
+    const upstreamLength=Number(upstream.headers.get('content-length'));
+    if(Number.isFinite(upstreamLength) && upstreamLength>0 && upstreamLength!==length){
+      try{await upstream.body.cancel();}catch{}
+      throw fail(502,'Drive returned a mismatched Content-Length','drive-media');
+    }
+    res.setHeader('Server-Timing',`auth;dur=${authMs}, drive-ttfb;dur=${Date.now()-t0-authMs}`);
+    res.setHeader('X-Amorri-Stream','v570');
     const upstreamRange=upstream.headers.get('content-range');
     // Never send mismatched bytes: the browser may otherwise decode wrong
     // positions or report a media error after a few seconds.
