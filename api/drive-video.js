@@ -4,10 +4,11 @@
  * Required env: DRIVE_SERVICE_ACCOUNT_JSON, FIREBASE_PROJECT_ID,
  *               FIREBASE_DATABASE_URL, DRIVE_VIDEO_SIGNING_SECRET
  * Optional env: DRIVE_VIDEO_TICKET_TTL_SECONDS (900..43200; default 21600),
- *               DRIVE_VIDEO_CHUNK_BYTES (1048576..16777216; default 8388608)
+ *               DRIVE_VIDEO_CHUNK_BYTES (8388608..134217728; default 67108864)
  *
  * POST { id, clientGallery, productId } -> signed playback URL.
- * GET  ?id=...&ticket=... with Range -> bounded 206 streaming response.
+ * GET  ?id=...&ticket=... with Range -> streaming HTTP 206, with longer contiguous ranges.
+ * HEAD ?id=...&ticket=... -> metadata response for clients that probe first.
  * This endpoint is meant for Google Drive *blob video files*, not Google Vids.
  */
 import crypto from 'node:crypto';
@@ -20,7 +21,9 @@ const API = 'https://www.googleapis.com/drive/v3/files/';
 const FILE_ID = /^[A-Za-z0-9_-]{10,200}$/;
 const GALLERY_ID = /^[A-Za-z0-9_-]{1,160}$/;
 const MEDIA_TIMEOUT_MS = 25000; // Until upstream response headers only.
-const CHUNK_BYTES = clampInt(process.env.DRIVE_VIDEO_CHUNK_BYTES, 8 * 1024 * 1024, 1024 * 1024, 16 * 1024 * 1024);
+// Avoid a new Vercel -> Drive request every ~8 MiB. Streams without buffering
+// the response in memory; tune down for extremely low bandwidth connections.
+const CHUNK_BYTES = clampInt(process.env.DRIVE_VIDEO_CHUNK_BYTES, 64 * 1024 * 1024, 8 * 1024 * 1024, 128 * 1024 * 1024);
 const TICKET_SECONDS = clampInt(process.env.DRIVE_VIDEO_TICKET_TTL_SECONDS, 6 * 3600, 900, 12 * 3600);
 function clampInt(raw, fallback, min, max) {
   const v = Number(raw);
@@ -63,7 +66,7 @@ async function fetchHeaders(url, options, step, ms=MEDIA_TIMEOUT_MS) {
 }
 function hmac(value){return crypto.createHmac('sha256',process.env.DRIVE_VIDEO_SIGNING_SECRET).update(value).digest('base64url');}
 function issueTicket(id, clientGallery, productId, meta) {
-  const body=Buffer.from(JSON.stringify({id,clientGallery,productId,size:Number(meta.size),mime:meta.mimeType,exp:Math.floor(Date.now()/1000)+TICKET_SECONDS})).toString('base64url');
+  const body=Buffer.from(JSON.stringify({id,clientGallery,productId,size:Number(meta.size),mime:meta.mimeType,tag:crypto.createHash('sha256').update(`${id}:${meta.size}:${meta.md5Checksum||meta.modifiedTime||''}`).digest('hex').slice(0,32),exp:Math.floor(Date.now()/1000)+TICKET_SECONDS})).toString('base64url');
   return `${body}.${hmac(body)}`;
 }
 function checkTicket(ticket, requestedId) {
@@ -92,7 +95,7 @@ function driveIdFromUrl(input, folder=false) {
   }catch{return null;}
 }
 async function getDriveMetadata(id, token) {
-  const url=`${API}${encodeURIComponent(id)}?fields=id,mimeType,size,parents,capabilities(canDownload)&supportsAllDrives=true`;
+  const url=`${API}${encodeURIComponent(id)}?fields=id,mimeType,size,modifiedTime,md5Checksum,parents,capabilities(canDownload)&supportsAllDrives=true`;
   const r=await fetchHeaders(url,{headers:{Authorization:`Bearer ${token}`}},'drive-metadata');
   if(!r.ok)throw fail(r.status===404?404:502,`Drive metadata HTTP ${r.status}`,'drive-metadata');
   return r.json();
@@ -159,7 +162,7 @@ export default async function handler(req,res) {
   res.setHeader('Cache-Control','private, no-store');
   res.setHeader('X-Content-Type-Options','nosniff');
   res.setHeader('Referrer-Policy','no-referrer');
-  if(!['GET','POST'].includes(req.method))return sendError(res,405,'Method Not Allowed');
+  if(!['GET','POST','HEAD'].includes(req.method))return sendError(res,405,'Method Not Allowed');
   try {
     required();
     let payload={};
@@ -168,7 +171,7 @@ export default async function handler(req,res) {
       try { payload=Buffer.isBuffer(raw)?JSON.parse(raw.toString()):typeof raw==='string'?JSON.parse(raw):(raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{}); }
       catch{return sendError(res,400,'Invalid JSON body');}
     }
-    const id=String(req.method==='POST'?payload.id:req.query?.id||'').trim();
+    const id=String(req.method==='POST'?payload.id:(req.query?.id||'')).trim();
     if(!FILE_ID.test(id))return sendError(res,400,'Invalid Google Drive file ID');
     if(req.method==='POST'){
       const clientGallery=String(payload.clientGallery||'');
@@ -191,31 +194,73 @@ export default async function handler(req,res) {
     }
     const ticket=checkTicket(req.query?.ticket,id);
     if(!ticket)return sendError(res,401,'Playback ticket expired or invalid');
-    const part=resolveRange(req.headers.range,ticket.size);
-    if(!part){res.setHeader('Content-Range',`bytes */${ticket.size}`);return sendError(res,416,'Requested Range Not Satisfiable');}
+    // Native HTML video requests one or several HTTP ranges. For an open-ended
+    // request we return up to 64 MiB, instead of the old 8 MiB which introduced
+    // frequent round-trips and made playback pause at each Range boundary.
+    const rangeHeader=req.headers.range;
+    const hasRange=typeof rangeHeader==='string' && rangeHeader.length>0;
+    const part=resolveRange(hasRange?rangeHeader:null,ticket.size,
+      hasRange?CHUNK_BYTES:ticket.size);
+    if(!part){
+      res.setHeader('Accept-Ranges','bytes');
+      res.setHeader('Content-Range',`bytes */${ticket.size}`);
+      return sendError(res,416,'Requested Range Not Satisfiable');
+    }
+    const length=part.end-part.start+1;
+    const expectedRange=`bytes ${part.start}-${part.end}/${ticket.size}`;
+    const etag=`"${ticket.tag||crypto.createHash('sha256').update(`${id}:${ticket.size}`).digest('hex').slice(0,32)}"`;
+    const cacheControl='private, max-age=300, no-transform';
+    const isPartial=hasRange;
+    const setMediaHeaders=()=>{
+      res.setHeader('Accept-Ranges','bytes');
+      res.setHeader('Content-Length',String(length));
+      res.setHeader('Content-Type',ticket.mime);
+      res.setHeader('Cache-Control',cacheControl);
+      res.setHeader('ETag',etag);
+      res.setHeader('Content-Disposition','inline');
+      if(isPartial)res.setHeader('Content-Range',expectedRange);
+    };
+    if(req.method==='HEAD'){
+      setMediaHeaders();
+      return res.status(isPartial?206:200).end();
+    }
+    // This GET only authenticates the signed ticket. It does not reread the
+    // whole gallery from Firebase on each media Range request.
     const token=await accessToken(clients().driveAuth);
+    const upstreamUrl=`${API}${encodeURIComponent(id)}?alt=media&supportsAllDrives=true`;
     const range=`bytes=${part.start}-${part.end}`;
-    const upstream=await fetchHeaders(`${API}${encodeURIComponent(id)}?alt=media&supportsAllDrives=true`,{
-      headers:{Authorization:`Bearer ${token}`,Range:range}
-    },'drive-media');
-    if(upstream.status!==206||!upstream.body){
-      try { await upstream.body?.cancel(); }catch{}
-      return sendError(res,502,`Drive did not honor Range (HTTP ${upstream.status})`);
+    let upstream;
+    for(let attempt=0;attempt<2;attempt++){
+      try {
+        upstream=await fetchHeaders(upstreamUrl,{
+          headers:{Authorization:`Bearer ${token}`,Range:range}
+        },'drive-media');
+      }catch(err){
+        if(attempt===1 || ![502,504].includes(err.status))throw err;
+        await new Promise(resolve=>setTimeout(resolve,350));
+        continue;
+      }
+      if(upstream.status===206&&upstream.body)break;
+      const retryable=[429,500,502,503,504].includes(upstream.status);
+      const lastStatus=upstream.status;
+      try{await upstream.body?.cancel();}catch{}
+      if(!retryable||attempt===1)throw fail(lastStatus===403?403:502,
+        `Drive Range request returned HTTP ${lastStatus}`,'drive-media');
+      await new Promise(resolve=>setTimeout(resolve,350));
     }
     const upstreamRange=upstream.headers.get('content-range');
-    const expectedRange=`bytes ${part.start}-${part.end}/${ticket.size}`;
+    // Never send mismatched bytes: the browser may otherwise decode wrong
+    // positions or report a media error after a few seconds.
     if(upstreamRange && upstreamRange!==expectedRange){
-      try {await upstream.body.cancel();}catch{}
-      return sendError(res,502,'Drive returned a mismatched Content-Range');
+      try{await upstream.body.cancel();}catch{}
+      throw fail(502,'Drive returned a mismatched Content-Range','drive-media');
     }
-    res.status(206);
-    res.setHeader('Accept-Ranges','bytes');
-    res.setHeader('Content-Range',expectedRange);
-    res.setHeader('Content-Length',String(part.end-part.start+1));
-    res.setHeader('Content-Type',ticket.mime);
-    res.setHeader('Cache-Control','private, no-store');
-    try {await pipeline(Readable.fromWeb(upstream.body),res);}catch(err){
-      // Client seeks again before the previous Range finishes: cancellation is normal.
+    // Streaming pipeline with backpressure: do not Buffer/arrayBuffer()
+    // the file. Support clients cancelling an old Range after seeking.
+    // Only write media headers AFTER Drive has accepted the Range request.
+    setMediaHeaders();
+    res.status(isPartial?206:200);
+    try{await pipeline(Readable.fromWeb(upstream.body),res);}catch(err){
       if(!res.destroyed)res.destroy(err);
     }
   } catch(err) {
