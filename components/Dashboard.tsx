@@ -110,10 +110,20 @@ export function Dashboard(){
     if(!user){setData(null);return;}
     setLoading(true);setRequestError('');
     try {
-      const token=await user.getIdToken();
-      const resp=await fetch(`/api/dashboard?month=${encodeURIComponent(month)}`,{headers:{Authorization:`Bearer ${token}`},signal,cache:'no-store'});
+      const fetchWithToken=async (forceRefresh=false)=>{
+        const token=await user.getIdToken(forceRefresh);
+        return fetch(`/api/dashboard?month=${encodeURIComponent(month)}`,{headers:{Authorization:`Bearer ${token}`},signal,cache:'no-store'});
+      };
+      let resp=await fetchWithToken();
+      // Retry once with a freshly issued Firebase ID token. Never retry 403/503 automatically.
+      if(resp.status===401 && !signal.aborted)resp=await fetchWithToken(true);
       const value=await resp.json();
-      if(!resp.ok)throw new Error(value.error||`HTTP ${resp.status}`);
+      if(!resp.ok) {
+        if(resp.status===401 && !value.code && value.error==='Không thể xác thực. Kiểm tra phiên đăng nhập/cấu hình Firebase.') {
+          throw new Error('API đang dùng bản Beta 2 cũ. Cập nhật mã nguồn Auth Fix và redeploy Production; kiểm tra /api/health có release auth-verified-20261012-r1.');
+        }
+        throw new Error(`${value.error||`HTTP ${resp.status}`}${value.code?` [${value.code}]`:''}`);
+      }
       setData(value as DashboardData);
     }catch(error){
       if(!signal.aborted){setData(null);setRequestError(error instanceof Error?error.message:'Không tải được dữ liệu');}
@@ -150,7 +160,7 @@ export function Dashboard(){
       <header className="topbar"><div className="topbar-left"><button aria-label="Mở menu" className="menu-toggle" onClick={()=>setMenuOpen(true)}><Menu size={22}/></button><div className="breadcrumb">WORKSPACE <span>/</span> {title?.name.toUpperCase()}</div></div><div className="topbar-right"><span className="live-dot"/><span className="topbar-time">Đồng bộ mỗi 60 giây</span><button aria-label="Tải lại" title="Làm mới" onClick={()=>setReload(x=>x+1)} className="top-icon"><RefreshCw size={18} className={loading?'spin':''}/></button><div className="top-avatar">{(user.email||'A').slice(0,1).toUpperCase()}</div></div></header>
       <div className="content-inner">
         <div className="page-heading"><div><div className="eyebrow">AMORRI STUDIO / OPERATIONS</div><h1>{title?.name}</h1><p>{title?.sub} · Tháng {month.slice(5)}/{month.slice(0,4)}</p></div><div className="heading-actions"><button className="secondary-button" onClick={()=>setReload(x=>x+1)} disabled={loading}><RefreshCw size={16} className={loading?'spin':''}/> Đồng bộ</button><button className="primary-button" onClick={()=>setNewBookingOpen(true)}><Plus size={18}/> Tạo lịch mới</button></div></div>
-        {requestError&&<div className="alert error"><ShieldCheck size={18}/><div><strong>Không tải được dữ liệu quản trị</strong><p>{requestError} Kiểm tra `AMORRI_ADMIN_UIDS` hoặc Firebase custom claim `admin`.</p></div></div>}
+        {requestError&&<div className="alert error"><ShieldCheck size={18}/><div><strong>Không tải được dữ liệu quản trị</strong><p>{requestError}</p></div></div>}
         {data?.eventLimitReached&&<div className="alert notice">Dữ liệu tháng vượt giới hạn truy vấn 1001 bản ghi. Cần phân trang và index Firebase trước khi dùng báo cáo.</div>}
         {!data && loading && <div className="loading-state"><RefreshCw size={24} className="spin"/> Đang tải dữ liệu Firebase…</div>}
         {data && <>

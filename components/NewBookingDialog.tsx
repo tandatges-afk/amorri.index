@@ -21,10 +21,15 @@ export function NewBookingDialog({open,onClose,onCreated,user}:Props){
    if(!checked.ok){setError(checked.message);return;}
    setBusy(true);setError('');
    try{
-     const token=await user.getIdToken();
-     const result=await fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(checked.value)});
+     const post=async (forceRefresh=false)=>{
+       const token=await user.getIdToken(forceRefresh);
+       return fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(checked.value)});
+     };
+     let result=await post();
+     // Safe retry: event.id is an idempotency key; the API never overwrites an existing event.
+     if(result.status===401)result=await post(true);
      const payload=await result.json();
-     if(!result.ok)throw new Error(payload.error||'Không thể tạo lịch');
+     if(!result.ok)throw new Error(`${payload.error||'Không thể tạo lịch'}${payload.code?` [${payload.code}]`:''}`);
      onCreated();onClose();
    }catch(err){setError(err instanceof Error?err.message:'Không thể tạo lịch');}
    finally{setBusy(false);}

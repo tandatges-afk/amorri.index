@@ -1,19 +1,20 @@
 import { NextResponse } from 'next/server';
-import { adminDatabase, authenticatedAdmin } from '@/lib/server/firebase-admin';
+import { adminDatabase, authenticatedAdmin, publicAuthFailure } from '@/lib/server/firebase-admin';
 import { normaliseAudit, normaliseEvents, normalisePayroll, normaliseStaff } from '@/lib/domain/studio';
 import type { DashboardData } from '@/lib/domain/types';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-const NO_CACHE = { 'Cache-Control': 'private, no-store, max-age=0' };
+const NO_CACHE = { 'Cache-Control': 'private, no-store, max-age=0', 'X-Amorri-Auth-Version': 'auth-verified-20261012-r1' };
 const yyyyMM = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 export async function GET(request: Request) {
   let permitted = null;
   try { permitted = await authenticatedAdmin(request); }
   catch (err) {
-    console.error('[dashboard] auth configuration/token problem', err);
-    return NextResponse.json({ error:'Không thể xác thực. Kiểm tra phiên đăng nhập/cấu hình Firebase.' }, {status:401,headers:NO_CACHE});
+    const failure = publicAuthFailure(err);
+    console.error('[dashboard] admin authentication failure', { code: failure.code });
+    return NextResponse.json({ error: failure.error, code: failure.code, release: 'auth-verified-20261012-r1' }, {status:failure.status,headers:NO_CACHE});
   }
   if (!permitted) return NextResponse.json({error:'Chỉ tài khoản admin mới được truy cập dashboard.'}, {status:403,headers:NO_CACHE});
   const url = new URL(request.url);

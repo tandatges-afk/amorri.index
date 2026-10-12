@@ -39,7 +39,9 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Điền đầy đủ `.env.local` từ dự án của bạn; **không commit** khóa service account. Firebase public config `NEXT_PUBLIC_*` không phải secret. `DRIVE_SERVICE_ACCOUNT_JSON`, `DRIVE_VIDEO_SIGNING_SECRET`, `AMORRI_ADMIN_UIDS`, `FIREBASE_DATABASE_URL` là server-only.
+Nếu gặp **401 / Không thể xác thực Firebase Admin**, đọc [`docs/FIX_AUTH_401.md`](docs/FIX_AUTH_401.md).
+
+Điền đầy đủ `.env.local` từ dự án của bạn; **không commit** khóa service account. Firebase public config `NEXT_PUBLIC_*` không phải secret. `FIREBASE_SERVICE_ACCOUNT_JSON`, `DRIVE_SERVICE_ACCOUNT_JSON`, `DRIVE_VIDEO_SIGNING_SECRET`, `AMORRI_ADMIN_UIDS`, `FIREBASE_DATABASE_URL` là server-only.
 
 Chạy kiểm tra khi đã cài dependency:
 

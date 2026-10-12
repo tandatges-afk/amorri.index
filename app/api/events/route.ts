@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
-import { authenticatedAdmin, adminDatabase } from '@/lib/server/firebase-admin';
+import { authenticatedAdmin, adminDatabase, publicAuthFailure } from '@/lib/server/firebase-admin';
 import { validateBooking } from '@/lib/domain/booking';
 
 export const runtime = 'nodejs';
@@ -9,7 +9,7 @@ const headers = { 'Cache-Control': 'no-store' };
 export async function POST(request: Request) {
   let user;
   try {user = await authenticatedAdmin(request);}
-  catch (err) {console.error('[events] auth failed', err);return NextResponse.json({error:'Không thể xác thực tài khoản'}, {status:401,headers});}
+  catch (err) {const failure=publicAuthFailure(err);console.error('[events] auth failed',{code:failure.code});return NextResponse.json({error:failure.error,code:failure.code}, {status:failure.status,headers});}
   if (!user) return NextResponse.json({error:'Chỉ admin được tạo lịch'}, {status:403,headers});
   const size = Number(request.headers.get('content-length') || '0');
   if (size>16_384) return NextResponse.json({error:'Dữ liệu quá lớn'}, {status:413,headers});
