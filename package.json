@@ -1,8 +1,22 @@
 {
+  "name": "amorri-studio-vnext-stage1",
   "private": true,
+  "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test tests/*.test.mjs",
+    "check": "npm run build && npm test",
+    "dev": "vercel dev",
+    "start:static": "python -m http.server 8080"
+  },
+  "engines": {"node": ">=20"},
   "dependencies": {
     "firebase-admin": "^13.0.0",
     "google-auth-library": "^10.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "vercel": "^48.0.0"
   }
 }

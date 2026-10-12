@@ -7,7 +7,6 @@
  *               DRIVE_VIDEO_CHUNK_BYTES (2097152..33554432; default 8388608)
  *
  * POST { id, clientGallery, productId } -> signed playback URL.
- * A product may additionally authorize playback1080Url (a prepared MP4 file on Drive).
  * GET  ?id=...&ticket=... with Range -> streaming HTTP 206, with longer contiguous ranges.
  * HEAD ?id=...&ticket=... -> metadata response for clients that probe first.
  * This endpoint is meant for Google Drive *blob video files*, not Google Vids.
@@ -15,7 +14,7 @@
 import crypto from 'node:crypto';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import admin from 'firebase-admin';
+import { resolveRange } from './_lib/range.js';
 import { GoogleAuth } from 'google-auth-library';
 
 const API = 'https://www.googleapis.com/drive/v3/files/';
@@ -24,7 +23,7 @@ const GALLERY_ID = /^[A-Za-z0-9_-]{1,160}$/;
 const MEDIA_TIMEOUT_MS = 20000; // Timeout until upstream response HEADERS only.
 // Avoid a new Vercel -> Drive request every ~8 MiB. Streams without buffering
 // the response in memory; tune down for extremely low bandwidth connections.
-const CHUNK_BYTES = clampInt(process.env.DRIVE_VIDEO_CHUNK_BYTES, 128 * 1024 * 1024, 2 * 1024 * 1024, 32 * 1024 * 1024);
+const CHUNK_BYTES = clampInt(process.env.DRIVE_VIDEO_CHUNK_BYTES, 16 * 1024 * 1024, 2 * 1024 * 1024, 32 * 1024 * 1024);
 const TICKET_SECONDS = clampInt(process.env.DRIVE_VIDEO_TICKET_TTL_SECONDS, 6 * 3600, 900, 12 * 3600);
 function clampInt(raw, fallback, min, max) {
   const v = Number(raw);
@@ -125,6 +124,31 @@ async function descendantOf(meta,folderId,driveToken){
   }
   return false;
 }
+
+// A shortcut to a video may reside inside the customer's folder even when
+// the actual video lives elsewhere in Drive. Verify the shortcut membership,
+// not just the target file's physical parent chain.
+async function folderContainsShortcut(folderId,targetId,driveToken){
+  let pageToken='';
+  for(let page=0;page<10;page++){
+    const params=new URLSearchParams({
+      q:`'${folderId}' in parents and mimeType = 'application/vnd.google-apps.shortcut' and trashed = false`,
+      pageSize:'1000',fields:'nextPageToken,files(shortcutDetails(targetId))',
+      supportsAllDrives:'true',includeItemsFromAllDrives:'true'
+    });
+    if(pageToken)params.set('pageToken',pageToken);
+    const r=await fetchHeaders(`https://www.googleapis.com/drive/v3/files?${params}`,{
+      headers:{Authorization:`Bearer ${driveToken}`}
+    },'shortcut-authorization');
+    if(!r.ok)throw fail(502,`Drive shortcut listing HTTP ${r.status}`,'shortcut-authorization');
+    const result=await r.json();
+    if((result.files||[]).some(file=>String(file.shortcutDetails?.targetId)===targetId))return true;
+    pageToken=result.nextPageToken||'';
+    if(!pageToken)break;
+  }
+  return false;
+}
+
 async function authorized(clientGallery,productId,id,driveToken,meta,event){
   if(!GALLERY_ID.test(clientGallery||'') || !GALLERY_ID.test(productId||''))return false;
   // Reuse the event fetched during startup, rather than requesting RTDB twice.
@@ -135,31 +159,11 @@ async function authorized(clientGallery,productId,id,driveToken,meta,event){
   if(!prod)return false;
   const url=String(prod.url||'');
   if(driveIdFromUrl(url)===id)return true;
-  // Additional protected 1080p playback file must belong to this exact product.
-  if(driveIdFromUrl(url) && driveIdFromUrl(prod.playback1080Url||'')===id)return true;
   const folderId=driveIdFromUrl(url,true);
-  return !!folderId && await descendantOf(meta,folderId,driveToken);
+  return !!folderId && (await descendantOf(meta,folderId,driveToken) || await folderContainsShortcut(folderId,id,driveToken));
 }
-export function resolveRange(range,total,chunkBytes=CHUNK_BYTES) {
-  if (!Number.isSafeInteger(total)||total<=0) return null;
-  if (range==null) return {start:0,end:Math.min(total-1,chunkBytes-1)};
-  const match=/^bytes=(\d*)-(\d*)$/.exec(String(range).trim());
-  if(!match || (!match[1]&&!match[2]))return null;
-  let start,end;
-  if (!match[1]) {
-    const suffix=Number(match[2]);
-    if(!Number.isSafeInteger(suffix)||suffix<=0)return null;
-    start=Math.max(0,total-Math.min(suffix,chunkBytes));
-    end=total-1;
-  } else {
-    start=Number(match[1]);
-    if(!Number.isSafeInteger(start)||start>=total)return null;
-    const asked=match[2]?Number(match[2]):total-1;
-    if(!Number.isSafeInteger(asked)||asked<start)return null;
-    end=Math.min(total-1,asked,start+chunkBytes-1);
-  }
-  return {start,end};
-}
+export { resolveRange };
+
 function sendError(res,status,message){res.setHeader('Cache-Control','no-store');return res.status(status).json({error:message});}
 export default async function handler(req,res) {
   res.setHeader('Cache-Control','private, no-store');
@@ -257,7 +261,7 @@ export default async function handler(req,res) {
       throw fail(502,'Drive returned a mismatched Content-Length','drive-media');
     }
     res.setHeader('Server-Timing',`auth;dur=${authMs}, drive-ttfb;dur=${Date.now()-t0-authMs}`);
-    res.setHeader('X-Amorri-Stream','v570');
+    res.setHeader('X-Amorri-Stream','vnext-stage1');
     const upstreamRange=upstream.headers.get('content-range');
     // Never send mismatched bytes: the browser may otherwise decode wrong
     // positions or report a media error after a few seconds.
