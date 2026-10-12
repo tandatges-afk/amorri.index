@@ -121,9 +121,10 @@ async function descendantOf(meta,folderId,driveToken){
   }
   return false;
 }
-async function authorized(clientGallery,productId,id,driveToken,meta){
+async function authorized(clientGallery,productId,id,driveToken,meta,event){
   if(!GALLERY_ID.test(clientGallery||'') || !GALLERY_ID.test(productId||''))return false;
-  const event=await loadGalleryEvent(clientGallery);
+  // Reuse the event fetched during startup, rather than requesting RTDB twice.
+  if(!event)return false;
   if(!event||String(event.id)!==clientGallery)return false;
   const products=Array.isArray(event.products)?event.products:Object.values(event.products||{});
   const prod=products.find(p=>p&&String(p.id)===productId);
@@ -170,13 +171,22 @@ export default async function handler(req,res) {
     const id=String(req.method==='POST'?payload.id:req.query?.id||'').trim();
     if(!FILE_ID.test(id))return sendError(res,400,'Invalid Google Drive file ID');
     if(req.method==='POST'){
-      const token=await accessToken(clients().driveAuth);
-      const meta=await getDriveMetadata(id,token);
+      const clientGallery=String(payload.clientGallery||'');
+      const productId=String(payload.productId||'');
+      if(!GALLERY_ID.test(clientGallery)||!GALLERY_ID.test(productId))return sendError(res,400,'Invalid gallery or product ID');
+      // Drive metadata and Firebase gallery authorization are independent network
+      // calls. Run them concurrently to reduce first-frame startup latency.
+      // Never issue a ticket until BOTH succeed and membership is verified.
+      const metadataTask=accessToken(clients().driveAuth).then(async token=>({
+        token,meta:await getDriveMetadata(id,token)
+      }));
+      const eventTask=loadGalleryEvent(clientGallery);
+      const [{token,meta},event]=await Promise.all([metadataTask,eventTask]);
       if(!meta.mimeType?.startsWith('video/'))return sendError(res,415,'Drive file must be video');
       if(meta.capabilities?.canDownload===false)return sendError(res,403,'Download not permitted');
       if(!Number.isSafeInteger(Number(meta.size))||Number(meta.size)<=0)return sendError(res,422,'Missing video size');
-      if(!await authorized(String(payload.clientGallery||''),String(payload.productId||''),id,token,meta))return sendError(res,403,'Video does not belong to this client gallery/product');
-      const ticket=issueTicket(id,String(payload.clientGallery),String(payload.productId),meta);
+      if(!await authorized(clientGallery,productId,id,token,meta,event))return sendError(res,403,'Video does not belong to this client gallery/product');
+      const ticket=issueTicket(id,clientGallery,productId,meta);
       return res.status(200).json({success:true,url:`/api/drive-video?id=${encodeURIComponent(id)}&ticket=${encodeURIComponent(ticket)}`,expiresIn:TICKET_SECONDS,mimeType:meta.mimeType});
     }
     const ticket=checkTicket(req.query?.ticket,id);
