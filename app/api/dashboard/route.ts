@@ -5,7 +5,7 @@ import type { DashboardData } from '@/lib/domain/types';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-const NO_CACHE = { 'Cache-Control': 'private, no-store, max-age=0', 'X-Amorri-Auth-Version': 'staff-scheduling-20261013-r2' };
+const NO_CACHE = { 'Cache-Control': 'private, no-store, max-age=0', 'X-Amorri-Auth-Version': 'payroll-manager-20261013-r1' };
 const yyyyMM = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 export async function GET(request: Request) {
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   catch (err) {
     const failure = publicAuthFailure(err);
     console.error('[dashboard] admin authentication failure', { code: failure.code });
-    return NextResponse.json({ error: failure.error, code: failure.code, release: 'staff-scheduling-20261013-r2' }, {status:failure.status,headers:NO_CACHE});
+    return NextResponse.json({ error: failure.error, code: failure.code, release: 'payroll-manager-20261013-r1' }, {status:failure.status,headers:NO_CACHE});
   }
   if (!permitted) return NextResponse.json({error:'Chỉ tài khoản admin mới được truy cập dashboard.'}, {status:403,headers:NO_CACHE});
   const url = new URL(request.url);

@@ -1,8 +1,18 @@
-# AMORRI STUDIO VNext 2.2 — Staff & Scheduling (Preview)
+# AMORRI STUDIO VNext 2.3 — Payroll Manager (Preview)
 
 **Next.js App Router + React + TypeScript + Tailwind v4, Firebase RTDB, Vercel, Vitest + Playwright tests.**
 
 > **Trạng thái thực tế:** đây là bản chuyển đổi nền tảng với giao diện React mới, tạo lịch và quản lý lịch cơ bản (chỉnh sửa/hủy/xóa/phân công) và workspace tương thích. KHÔNG phải bản viết lại toàn bộ 9.470 dòng nghiệp vụ cũ. Không thay thế website production trước khi chạy kiểm thử trên môi trường preview.
+
+## Bước mới: Bảng lương lũy kế TypeScript — VNext 2.3
+
+- **Admin / Lương thợ**: dùng `components/PayrollManager.tsx` thay cho bảng chỉ đọc, hiển thị nợ cũ, công tháng, tổng đã ứng/trả, số dư cuối kỳ, cập nhật tiền theo VND và xuất CSV.
+- **Nhân sự /staff**: xem **chỉ bảng lương của chính mình**, qua token Firebase đã xác minh và UID đã liên kết; không lộ lương nhân sự khác qua API mới.
+- **API** `GET /api/payroll`, `PUT /api/payroll/[staffId]`, `GET /api/staff/payroll`; ghi nhận audit `PAYROLL_UPDATED`, kiểm tra quyền và khóa xung đột bằng Firebase RTDB transaction (`409 PAYROLL_CONFLICT`).
+- **Tương thích Firebase**: giữ nguyên `studioPlanner_v1/payroll/YYYY-MM/staffId` và công thức nợ cũ từ web gốc. Không cần biến môi trường mới.
+- **Điều kiện quan trọng**: web `/studio` cũ vẫn có quyền ghi trực tiếp, nên chưa được bảo đảm chống ghi đè giữa mọi giao diện. Chỉ thử trên Vercel Preview với Firebase staging trước khi chuyển production.
+- Tài liệu kế toán, bảo mật, checklist đối chiếu: [`docs/PAYROLL_MANAGER_2_3.md`](docs/PAYROLL_MANAGER_2_3.md).
+- Endpoint xác định deploy: `/api/health` → `payroll-manager-20261013-r1`.
 
 ## Bản vá 2.2.1 — Sửa lỗi kiểm tra kiểu TypeScript khi deploy Vercel
 

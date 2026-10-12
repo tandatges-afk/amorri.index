@@ -1,5 +1,7 @@
 'use client';
 
+import {PayrollManager} from '@/components/PayrollManager';
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
@@ -13,7 +15,7 @@ import { browserAuth } from '@/lib/firebase/client';
 import { NewBookingDialog } from './NewBookingDialog';
 import { EventEditor } from './EventEditor';
 import { StaffManager } from './StaffManager';
-import { buildCalendarCells, calculatePayroll, getMonthStats, monthEvents, shiftMonth, statusName } from '@/lib/domain/studio';
+import { buildCalendarCells, getMonthStats, monthEvents, shiftMonth, statusName } from '@/lib/domain/studio';
 import type { DashboardData, StudioEvent } from '@/lib/domain/types';
 
 type Tab = 'overview'|'calendar'|'staff'|'payroll'|'delivery'|'activity';
@@ -155,7 +157,7 @@ export function Dashboard(){
       })}</nav>
       <div className="sidebar-label section-gap">CÔNG CỤ</div>
       <div className="nav-items"><a className="nav-item" href="/studio"><Settings2 size={19}/><span>Workspace đầy đủ</span><ArrowRight size={14}/></a></div>
-      <div className="sidebar-bottom"><div className="migration-tile"><Sparkles size={21}/><strong>VNext 2.2</strong><p>Không gian mới chạy trên React & TypeScript. Chỉnh sửa, phân công và xóa lịch cơ bản trực tiếp trên React. Nghiệp vụ bàn giao/lương nâng cao vẫn dùng workspace tương thích.</p><a href="/studio">Mở công cụ <ArrowRight size={14}/></a></div>
+      <div className="sidebar-bottom"><div className="migration-tile"><Sparkles size={21}/><strong>VNext 2.3</strong><p>Không gian mới chạy trên React & TypeScript. Chỉnh sửa, phân công và xóa lịch cơ bản trực tiếp trên React. Bảng lương lũy kế đã được chuyển sang TypeScript. Bàn giao ảnh/video nâng cao vẫn dùng workspace tương thích.</p><a href="/studio">Mở công cụ <ArrowRight size={14}/></a></div>
         <div className="user-identity"><div className="user-avatar">{(user.email||'A').slice(0,1).toUpperCase()}</div><div className="user-meta"><strong>{user.email?.split('@')[0]||'Admin'}</strong><span>Firebase Admin</span></div><button title="Đăng xuất" onClick={()=>signOut(browserAuth())}><LogOut size={19}/></button></div>
       </div>
     </aside>
@@ -188,11 +190,11 @@ export function Dashboard(){
           </>}
           {tab==='calendar'&&<><div className="toolbar"><div className="search-input"><Search size={17}/><input placeholder="Tìm tên khách, loại dịch vụ, nhân sự..." value={search} onChange={e=>setSearch(e.target.value)} aria-label="Tìm kiếm lịch"/></div><div className="toolbar-right"><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,-1))}><ChevronLeft size={18}/></button><strong className="month-title">Tháng {month.slice(5)}/{month.slice(0,4)}</strong><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,1))}><ChevronRight size={18}/></button></div></div><section className="surface calendar-surface"><CalendarView data={data} filter={search} onSelect={setSelected}/></section><section className="surface"><div className="surface-title"><h3>Danh sách đặt lịch <span className="counter">{filtered.length}</span></h3><a className="text-action" href="/studio">Quản lý lịch <ArrowRight size={16}/></a></div><EventTable events={filtered} staff={data.staff} onSelect={setSelected}/></section></>}
           {tab==='staff'&&<StaffManager user={user} month={month} onChanged={()=>setReload(x=>x+1)}/>}
-          {tab==='payroll'&&<><div className="section-intro"><WalletCards size={19}/> Lương dự kiến theo phân công trong tháng. Số dư lũy kế và thanh toán chi tiết vẫn được tính tại workspace cũ.</div><section className="surface"><div className="surface-title"><h3>Tổng hợp lương — {month.slice(5)}/{month.slice(0,4)}</h3><a className="text-action" href="/studio">Điều chỉnh thanh toán <ArrowRight size={16}/></a></div><div className="table-scroll"><table className="data-table"><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>Thu nhập tháng</th><th>Ứng trước</th><th>Đã trả</th><th>Còn lại trong tháng</th></tr></thead><tbody>{data.staff.length ? data.staff.map(s=>{const p=calculatePayroll(data,s.id);return <tr key={s.id}><td><strong>{s.name}</strong></td><td>{s.role}</td><td>{money(p.gross)}</td><td>{money(p.advance)}</td><td>{money(p.paid)}</td><td><b className={p.balance<0?'negative-amount':'positive-amount'}>{money(p.balance)}</b></td></tr>;}) : <tr><td colSpan={6}><Empty title="Chưa có dữ liệu lương" detail="Các khoản thanh toán hiện lên khi có phân công."/></td></tr>}</tbody></table></div></section></>}
+          {tab==='payroll'&&<PayrollManager month={month} user={user}/>}
           {tab==='delivery'&&<><div className="section-intro"><Film size={19}/> Các bộ bàn giao ảnh/video thuộc lịch tháng này. Xem, chọn ảnh, bình luận timeline và chốt sản phẩm trong giao diện bàn giao đang được bảo toàn.</div><div className="delivery-grid">{filtered.filter(e=>e.products.length>0).map(e=><div className="delivery-card" key={e.id}><div className="delivery-art"><Film size={34}/><span>{e.products.length} SẢN PHẨM</span></div><div className="delivery-details"><span className="hint">{dateDisplay(e.date)} / {e.eventType}</span><h3>{e.name}</h3><p>{e.products.map(p=>p.name).filter(Boolean).slice(0,3).join(' · ')||'Ảnh & Video'}</p><div className="delivery-actions"><a className="primary-button small" href={`/studio?client_gallery=${encodeURIComponent(e.id)}`}>Mở bàn giao <ArrowRight size={15}/></a><button className="secondary-button small" onClick={()=>copy(`${window.location.origin}/studio?client_gallery=${encodeURIComponent(e.id)}`,e.id)}><Copy size={15}/>{copied===e.id?'Đã copy':'Copy link'}</button></div></div></div>)}</div>{!filtered.some(e=>e.products.length>0)&&<Empty title="Không có bộ bàn giao trong tháng" detail="Các sản phẩm liên kết Google Drive sẽ xuất hiện tại đây."/>}</>}
           {tab==='activity'&&<section className="surface"><div className="surface-title"><div><span className="eyebrow">AUDIT TRAIL</span><h3>Nhật ký hoạt động gần đây</h3></div></div>{data.audit.length?<div className="activity-list">{data.audit.map((a,i)=><div key={a.id||i} className="activity-item"><div className="activity-symbol"><Activity size={17}/></div><div><strong>{a.message||a.action||'Hoạt động'}</strong><p>{a.action} · {a.createdAt ? new Date(a.createdAt<1e12?a.createdAt*1000:a.createdAt).toLocaleString('vi-VN'): 'Chưa xác định thời gian'}</p></div></div>)}</div>:<Empty title="Chưa có nhật ký" detail="Hoạt động trong Firebase sẽ được ghi nhận ở đây."/>}</section>}
         </>}
-      </div><footer className="footer">AMORRI STUDIO / VNEXT 2.2 <span>BUILT WITH NEXT.JS + TYPESCRIPT · {new Date().getFullYear()}</span></footer>
+      </div><footer className="footer">AMORRI STUDIO / VNEXT 2.3 <span>BUILT WITH NEXT.JS + TYPESCRIPT · {new Date().getFullYear()}</span></footer>
     </main>
     <NewBookingDialog open={newBookingOpen} onClose={()=>setNewBookingOpen(false)} onCreated={()=>{setReload(x=>x+1);setTab('calendar');}} user={user}/>
     <EventEditor id={editEventId} staff={data?.staff||[]} user={user} onClose={()=>setEditEventId(null)} onChanged={(date)=>{setEditEventId(null);setSelected(null);if(date && date.slice(0,7)!==month)setMonth(date.slice(0,7));setReload(v=>v+1);}}/>

@@ -1,6 +1,6 @@
 {
   "name": "amorri-studio-vnext-2",
-  "version": "2.2.1-typecheck-fix",
+  "version": "2.3.0-payroll-manager",
   "private": true,
   "scripts": {
     "dev": "next dev",
