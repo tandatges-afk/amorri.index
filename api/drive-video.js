@@ -24,7 +24,7 @@ const GALLERY_ID = /^[A-Za-z0-9_-]{1,160}$/;
 const MEDIA_TIMEOUT_MS = 20000; // Timeout until upstream response HEADERS only.
 // Avoid a new Vercel -> Drive request every ~8 MiB. Streams without buffering
 // the response in memory; tune down for extremely low bandwidth connections.
-const CHUNK_BYTES = clampInt(process.env.DRIVE_VIDEO_CHUNK_BYTES, 8 * 1024 * 1024, 2 * 1024 * 1024, 32 * 1024 * 1024);
+const CHUNK_BYTES = clampInt(process.env.DRIVE_VIDEO_CHUNK_BYTES, 128 * 1024 * 1024, 2 * 1024 * 1024, 32 * 1024 * 1024);
 const TICKET_SECONDS = clampInt(process.env.DRIVE_VIDEO_TICKET_TTL_SECONDS, 6 * 3600, 900, 12 * 3600);
 function clampInt(raw, fallback, min, max) {
   const v = Number(raw);
