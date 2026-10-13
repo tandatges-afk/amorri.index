@@ -1,14 +1,15 @@
+import {withApiTrace} from '@/lib/server/trace';
 import {randomUUID} from 'node:crypto';
 import {identity,json,jsonBody,failure,ScheduleError} from '@/lib/server/staff-scheduling';
 import {findBooking} from '@/lib/server/event-storage';
-import {saveProductConditional,ProductCasError,BookingCasError} from '@/lib/server/booking-cas';
+import {saveProductConditional,deleteProductConditional,ProductCasError,BookingCasError} from '@/lib/server/booking-cas';
 import {parseDriveSource} from '@/lib/domain/delivery';
 import {requireVersion,eventIdValid} from '@/lib/domain/event-management';
 import type {ProductBaseline} from '@/lib/domain/product-cas';
 
 export const runtime='nodejs';export const dynamic='force-dynamic';
 
-export async function POST(request:Request,{params}:{params:Promise<{id:string}>}){
+async function handlePOST(request:Request,{params}:{params:Promise<{id:string}>}){
  const user=await identity(request,true);if(user instanceof Response)return user;
  try{
   const {id}=await params;
@@ -43,4 +44,32 @@ export async function POST(request:Request,{params}:{params:Promise<{id:string}>
      return json({error:err.message,code:err.code},err.status);
    return failure(err);
  }
+}
+
+/** Admin removes the product pointer only. Historic selections/reviews remain archived in Firebase. */
+async function handleDELETE(request:Request,{params}:{params:Promise<{id:string}>}){
+ const user=await identity(request,true);if(user instanceof Response)return user;
+ try{
+  const {id}=await params;
+  const body=await jsonBody(request,4096) as Record<string,unknown>;
+  if(!requireVersion(body?.expectedVersion)||typeof body?.productId!=='string'||!eventIdValid(body.productId))
+   throw new ScheduleError(400,'Thiếu phiên bản hoặc mã sản phẩm','PRODUCT_DELETE_INVALID');
+  const o=body.originalProduct as Record<string,unknown>|undefined;
+  if(!o||typeof o.name!=='string'||typeof o.url!=='string'||typeof o.mediaType!=='string')
+   throw new ScheduleError(400,'Thiếu thông tin sản phẩm để xác minh','PRODUCT_DELETE_BASE');
+  const located=await findBooking(id);
+  const result=await deleteProductConditional({key:located.key,id,expectedVersion:body.expectedVersion,
+   productId:body.productId,originalProduct:{name:o.name,url:o.url,mediaType:o.mediaType}});
+  return json({success:true,version:result.version});
+ }catch(err){
+  if(err instanceof ProductCasError||err instanceof BookingCasError)return json({error:err.message,code:err.code},err.status);
+  return failure(err);
+ }
+}
+
+export async function POST(request:Request, context:{params:Promise<{id:string}>}){
+  return withApiTrace('products.post',()=>handlePOST(request,context));
+}
+export async function DELETE(request:Request, context:{params:Promise<{id:string}>}){
+  return withApiTrace('products.delete',()=>handleDELETE(request,context));
 }

@@ -19,9 +19,11 @@ export async function POST(request:Request){
   try{const user=await requireAdmin(request);const body=await payload(request);
     const eventId=body.eventId;
     if(!validId(eventId))return json({error:'Mã lịch không hợp lệ'},400);
-    const grant=await ensureDeliveryGrant(eventId,user.uid,30);
+    const productId=body.productId===undefined?'':body.productId;
+    if(typeof productId!=='string'||productId && !validId(productId))return json({error:'Mã sản phẩm không hợp lệ'},400);
+    const grant=await ensureDeliveryGrant(eventId,user.uid,30,productId);
     const url=new URL(request.url);
     const shareUrl=`${url.origin}/delivery/${encodeURIComponent(eventId)}#token=${encodeURIComponent(grant.token)}`;
-    return json({success:true,shareUrl,grantId:grant.grantId,expiresAt:grant.expiresAt,scope:grant.scope,created:grant.created});
+    return json({success:true,shareUrl,grantId:grant.grantId,expiresAt:grant.expiresAt,scope:grant.scope,productId:grant.productId,created:grant.created});
   }catch(err){return deliveryFailure(err);}
 }

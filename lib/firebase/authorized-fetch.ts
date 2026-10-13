@@ -5,6 +5,6 @@ export async function authorizedFetch(user:User,url:string,init:RequestInit={}){
 }
 export async function decodeResult(res:Response){
  const p=await res.json();
- if(!res.ok)throw new Error(`${p.error||`HTTP ${res.status}`}${p.code?` [${p.code}]`:''}`);
+ if(!res.ok)throw new Error(`${p.error||`HTTP ${res.status}`}${p.code?` [${p.code}]`:''}${res.headers.get('X-Amorri-Request-Id')?` · Mã tra cứu: ${res.headers.get('X-Amorri-Request-Id')}`:''}`);
  return p;
 }

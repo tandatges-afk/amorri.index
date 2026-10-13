@@ -36,7 +36,7 @@ export async function saveBookingConditional(input:{key:string;id:string;expecte
 }
 
 /** Product writes reuse the same verified Firebase REST credentials as booking edits. */
-import { conditionalProductWrite, type ProductBaseline } from '../domain/product-cas';
+import { conditionalProductWrite, conditionalProductDelete, type ProductBaseline } from '../domain/product-cas';
 export {ProductCasError} from '../domain/product-cas';
 export async function saveProductConditional(input:{
   key:string;id:string;expectedVersion:string;productId:string;newId:string;
@@ -50,6 +50,12 @@ export async function saveProductConditional(input:{
   });
 }
 
+export async function deleteProductConditional(input:{key:string;id:string;expectedVersion:string;productId:string;originalProduct:ProductBaseline}){
+  if(!/^[A-Za-z0-9_-]{1,160}$/.test(input.key))throw new BookingCasError(503,'BOOKING_CAS_KEY','Khóa lịch không hợp lệ');
+  return conditionalProductDelete({url:`${databaseUrl()}/studioPlanner_v1/events/${encodeURIComponent(input.key)}.json`,
+    token:await firebaseToken(),id:input.id,productId:input.productId,expectedVersion:input.expectedVersion,
+    originalProduct:input.originalProduct,versionOf:bookingVersion});
+}
 /** Conditional delete after the encrypted archive has been committed. */
 export async function deleteBookingConditional(input:{key:string;id:string;expectedVersion:string}):Promise<void>{
   if(!/^[A-Za-z0-9_-]{1,160}$/.test(input.key))

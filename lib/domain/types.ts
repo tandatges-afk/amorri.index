@@ -21,6 +21,7 @@ export interface StudioEvent {
   deposit: number;
   products: { id: string; name: string; mediaType: string }[];
   deliveryCompleted?: boolean;
+  completedProductIds?: string[];
 }
 export interface PayrollPayment { advance: number; paid: number; }
 export interface AuditEvent {

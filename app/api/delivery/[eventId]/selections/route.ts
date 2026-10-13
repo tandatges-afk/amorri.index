@@ -1,3 +1,4 @@
+import {withApiTrace} from '@/lib/server/trace';
 import {deliveryEvent,productById,payload,json,deliveryFailure} from '@/lib/server/delivery-http';
 import {DeliveryError} from '@/lib/server/delivery-access';
 import {listDeliveryMedia,productSource} from '@/lib/server/delivery-media';
@@ -5,10 +6,11 @@ import {validateSelection} from '@/lib/domain/delivery';
 import {applyPhotoSelection} from '@/lib/domain/delivery-guest-writes';
 import {conditionalDeliveryMutation} from '@/lib/server/delivery-cas';
 export const runtime='nodejs';export const dynamic='force-dynamic';
-export async function PUT(request:Request,{params}:{params:Promise<{eventId:string}>}){
+async function handlePUT(request:Request,{params}:{params:Promise<{eventId:string}>}){
   try{
-    const {eventId}=await params;const located=await deliveryEvent(request,eventId,true);
+    const {eventId}=await params;
     const body=await payload(request,24_576);const productId=String(body.productId||'');
+    const located=await deliveryEvent(request,eventId,true,productId);
     const product=productById(located.value,productId);
     const check=validateSelection(body);if(!check.ok)return json({error:check.error},422);
     const source=productSource(product);
@@ -38,4 +40,8 @@ export async function PUT(request:Request,{params}:{params:Promise<{eventId:stri
     }
     return json({success:true,selected:check.ids.length});
   }catch(err){return deliveryFailure(err);}
+}
+
+export async function PUT(request:Request, context:{params:Promise<{eventId:string}>}){
+  return withApiTrace('selections.put',()=>handlePUT(request,context));
 }

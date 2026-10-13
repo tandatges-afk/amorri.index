@@ -1,6 +1,6 @@
 import {NextResponse} from 'next/server';
 import {authenticatedAdmin,publicAuthFailure} from './firebase-admin';
-import {responseForDeliveryError,DeliveryError,deliveryToken,verifyDeliveryGrant} from './delivery-access';
+import {responseForDeliveryError,DeliveryError,deliveryToken,verifyDeliveryGrant,assertGrantProduct} from './delivery-access';
 import {findBooking} from './event-storage';
 import {pickProducts,validId} from '@/lib/domain/delivery';
 export const NO_STORE={'Cache-Control':'private, no-store, max-age=0','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'};
@@ -16,11 +16,12 @@ export async function requireAdmin(request:Request){
     throw new DeliveryError(failure.status, failure.code, failure.error);
   }
 }
-export async function deliveryEvent(request:Request,eventId:string,review=false){
+export async function deliveryEvent(request:Request,eventId:string,review=false,productId?:string){
   if(!validId(eventId))throw new DeliveryError(400,'DELIVERY_BAD_ID','Mã lịch không hợp lệ');
-  await verifyDeliveryGrant(eventId,deliveryToken(request),review);
+  const grant=await verifyDeliveryGrant(eventId,deliveryToken(request),review);
+  if(productId)assertGrantProduct(grant,productId);
   const found=await findBooking(eventId);
-  return found;
+  return {...found,grant};
 }
 export function productById(event:Record<string,unknown>,id:string){
   if(!validId(id))throw new DeliveryError(400,'DELIVERY_BAD_PRODUCT','Sản phẩm không hợp lệ');

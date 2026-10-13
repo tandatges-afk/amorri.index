@@ -1,3 +1,4 @@
+import {withApiTrace} from '@/lib/server/trace';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { adminDatabase, authenticatedAdmin, publicAuthFailure } from '@/lib/server/firebase-admin';
@@ -40,17 +41,19 @@ async function audit(action:string,user:DecodedIdToken,event:Record<string,unkno
     targetType:'event', targetId:id,eventName:String(event.name||''),eventDate:String(event.date||''),message:detail,
   });}catch(err){console.error('[booking-manager] audit failed',err);}
 }
-export async function GET(request:Request,{params}:{params:Promise<{id:string}>}){
+async function handleGET(request:Request,{params}:{params:Promise<{id:string}>}){
   const user=await requireAdmin(request);if(user instanceof Response)return user;
   try{const {id}=await params;const item=await findBooking(id);
     const deliveryCompleted=Boolean((await adminDatabase().ref(`studioPlanner_v1/deliveryState/${id}`).once('value')).val()?.completedAt);
-    return json({event:{...normaliseEvents([item.value])[0],deliveryCompleted,phone:item.value.phone||'',note:item.value.note||'',isRuocDau:item.value.isRuocDau===true,
+    const productState=(await adminDatabase().ref(`studioPlanner_v1/deliveryProductState/${id}`).once('value')).val()||{};
+    const completedProductIds=Object.entries(productState as Record<string,{completedAt?:unknown}>).filter(([,value])=>Boolean(value?.completedAt)).map(([productId])=>productId);
+    return json({event:{...normaliseEvents([item.value])[0],deliveryCompleted,completedProductIds,phone:item.value.phone||'',note:item.value.note||'',isRuocDau:item.value.isRuocDau===true,
     sourceLinks:Object.fromEntries(recordValues(item.value.assignments).filter(a=>a.id!=null).map(a=>[String(a.id),String(a.link||'')])),
     products:recordValues(item.value.products).map(p=>({id:String(p.id||''),name:String(p.name||''),url:String(p.url||''),mediaType:String(p.mediaType||'auto')})),
     startTrai:item.value.startTrai||'',startGai:item.value.startGai||'',locTrai:item.value.locTrai||'',locGai:item.value.locGai||'',phoneTrai:item.value.phoneTrai||'',phoneGai:item.value.phoneGai||''},version:item.version});
   }catch(err){return fail(err);}
 }
-export async function PATCH(request:Request,{params}:{params:Promise<{id:string}>}){
+async function handlePATCH(request:Request,{params}:{params:Promise<{id:string}>}){
   const user=await requireAdmin(request);if(user instanceof Response)return user;
   if(Number(request.headers.get('content-length')||0)>20_480)return json({error:'Yêu cầu quá lớn'},413);
   let body:unknown;try{body=await request.json();}catch{return json({error:'JSON không hợp lệ'},400);}
@@ -111,7 +114,7 @@ export async function PATCH(request:Request,{params}:{params:Promise<{id:string}
     return response;
   }catch(err){return fail(err);}
 }
-export async function DELETE(request:Request,{params}:{params:Promise<{id:string}>}){
+async function handleDELETE(request:Request,{params}:{params:Promise<{id:string}>}){
   const user=await requireAdmin(request);if(user instanceof Response)return user;
   let body:unknown;try{body=await request.json();}catch{return json({error:'JSON không hợp lệ'},400);}
   if(!body||typeof body!=='object'||Array.isArray(body))return json({error:'Dữ liệu không hợp lệ'},400);
@@ -142,4 +145,14 @@ export async function DELETE(request:Request,{params}:{params:Promise<{id:string
     await audit('EVENT_DELETED',user,item.value,id,`Đã xóa lịch ${String(item.value.name||'')} (đã lưu bản dự phòng cho admin)`);
     return json({success:true,archived:true});
   }catch(err){return fail(err);}
+}
+
+export async function GET(request:Request, context:{params:Promise<{id:string}>}){
+  return withApiTrace('booking.get',()=>handleGET(request,context));
+}
+export async function PATCH(request:Request, context:{params:Promise<{id:string}>}){
+  return withApiTrace('booking.patch',()=>handlePATCH(request,context));
+}
+export async function DELETE(request:Request, context:{params:Promise<{id:string}>}){
+  return withApiTrace('booking.delete',()=>handleDELETE(request,context));
 }

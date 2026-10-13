@@ -62,3 +62,8 @@ export function coverOrientation(item:DeliveryMedia):'landscape'|'portrait'|'unk
   if(!item.width || !item.height)return 'unknown';
   return item.width>item.height?'landscape':item.width<item.height?'portrait':'unknown';
 }
+
+/** A legacy event-wide link has no productId; new links are strictly scoped. */
+export function productAllowedByGrant(grantProductId:string|undefined,requestedProductId:string){
+ return !grantProductId||grantProductId===requestedProductId;
+}

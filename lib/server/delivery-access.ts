@@ -1,7 +1,7 @@
 import {createHash,randomBytes,timingSafeEqual,randomUUID,createCipheriv,createDecipheriv} from 'node:crypto';
 import {adminDatabase} from './firebase-admin';
 import {findBooking,BookingStoreError} from './event-storage';
-import {SHARE_TOKEN, validGrantToken, validId, type DeliveryScope} from '@/lib/domain/delivery';
+import {SHARE_TOKEN, validGrantToken, validId, productAllowedByGrant, type DeliveryScope} from '@/lib/domain/delivery';
 
 // Keep the permitted HTTP response codes explicit. Media thumbnail errors use
 // 413 (oversized), 502 (upstream response invalid) and 504 (upstream timeout).
@@ -40,7 +40,7 @@ function decryptToken(encoded:string){
   }catch{return null;}
 }
 
-export type GrantRecord={hash:string;expiresAt:number;createdAt:number;createdBy:string;scope:DeliveryScope;revokedAt?:number;revokedBy?:string;lastUsedAt?:number;encryptedToken?:string};
+export type GrantRecord={hash:string;expiresAt:number;createdAt:number;createdBy:string;scope:DeliveryScope;revokedAt?:number;revokedBy?:string;lastUsedAt?:number;encryptedToken?:string;productId?:string};
 
 export async function issueDeliveryGrant(eventId:string,adminUid:string,days:number,scope:DeliveryScope='review'){
   if(!validId(eventId))throw new DeliveryError(400,'DELIVERY_BAD_ID','Mã lịch không hợp lệ');
@@ -59,25 +59,27 @@ export async function issueDeliveryGrant(eventId:string,adminUid:string,days:num
  * RTDB transaction. Older hash-only grants cannot be reconstructed; only on
  * the first use they are replaced and revoked atomically.
  */
-export async function ensureDeliveryGrant(eventId:string,adminUid:string,days=30){
+export async function ensureDeliveryGrant(eventId:string,adminUid:string,days=30,productId=''){
   if(!validId(eventId))throw new DeliveryError(400,'DELIVERY_BAD_ID','Mã lịch không hợp lệ');
-  await findBooking(eventId);
+  const booking=await findBooking(eventId);
+  if(productId && (!validId(productId)||!Array.isArray(booking.value.products)&&!(booking.value.products&&typeof booking.value.products==='object')))throw new DeliveryError(404,'DELIVERY_PRODUCT_NOT_FOUND','Không tìm thấy sản phẩm');
+  if(productId && !(Array.isArray(booking.value.products)?booking.value.products:Object.values(booking.value.products||{})).some(p=>p&&typeof p==='object'&&String((p as {id?:unknown}).id)===productId))throw new DeliveryError(404,'DELIVERY_PRODUCT_NOT_FOUND','Sản phẩm không còn trong lịch');
   // Prepare candidate OUTSIDE RTDB transaction callback (Firebase may retry it).
   const grantId=randomBytes(12).toString('hex');
   const secret=randomBytes(32).toString('base64url');
   const token=`${grantId}.${secret}`;
   const now=Date.now(),expiresAt=now+days*86_400_000;
-  const candidate:GrantRecord={hash:digest(secret),encryptedToken:encryptToken(token),scope:'review',expiresAt,createdAt:now,createdBy:adminUid};
+  const candidate:GrantRecord={hash:digest(secret),encryptedToken:encryptToken(token),scope:'review',expiresAt,createdAt:now,createdBy:adminUid,...(productId?{productId}:{})};
   const rootRef=adminDatabase().ref(`${root}/${eventId}`);
   const tx=await rootRef.transaction((raw:Record<string,GrantRecord>|null)=>{
     const records={...(raw||{})};
     // Keep the newest recoverable link, if one exists. Do not rotate each click.
-    const eligible=Object.entries(records).filter(([id,v])=>v && !v.revokedAt && v.scope==='review' && Number(v.expiresAt)>now &&
+    const eligible=Object.entries(records).filter(([id,v])=>v && !v.revokedAt && v.scope==='review' && String(v.productId||'')===productId && Number(v.expiresAt)>now &&
       typeof v.encryptedToken==='string' && validGrantToken(decryptToken(v.encryptedToken)) && /^[a-f0-9]{24}$/.test(id))
       .sort((a,b)=>Number(b[1].createdAt)-Number(a[1].createdAt));
     const chosen=eligible[0]?.[0]||grantId;
     for(const [id,v] of Object.entries(records)){
-      if(id!==chosen && v && !v.revokedAt && Number(v.expiresAt)>now)
+      if(id!==chosen && v && String(v.productId||'')===productId && !v.revokedAt && Number(v.expiresAt)>now)
         records[id]={...v,revokedAt:now,revokedBy:adminUid};
     }
     if(chosen===grantId)records[grantId]=candidate;
@@ -85,13 +87,13 @@ export async function ensureDeliveryGrant(eventId:string,adminUid:string,days=30
   },undefined,false);
   if(!tx.committed)throw new DeliveryError(409,'DELIVERY_GRANT_CONFLICT','Không thể thiết lập link dùng chung');
   const records=tx.snapshot.val() as Record<string,GrantRecord>;
-  const entry=Object.entries(records).filter(([,v])=>v&&!v.revokedAt&&Number(v.expiresAt)>now)
+  const entry=Object.entries(records).filter(([,v])=>v&&String(v.productId||'')===productId&&!v.revokedAt&&Number(v.expiresAt)>now)
     .sort((a,b)=>Number(b[1].createdAt)-Number(a[1].createdAt))[0];
   if(!entry)throw new DeliveryError(503,'DELIVERY_LINK_UNAVAILABLE','Không lấy được link bảo mật');
   const raw=entry[0]===grantId?token:decryptToken(String(entry[1].encryptedToken||''));
   if(!raw||!validGrantToken(raw))throw new DeliveryError(503,'DELIVERY_LINK_UNAVAILABLE','Không giải mã được link. Kiểm tra khóa mã hóa');
   if(entry[0]===grantId)await deliveryAudit('DELIVERY_LINK_CREATED',eventId,grantId,adminUid).catch(err=>console.error('[delivery] audit unavailable',err));
-  return {grantId:entry[0],token:raw,expiresAt:entry[1].expiresAt,scope:entry[1].scope,created:entry[0]===grantId};
+  return {grantId:entry[0],token:raw,expiresAt:entry[1].expiresAt,scope:entry[1].scope,productId:entry[1].productId||null,created:entry[0]===grantId};
 }
 export async function verifyDeliveryGrant(eventId:string,token:unknown,needsReview=false):Promise<GrantRecord>{
   if(!validId(eventId)||!validGrantToken(token))throw new DeliveryError(401,'DELIVERY_TOKEN_INVALID','Liên kết bàn giao không hợp lệ');
@@ -106,6 +108,11 @@ export async function verifyDeliveryGrant(eventId:string,token:unknown,needsRevi
   if(!Number.isSafeInteger(record.expiresAt)||Date.now()>=record.expiresAt)throw new DeliveryError(410,'DELIVERY_EXPIRED','Liên kết đã hết hạn');
   if(needsReview && record.scope!=='review')throw new DeliveryError(403,'DELIVERY_READ_ONLY','Liên kết chỉ được xem');
   return record;
+}
+/** A scoped link must never access a different product from the same booking. */
+export function assertGrantProduct(grant:GrantRecord,productId:string){
+  if(!productAllowedByGrant(grant.productId,productId))
+    throw new DeliveryError(403,'DELIVERY_PRODUCT_DENIED','Link này chỉ dành cho một sản phẩm bàn giao khác');
 }
 export async function listDeliveryGrants(eventId:string){
   const snap=await adminDatabase().ref(`${root}/${eventId}`).once('value');

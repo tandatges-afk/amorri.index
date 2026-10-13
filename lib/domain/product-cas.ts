@@ -87,3 +87,35 @@ export async function conditionalProductWrite(args:ProductRequest):Promise<{reco
   }
   throw new ProductCasError(409,'PRODUCT_RETRY_LIMIT','Sản phẩm đang được cập nhật đồng thời. Hãy thử lại sau ít giây.');
 }
+
+/** Remove only the selected product, preserving unrelated legacy fields/selections.
+ * Deletes are not retried blindly on uncertain network responses. */
+export async function conditionalProductDelete(args:Pick<ProductRequest,'url'|'token'|'id'|'productId'|'expectedVersion'|'versionOf'|'request'> & {originalProduct:ProductBaseline}):Promise<{version:string}> {
+ const send=args.request||fetch;
+ const auth={Authorization:`Bearer ${args.token}`};
+ for(let attempt=0;attempt<3;attempt++){
+  let read:Response;
+  try{read=await send(args.url,{method:'GET',headers:{...auth,'X-Firebase-ETag':'true'},cache:'no-store',signal:AbortSignal.timeout(18000)});}
+  catch{throw new ProductCasError(503,'PRODUCT_DELETE_READ','Không đọc được dữ liệu sản phẩm để xóa.');}
+  if(!read.ok)throw new ProductCasError(503,'PRODUCT_DELETE_READ','Firebase không cho phép đọc dữ liệu sản phẩm.');
+  const etag=read.headers.get('etag');if(!etag)throw new ProductCasError(503,'PRODUCT_DELETE_ETAG','Thiếu ETag, không thể xóa an toàn.');
+  const current=await read.json() as Record<string,unknown>|null;
+  if(!current||String(current.id)!==args.id)throw new ProductCasError(404,'PRODUCT_BOOKING_NOT_FOUND','Lịch không tồn tại.');
+  const matches=items(current.products).filter(v=>String(v.id||'')===args.productId);
+  if(matches.length!==1)throw new ProductCasError(409,'PRODUCT_CHANGED','Sản phẩm đã được xóa hoặc trùng ID.');
+  if(!equal(summary(matches[0]),args.originalProduct))throw new ProductCasError(409,'PRODUCT_CHANGED','Sản phẩm đã thay đổi. Tải lại chi tiết trước khi xóa.');
+  const old=current.products;
+  let updated:unknown;
+  if(Array.isArray(old))updated=old.filter(v=>!v||typeof v!=='object'||String(v.id)!==args.productId);
+  else if(old&&typeof old==='object')updated=Object.fromEntries(Object.entries(old).filter(([,v])=>!v||typeof v!=='object'||String((v as Record<string,unknown>).id)!==args.productId));
+  else throw new ProductCasError(404,'PRODUCT_NOT_FOUND','Không tìm thấy sản phẩm.');
+  const next={...current,products:updated,updatedAt:Date.now()};
+  let write:Response;
+  try{write=await send(args.url,{method:'PUT',headers:{...auth,'Content-Type':'application/json','if-match':etag},body:JSON.stringify(next),cache:'no-store',signal:AbortSignal.timeout(18000)});}
+  catch{throw new ProductCasError(503,'PRODUCT_DELETE_UNCERTAIN','Không xác định được kết quả xóa. Tải lại trước khi thử lại.');}
+  if(write.status===412)continue;
+  if(!write.ok)throw new ProductCasError(503,'PRODUCT_DELETE_FAILED','Firebase từ chối xóa sản phẩm.');
+  return {version:args.versionOf(next)};
+ }
+ throw new ProductCasError(409,'PRODUCT_RETRY_LIMIT','Sản phẩm đang thay đổi liên tục. Vui lòng thử lại.');
+}

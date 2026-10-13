@@ -16,7 +16,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { resolveRange } from '../../lib/server/legacy/range.js';
 import { GoogleAuth } from 'google-auth-library';
-import { verifyDeliveryGrant } from '../../lib/server/delivery-access';
+import { verifyDeliveryGrant, assertGrantProduct } from '../../lib/server/delivery-access';
 import { findBooking } from '../../lib/server/event-storage';
 
 const API = 'https://www.googleapis.com/drive/v3/files/';
@@ -180,7 +180,8 @@ export default async function handler(req,res) {
       if(!GALLERY_ID.test(clientGallery)||!GALLERY_ID.test(productId))return sendError(res,400,'Invalid gallery or product ID');
       // New private links MUST prove a valid grant. Legacy access is gated separately for migration.
       if(payload.deliveryToken){
-        try{await verifyDeliveryGrant(clientGallery,payload.deliveryToken,false);}
+        try{const grant=await verifyDeliveryGrant(clientGallery,payload.deliveryToken,false);
+          assertGrantProduct(grant,productId);}
         catch{return sendError(res,401,'Invalid or expired delivery link');}
       } else if(process.env.AMORRI_LEGACY_DELIVERY_ACCESS==='strict'){
         return sendError(res,401,'Private delivery token required');

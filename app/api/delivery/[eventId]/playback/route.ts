@@ -1,5 +1,5 @@
 import {deliveryFailure,json,productById,payload} from '@/lib/server/delivery-http';
-import {DeliveryError,deliveryToken,verifyDeliveryGrant} from '@/lib/server/delivery-access';
+import {DeliveryError,deliveryToken,verifyDeliveryGrant,assertGrantProduct} from '@/lib/server/delivery-access';
 import {findBooking} from '@/lib/server/event-storage';
 import {listDeliveryMedia} from '@/lib/server/delivery-media';
 import {validId} from '@/lib/domain/delivery';
@@ -12,9 +12,10 @@ export async function POST(request:Request,{params}:{params:Promise<{eventId:str
   try{
     const {eventId}=await params;
     if(!validId(eventId))throw new DeliveryError(400,'VIDEO_BAD_ID','Mã lịch không hợp lệ');
-    await verifyDeliveryGrant(eventId,deliveryToken(request));
+    const grant=await verifyDeliveryGrant(eventId,deliveryToken(request));
     const body=await payload(request,4096);
     if(!validId(body.productId)||!validId(body.mediaId))throw new DeliveryError(400,'VIDEO_BAD_ID','Mã sản phẩm hoặc video không hợp lệ');
+    assertGrantProduct(grant,String(body.productId));
     const {value}=await findBooking(eventId);
     const product=productById(value,body.productId);
     const media=await listDeliveryMedia(product);

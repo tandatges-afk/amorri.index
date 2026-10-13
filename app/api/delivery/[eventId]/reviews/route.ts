@@ -1,3 +1,4 @@
+import {withApiTrace} from '@/lib/server/trace';
 import {adminDatabase} from '@/lib/server/firebase-admin';
 import {deliveryEvent,productById,payload,json,deliveryFailure} from '@/lib/server/delivery-http';
 import {DeliveryError,deliveryToken,verifyDeliveryGrant} from '@/lib/server/delivery-access';
@@ -7,9 +8,9 @@ import {listDeliveryMedia} from '@/lib/server/delivery-media';
 import {validId,reviewKey,validateReview} from '@/lib/domain/delivery';
 export const runtime='nodejs';export const dynamic='force-dynamic';
 async function reviewRef(request:Request,eventId:string,needsReview:boolean){
-  const {value}=await deliveryEvent(request,eventId,needsReview);
   const query=new URL(request.url).searchParams;
   const productId=query.get('productId')||'';const mediaId=query.get('mediaId')||'';
+  const {value}=await deliveryEvent(request,eventId,needsReview,productId);
   const product=productById(value,productId);
   if(!validId(mediaId))throw new DeliveryError(400,'DELIVERY_BAD_MEDIA','Mã video không hợp lệ');
   const files=await listDeliveryMedia(product);
@@ -17,7 +18,7 @@ async function reviewRef(request:Request,eventId:string,needsReview:boolean){
   const productKey=reviewKey(`${productId}::${mediaId}`);
   return {ref:adminDatabase().ref(`videoReviews_v1/${reviewKey(eventId)}/${productKey}`),productId,mediaId};
 }
-export async function GET(request:Request,{params}:{params:Promise<{eventId:string}>}){
+async function handleGET(request:Request,{params}:{params:Promise<{eventId:string}>}){
   try{const {eventId}=await params;const {ref}=await reviewRef(request,eventId,false);
     const snap=await ref.limitToLast(300).once('value');
     const comments=Object.entries(snap.val()||{}).filter(([,v])=>v&&typeof v==='object')
@@ -26,7 +27,7 @@ export async function GET(request:Request,{params}:{params:Promise<{eventId:stri
     return json({comments});
   }catch(err){return deliveryFailure(err);}
 }
-export async function POST(request:Request,{params}:{params:Promise<{eventId:string}>}){
+async function handlePOST(request:Request,{params}:{params:Promise<{eventId:string}>}){
   try{
     const {eventId}=await params;const {ref}=await reviewRef(request,eventId,true);
     const body=await payload(request,4_096);const parsed=validateReview(body);
@@ -50,4 +51,11 @@ export async function POST(request:Request,{params}:{params:Promise<{eventId:str
     const created=ref.push();await created.set(record);
     return json({success:true,id:created.key,comment:record},201);
   }catch(err){return deliveryFailure(err);}
+}
+
+export async function GET(request:Request, context:{params:Promise<{eventId:string}>}){
+  return withApiTrace('reviews.get',()=>handleGET(request,context));
+}
+export async function POST(request:Request, context:{params:Promise<{eventId:string}>}){
+  return withApiTrace('reviews.post',()=>handlePOST(request,context));
 }

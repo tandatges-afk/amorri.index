@@ -1,3 +1,4 @@
+import {withApiTrace} from '@/lib/server/trace';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { authenticatedAdmin, adminDatabase, publicAuthFailure } from '@/lib/server/firebase-admin';
@@ -8,7 +9,7 @@ import {withScheduleLock,dailyEvents,dailyBlackouts,ScheduleError} from '@/lib/s
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const headers = { 'Cache-Control': 'no-store' };
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   let user;
   try {user = await authenticatedAdmin(request);}
   catch (err) {const failure=publicAuthFailure(err);console.error('[events] auth failed',{code:failure.code});return NextResponse.json({error:failure.error,code:failure.code}, {status:failure.status,headers});}
@@ -54,7 +55,11 @@ export async function POST(request: Request) {
     return NextResponse.json({success:true,id:event.id},{status:201,headers});
   } catch (error) {
     if(error instanceof ScheduleError)return NextResponse.json({error:error.message,code:error.code},{status:error.status,headers});
-    console.error('[events] create failed', error);
+    console.error('[events] create failed',{kind:error instanceof Error?error.name:'unknown'});
     return NextResponse.json({error:'Không thể tạo lịch trên Firebase, hãy kiểm tra kết nối và cấu hình'},{status:503,headers});
   }
+}
+
+export async function POST(request:Request){
+  return withApiTrace('booking.post',()=>handlePOST(request));
 }
