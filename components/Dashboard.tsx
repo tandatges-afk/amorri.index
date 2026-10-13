@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import {
-  Activity, ArrowRight, BadgeCheck, CalendarDays, ChevronLeft, ChevronRight,
+  Activity, ArrowRight, BadgeCheck, CalendarDays, ChevronLeft, ChevronRight, Copy,
   CircleDollarSign, Clock3, Download, Film, FolderOpen, Images, LayoutDashboard, ChartNoAxesCombined,
   LockKeyhole, LogOut, Menu, Plus, RefreshCw, Search, Settings2, ShieldCheck,
   Sparkles, Users, WalletCards, X
