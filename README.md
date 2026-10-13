@@ -1,3 +1,21 @@
+# AMORRI STUDIO — VNext 2.7 Main Workflow & Staff Share (Preview)
+
+## Nâng cấp từ VNext 2.6.2
+
+- **Sửa cảnh báo phát MP4 sai nguyên nhân:** thử cấp lại ticket Google Drive, báo lỗi HTTP/codec/mạng khác nhau, fallback Google Drive Preview mà vẫn giữ review timeline.
+- **Không cần Firebase Auth UID của thợ:** Admin phát hành link xem lịch có token ngẫu nhiên, hạn 7–90 ngày, thu hồi từ **Đội ngũ**. `/staff` là cổng **chỉ xem** lịch/ngày nghỉ, không có lương hay quyền sửa.
+- **Web chính:** có phân công nhân sự khi tạo lịch, kiểm tra trùng giờ + lịch nghỉ ở backend, form rước dâu hai nhà và thêm/sửa sản phẩm Google Drive ngay trong EventEditor; Admin xử lý bình luận video, khách copy tên ảnh đã chọn.
+- **Giữ nguyên:** Firebase RTDB `studioPlanner_v1`, lương, bàn giao, các API Google Drive, toàn bộ đường dẫn `/studio` cũ (chưa thể coi các link legacy là bảo mật).
+- **Không có Cloudflare HLS/CDN**; không cần biến môi trường mới.
+
+**Tài liệu triển khai, thao tác và QA:** [`docs/MAIN_WORKFLOW_2_7.md`](docs/MAIN_WORKFLOW_2_7.md).
+**Mã release ở `/api/health`:** `main-workflow-20261013-r1`.
+**Lưu ý:** chỉ kiểm thử mã nguồn cục bộ; chưa xác nhận Next build, Playwright hay tích hợp production. Dùng Vercel Preview trước.
+
+---
+
+## Lịch sử phiên bản 2.6.2 (tham khảo)
+
 # AMORRI STUDIO VNext 2.6.2 — Google Drive Only (Preview)
 
 **Next.js App Router + React + TypeScript + Tailwind v4, Firebase RTDB, Vercel, Vitest + Playwright tests.**
@@ -15,7 +33,7 @@
 
 ## Bước mới — VNext 2.5: Bàn giao riêng tư, bình luận video và chọn ảnh qua API TypeScript
 
-- **Admin:** Trong **Bàn giao sản phẩm**, mở “Link an toàn 2.5” để tạo link có hạn dùng / thu hồi / giới hạn quyền khách. Token 256-bit chỉ được lưu trên Firebase dưới dạng hash; không còn phải coi event ID là mật khẩu.
+- **Admin:** Trong **Bàn giao sản phẩm**, mở “Link an toàn” để tạo link có hạn dùng / thu hồi / giới hạn quyền khách. Token 256-bit chỉ được lưu trên Firebase dưới dạng hash; không còn phải coi event ID là mật khẩu.
 - **Khách:** Trang React mới `/delivery/<eventId>#token=...`, xem ảnh/video của đúng lịch, chọn ảnh và gửi góp ý theo timeline; API xác thực token phía server, kiểm tra file thực sự thuộc thư mục Drive trước khi ghi.
 - **Tương thích:** Mọi màn hình lịch, lương, nhân sự, `/staff`, `/studio`, ảnh đã chọn cũ và `videoReviews_v1` vẫn giữ. Link cũ chưa bị ngắt, nhưng vẫn phải siết Rules sau khi staging thành công.
 - **Không tuyên bố tối ưu video/CDN xong:** luồng phát vẫn đi qua Google Drive / Vercel Function. Chưa chuyển HLS, chưa bảo đảm 1080p mượt, chưa giải quyết quota Fast Origin Transfer.

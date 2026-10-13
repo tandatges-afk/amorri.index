@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 const read = f => readFileSync(new URL('../'+f,import.meta.url),'utf8');
 
-test('EventEditor uses narrowed immutable eventId for PATCH and DELETE', () => {
+test('EventEditor uses narrowed immutable eventId for PATCH, DELETE and products', () => {
   const editor = read('components/EventEditor.tsx');
   assert.match(editor,/if\(!id\)return null;\s*\/\/[^\n]*\n const eventId: string = id;/);
-  assert.equal((editor.match(/encodeURIComponent\(eventId\)/g)||[]).length, 2);
+  assert.equal((editor.match(/encodeURIComponent\(eventId\)/g)||[]).length, 3);
   assert.equal((editor.match(/encodeURIComponent\(id\)/g)||[]).length, 1); // GET in effect
 });
 

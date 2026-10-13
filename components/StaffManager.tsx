@@ -2,7 +2,7 @@
 import { useCallback,useEffect,useState } from 'react';
 import type { User } from 'firebase/auth';
 import { authorizedFetch,decodeResult } from '@/lib/firebase/authorized-fetch';
-import { CalendarOff, Save, UserPlus, RotateCw, UserX } from 'lucide-react';
+import { CalendarOff, Save, UserPlus, RotateCw, UserX, Link2, Copy, Link2Off } from 'lucide-react';
 
 type Staff={id:string;name:string;role:string;authUid:string;active:boolean};
 type Blackout={id:string;staffId:string;date:string;reason:string};
@@ -14,6 +14,8 @@ export function StaffManager({user,month,onChanged}:{user:User;month:string;onCh
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[success,setSuccess]=useState('');
  const [leaveStaff,setLeaveStaff]=useState(''),[leaveDate,setLeaveDate]=useState(today),[leaveReason,setLeaveReason]=useState('');
  const [agendaId,setAgendaId]=useState(''),[agenda,setAgenda]=useState<Agenda|null>(null);
+ const [shareStaffId,setShareStaffId]=useState(''),[shareDays,setShareDays]=useState(30),[shareUrl,setShareUrl]=useState('');
+ const [shares,setShares]=useState<{id:string;createdAt:number;expiresAt:number;revokedAt:number|null}[]>([]);
  const load=useCallback(async()=>{
   const [a,b]=await Promise.all([
    authorizedFetch(user,'/api/staff').then(decodeResult),
@@ -28,10 +30,21 @@ export function StaffManager({user,month,onChanged}:{user:User;month:string;onCh
  },[agendaId,user]);
  async function run(fn:()=>Promise<void>){setBusy(true);setError('');setSuccess('');try{await fn();await load();onChanged();setSuccess('Đã đồng bộ Firebase.');}catch(e){setError(e instanceof Error?e.message:'Thao tác thất bại');}finally{setBusy(false);}}
  const blank=()=>setForm({id:'',name:'',role:'Quay',authUid:'',active:true});
+ const openShares=async(id:string)=>{setShareStaffId(id);setShareUrl('');setError('');try{
+  const payload=await decodeResult(await authorizedFetch(user,`/api/staff/share?staffId=${encodeURIComponent(id)}`));setShares(payload.grants||[]);
+ }catch(e){setError(e instanceof Error?e.message:'Không xem được link');}};
+ const createShare=()=>run(async()=>{
+  const value=await decodeResult(await authorizedFetch(user,'/api/staff/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({staffId:shareStaffId,days:shareDays})}));
+  setShareUrl(value.shareUrl);const list=await decodeResult(await authorizedFetch(user,`/api/staff/share?staffId=${encodeURIComponent(shareStaffId)}`));setShares(list.grants||[]);
+ });
+ const revokeShare=(grantId:string)=>{if(!confirm('Thu hồi link này? Người có link sẽ không xem được nữa.'))return;void run(async()=>{
+  await decodeResult(await authorizedFetch(user,`/api/staff/share/${encodeURIComponent(grantId)}?staffId=${encodeURIComponent(shareStaffId)}`,{method:'DELETE'}));
+  setShareUrl('');const list=await decodeResult(await authorizedFetch(user,`/api/staff/share?staffId=${encodeURIComponent(shareStaffId)}`));setShares(list.grants||[]);
+ });};
  const save=()=>run(async()=>{
   const editing=!!form.id;
   const r=await authorizedFetch(user,editing?`/api/staff/${encodeURIComponent(form.id)}`:'/api/staff',{
-    method:editing?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:form.name,role:form.role,authUid:form.authUid,active:form.active})
+    method:editing?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:form.name,role:form.role,active:form.active})
   });await decodeResult(r);blank();
  });
  const deactivate=(s:Staff)=>{if(!window.confirm(`Ngưng hoạt động ${s.name}? Giữ nguyên lịch và lương cũ.`))return;void run(async()=>{
@@ -46,10 +59,9 @@ export function StaffManager({user,month,onChanged}:{user:User;month:string;onCh
  });};
  return <div className="space-y-5">
   <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-950">
-   <b>VNext 2.6 — Liên kết tài khoản cho nhân sự</b>
-   <p>1. Mở <a className="underline" href="https://console.firebase.google.com/project/ammori-c4905/authentication/users" target="_blank" rel="noopener noreferrer">Firebase Authentication → Users ↗</a> → Add user và tạo email/mật khẩu riêng cho thợ.</p>
-   <p>2. Sao chép <strong>User UID</strong> (khác Staff ID), bấm <strong>Sửa</strong> ở đúng nhân sự đang có → dán vào <strong>Firebase Auth UID</strong> → Lưu cập nhật. Không tạo nhân sự trùng nếu đã có lịch/lương.</p>
-   <p>3. Thợ đăng nhập tại <a className="underline" href="/staff">/staff</a>. Một UID chỉ được gắn với một hồ sơ; link <code>?staff=</code> cũ không phải cơ chế xác thực.</p>
+   <b>Link xem lịch cho đội ngũ — Không cần Firebase Auth UID</b>
+   <p>Thêm nhân sự như bình thường, sau đó bấm <strong>Copy link</strong> tại hồ sơ để tạo link riêng. Thợ mở link sẽ xem lịch được phân công và ngày nghỉ, không cần email/mật khẩu.</p>
+   <p>Link chỉ xem, có hạn sử dụng và có thể thu hồi. Không chia sẻ link công khai.</p>
   </div>
   {(error||success)&&<div role="alert" className={`rounded-lg p-3 text-sm ${error?'bg-rose-50 text-rose-800':'bg-emerald-50 text-emerald-800'}`}>{error||success}</div>}
   <div className="grid gap-5 lg:grid-cols-2">
@@ -58,7 +70,6 @@ export function StaffManager({user,month,onChanged}:{user:User;month:string;onCh
     <form className="space-y-3" onSubmit={e=>{e.preventDefault();void save();}}>
      <label className="block text-xs font-semibold">Tên nhân sự<input required minLength={2} maxLength={120} className="mt-1 w-full rounded-lg border p-2.5" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label>
      <label className="block text-xs font-semibold">Vai trò<input maxLength={80} className="mt-1 w-full rounded-lg border p-2.5" value={form.role} onChange={e=>setForm({...form,role:e.target.value})}/></label>
-     <label className="block text-xs font-semibold">Firebase Auth UID<input maxLength={160} placeholder="UID của tài khoản thợ" className="mt-1 w-full rounded-lg border p-2.5" value={form.authUid} onChange={e=>setForm({...form,authUid:e.target.value.trim()})}/></label>
      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.active} onChange={e=>setForm({...form,active:e.target.checked})}/> Đang hoạt động</label>
      <div className="flex gap-2"><button disabled={busy} className="primary-button" type="submit"><Save size={15}/> {form.id?'Lưu cập nhật':'Thêm nhân sự'}</button>{form.id&&<button type="button" className="secondary-button" onClick={blank}>Bỏ chọn</button>}</div>
     </form>
@@ -66,10 +77,17 @@ export function StaffManager({user,month,onChanged}:{user:User;month:string;onCh
    <section className="rounded-2xl border bg-white p-5 shadow-sm">
     <div className="mb-4 flex items-center justify-between"><h3 className="font-bold">Đội ngũ ({staff.length})</h3><button onClick={()=>void load().catch(e=>setError(e.message))} title="Tải lại" className="rounded-lg border p-2"><RotateCw size={17}/></button></div>
     <div className="max-h-[360px] space-y-2 overflow-auto">
-     {staff.map(s=><div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3"><div><b>{s.name}</b><p className="text-xs text-slate-500">{s.role} · {s.active?'Hoạt động':'Ngưng hoạt động'}</p><p className="text-xs text-slate-400">{s.authUid?'Đã liên kết tài khoản':'Chưa liên kết Firebase Auth'}</p></div><div className="flex gap-2"><button className="secondary-button small" onClick={()=>setForm({...s})}>Sửa</button><button disabled={!s.active||busy} className="rounded-lg border px-2 text-rose-700 disabled:opacity-40" title="Ngưng hoạt động" onClick={()=>deactivate(s)}><UserX size={16}/></button></div></div>)}
+     {staff.map(s=><div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3"><div><b>{s.name}</b><p className="text-xs text-slate-500">{s.role} · {s.active?'Hoạt động':'Ngưng hoạt động'}</p><p className="text-xs text-slate-400">Mã hồ sơ: {s.id}</p></div><div className="flex gap-2"><button className="secondary-button small" onClick={()=>setForm({...s})}>Sửa</button><button type="button" className="secondary-button small" onClick={()=>void openShares(s.id)}><Link2 size={14}/> Copy link</button><button disabled={!s.active||busy} className="rounded-lg border px-2 text-rose-700 disabled:opacity-40" title="Ngưng hoạt động" onClick={()=>deactivate(s)}><UserX size={16}/></button></div></div>)}
     </div>
    </section>
   </div>
+  {shareStaffId&&<section className="rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
+    <div className="flex items-center justify-between gap-3"><h3 className="font-bold">Link riêng: {staff.find(s=>s.id===shareStaffId)?.name||'Nhân sự'}</h3><button className="secondary-button small" type="button" onClick={()=>{setShareStaffId('');setShareUrl('');}}>Đóng</button></div>
+    <div className="mt-3 flex flex-wrap items-end gap-3"><label className="text-xs font-semibold">Hiệu lực (ngày)<select className="mt-1 block rounded-lg border p-2" value={shareDays} onChange={e=>setShareDays(Number(e.target.value))}>{[7,30,60,90].map(n=><option key={n} value={n}>{n} ngày</option>)}</select></label>
+    <button type="button" className="primary-button" disabled={busy} onClick={()=>void createShare()}><Link2 size={16}/> Tạo link nhân sự</button></div>
+    {shareUrl&&<div className="mt-3 rounded-xl bg-indigo-50 p-3"><p className="break-all text-xs">{shareUrl}</p><button type="button" className="secondary-button small mt-2" onClick={()=>void navigator.clipboard.writeText(shareUrl).then(()=>setSuccess('Đã sao chép link.')).catch(()=>setError('Không thể copy tự động. Hãy chọn đường link bên trên.'))}><Copy size={15}/> Copy link để gửi</button><p className="mt-2 text-xs text-indigo-800">Link chỉ hiển thị ngay sau khi tạo. Nếu làm mất, hãy tạo link mới.</p></div>}
+    <div className="mt-3 space-y-2">{shares.map(gr=> <div key={gr.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2 text-xs"><span>{gr.revokedAt?'Đã thu hồi':gr.expiresAt<Date.now()?'Hết hạn':`Hiệu lực đến ${new Date(gr.expiresAt).toLocaleDateString('vi-VN')}`}</span><button type="button" disabled={busy||!!gr.revokedAt} onClick={()=>revokeShare(gr.id)} className="inline-flex items-center gap-1 font-semibold text-rose-700 disabled:opacity-40"><Link2Off size={14}/> Thu hồi</button></div>)}</div>
+   </section>}
   <div className="grid gap-5 lg:grid-cols-2">
    <section className="rounded-2xl border bg-white p-5 shadow-sm">
     <h3 className="mb-4 flex items-center gap-2 font-bold"><CalendarOff size={19}/> Quản lý lịch nghỉ</h3>

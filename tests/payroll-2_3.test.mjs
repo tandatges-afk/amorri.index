@@ -55,12 +55,13 @@ test('API contracts authorize admin writes, compare-and-set and isolate staff re
  assert.match(staffApi,/accessibleStaff\(actor\)/);assert.match(staffApi,/\.find\(row=>row\.staffId===String\(staff\.data\.id\)\)/);
  assert.doesNotMatch(staffApi,/return json\(ledger\)/);
 });
-test('legacy staff portal and payroll dashboard now use typed API routes',()=>{
+test('admin payroll keeps typed API while share-based staff portal is read-only',()=>{
  const root=new URL('../',import.meta.url);
  const dashboard=readFileSync(new URL('components/Dashboard.tsx',root),'utf8');
  const portal=readFileSync(new URL('components/StaffPortal.tsx',root),'utf8');
  assert.match(dashboard,/<PayrollManager month=\{month\} user=\{user\}/);
- assert.match(portal,/\/api\/staff\/payroll\?month=/);
+ assert.match(portal,/\/api\/staff\/shared\?staffId=/);
+ assert.doesNotMatch(portal,/\/api\/staff\/payroll\?month=/);
 });
 test('CSV escape prevents formula-like staff names being opened as formulas',()=>{
  const file=readFileSync(new URL('../components/PayrollManager.tsx',import.meta.url),'utf8');

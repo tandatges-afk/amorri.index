@@ -15,6 +15,19 @@ try {
    const result=validateBooking(base);assert.equal(result.ok,true);
    assert.equal(result.value.deposit,3_000_000);
  });
+ test('accepts assigned crew when creating a new booking',()=>{
+   const result=validateBooking({...base,assignments:[{id:'staff01',task:'Quay',cost:800000,locType:'Nhà trai'}]});
+   assert.equal(result.ok,true);if(result.ok)assert.equal(result.value.assignments[0].cost,800000);
+ });
+ test('requires both house locations on bridal schedules',()=>{
+   const result=validateBooking({...base,isRuocDau:true,startTrai:'07:00',startGai:'09:00',locTrai:'',locGai:'Sóc Trăng'});
+   assert.equal(result.ok,false);
+ });
+ test('accepts two-house event and keeps location fields',()=>{
+   const result=validateBooking({...base,isRuocDau:true,startTrai:'07:00',startGai:'09:00',locTrai:'Cần Thơ',locGai:'Sóc Trăng'});
+   assert.equal(result.ok,true);if(result.ok)assert.equal(result.value.locTrai,'Cần Thơ');
+ });
+ test('does not accept duplicate crew IDs',()=>assert.equal(validateBooking({...base,assignments:[{id:'a',task:'',cost:0,locType:''},{id:'a',task:'',cost:0,locType:''}]}).ok,false));
  test('does not accept impossible dates',()=>assert.equal(validateBooking({...base,date:'2026-02-30'}).ok,false));
  test('does not accept negative prices',()=>assert.equal(validateBooking({...base,price:-1}).ok,false));
  test('does not accept mismatched deposits',()=>assert.equal(validateBooking({...base,deposit:11_000_000}).ok,false));

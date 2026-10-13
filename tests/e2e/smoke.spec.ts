@@ -31,11 +31,20 @@ test('2.5 private delivery API refuses missing token and does not return custome
  await expect(page.getByText('Link bàn giao thiếu mã truy cập.',{exact:false})).toBeVisible();
 });
 
-test('2.6.2 uses Drive only and protects compatibility video endpoint',async({request})=>{
+test('2.7 uses Drive only and protects compatibility video endpoint',async({request})=>{
   const health=await request.get('/api/health');
   const version=await health.json();expect(version.streamingApi).toBe('google-drive-only');
   const playback=await request.post('/api/delivery/example-event/playback',{data:{productId:'example-product',mediaId:'0123456789abcdef'}});
   expect(playback.status()).toBe(401);
   const response=await request.post('/api/drive-video',{data:{}});
   expect([400,503]).toContain(response.status());
+});
+
+
+test('2.7 anonymous staff share cannot be read without token',async({request})=>{
+ const response=await request.get('/api/staff/shared?staffId=exampleStaff');
+ expect(response.status()).toBe(401);
+ const body=await response.json();expect(body.code).toBe('STAFF_LINK_INVALID');
+ const grants=await request.get('/api/staff/share?staffId=exampleStaff');
+ expect(grants.status()).toBe(401);
 });

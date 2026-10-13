@@ -1,5 +1,5 @@
 'use client';
-import {useCallback,useEffect,useRef,useState,type FormEvent} from 'react';
+import {useCallback,useEffect,useRef,useState,type FormEvent,type SyntheticEvent} from 'react';
 import type {DeliveryMedia,DeliveryPayload} from '@/lib/domain/delivery';
 import './delivery.css';
 
@@ -12,6 +12,8 @@ function VideoReview({eventId,productId,file,token}:{eventId:string;productId:st
   const [name,setName]=useState(''),[message,setMessage]=useState(''),[seconds,setSeconds]=useState(0),[sending,setSending]=useState(false);
   const [actualQuality,setActualQuality]=useState('');
   const mediaRef=useRef<HTMLVideoElement>(null);
+  const retryCount=useRef(0);
+  const lastPosition=useRef(0);
   const endpoint=`/api/delivery/${encodeURIComponent(eventId)}/reviews?productId=${encodeURIComponent(productId)}&mediaId=${encodeURIComponent(file.id)}`;
   const load=useCallback(async()=>{
     try{const r=await fetch(endpoint,{headers:{'x-amorri-delivery-token':token},cache:'no-store'});
@@ -26,10 +28,34 @@ function VideoReview({eventId,productId,file,token}:{eventId:string;productId:st
   },[eventId,productId,file.id,token]);
   const useDrive=useCallback(async()=>{
     try{const url=await issueDriveTicket();setSrc(url);setMode('drive');setActualQuality('Nguồn Drive gốc');}
-    catch(e){setMode('iframe');setError(e instanceof Error?e.message:'Không thể phát video');}
+    catch(e){setMode('iframe');setError(`Không lấy được quyền phát trực tiếp từ Drive: ${e instanceof Error?e.message:'Lỗi kết nối'}. Đang dùng khung preview.`);}
   },[issueDriveTicket]);
+  const onNativeError=useCallback(async(e:SyntheticEvent<HTMLVideoElement>)=>{
+    const node=e.currentTarget;
+    const errorCode=node.error?.code||0;
+    const source=src;
+    lastPosition.current=Number.isFinite(node.currentTime)?node.currentTime:seconds;
+    if(retryCount.current===0){
+      retryCount.current=1;setError('Luồng video bị gián đoạn, đang xin lại đường dẫn phát từ Google Drive…');
+      try{const fresh=await issueDriveTicket();setSrc(fresh);setMode('drive');return;}
+      catch(err){setError(`Không cấp lại được link Drive: ${err instanceof Error?err.message:'Lỗi kết nối'}. Đang dùng preview dự phòng.`);}
+    }
+    // The browser's MediaError is NOT proof that an MP4 codec is unsupported.
+    // Distinguish upstream proxy/HTTP failures from decoding problems where possible.
+    let reason='';
+    try{
+      const probe=await fetch(source,{method:'HEAD',cache:'no-store'});
+      if(!probe.ok)reason=`proxy trả HTTP ${probe.status}`;
+      else if(errorCode===4)reason='định dạng/codec không tương thích hoặc dữ liệu nguồn không đọc được';
+      else if(errorCode===3)reason='giải mã video không thành công (codec hoặc file gốc)';
+      else if(errorCode===2)reason='kết nối bị gián đoạn';
+      else reason='không thể phát trực tiếp';
+    }catch{reason='kết nối tới proxy Drive gặp lỗi';}
+    setMode('iframe');setError(`Phát trực tiếp không thành công (${reason}); đã chuyển sang Google Drive Preview. Khung Drive không cung cấp currentTime cho website, vì vậy mốc bình luận cần nhập thủ công.`);
+  },[issueDriveTicket,src,seconds]);
   useEffect(()=>{
     // Drive-only playback: video access is authorized when the ticket is issued.
+    retryCount.current=0;lastPosition.current=0;
     void useDrive();
     void load();
   },[useDrive,load]);
@@ -42,9 +68,10 @@ function VideoReview({eventId,productId,file,token}:{eventId:string;productId:st
   const native=mode==='drive';
   return <section className="delivery-video"><div className="delivery-video-main"><h4>{file.name}</h4>
     {native?<video ref={mediaRef} src={src} controls playsInline preload="metadata"
-      onTimeUpdate={e=>{setSeconds(Math.floor(e.currentTarget.currentTime));}}
+      onTimeUpdate={e=>{const t=Math.floor(e.currentTarget.currentTime);lastPosition.current=t;setSeconds(t);}}
       onSeeked={e=>{setSeconds(Math.floor(e.currentTarget.currentTime));}}
-      onError={()=>{setMode('iframe');setError('Trình duyệt không phát được MP4, hãy nhập mốc giây thủ công.');}}/>
+      onLoadedMetadata={e=>{if(lastPosition.current>0 && Number.isFinite(e.currentTarget.duration)&&lastPosition.current<e.currentTarget.duration){e.currentTarget.currentTime=lastPosition.current;}}}
+      onError={e=>{void onNativeError(e);}}/>
       :mode==='loading'?<div className="delivery-player-loading">Đang chuẩn bị video…</div>
       :<iframe src={file.previewUrl} loading="lazy" title={`Xem video ${file.name}`} allow="autoplay; fullscreen; picture-in-picture" referrerPolicy="no-referrer"/>}
     <div className="delivery-player-info"><span>{actualQuality||'Google Drive'}</span></div>
@@ -66,6 +93,11 @@ function VideoReview({eventId,productId,file,token}:{eventId:string;productId:st
 function PhotoProduct({eventId,productId,files,preselected,token}:{eventId:string;productId:string;files:DeliveryMedia[];preselected:string[];token:string}){
   const [checked,setChecked]=useState<string[]>(preselected),[filter,setFilter]=useState<'all'|'selected'>('all');
   const [busy,setBusy]=useState(false),[notice,setNotice]=useState('');
+  const copySelectedNames=async()=>{
+   const names=images.filter(f=>checked.includes(f.id)).map(f=>f.name).join('\n');
+   if(!names){setNotice('Bạn chưa chọn ảnh nào.');return;}
+   try{await navigator.clipboard.writeText(names);setNotice(`Đã copy ${checked.length} tên ảnh.`);}catch{setNotice('Không thể copy tự động trên trình duyệt này.');}
+  };
   const images=files.filter(f=>!f.isVideo);
   const save=async()=>{setBusy(true);setNotice('');
     try{const r=await fetch(`/api/delivery/${encodeURIComponent(eventId)}/selections`,{method:'PUT',headers:{'Content-Type':'application/json','x-amorri-delivery-token':token},body:JSON.stringify({productId,fileIds:checked})});
@@ -75,7 +107,7 @@ function PhotoProduct({eventId,productId,files,preselected,token}:{eventId:strin
   if(!images.length)return null;
   return <><div className="delivery-photo-toolbar"><strong>Ảnh đã chọn: {checked.length}/{images.length}</strong>
     <div><button className={filter==='all'?'active':''} onClick={()=>setFilter('all')}>Tất cả</button><button className={filter==='selected'?'active':''} onClick={()=>setFilter('selected')}>Đã chọn</button>
-    <button className="delivery-primary" disabled={busy} onClick={save}>{busy?'Đang đồng bộ…':'Gửi lựa chọn'}</button></div></div>
+    <button type="button" onClick={()=>void copySelectedNames()}>Copy tên ảnh đã chọn</button><button className="delivery-primary" disabled={busy} onClick={save}>{busy?'Đang đồng bộ…':'Gửi lựa chọn'}</button></div></div>
     <div className="delivery-photos">{images.filter(i=>filter==='all'||checked.includes(i.id)).map(i=><button type="button" className={`delivery-photo ${checked.includes(i.id)?'is-selected':''}`} key={i.id} onClick={()=>setChecked(p=>p.includes(i.id)?p.filter(id=>id!==i.id):[...p,i.id])} aria-pressed={checked.includes(i.id)}>
       <img loading="lazy" alt={i.name} src={i.thumb}/><span>{checked.includes(i.id)?'✓ Đã chọn':'Chọn ảnh'}</span><small title={i.name}>{i.name}</small></button>)}</div>
     {notice&&<p role="status" className="delivery-alert">{notice}</p>}
