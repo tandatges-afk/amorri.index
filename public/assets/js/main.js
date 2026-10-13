@@ -149,15 +149,72 @@ let currentView = 'month'; let isFirstLoad = true;
 const staffViewId = urlParams.get('staff');
 let currentUserRole = 'guest';
 let currentAuthUser = null;
+// Server-verified identity: a Firebase login alone must NEVER grant the legacy admin role.
+let legacyVerifiedAdmin = false;
+let legacyVerifiedStaffId = null;
+let legacyAuthSequence = 0;
+let legacyAdminWriteMode = 'read-only'; // fail closed until migration policy arrives
 let invalidStaffLinkNotified = false;
+async function loadLegacyWritePolicy() {
+    try {
+        const res = await fetch('/api/access/policy', {cache:'no-store'});
+        if(!res.ok)throw new Error('migration policy unavailable');
+        const value = await res.json();
+        legacyAdminWriteMode = value.legacyAdminWrites === 'compat' ? 'compat' : 'read-only';
+    } catch(err) {
+        legacyAdminWriteMode = 'read-only';
+        console.warn('[Amorri migration] Unable to verify legacy write policy',err);
+    }
+}
+async function verifyLegacyIdentity(user) {
+    const sequence = ++legacyAuthSequence;
+    legacyVerifiedAdmin = false;
+    legacyVerifiedStaffId = null;
+    resolveCurrentUserRole();applyRoleUI();
+    if(!user){if(!isClientMode)render();return;}
+    try {
+        let token=await user.getIdToken();
+        let res=await fetch('/api/access/me',{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+        if(res.status===401){token=await user.getIdToken(true);res=await fetch('/api/access/me',{headers:{Authorization:'Bearer '+token},cache:'no-store'});}
+        if(!res.ok)throw new Error('Server denied legacy identity verification: '+res.status);
+        const identity=await res.json();
+        if(sequence!==legacyAuthSequence)return;
+        legacyVerifiedAdmin=identity.role==='admin';
+        legacyVerifiedStaffId=identity.role==='staff'?String(identity.staffId||''):null;
+        legacyAdminWriteMode=identity.legacyAdminWrites==='compat'?'compat':'read-only';
+    }catch(err){
+        if(sequence!==legacyAuthSequence)return;
+        legacyVerifiedAdmin=false;legacyVerifiedStaffId=null;
+        console.warn('[Amorri migration] Legacy identity not verified',err);
+        showToast('Phiên chưa được server xác minh. Mở Dashboard /staff để thao tác an toàn.');
+    }
+    resolveCurrentUserRole();applyRoleUI();
+    if(!isClientMode)render();
+}
+function canLegacyWrite(path,quiet=false) {
+    const target=String(path||'');
+    // The customer selection flow still uses legacy Firebase writes: not yet migrated.
+    // Never treat this compatibility exception as a Firebase security guarantee.
+    if(isClientMode && /^events\/[^/]+$/.test(target))return true;
+    if(!legacyVerifiedAdmin && !(legacyVerifiedStaffId && currentUserRole==='staff')){
+        if(!quiet)showToast('Cần đăng nhập và xác minh quyền trên server trước khi ghi dữ liệu.');
+        return false;
+    }
+    if(legacyAdminWriteMode !== 'compat'){
+        if(!quiet)showToast('Nghiệp vụ cũ đang chỉ đọc. Sử dụng Dashboard React hoặc /staff.');
+        return false;
+    }
+    return true;
+}
+
 
 function resolveCurrentUserRole() {
     if (staffViewId) {
         const validStaff = data.staff.some(s => String(s.id) === String(staffViewId));
-        currentUserRole = validStaff ? 'staff' : 'guest';
+        currentUserRole = validStaff && legacyVerifiedStaffId === String(staffViewId) ? 'staff' : 'guest';
         return currentUserRole;
     }
-    currentUserRole = currentAuthUser ? 'admin' : 'guest';
+    currentUserRole = legacyVerifiedAdmin ? 'admin' : 'guest';
     return currentUserRole;
 }
 
@@ -1618,6 +1675,17 @@ function savePendingWrites(list) {
     try { localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify((list || []).slice(-300))); } catch (_) {}
 }
 
+// Stale offline replay has previously resurrected deleted bookings. Quarantine old
+// management writes until a person compares them to the latest server record.
+function legacyQueueNeedsReview(path) {
+    return /^(events|staff|payroll|blackouts)(?:\/|$)/.test(String(path||''));
+}
+let legacyQueueWarned = false;
+function warnLegacyPendingReview() {
+    if(legacyQueueWarned)return;
+    legacyQueueWarned=true;
+    showToast('Có dữ liệu nháp chưa đồng bộ: hệ thống tạm chặn tự ghi đè. Hãy xuất bản nháp tại /migration để đối chiếu.');
+}
 function queuePendingWrite(type, path, value = null) {
     const cleanPath = String(path || '').replace(/^\/+|\/+$/g, '');
     let list = readPendingWrites();
@@ -1682,6 +1750,9 @@ function removeNestedValue(root, path) {
 function applyPendingWritesToSnapshot(snapshotData) {
     const clone = JSON.parse(JSON.stringify(snapshotData || defaultData()));
     for (const op of readPendingWrites()) {
+        // Do not paint stale pending event/staff/payroll/blackout operations over the
+        // authoritative Firebase snapshot: that looks exactly like a deleted item returning.
+        if(legacyQueueNeedsReview(op.path))continue;
         if (op.type === 'remove') removeNestedValue(clone, op.path);
         else if (op.type === 'update') setNestedValue(clone, op.path, op.value, true);
         else setNestedValue(clone, op.path, op.value, false);
@@ -1711,6 +1782,11 @@ async function flushPendingWrites() {
     try {
         while (list.length) {
             const op = list[0];
+            if(!canLegacyWrite(op.path,true))return false; // Never silently replay unauthorized writes.
+            if(legacyQueueNeedsReview(op.path)){
+                warnLegacyPendingReview();
+                return false; // Preserve the draft instead of resurrecting a deleted or superseded record.
+            }
             const ref = window.dbRef.child(op.path);
             if (op.type === 'remove') await withFirebaseTimeout(ref.remove());
             else if (op.type === 'update') await withFirebaseTimeout(ref.update(op.value));
@@ -1728,6 +1804,7 @@ async function flushPendingWrites() {
 }
 
 async function dbSet(path, value) {
+    if(!canLegacyWrite(path))return false;
     persistLocal();
     if (!window.dbRef) {
         queuePendingWrite('set', path, value);
@@ -1739,12 +1816,13 @@ async function dbSet(path, value) {
     } catch (err) {
         console.error('Firebase set error:', err);
         queuePendingWrite('set', path, value);
-        showToast('Đã lưu trên máy và xếp hàng chờ đồng bộ.');
+        showToast(legacyQueueNeedsReview(path)?'Đã giữ bản nháp. Cần đối chiếu thủ công tại /migration trước khi ghi lại.':'Đã lưu trên máy và xếp hàng chờ đồng bộ.');
         return false;
     }
 }
 
 async function dbUpdate(path, value) {
+    if(!canLegacyWrite(path))return false;
     persistLocal();
     if (!window.dbRef) {
         queuePendingWrite('update', path, value);
@@ -1756,12 +1834,13 @@ async function dbUpdate(path, value) {
     } catch (err) {
         console.error('Firebase update error:', err);
         queuePendingWrite('update', path, value);
-        showToast('Đã lưu trên máy và xếp hàng chờ đồng bộ.');
+        showToast(legacyQueueNeedsReview(path)?'Đã giữ bản nháp. Cần đối chiếu thủ công tại /migration trước khi ghi lại.':'Đã lưu trên máy và xếp hàng chờ đồng bộ.');
         return false;
     }
 }
 
 async function dbRemove(path) {
+    if(!canLegacyWrite(path))return false;
     persistLocal();
     if (!window.dbRef) {
         queuePendingWrite('remove', path, null);
@@ -1773,7 +1852,7 @@ async function dbRemove(path) {
     } catch (err) {
         console.error('Firebase remove error:', err);
         queuePendingWrite('remove', path, null);
-        showToast('Đã xóa trên máy và xếp hàng chờ đồng bộ.');
+        showToast(legacyQueueNeedsReview(path)?'Lệnh xóa đã được giữ ở bản nháp, chưa gửi server. Hãy đối chiếu tại /migration.':'Đã xóa trên máy và xếp hàng chờ đồng bộ.');
         return false;
     }
 }
@@ -1793,45 +1872,41 @@ function amorriRemovePendingWritesForRecords(collection, keys) {
     });
     savePendingWrites(remaining);
 }
-async function amorriDeleteRecordPersistently(collection, rawId) {
-    if (!['events','blackouts'].includes(collection)) throw new Error('Loại dữ liệu không hợp lệ');
-    const id = String(rawId ?? '');
-    if (!id || /[.#$\[\]/]/.test(id)) throw new Error('ID lịch không hợp lệ');
-    if (!window.dbRef) throw new Error('Firebase chưa kết nối; chưa xóa dữ liệu.');
-    if (collection === 'events' && !(typeof firebase !== 'undefined' && firebase.auth?.().currentUser))
-        throw new Error('Bạn cần đăng nhập admin để xóa lịch.');
-    if (amorriDeletingCollections.has(collection)) throw new Error('Đang xóa một mục khác, vui lòng đợi.');
+async function amorriLegacyAuthorizedFetch(url,init={}) {
+    const user = firebase.auth()?.currentUser;
+    if(!user)throw new Error('Cần đăng nhập Firebase để xóa.');
+    const send=async(force)=>fetch(url,{...init,cache:'no-store',headers:{...(init.headers||{}),Authorization:'Bearer '+await user.getIdToken(force)}});
+    let result=await send(false);
+    if(result.status===401)result=await send(true);
+    const payload=await result.json().catch(()=>({}));
+    if(!result.ok)throw new Error(String(payload.error||('HTTP '+result.status))+(payload.code?' ['+payload.code+']':''));
+    return payload;
+}
+async function amorriDeleteRecordPersistently(collection,rawId){
+    if(!['events','blackouts'].includes(collection))throw new Error('Loại dữ liệu không hợp lệ');
+    const id=String(rawId??'');
+    if(!id || /[.#$\[\]/]/.test(id))throw new Error('ID lịch không hợp lệ');
+    if(legacyAdminWriteMode!=='compat')throw new Error('Workspace cũ đang chỉ đọc; hãy xóa từ Dashboard mới.');
+    if(amorriDeletingCollections.has(collection))throw new Error('Đang xử lý thao tác xóa khác.');
     amorriDeletingCollections.add(collection);
     try {
-        // Avoid an in-flight offline replay writing a stale record AFTER deletion.
-        const waitUntil = Date.now() + 15000;
-        while (isFlushingPendingWrites) {
-            if (Date.now() > waitUntil) throw new Error('Đang đồng bộ dữ liệu cũ, hãy thử xóa lại.');
-            await new Promise(resolve => setTimeout(resolve, 60));
+        if(collection==='events'){
+            if(!legacyVerifiedAdmin)throw new Error('Chỉ Admin đã được server xác minh mới được xóa lịch.');
+            const url='/api/events/'+encodeURIComponent(id);
+            const detail=await amorriLegacyAuthorizedFetch(url);
+            await amorriLegacyAuthorizedFetch(url,{method:'DELETE',headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({expectedVersion:detail.version,confirmName:String(detail.event?.name||'')})});
+        }else{
+            if(!legacyVerifiedAdmin && legacyVerifiedStaffId!==String(data.blackouts.find(b=>sameId(b.id,id))?.staffId))
+                throw new Error('Bạn không có quyền xóa ngày nghỉ này.');
+            await amorriLegacyAuthorizedFetch('/api/blackouts/'+encodeURIComponent(id),{method:'DELETE'});
         }
-        const ref = window.dbRef.child(collection);
-        const snapshot = await withFirebaseTimeout(ref.once('value'), 18000);
-        const matching = new Set([id]);
-        snapshot.forEach(child => {
-            if (String(child.key) === id || (child.val() && String(child.val().id) === id)) matching.add(String(child.key));
-        });
-        // Block queued replays for all matching paths before sending the delete.
-        amorriRemovePendingWritesForRecords(collection, matching);
-        const updates = {};
-        for (const key of matching) updates[collection + '/' + key] = null;
-        await withFirebaseTimeout(window.dbRef.update(updates), 18000);
-        // Confirm from Firebase, not just the local UI, before claiming success.
-        const verified = await withFirebaseTimeout(ref.once('value'), 18000);
-        let stillPresent = false;
-        verified.forEach(child => {
-            if (String(child.key) === id || (child.val() && String(child.val().id) === id)) stillPresent = true;
-        });
-        if (stillPresent) throw new Error('Firebase vẫn còn bản ghi; kiểm tra quyền và dữ liệu cũ.');
-        amorriRemovePendingWritesForRecords(collection, matching);
+        // Remove queued local operations for the record so an old client cannot replay it.
+        const oldPaths=readPendingWrites().filter(op=>op.path===collection || String(op.path).startsWith(collection+'/'+id));
+        if(oldPaths.length)console.warn('[Amorri] Discarding old queued writes for deleted item',oldPaths.length);
+        amorriRemovePendingWritesForRecords(collection,new Set([id]));
         return true;
-    } finally {
-        amorriDeletingCollections.delete(collection);
-    }
+    }finally{amorriDeletingCollections.delete(collection);}
 }
 
 const AUDIT_META = {
@@ -2057,6 +2132,7 @@ function initApp() {
     
     setupDefaultFilters();
     window.setupLocationAutocomplete();
+    void loadLegacyWritePolicy();
 
     // Render dữ liệu local ngay lập tức để giao diện vẫn hoạt động khi Firebase/network lỗi.
     try {
@@ -2090,10 +2166,7 @@ function initApp() {
             
             firebase.auth().onAuthStateChanged((user) => {
                 currentAuthUser = user || null;
-                resolveCurrentUserRole();
-                applyRoleUI();
-                // Do not touch a running delivery player when authentication is refreshed.
-                if (!isClientMode) render();
+                void verifyLegacyIdentity(currentAuthUser);
                 notifyInvalidStaffLinkIfNeeded();
             });
 
@@ -4101,7 +4174,7 @@ document.getElementById('clearAll')?.addEventListener('click', ()=>{
         const keptLogs = data.auditLogs || [];
         data={staff:[],events:[],payroll:{},blackouts:[],auditLogs:keptLogs };
         writeAuditLog('SYSTEM_CLEAR', { severity:'danger', category:'system', targetType:'system', message:'Admin làm sạch dữ liệu lịch / nhân sự / lương' });
-        if(window.dbRef) window.dbRef.set(data).catch(err => console.error('Clear DB error:', err));
+        if(window.dbRef && canLegacyWrite('root')) window.dbRef.set(data).catch(err => console.error('Clear DB error:', err));
         else persistLocal();
         render(); window.smoothClose('settingsModal'); showToast('Đã dọn dữ liệu, giữ Audit Log');
     }

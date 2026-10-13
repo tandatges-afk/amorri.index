@@ -18,3 +18,8 @@
 3. Delivery links ký và expire, người xem chỉ được xem event/product được cấp phép.
 4. Không đưa thông tin cá nhân hay video gốc ra URL không có bảo vệ.
 5. Server logging với redaction email/số điện thoại, retention policy, test revoke, access denied và link guess.
+
+
+## Cập nhật 2.4
+
+Xem [`SECURITY_CUTOVER_2_4.md`](SECURITY_CUTOVER_2_4.md) và [`../security/README.md`](../security/README.md) để hiểu các lớp xác thực legacy đã cải thiện, các giới hạn guest delivery và quy trình review rules. **Không coi UI guard là thay thế cho RTDB Rules.**

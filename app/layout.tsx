@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Amorri Studio — VNext 2.0',
+  title: 'Amorri Studio — VNext 2.4',
   description: 'Điều hành lịch quay chụp, đội ngũ, sản phẩm và hoạt động studio.',
 };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1 };

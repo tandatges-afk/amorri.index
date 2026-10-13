@@ -1,8 +1,19 @@
-# AMORRI STUDIO VNext 2.3 — Payroll Manager (Preview)
+# AMORRI STUDIO VNext 2.4 — Security Cutover (Preview)
 
 **Next.js App Router + React + TypeScript + Tailwind v4, Firebase RTDB, Vercel, Vitest + Playwright tests.**
 
 > **Trạng thái thực tế:** đây là bản chuyển đổi nền tảng với giao diện React mới, tạo lịch và quản lý lịch cơ bản (chỉnh sửa/hủy/xóa/phân công) và workspace tương thích. KHÔNG phải bản viết lại toàn bộ 9.470 dòng nghiệp vụ cũ. Không thay thế website production trước khi chạy kiểm thử trên môi trường preview.
+
+## Bước mới — 2.4: Xác thực workspace cũ, xóa bằng API, migration diagnostics
+
+- **Không đổi dữ liệu** `studioPlanner_v1`, giữ nguyên `VNext 2.3 Payroll Manager` và tất cả đường dẫn `/studio` bàn giao ảnh/video.
+- `/studio` chỉ cấp quyền Admin/nhân sự khi server xác minh Firebase ID token + UID cho đúng vai trò, không coi bất kỳ Firebase login hoặc URL `?staff` là quyền sửa/xóa.
+- Xóa lịch từ legacy qua **GET+DELETE `/api/events/[id]`**, kiểm tra phiên bản và sao lưu mã hóa; xóa ngày nghỉ qua `/api/blackouts/[id]` kiểm tra ownership. Không còn xóa trực tiếp Firebase qua helper legacy.
+- Trang `/migration` (Admin) hiển thị thống kê khóa numeric legacy, ID trùng/thiếu, nhân sự chưa liên kết UID; không tiết lộ thông tin khách hàng.
+- `AMORRI_LEGACY_ADMIN_WRITES=compat` (mặc định) giữ các form studio nâng cao; `read-only` có thể bật trên **staging** để thử chuyển admin/staff sang React, nhưng không thay thế Security Rules.
+- Script `scripts/prepare-rtdb-rules.mjs` tạo bản đề xuất rules **từ bản export thật** và chỉ để review, không có deploy tự động. Rules deny browser writes chưa an toàn để triển khai cho Production vì gallery chọn ảnh vẫn ghi trực tiếp SDK; phản hồi video còn ở `videoReviews_v1`.
+- **Không tự động bổ sung/xóa dữ liệu hay thay đổi rules.** Nghiệp vụ customer delivery và review chưa được chuyển hoàn toàn sang server.
+- Release: `/api/health` → `security-cutover-20261013-r1`. Tài liệu triển khai/rủi ro tại [`docs/SECURITY_CUTOVER_2_4.md`](docs/SECURITY_CUTOVER_2_4.md).
 
 ## Bước mới: Bảng lương lũy kế TypeScript — VNext 2.3
 

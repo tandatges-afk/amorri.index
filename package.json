@@ -1,6 +1,6 @@
 {
   "name": "amorri-studio-vnext-2",
-  "version": "2.3.0-payroll-manager",
+  "version": "2.4.0-security-cutover",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,7 +12,8 @@
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:legacy": "node --test tests/*.test.mjs",
-    "validate": "npm run typecheck && npm run test && npm run test:unit && npm run check:static"
+    "validate": "npm run typecheck && npm run test && npm run test:unit && npm run check:static",
+    "rules:proposal": "node scripts/prepare-rtdb-rules.mjs"
   },
   "engines": {
     "node": ">=22.16.0"

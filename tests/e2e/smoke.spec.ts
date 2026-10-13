@@ -10,3 +10,14 @@ test('legacy event and client gallery DOM are served',async ({request})=>{
 test('anonymous booking creation denied',async ({request})=>{
  const response=await request.post('/api/events',{data:{}});expect([401,403]).toContain(response.status());
 });
+test('2.4 protects migration diagnostics from anonymous access',async ({request})=>{
+ const response=await request.get('/api/migration/diagnostics');
+ expect(response.status()).toBe(401);
+ const json=await response.json();expect(json.code).toBe('AUTH_TOKEN_MISSING');
+});
+test('2.4 migration policy and identity endpoints fail safely',async ({request})=>{
+ const policy=await request.get('/api/access/policy');expect(policy.status()).toBe(200);
+ const config=await policy.json();expect(['compat','read-only']).toContain(config.legacyAdminWrites);
+ expect(config.serverEnforcedWrites).toBe(false);
+ const me=await request.get('/api/access/me');expect(me.status()).toBe(401);
+});

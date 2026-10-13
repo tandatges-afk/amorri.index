@@ -59,6 +59,7 @@ function Login({onLogin,error,loading}:{onLogin:(email:string,password:string)=>
         <button disabled={loading} className="primary-button wide" type="submit">{loading?'Đang xác thực…':'Đăng nhập'}<ArrowRight size={17}/></button>
       </form>
       <div className="login-foot"><ShieldCheck size={16}/> Quyền truy cập được xác minh trên server.</div>
+      <a className="legacy-link" href="/migration">Kiểm tra an toàn dữ liệu →</a>
       <a className="legacy-link" href="/studio">Mở workspace tương thích <ArrowRight size={15}/></a>
     </div></div>
   </div>;
@@ -156,7 +157,7 @@ export function Dashboard(){
         const Icon=p.icon; return <button key={p.key} onClick={()=>goTab(p.key)} className={`nav-item ${tab===p.key?'nav-active':''}`}><Icon size={19}/><span>{p.name}</span>{tab===p.key&&<i/>}</button>;
       })}</nav>
       <div className="sidebar-label section-gap">CÔNG CỤ</div>
-      <div className="nav-items"><a className="nav-item" href="/studio"><Settings2 size={19}/><span>Workspace đầy đủ</span><ArrowRight size={14}/></a></div>
+      <div className="nav-items"><a className="nav-item" href="/studio"><Settings2 size={19}/><span>Workspace đầy đủ</span><ArrowRight size={14}/></a><a className="nav-item" href="/migration"><ShieldCheck size={19}/><span>Kiểm tra an toàn 2.4</span><ArrowRight size={14}/></a></div>
       <div className="sidebar-bottom"><div className="migration-tile"><Sparkles size={21}/><strong>VNext 2.3</strong><p>Không gian mới chạy trên React & TypeScript. Chỉnh sửa, phân công và xóa lịch cơ bản trực tiếp trên React. Bảng lương lũy kế đã được chuyển sang TypeScript. Bàn giao ảnh/video nâng cao vẫn dùng workspace tương thích.</p><a href="/studio">Mở công cụ <ArrowRight size={14}/></a></div>
         <div className="user-identity"><div className="user-avatar">{(user.email||'A').slice(0,1).toUpperCase()}</div><div className="user-meta"><strong>{user.email?.split('@')[0]||'Admin'}</strong><span>Firebase Admin</span></div><button title="Đăng xuất" onClick={()=>signOut(browserAuth())}><LogOut size={19}/></button></div>
       </div>

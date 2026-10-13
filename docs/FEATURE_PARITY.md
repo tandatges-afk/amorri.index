@@ -32,3 +32,10 @@
 - When deleting, encrypted archive lives at `/amorriStudioAdminArchive_v1/events/<id>` outside the app subscription; requires a separately generated 256-bit key.
 - Old offline writes may still recreate deleted items if the legacy client is open; do not assume deletion is globally final until legacy sync is migrated and RTDB rules audited.
 - Check `.indexOn: ["id"]` for events to keep ID-based lookups efficient.
+
+## VNext 2.2–2.4 (cập nhật)
+
+- **2.2**: nhân sự UID-linked, báo nghỉ và lịch 90 ngày `/staff` được port sang TypeScript + backend, có kiểm tra conflict. Link cũ `?staff` vẫn có thể truy cập dữ liệu theo rules hiện tại, nhưng từ 2.4 chỉ cho vai trò UI `staff` sau khi kiểm tra Firebase UID trên server.
+- **2.3**: payroll lũy kế nợ đầu kỳ, tạm ứng và thanh toán qua TypeScript trên React và API; cột lương của thợ chỉ trả về bản ghi của UID liên kết, thay vì bảng chỉ đọc 2.0. Công thức lương đã có unit tests nhưng chưa đối chiếu production.
+- **2.4**: `/studio` không tự coi Firebase login là admin; xóa event và blackout đi qua server API. `/migration` cung cấp thống kê read-only chuẩn bị migration. Bản nháp offline quản trị cũ bị chặn tự replay, có thể export từ cùng browser. Chế độ `AMORRI_LEGACY_ADMIN_WRITES=compat` mặc định giữ các form nâng cao; `read-only` chỉ dùng để thử chuyển dần.
+- Gallery ảnh khách, bình luận timeline, rước dâu hai địa điểm và nhiều form nâng cao **chưa** được port hoàn toàn. **Chưa triển khai** RTDB Rules nghiêm ngặt cho Production, vì sẽ làm ngừng các luồng ghi legacy này. Các ví dụ rules là bản xuất đề xuất, chưa dùng để xác định quyền truy cập thực tế.
