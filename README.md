@@ -1,18 +1,17 @@
-# AMORRI STUDIO VNext 2.6 — Video Streaming & Performance (Preview)
+# AMORRI STUDIO VNext 2.6.2 — Google Drive Only (Preview)
 
 **Next.js App Router + React + TypeScript + Tailwind v4, Firebase RTDB, Vercel, Vitest + Playwright tests.**
 
 > **Trạng thái thực tế:** đây là bản chuyển đổi nền tảng với giao diện React mới, tạo lịch và quản lý lịch cơ bản (chỉnh sửa/hủy/xóa/phân công) và workspace tương thích. KHÔNG phải bản viết lại toàn bộ 9.470 dòng nghiệp vụ cũ. Không thay thế website production trước khi chạy kiểm thử trên môi trường preview.
 
-## Bước mới — VNext 2.6: HLS 1080p / Cloudflare Stream (tùy chọn)
+## Bản vá VNext 2.6.2 — Tạm gỡ Cloudflare HLS/CDN
 
-- Dashboard Admin → **Bàn giao sản phẩm → HLS / CDN 2.6** liên kết Cloudflare Stream UID với clip Drive đúng lịch/sản phẩm, có xác minh quyền admin và video private/Ready.
-- Trang khách `/delivery` → sử dụng HLS native trên Safari hoặc HLS.js, ưu tiên 1080p nếu nguồn có rendition này; bình luận timeline vẫn gắn với player. Giữ **Drive fallback**, file gốc không bị sửa.
-- Stream token do backend ký cấp qua Cloudflare API sau khi kiểm tra grant, event, product và file Drive; URL HLS được trình duyệt yêu cầu **trực tiếp từ CDN** thay vì đi qua Function. Chưa tự động upload/transcode Drive; Cloudflare Stream là dịch vụ riêng có phí.
-- Biến mới (chỉ khi bật HLS): `CF_STREAM_ACCOUNT_ID`, `CF_STREAM_API_TOKEN` (Secret), `CF_STREAM_CUSTOMER_CODE`, `AMORRI_STREAM_TOKEN_TTL_SECONDS` (optional). Không đặt `NEXT_PUBLIC_`.
-- Release marker `/api/health` → `video-performance-20261013-r1`.
-- **Xem hướng dẫn cài đặt Cloudflare Stream, QA, giới hạn token và cách liên kết Firebase UID nhân sự trong [`docs/VIDEO_STREAMING_2_6.md`](docs/VIDEO_STREAMING_2_6.md).**
-- Không đổi Firebase data cũ hoặc Security Rules Production; không thể cam kết 1080p không giật trước khi đo mạng/video thực tế.
+- Loại bỏ nút **HLS / CDN 2.6**, form nhập Stream UID, các API Cloudflare và dependency `hls.js` khỏi frontend/backend. Không phải cấu hình `CF_STREAM_*` hoặc `AMORRI_STREAM_TOKEN_TTL_SECONDS`.
+- **Trang `/delivery` sử dụng Google Drive Range Proxy** (`/api/drive-video`) và tự chuyển sang khung xem Drive khi trình duyệt không phát được MP4. Chọn ảnh, quyền link riêng tư và bình luận timeline vẫn giữ.
+- **Giữ nguyên dữ liệu Firebase**, kể cả `amorriVideoStreams_v1` từng liên kết để sau này có thể khôi phục; không xóa hay sửa Security Rules trên production. Các API Stream quản lý UID đã bị gỡ.
+- Truy cập `/api/health`: `drive-only-20261013-r1`, `streamingApi=google-drive-only`.
+- Vì video đi qua Vercel Functions, **Fast Origin Transfer vẫn có thể tăng**; đây là bản tắt Cloudflare theo yêu cầu, không phải bản tối ưu streaming 1080p.
+- Hướng dẫn chi tiết: [`docs/DRIVE_ONLY_2_6_2.md`](docs/DRIVE_ONLY_2_6_2.md).
 
 ## Bước mới — VNext 2.5: Bàn giao riêng tư, bình luận video và chọn ảnh qua API TypeScript
 
@@ -139,3 +138,8 @@ npm run build
 - Không thay đổi node `studioPlanner_v1` hoặc dữ liệu production bằng migration tự động.
 
 Xem thêm `docs/FEATURE_PARITY.md`, `docs/SECURITY.md`, `docs/RELEASE_CHECKLIST.md`, `docs/MIGRATION_PLAN.md`.
+
+
+## VNext 2.6.1: UI hotfix
+
+Sửa nhãn `Link an toàn` hiển thị markup HTML nguyên văn trên React, đồng bộ nhãn phiên bản Dashboard; xem `docs/DISPLAY_FIX_2_6_1.md`. Không thay đổi Firebase/API.
