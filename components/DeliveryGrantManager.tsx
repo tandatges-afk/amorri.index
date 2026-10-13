@@ -19,17 +19,12 @@ export function DeliveryGrantManager({eventId,user}:{eventId:string;user:User}){
       // and reuse the one active link in an atomic Firebase transaction.
       let response=await fetchWithToken('/api/delivery/grants','POST');
       if(response.status===401)response=await fetchWithToken('/api/delivery/grants','POST',true);
-      const body=await response.json();
+      const body=await response.json() as {error?:string;shareUrl?:string};
       if(!response.ok)throw new Error(body.error||`HTTP ${response.status}`);
-      const url=String(body.shareUrl||'');
-      if(!url){
-        response=await fetchWithToken('/api/delivery/grants','POST');
-        if(response.status===401)response=await fetchWithToken('/api/delivery/grants','POST',true);
-        body=await response.json();
-        if(!response.ok)throw new Error(body.error||`HTTP ${response.status}`);
-        url=String(body.shareUrl||'');
-      }
-      if(!url)throw new Error('Không tìm thấy link bàn giao');
+      // POST is idempotent server-side; do not send a second POST just because
+      // its response is missing shareUrl. A second request masks the real error.
+      const url=typeof body.shareUrl==='string'?body.shareUrl.trim():'';
+      if(!url)throw new Error('API không trả về link bàn giao. Vui lòng kiểm tra Vercel Function Logs.');
       try {await navigator.clipboard.writeText(url);setFeedback('Đã sao chép link bàn giao.');}
       catch {setManualLink(url);setFeedback('Trình duyệt chặn copy. Hãy chọn và sao chép link dưới đây.');}
     }catch(error){setFeedback(error instanceof Error?error.message:'Không sao chép được link');}
