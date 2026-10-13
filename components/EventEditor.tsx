@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
-import { CalendarClock, Save, Trash2, X } from 'lucide-react';
+import { CalendarClock, ExternalLink, Save, Trash2, X } from 'lucide-react';
+import { DeliveryGrantManager } from './DeliveryGrantManager';
 import type { Staff, StudioEvent } from '@/lib/domain/types';
 import type { EditableChanges } from '@/lib/domain/event-management';
 
@@ -121,6 +122,10 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
    finally{setBusy(false);}
  }
  const chooseProduct=(product:{id:string;name:string;url:string;mediaType:string})=>{setProductId(product.id);setProductName(product.name);setProductUrl(product.url);setProductType(product.mediaType||'auto');};
+ async function copyProductUrl(url:string){
+   try{await navigator.clipboard.writeText(url);}
+   catch{setError('Trình duyệt chặn thao tác copy link.');}
+ }
  async function remove(){
    if(!detail||busy||confirmName.trim()!==detail.name)return;
    if(!window.confirm('Xóa lịch này khỏi lịch làm việc? Dữ liệu sẽ được lưu dự phòng trên Firebase.'))return;
@@ -158,12 +163,23 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
         <div className="space-y-3">{roster.map(s=>{const a=assignments.find(a=>a.id===s.id);return <div key={s.id} className="rounded-lg bg-slate-50 p-3"><label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" checked={!!a} onChange={e=>toggleStaff(s.id,e.target.checked)}/>{s.name} <span className="text-xs font-normal text-slate-400">{s.role}</span></label>{a&&<><div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3"><label className={label}>Công việc<input className={input} value={a.task} maxLength={120} onChange={e=>editAssignment(s.id,'task',e.target.value)}/></label><label className={label}>Chi phí (VND)<input className={input} type="number" min={0} step={1000} value={a.cost} onChange={e=>editAssignment(s.id,'cost',Number(e.target.value))}/></label><label className={label}>Nhà trai/gái<input className={input} value={a.locType} maxLength={80} onChange={e=>editAssignment(s.id,'locType',e.target.value)}/></label></div><div className="mt-2 rounded-lg border border-dashed border-slate-200 bg-white p-2"><label className={label}>Link Source nhân sự (http/https)<input className={input} type="url" value={sourceDrafts[s.id]||''} onChange={e=>setSourceDrafts(v=>({...v,[s.id]:e.target.value}))} placeholder="Dán link thư mục Source của thợ" maxLength={1500}/></label><button className="mt-2 rounded-lg border bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 disabled:opacity-40" type="button" disabled={busy||sourceDrafts[s.id]===(detail.sourceLinks?.[s.id]||'')} onClick={()=>void saveSource(s.id)}>Lưu link Source</button></div></>}</div>})}</div>
       </fieldset>
       <fieldset className="col-span-full rounded-xl border border-indigo-200 p-4"><legend className="px-2 text-sm font-bold text-slate-800">Sản phẩm bàn giao / Google Drive</legend>
-       <p className="mb-3 text-xs text-slate-500">Thêm hoặc sửa album ảnh, thư mục Drive, clip trực tiếp trên web chính. Link và ID cũ được giữ khi sửa. Không xóa ảnh khách đã chọn.</p>
-       <div className="mb-3 space-y-2">{detail.products.map(prod=><button type="button" key={prod.id} onClick={()=>chooseProduct(prod)} className={`w-full rounded-lg border p-2 text-left text-xs ${productId===prod.id?'border-indigo-500 bg-indigo-50':'bg-slate-50'}`}><strong>{prod.name}</strong><span className="block truncate text-slate-500">{prod.url||'Chưa có URL'}</span></button>)}{!detail.products.length&&<p className="text-xs text-slate-400">Chưa có sản phẩm.</p>}</div>
+       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 p-3">
+         <div><p className="text-sm font-bold text-slate-800">Quản lý link bàn giao</p><p className="text-xs text-slate-500">Copy lại link bàn giao sản phẩm ngay tại đây và mở nhanh từng link Drive đã lưu.</p></div>
+         <DeliveryGrantManager eventId={eventId} user={user}/>
+       </div>
+       <div className="mb-3 space-y-2">{detail.products.map(prod=><div key={prod.id} className={`rounded-xl border p-3 text-xs ${productId===prod.id?'border-indigo-500 bg-indigo-50':'bg-slate-50'}`}>
+         <div className="flex flex-wrap items-start justify-between gap-2">
+           <div className="min-w-0"><strong className="block text-slate-900">{prod.name}</strong><a href={prod.url||'#'} target="_blank" rel="noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-indigo-700 underline underline-offset-2">Mở link Drive <ExternalLink size={12}/></a></div>
+           <div className="flex flex-wrap gap-2"><button type="button" className="rounded-lg border bg-white px-3 py-1.5 font-semibold text-slate-700" onClick={()=>chooseProduct(prod)}>Chỉnh sửa</button><button type="button" className="rounded-lg border bg-white px-3 py-1.5 font-semibold text-slate-700" onClick={()=>void copyProductUrl(prod.url)} disabled={!prod.url}>Copy link</button></div>
+         </div>
+       </div>)}{!detail.products.length&&<p className="text-xs text-slate-400">Chưa có sản phẩm.</p>}</div>
        <div className="grid gap-2 sm:grid-cols-2"><label className={label}>Tên sản phẩm<input className={input} maxLength={180} value={productName} onChange={e=>setProductName(e.target.value)} placeholder="VD: Album ảnh cưới"/></label><label className={label}>Loại<select className={input} value={productType} onChange={e=>setProductType(e.target.value)}><option value="auto">Tự nhận diện</option><option value="image">Hình ảnh</option><option value="video">Video</option></select></label><label className={`${label} sm:col-span-2`}>Link Drive (folder hoặc file)<input className={input} value={productUrl} onChange={e=>setProductUrl(e.target.value)} placeholder="https://drive.google.com/drive/folders/..." maxLength={1200}/></label></div>
        <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={()=>void saveProduct()} disabled={busy||!productName.trim()||!productUrl.trim()} className="rounded-lg bg-indigo-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">{productId?'Cập nhật sản phẩm':'Thêm sản phẩm'}</button><button type="button" className="rounded-lg border px-3 py-2 text-xs" onClick={()=>{setProductId('');setProductName('');setProductUrl('');setProductType('auto');}}>Tạo mới</button></div>
       </fieldset>
-      <div className="col-span-full rounded-xl bg-rose-50 p-4"><h3 className="text-sm font-bold text-rose-800">Xóa lịch (có lưu dự phòng)</h3><p className="my-2 text-xs text-rose-700">Để hủy mà vẫn giữ lịch, chọn trạng thái “Đã hủy”. Chỉ xóa khi chắc chắn. Bản gốc được lưu vào vùng lưu trữ Admin riêng.</p><label className={label}>Gõ chính xác tên lịch để xác nhận<input className={input} value={confirmName} onChange={e=>setConfirmName(e.target.value)} placeholder={detail.name}/></label><button disabled={busy||confirmName.trim()!==detail.name} type="button" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2 text-xs font-bold text-rose-700 disabled:opacity-40" onClick={()=>void remove()}><Trash2 size={15}/> Xóa và lưu bản dự phòng</button></div>
+      <div className="col-span-full rounded-xl bg-rose-50 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-rose-800">Xóa lịch (có lưu dự phòng)</h3><p className="mt-1 text-xs text-rose-700">Để hủy mà vẫn giữ lịch, chọn trạng thái “Đã hủy”. Chỉ xóa khi chắc chắn.</p></div><button type="button" className="inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2 text-xs font-bold text-rose-700" onClick={()=>setDeleting(v=>!v)}><Trash2 size={15}/> {deleting?'Ẩn xác nhận xóa':'Hiển thị xác nhận xóa'}</button></div>
+        {deleting&&<div className="mt-3"><label className={label}>Gõ chính xác tên lịch để xác nhận<input className={input} value={confirmName} onChange={e=>setConfirmName(e.target.value)} placeholder={detail.name}/></label><button disabled={busy||confirmName.trim()!==detail.name} type="button" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2 text-xs font-bold text-rose-700 disabled:opacity-40" onClick={()=>void remove()}><Trash2 size={15}/> Xóa và lưu bản dự phòng</button></div>}
+      </div>
       {error&&<div role="alert" className="col-span-full rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-700">
        <p>{error} {error.includes('thay đổi')&&'Đóng và mở lại chi tiết để tải phiên bản mới.'}</p>
        {/BOOKING_|SCHEDULE_/.test(error)&&<button type="button" disabled={diagnosticBusy} className="mt-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-bold" onClick={()=>void inspectError()}>{diagnosticBusy?'Đang kiểm tra…':'Kiểm tra trạng thái lịch / khóa ngày'}</button>}

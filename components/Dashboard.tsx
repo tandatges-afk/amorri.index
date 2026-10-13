@@ -46,7 +46,7 @@ function Login({onLogin,error,loading}:{onLogin:(email:string,password:string)=>
   return <div className="login-layout">
     <div className="login-showcase">
       <div className="login-brand"><div className="brand-square">A<span>.</span></div><span>AMORRI <strong>STUDIO</strong></span></div>
-      <div className="showcase-main"><div className="overline">AMORRI STUDIO / VNEXT 2.8.3</div>
+      <div className="showcase-main"><div className="overline">AMORRI STUDIO / VNEXT 2.8.4</div>
         <h1>Mọi khoảnh khắc.<br/><em>Một hệ thống.</em></h1>
         <p>Không gian điều hành từ lịch quay chụp, đội ngũ đến bàn giao sản phẩm — đồng nhất và hiệu quả hơn.</p>
         <div className="showcase-pills"><span>Lịch thông minh</span><span>Đội ngũ</span><span>Gallery & Video</span></div>
@@ -99,6 +99,24 @@ function CalendarView({data,filter,onSelect}:{data:DashboardData;filter:string;o
 function DeliveryProjectCard({event,user}:{event:StudioEvent;user:User}){
  const [cover,setCover]=useState<CoverInfo|null>(null);
  const [mediaSummary,setMediaSummary]=useState<DeliveryMediaSummary|null>(null);
+ const [hidden,setHidden]=useState(Boolean(event.deliveryCompleted));
+ const [completing,setCompleting]=useState(false);
+ const [completeMessage,setCompleteMessage]=useState('');
+ const complete=useCallback(async()=>{
+   if(completing||hidden)return;
+   setCompleting(true);setCompleteMessage('');
+   try{
+     const run=async(force=false)=>fetch(`/api/delivery/${encodeURIComponent(event.id)}/status`,{
+       method:'PATCH',cache:'no-store',headers:{'Content-Type':'application/json',Authorization:`Bearer ${await user.getIdToken(force)}`},body:JSON.stringify({completed:true})
+     });
+     let res=await run();if(res.status===401)res=await run(true);
+     const body=await res.json();
+     if(!res.ok)throw new Error(`${body.error||'Không thể hoàn thành bàn giao'}${body.code?` [${body.code}]`:''}`);
+     setHidden(true);
+   }catch(error){setCompleteMessage(error instanceof Error?error.message:'Không thể hoàn thành bàn giao');}
+   finally{setCompleting(false);}
+ },[completing,hidden,event.id,user]);
+ if(hidden)return null;
  return <article className="delivery-card" aria-label={`Bàn giao ${event.name}`}>
    <div className="delivery-art">
      <AdminThumbnail eventId={event.id} user={user} cover={cover}/>
@@ -110,7 +128,9 @@ function DeliveryProjectCard({event,user}:{event:StudioEvent;user:User}){
      <div className="delivery-card-actions">
        <DeliveryGrantManager eventId={event.id} user={user}/>
        {mediaSummary?.hasVideo&&<DeliveryReviewManager eventId={event.id} user={user}/>}
+       <button type="button" disabled={completing} className="secondary-button small" onClick={()=>void complete()}><BadgeCheck size={15}/> {completing?'Đang ẩn…':'Hoàn thành'}</button>
      </div>
+     {completeMessage&&<small role="status" className="delivery-share-feedback">{completeMessage}</small>}
    </div>
  </article>;
 }
@@ -214,10 +234,10 @@ export function Dashboard(){
           {tab==='calendar'&&<><div className="toolbar"><div className="search-input"><Search size={17}/><input placeholder="Tìm tên khách, loại dịch vụ, nhân sự..." value={search} onChange={e=>setSearch(e.target.value)} aria-label="Tìm kiếm lịch"/></div><div className="toolbar-right"><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,-1))}><ChevronLeft size={18}/></button><strong className="month-title">Tháng {month.slice(5)}/{month.slice(0,4)}</strong><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,1))}><ChevronRight size={18}/></button></div></div><section className="surface calendar-surface"><CalendarView data={data} filter={search} onSelect={setSelected}/></section><section className="surface"><div className="surface-title"><h3>Danh sách đặt lịch <span className="counter">{filtered.length}</span></h3><span className="text-xs text-slate-500">Chọn một lịch để chỉnh sửa trên web chính</span></div><EventTable events={filtered} staff={data.staff} onSelect={setSelected}/></section></>}
           {tab==='staff'&&<StaffManager user={user} month={month} onChanged={()=>setReload(x=>x+1)}/>}
           {tab==='payroll'&&<PayrollManager month={month} user={user}/>}
-          {tab==='delivery'&&<><div className="section-intro"><Film size={19}/> Các bộ bàn giao ảnh/video thuộc lịch tháng này. Xem, chọn ảnh, bình luận timeline và chốt sản phẩm trong giao diện bàn giao đang được bảo toàn.</div><div className="delivery-grid">{filtered.filter(e=>e.products.length>0).map(e=><DeliveryProjectCard key={e.id} event={e} user={user}/>)}</div>{!filtered.some(e=>e.products.length>0)&&<Empty title="Không có bộ bàn giao trong tháng" detail="Các sản phẩm liên kết Google Drive sẽ xuất hiện tại đây."/>}</>}
+          {tab==='delivery'&&<><div className="section-intro"><Film size={19}/> Các bộ bàn giao ảnh/video thuộc lịch tháng này. Nhấn Hoàn thành để tự ẩn khỏi tab bàn giao; khi cần xem lại hãy mở trong Quản lý lịch.</div><div className="delivery-grid">{filtered.filter(e=>e.products.length>0 && !e.deliveryCompleted).map(e=><DeliveryProjectCard key={e.id} event={e} user={user}/>)}</div>{!filtered.some(e=>e.products.length>0 && !e.deliveryCompleted)&&<Empty title="Không có bộ bàn giao đang mở" detail="Các bộ đã hoàn thành sẽ được ẩn khỏi tab này, nhưng vẫn xem lại được trong Quản lý lịch."/>}</>}
           {tab==='activity'&&<section className="surface"><div className="surface-title"><div><span className="eyebrow">AUDIT TRAIL</span><h3>Nhật ký hoạt động gần đây</h3></div></div>{data.audit.length?<div className="activity-list">{data.audit.map((a,i)=><div key={a.id||i} className="activity-item"><div className="activity-symbol"><Activity size={17}/></div><div><strong>{a.message||a.action||'Hoạt động'}</strong><p>{a.action} · {a.createdAt ? new Date(a.createdAt<1e12?a.createdAt*1000:a.createdAt).toLocaleString('vi-VN'): 'Chưa xác định thời gian'}</p></div></div>)}</div>:<Empty title="Chưa có nhật ký" detail="Hoạt động trong Firebase sẽ được ghi nhận ở đây."/>}</section>}
         </>}
-      </div><footer className="footer">AMORRI STUDIO / VNEXT 2.8.3 <span>BUILT WITH NEXT.JS + TYPESCRIPT · {new Date().getFullYear()}</span></footer>
+      </div><footer className="footer">AMORRI STUDIO / VNEXT 2.8.4 <span>BUILT WITH NEXT.JS + TYPESCRIPT · {new Date().getFullYear()}</span></footer>
     </main>
     <NewBookingDialog open={newBookingOpen} onClose={()=>setNewBookingOpen(false)} onCreated={()=>{setReload(x=>x+1);setTab('calendar');}} user={user} staff={data?.staff||[]}/>
     <EventEditor id={editEventId} staff={data?.staff||[]} user={user} onClose={()=>setEditEventId(null)} onChanged={(date)=>{setEditEventId(null);setSelected(null);if(date && date.slice(0,7)!==month)setMonth(date.slice(0,7));setReload(v=>v+1);}}/>
