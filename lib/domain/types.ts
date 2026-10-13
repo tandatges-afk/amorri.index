@@ -20,6 +20,7 @@ export interface StudioEvent {
   price: number;
   deposit: number;
   products: { id: string; name: string; mediaType: string }[];
+  deliveryCompleted?: boolean;
 }
 export interface PayrollPayment { advance: number; paid: number; }
 export interface AuditEvent {

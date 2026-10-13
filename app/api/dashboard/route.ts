@@ -24,14 +24,19 @@ export async function GET(request: Request) {
   if (!yyyyMM.test(month)) return NextResponse.json({error:'Tháng không hợp lệ'}, {status:400,headers:NO_CACHE});
   try {
     const base = adminDatabase().ref('studioPlanner_v1');
-    const [eventsSnap, staffSnap, payrollSnap, auditSnap] = await Promise.all([
+    const [eventsSnap, staffSnap, payrollSnap, auditSnap, deliveryStateSnap] = await Promise.all([
       // Date indexed query when Firebase RTDB indexOn=["date"] is configured.
       base.child('events').orderByChild('date').startAt(month+'-01').endAt(month+'-31').limitToFirst(1001).once('value'),
       base.child('staff').once('value'),
       base.child('payroll').child(month).once('value'),
-      base.child('auditLogs').limitToLast(20).once('value')
+      base.child('auditLogs').limitToLast(20).once('value'),
+      base.child('deliveryState').once('value')
     ]);
-    const events = normaliseEvents(eventsSnap.val());
+    const deliveryState=(deliveryStateSnap.val()||{}) as Record<string,{completedAt?:unknown}>;
+    const events = normaliseEvents(eventsSnap.val()).map(event=>({
+      ...event,
+      deliveryCompleted:Boolean((deliveryState[event.id]||{}).completedAt)
+    }));
     const payload: DashboardData = {
       month, events, staff: normaliseStaff(staffSnap.val()),
       payroll: normalisePayroll(payrollSnap.val()), audit: normaliseAudit(auditSnap.val()),
