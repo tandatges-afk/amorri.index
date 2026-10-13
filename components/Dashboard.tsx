@@ -116,8 +116,10 @@ function DeliveryProductGroup({event,user}:{event:StudioEvent;user:User}){
  const [hiddenProducts,setHiddenProducts]=useState<string[]>([]);
  const remaining=event.products.filter(p=>!event.completedProductIds?.includes(p.id)&&!hiddenProducts.includes(p.id));
  if(event.deliveryCompleted||!remaining.length)return null;
- return <section className="delivery-event-group" ref={groupRef} aria-label={`Sản phẩm của lịch ${event.name}`}>
-   <div className="delivery-event-group-heading"><CalendarDays size={14}/><b>{event.name}</b><span>{dateDisplay(event.date)} · {remaining.length} sản phẩm</span></div>
+ // A booking only reserves as many grid columns as it has unfinished products.
+ // The nested grid keeps sibling products side by side, while other bookings
+ // can fill the remaining slots on the same row.
+ return <section className={`delivery-event-group delivery-event-group--span-${Math.min(remaining.length,4)}`} ref={groupRef} aria-label={`Sản phẩm của lịch ${event.name}`}>
    <div className="delivery-event-products">{remaining.map(product=>{
      const meta=products.find(row=>row.id===product.id);
      return <DeliveryProductCard key={product.id} event={event} product={product} user={user} info={meta} onComplete={()=>setHiddenProducts(previous=>[...previous,product.id])}/>;
@@ -145,7 +147,7 @@ function DeliveryProductCard({event,product,user,info,onComplete}:{event:StudioE
  const copyNames=async()=>{try{await navigator.clipboard.writeText((info?.selectedNames||[]).join('\n'));setCopied(true);setTimeout(()=>setCopied(false),2000);}catch{setMessage('Trình duyệt chặn sao chép');}};
  return <article className="delivery-card" aria-label={`Bàn giao sản phẩm ${product.name}`}>
    <div className="delivery-art"><AdminThumbnail eventId={event.id} user={user} cover={info?.cover}/>
-     <div className="delivery-art-meta"><span>1 SẢN PHẨM</span><span>{isVideo?'VIDEO DELIVERY':isPhoto?'PHOTO DELIVERY':'STUDIO DELIVERY'}</span></div>
+     <div className="delivery-art-meta delivery-art-meta--single"><span>{isVideo?'VIDEO DELIVERY':isPhoto?'PHOTO DELIVERY':'STUDIO DELIVERY'}</span></div>
    </div>
    <div className="delivery-details"><div className="delivery-date"><CalendarDays size={13}/>{dateDisplay(event.date)} · {event.eventType}</div>
      <h3>{product.name}</h3><p className="delivery-project-owner">Lịch: {event.name}</p>
@@ -163,6 +165,7 @@ function DeliveryProductCard({event,product,user,info,onComplete}:{event:StudioE
 export function Dashboard(){
   const [user,setUser]=useState<User|null>(null),[ready,setReady]=useState(false);
   const [authError,setAuthError]=useState(''),[logging,setLogging]=useState(false);
+  const [deliverySearch,setDeliverySearch]=useState('');
   const [month,setMonth]=useState(monthNow),[tab,setTab]=useState<Tab>('overview');
   const [data,setData]=useState<DashboardData|null>(null),[loading,setLoading]=useState(false);
   const [requestError,setRequestError]=useState(''),[search,setSearch]=useState('');
@@ -209,6 +212,15 @@ export function Dashboard(){
   useEffect(()=>{if(!user)return;const interval=setInterval(()=>setReload(x=>x+1),60_000);return()=>clearInterval(interval);},[user]);
 
   const filtered=useMemo(()=> (data ? monthEvents(data.events,data.month).filter(e=>[e.name,e.location,e.eventType,...e.assignments.map(a=>data.staff.find(s=>s.id===a.id)?.name||'')].join(' ').toLocaleLowerCase('vi').includes(search.trim().toLocaleLowerCase('vi'))) : []),[data,search]);
+  const deliveryEvents=useMemo(()=>{
+    if(!data)return [];
+    const term=deliverySearch.trim().toLocaleLowerCase('vi');
+    return monthEvents(data.events,data.month).filter(event=>
+      event.products.length>0 && !event.deliveryCompleted &&
+      event.products.some(product=>!event.completedProductIds?.includes(product.id)) &&
+      (!term || [event.name,event.date,event.eventType,event.location,...event.products.map(product=>product.name)]
+        .join(' ').toLocaleLowerCase('vi').includes(term)));
+  },[data,deliverySearch]);
   const stats=data?getMonthStats(data.events,data.month):null;
   const nextEvents=useMemo(()=>filtered.filter(e=>e.date>=localToday()&&e.status!=='cancelled').slice(0,6),[filtered]);
   const title=pages.find(p=>p.key===tab);
@@ -262,7 +274,11 @@ export function Dashboard(){
           {tab==='calendar'&&<><div className="toolbar"><div className="search-input"><Search size={17}/><input placeholder="Tìm tên khách, loại dịch vụ, nhân sự..." value={search} onChange={e=>setSearch(e.target.value)} aria-label="Tìm kiếm lịch"/></div><div className="toolbar-right"><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,-1))}><ChevronLeft size={18}/></button><strong className="month-title">Tháng {month.slice(5)}/{month.slice(0,4)}</strong><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,1))}><ChevronRight size={18}/></button></div></div><CalendarPlanner data={data} filter={search} onSelect={setSelected}/><section className="surface"><div className="surface-title"><h3>Danh sách đặt lịch <span className="counter">{filtered.length}</span></h3><span className="text-xs text-slate-500">Chọn một lịch để chỉnh sửa trên web chính</span></div><EventTable events={filtered} staff={data.staff} onSelect={setSelected}/></section></>}
           {tab==='staff'&&<StaffManager user={user} month={month} onChanged={()=>setReload(x=>x+1)}/>}
           {tab==='payroll'&&<PayrollManager month={month} user={user}/>}
-          {tab==='delivery'&&<><div className="section-intro"><Film size={19}/> Các bộ bàn giao ảnh/video thuộc lịch tháng này. Nhấn Hoàn thành để tự ẩn khỏi tab bàn giao; khi cần xem lại hãy mở trong Quản lý lịch.</div><div className="delivery-grid">{filtered.filter(e=>e.products.length>0 && !e.deliveryCompleted && e.products.some(p=>!e.completedProductIds?.includes(p.id))).map(e=><DeliveryProductGroup key={e.id} event={e} user={user}/>)}</div>{!filtered.some(e=>e.products.length>0 && !e.deliveryCompleted && e.products.some(p=>!e.completedProductIds?.includes(p.id)))&&<Empty title="Không có bộ bàn giao đang mở" detail="Các bộ đã hoàn thành sẽ được ẩn khỏi tab này, nhưng vẫn xem lại được trong Quản lý lịch."/>}</>}
+          {tab==='delivery'&&<>
+            <div className="delivery-browser-toolbar"><label className="search-input"><Search size={17}/><input aria-label="Tìm lịch hoặc sản phẩm bàn giao" placeholder="Tìm theo tên lịch, khách hàng hoặc sản phẩm..." value={deliverySearch} onChange={e=>setDeliverySearch(e.target.value)}/></label><span className="delivery-browser-hint">Các sản phẩm chung lịch được đặt cạnh nhau</span></div>
+            <div className="delivery-grid">{deliveryEvents.map(event=><DeliveryProductGroup key={event.id} event={event} user={user}/>)}</div>
+            {!deliveryEvents.length&&<Empty title={deliverySearch?'Không tìm thấy sản phẩm phù hợp':'Không có bộ bàn giao đang mở'} detail="Các bộ đã hoàn thành vẫn có thể xem lại từ Quản lý lịch."/>}
+          </>}
           {tab==='analytics'&&<StudioAnalytics data={data} today={localToday()}/>}
           {tab==='activity'&&<section className="surface"><div className="surface-title"><div><span className="eyebrow">AUDIT TRAIL</span><h3>Nhật ký hoạt động gần đây</h3></div></div>{data.audit.length?<div className="activity-list">{data.audit.map((a,i)=><div key={a.id||i} className="activity-item"><div className="activity-symbol"><Activity size={17}/></div><div><strong>{a.message||a.action||'Hoạt động'}</strong><p>{a.action} · {a.createdAt ? new Date(a.createdAt<1e12?a.createdAt*1000:a.createdAt).toLocaleString('vi-VN'): 'Chưa xác định thời gian'}</p></div></div>)}</div>:<Empty title="Chưa có nhật ký" detail="Hoạt động trong Firebase sẽ được ghi nhận ở đây."/>}</section>}
         </>}

@@ -147,25 +147,45 @@ body {text-rendering:optimizeLegibility;}
 .detail-panel.booking-detail-expanded h2{margin:0;font-size:22px}
 @media(max-width:640px){.detail-panel.booking-detail-expanded dl,.detail-panel.booking-detail-expanded dl.booking-detail-finance{grid-template-columns:1fr}}
 
-/* v2.8.4.4 Product delivery: one item is one card, grouped by booking */
-.delivery-grid{display:flex!important;flex-direction:column;gap:22px;align-items:stretch;}
-.delivery-event-group{min-width:0;}
-.delivery-event-group-heading{display:flex;align-items:center;gap:9px;margin:0 0 11px;color:#455269;font-size:13px;}
-.delivery-event-group-heading span{color:#8994a7;font-size:11px;margin-left:auto;}
-.delivery-event-products{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:17px;align-items:stretch;}
-.delivery-event-products .delivery-card{height:100%;}
-.delivery-event-loading{font-size:11px;color:#75829a;margin-top:8px;}
+/* VNext 2.9.0.2 — packed delivery grid: one product = one card.
+   A booking with two products spans two columns, not an entire row.
+   We keep the booking wrapper so IntersectionObserver can lazy-load Drive media. */
+.delivery-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:18px;align-items:stretch;grid-auto-flow:row;}
+.delivery-event-group{grid-column:span 1;--delivery-group-columns:1;min-width:0;display:flex;flex-direction:column;}
+.delivery-event-group--span-2{grid-column:span 2;--delivery-group-columns:2;}
+.delivery-event-group--span-3{grid-column:span 3;--delivery-group-columns:3;}
+.delivery-event-group--span-4{grid-column:span 4;--delivery-group-columns:4;}
+.delivery-event-products{display:grid;grid-template-columns:repeat(var(--delivery-group-columns),minmax(0,1fr));gap:18px;align-items:stretch;flex:1;min-width:0;}
+.delivery-event-products .delivery-card{height:100%;min-width:0;}
+.delivery-art-meta--single{justify-content:flex-end;}
+.delivery-art-meta--single span{color:#f1f6ff;font-size:10px;}
+.delivery-event-loading{font-size:11px;color:#75829a;margin:8px 0 0;}
 .delivery-product-action-row{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:13px 0 4px;font-size:11px;color:#65748d;min-height:38px;}
 .delivery-product-action-row>span{min-width:0;overflow-wrap:anywhere;}
 .delivery-product-action-row .delivery-review-action{flex:0 0 auto;}
-.delivery-project-owner{font-size:11px!important;color:#8090a5!important;min-height:0!important;}
+.delivery-project-owner{font-size:11px!important;color:#566982!important;font-weight:650;min-height:0!important;overflow-wrap:anywhere;background:#f4f7fa;border-radius:7px;padding:7px 9px;margin:6px 0 2px!important;}
 .delivery-product-warning{font-size:10px;color:#ae6a27;}
 .delivery-event-products .delivery-card-actions{display:flex;align-items:center;justify-content:stretch;margin-top:auto;gap:8px;}
 .delivery-event-products .delivery-card-actions>.delivery-share-action,.delivery-event-products .delivery-card-actions>button{flex:1 1 0;min-width:0;}
 .delivery-event-products .delivery-card-actions .secondary-button.small{min-width:0;width:100%;}
-@media(max-width:1500px){.delivery-event-products{grid-template-columns:repeat(3,minmax(0,1fr));}}
-@media(max-width:1100px){.delivery-event-products{grid-template-columns:repeat(2,minmax(0,1fr));}}
-@media(max-width:690px){.delivery-event-products{grid-template-columns:1fr;}.delivery-event-group-heading{flex-wrap:wrap;}}
+.delivery-browser-toolbar{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;margin:0 0 19px;}
+.delivery-browser-toolbar .search-input{margin:0;max-width:520px;min-width:min(100%,270px);}
+.delivery-browser-hint{color:#8491a7;font-size:11px;}
+/* Keep related products adjacent. Responsive spans are clamped to the viewport's columns. */
+@media(max-width:1499px){
+ .delivery-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+ .delivery-event-group--span-4{grid-column:span 3;--delivery-group-columns:3;}
+}
+@media(max-width:1099px){
+ .delivery-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+ .delivery-event-group--span-3,.delivery-event-group--span-4{grid-column:span 2;--delivery-group-columns:2;}
+}
+@media(max-width:760px){
+ .delivery-grid{grid-template-columns:minmax(0,1fr)!important;gap:16px;}
+ .delivery-event-group,.delivery-event-group--span-2,.delivery-event-group--span-3,.delivery-event-group--span-4{grid-column:span 1;--delivery-group-columns:1;}
+ .delivery-event-products{gap:16px;}
+ .delivery-browser-toolbar .search-input{min-width:100%;max-width:100%;}
+}
 
 .delivery-product-video-action{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;}
 .delivery-product-video-action .delivery-review-action{display:contents;}
