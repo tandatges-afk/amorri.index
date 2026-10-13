@@ -5,17 +5,16 @@ const read=(name)=>readFileSync(new URL(`../${name}`,import.meta.url),'utf8');
 
 test('secure delivery button renders JSX icon instead of literal HTML text',()=>{
   const src=read('components/DeliveryGrantManager.tsx');
-  assert.match(src,/import \{LockKeyhole\} from 'lucide-react'/);
-  assert.match(src,/<LockKeyhole size=\{15\}/);
+  assert.match(src,/LockKeyhole\} from 'lucide-react'/);
+  assert.match(src,/<LockKeyhole size=\{12\}/);
   assert.doesNotMatch(src,/["']<span>🔐<\/span>/);
-  assert.match(src,/aria-expanded=\{open\}/);
-  assert.match(src,/aria-controls=\{`delivery-grants-\$\{eventId\}`\}/);
+  assert.match(src,/aria-label="Copy link bàn giao an toàn"/);
 });
 
-test('release labels match VNext 2.8 and avoid the obsolete delivery 2.5 label',()=>{
+test('release labels match VNext 2.8.2 and avoid the obsolete delivery 2.5 label',()=>{
   const dashboard=read('components/Dashboard.tsx');
   const grants=read('components/DeliveryGrantManager.tsx');
-  assert.match(dashboard,/AMORRI STUDIO \/ VNEXT 2\.8/);
+  assert.match(dashboard,/AMORRI STUDIO \/ VNEXT 2\.8\.2/);
   assert.doesNotMatch(dashboard,/AMORRI STUDIO \/ VNEXT 2\.5/);
   assert.doesNotMatch(grants,/Link an toàn 2\.5/);
 });

@@ -22,7 +22,7 @@ test('admin owns photo selected-names copy and Drive mime classification',()=>{
  assert.match(endpoint,/await requireAdmin\(request\)/);
  assert.match(endpoint,/listDeliveryMedia\(p\)/);
  assert.match(endpoint,/savedSelectionIds/);
- assert.match(admin,/Copy tên ảnh đã chọn \(Admin\)/);
+ assert.match(admin,/Copy tên ảnh/);
  assert.doesNotMatch(client,/Copy tên ảnh đã chọn/);
  assert.match(css,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
 });

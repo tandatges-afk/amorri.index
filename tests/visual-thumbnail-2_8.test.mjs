@@ -37,7 +37,7 @@ test('dashboard uses real lazy authenticated thumbnails with fallback and per-pr
  const dash=r('components/Dashboard.tsx');
  const thumbnail=r('components/AdminThumbnail.tsx');
  assert.match(dash,/<AdminThumbnail eventId=\{event.id\}/);
- assert.match(admin,/<AdminThumbnail eventId=\{eventId\}/);
+ assert.match(admin,/scheduleDiscovery/); // image is rendered once on the parent card, not duplicated per product
  assert.match(thumbnail,/user\.getIdToken/);
  assert.match(thumbnail,/IntersectionObserver/);
  assert.match(thumbnail,/URL\.revokeObjectURL/);

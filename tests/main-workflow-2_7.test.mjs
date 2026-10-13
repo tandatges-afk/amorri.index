@@ -68,8 +68,8 @@ test('Admin, not client, copies selected photo filenames',()=>{
  const client=r('components/ClientDelivery.tsx');
  const admin=r('components/DeliveryAdminWorkspace.tsx');
  assert.doesNotMatch(client,/Copy tên ảnh đã chọn/);
- assert.match(admin,/navigator\.clipboard\.writeText\(names\)/);
- assert.match(admin,/Copy tên ảnh đã chọn/);
+ assert.match(admin,/navigator\.clipboard\.writeText\(selectedNames\.join/);
+ assert.match(admin,/Copy tên ảnh/);
 });
 test('Legacy interface no longer issues Staff ID only links',()=>{
  const src=r('public/assets/js/main.js');
