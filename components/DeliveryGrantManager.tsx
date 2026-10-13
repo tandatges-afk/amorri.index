@@ -1,13 +1,14 @@
 'use client';
-import {useCallback,useState} from 'react';
+import {useCallback,useEffect,useState} from 'react';
 import type {User} from 'firebase/auth';
-import {Copy,LoaderCircle,LockKeyhole} from 'lucide-react';
+import {Copy,LoaderCircle} from 'lucide-react';
 
 /** One-click: reuse active share link, or create one once if none can be recovered. */
 export function DeliveryGrantManager({eventId,user}:{eventId:string;user:User}){
   const [busy,setBusy]=useState(false);
   const [feedback,setFeedback]=useState('');
   const [manualLink,setManualLink]=useState('');
+  useEffect(()=>{if(!feedback)return;const timer=setTimeout(()=>setFeedback(''),3200);return()=>clearTimeout(timer);},[feedback]);
   const run=useCallback(async()=>{
     if(busy)return;
     setBusy(true);setFeedback('');setManualLink('');
@@ -34,7 +35,7 @@ export function DeliveryGrantManager({eventId,user}:{eventId:string;user:User}){
     <button type="button" disabled={busy} className="secondary-button small" onClick={()=>void run()} aria-label="Copy link sản phẩm">
       {busy?<LoaderCircle size={15} className="spin"/>:<Copy size={15}/>} {busy?'Đang lấy link…':'Copy link sản phẩm'}
     </button>
-    {feedback&&<small role="status" className="delivery-share-feedback"><LockKeyhole size={12}/>{feedback}</small>}
+    {feedback&&<div role="alert" className="delivery-share-toast">{feedback}</div>}
     {manualLink&&<input aria-label="Link bàn giao để sao chép thủ công" value={manualLink} readOnly onFocus={e=>e.currentTarget.select()} className="delivery-copy-fallback"/>}
   </div>;
 }

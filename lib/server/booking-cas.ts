@@ -34,3 +34,18 @@ export async function saveBookingConditional(input:{key:string;id:string;expecte
   const token=await firebaseToken();
   return conditionalBookingWrite({...input,url,token,versionOf:bookingVersion});
 }
+
+/** Product writes reuse the same verified Firebase REST credentials as booking edits. */
+import { conditionalProductWrite, type ProductBaseline } from '../domain/product-cas';
+export {ProductCasError} from '../domain/product-cas';
+export async function saveProductConditional(input:{
+  key:string;id:string;expectedVersion:string;productId:string;newId:string;
+  name:string;url:string;mediaType:string;originalProduct?:ProductBaseline|null;actorUid:string;
+}){
+  if(!/^[A-Za-z0-9_-]{1,160}$/.test(input.key))
+    throw new BookingCasError(503,'BOOKING_CAS_KEY','Khóa lịch Firebase không hợp lệ.');
+  return conditionalProductWrite({
+    ...input,driveUrl:input.url,url:`${databaseUrl()}/studioPlanner_v1/events/${encodeURIComponent(input.key)}.json`,
+    token:await firebaseToken(),versionOf:bookingVersion
+  });
+}

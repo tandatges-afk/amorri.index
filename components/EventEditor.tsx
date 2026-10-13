@@ -5,9 +5,10 @@ import { CalendarClock, ExternalLink, Save, Trash2, X } from 'lucide-react';
 import { DeliveryGrantManager } from './DeliveryGrantManager';
 import type { Staff, StudioEvent } from '@/lib/domain/types';
 import type { EditableChanges } from '@/lib/domain/event-management';
+import {defaultStaffTask,taskOptionsFor,taskForService} from '@/lib/domain/staff-task';
 
 type Detail = Omit<StudioEvent,'products'> & {sourceLinks?:Record<string,string>;products:{id:string;name:string;url:string;mediaType:string}[];phone?:string;note?:string;isRuocDau?:boolean;startTrai?:string;startGai?:string;locTrai?:string;locGai?:string;phoneTrai?:string;phoneGai?:string};
-type Props={id:string|null;staff:Staff[];user:User;onClose:()=>void;onChanged:(newDate?:string)=>void};
+type Props={id:string|null;staff:Staff[];user:User;onClose:()=>void;onChanged:(newDate?:string)=>void;onDataUpdated?:()=>void};
 const money=(value:number)=>new Intl.NumberFormat('vi-VN').format(value);
 const input='w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100';
 const label='flex flex-col gap-1.5 text-xs font-semibold text-slate-600';
@@ -21,13 +22,14 @@ async function authorizedRequest(user:User,url:string,init:RequestInit={}){
  const ask=async(force=false)=>fetch(url,{...init,cache:'no-store',headers:{...init.headers,Authorization:`Bearer ${await user.getIdToken(force)}`}});
  let res=await ask();if(res.status===401)res=await ask(true);return res;
 }
-export function EventEditor({id,staff,user,onClose,onChanged}:Props){
+export function EventEditor({id,staff,user,onClose,onChanged,onDataUpdated}:Props){
  const [detail,setDetail]=useState<Detail|null>(null),[version,setVersion]=useState('');
  const [form,setForm]=useState<EditableChanges>({}),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState('');
  const [diagnostic,setDiagnostic]=useState(''),[diagnosticBusy,setDiagnosticBusy]=useState(false);
  const [deleting,setDeleting]=useState(false),[confirmName,setConfirmName]=useState('');
  const [reloadKey,setReloadKey]=useState(0),[sourceDrafts,setSourceDrafts]=useState<Record<string,string>>({});
  const [productId,setProductId]=useState(''),[productName,setProductName]=useState(''),[productUrl,setProductUrl]=useState(''),[productType,setProductType]=useState('auto');
+ const [productNotice,setProductNotice]=useState('');
  useEffect(()=>{
    if(!id){setDetail(null);setVersion('');setError('');setConfirmName('');return;}
    const ctrl=new AbortController();setLoading(true);setError('');setDetail(null);setDeleting(false);setConfirmName('');setProductId('');setProductName('');setProductUrl('');setProductType('auto');
@@ -66,7 +68,7 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
  const set=<K extends keyof EditableChanges>(key:K,value:EditableChanges[K])=>setForm(f=>({...f,[key]:value}));
  const assignments=form.assignments||[];
  const roster=[...staff.filter(s=>s.active!==false||assignments.some(a=>a.id===s.id)),...assignments.filter(a=>!staff.some(s=>s.id===a.id)).map(a=>({id:a.id,name:`Nhân sự cũ (${a.id})`,role:'Không còn trong danh sách'}))];
- function toggleStaff(staffId:string,checked:boolean){set('assignments',checked?[...assignments,{id:staffId,cost:0,task:'',locType:''}]:assignments.filter(a=>a.id!==staffId));}
+ function toggleStaff(staffId:string,checked:boolean){set('assignments',checked?[...assignments,{id:staffId,cost:0,task:defaultStaffTask(roster.find(s=>s.id===staffId)?.role||'',String(form.eventType||'')),locType:detail?.isRuocDau?'Nhà trai':''}]:assignments.filter(a=>a.id!==staffId));}
  function editAssignment(staffId:string,key:'cost'|'task'|'locType',value:number|string){set('assignments',assignments.map(a=>a.id===staffId?{...a,[key]:value}:a));}
  async function save(e:FormEvent){
   e.preventDefault();if(!detail||busy)return;
@@ -96,14 +98,28 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
  }
  async function saveProduct(){
   if(!detail||busy)return;
-  setBusy(true);setError('');
+  setBusy(true);setError('');setProductNotice('');
   try{
-   if(productId&&detail.products.find(p=>p.id===productId)?.url!==productUrl&& !window.confirm('Đổi link Drive có thể thay đổi bộ ảnh/video mà khách đang xem. Tiếp tục?'))return;
+   const baseProduct=productId?detail.products.find(p=>p.id===productId):undefined;
+   if(productId&&!baseProduct)throw new Error('Không tìm thấy sản phẩm đã chọn. Hãy tải lại chi tiết lịch.');
+   if(productId&&baseProduct?.url!==productUrl && !window.confirm('Đổi link Drive có thể thay đổi bộ ảnh/video khách đang xem. Tiếp tục?'))return;
+   const originalProduct=baseProduct?{name:baseProduct.name,url:baseProduct.url,mediaType:baseProduct.mediaType||'auto'}:undefined;
    const res=await authorizedRequest(user,`/api/events/${encodeURIComponent(eventId)}/products`,{
-    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({expectedVersion:version,productId,name:productName,url:productUrl,mediaType:productType})
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({expectedVersion:version,productId,name:productName,url:productUrl,mediaType:productType,originalProduct})
    });
-   const body=await res.json();if(!res.ok)throw new Error(`${body.error||'Không lưu được sản phẩm'}${body.code?` [${body.code}]`:''}`);
-   onChanged(form.date);onClose();
+   const body=await res.json() as {error?:string;code?:string;version?:string;productId?:string;product?:{id:string;name:string;url:string;mediaType:string};unchanged?:boolean};
+   if(!res.ok)throw new Error(`${body.error||'Không lưu được sản phẩm'}${body.code?` [${body.code}]`:''}`);
+   if(!body.version||!body.product)throw new Error('API chưa trả phiên bản sản phẩm sau khi lưu.');
+   const saved=body.product;
+   setVersion(body.version);
+   setDetail(previous=>previous?{...previous,products:
+     previous.products.some(p=>p.id===saved.id)
+      ?previous.products.map(p=>p.id===saved.id?{...p,...saved}:p)
+      :[...previous.products,saved]}:previous);
+   setProductId(saved.id);setProductName(saved.name);setProductUrl(saved.url);setProductType(saved.mediaType);
+   setProductNotice(body.unchanged?'Thông tin sản phẩm đã được đồng bộ.':'Đã lưu sản phẩm. Có thể tiếp tục chỉnh sửa lịch mà không cần đóng cửa sổ.');
+   onDataUpdated?.();
   }catch(e){setError(e instanceof Error?e.message:'Không lưu được sản phẩm');}
   finally{setBusy(false);}
  }
@@ -154,13 +170,15 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
       <label className={label}>Ngày thực hiện<input className={input} type="date" required value={form.date||''} onChange={e=>set('date',e.target.value)}/></label>
       <label className={label}>Trạng thái<select className={input} value={form.status||'pending'} onChange={e=>set('status',e.target.value as NonNullable<EditableChanges['status']>)}><option value="pending">Chờ xác nhận</option><option value="confirmed">Đã chốt</option><option value="done">Hoàn thành</option><option value="cancelled">Đã hủy</option></select></label>
       {!detail.isRuocDau&&<><label className={label}>Bắt đầu<input className={input} type="time" required value={form.start||''} onChange={e=>set('start',e.target.value)}/></label><label className={label}>Kết thúc<input className={input} type="time" required value={form.end||''} onChange={e=>set('end',e.target.value)}/></label></>}
-      <label className={`${label} sm:col-span-2`}>Dịch vụ<input className={input} value={form.eventType||''} maxLength={80} onChange={e=>set('eventType',e.target.value)}/></label>
+      <label className={`${label} sm:col-span-2`}>Dịch vụ<input className={input} value={form.eventType||''} maxLength={80} onChange={e=>{const next=e.target.value;setForm(previous=>({...previous,eventType:next,assignments:(previous.assignments||[]).map(a=>({...a,task:taskForService(a.task,roster.find(s=>s.id===a.id)?.role||'',next)}))}));}}/></label>
       {!detail.isRuocDau&&<><label className={`${label} sm:col-span-2`}>Địa điểm<input className={input} value={form.location||''} maxLength={240} onChange={e=>set('location',e.target.value)}/></label><label className={`${label} sm:col-span-2`}>Số điện thoại<input className={input} value={form.phone||''} maxLength={50} onChange={e=>set('phone',e.target.value)}/></label></>}
       <label className={label}>Giá trị hợp đồng (VND)<input className={input} type="number" min={0} step={1000} value={form.price??0} onChange={e=>set('price',Number(e.target.value))}/></label>
       <label className={label}>Tiền cọc (VND)<input className={input} type="number" min={0} step={1000} value={form.deposit??0} onChange={e=>set('deposit',Number(e.target.value))}/></label>
       <label className={`${label} sm:col-span-2`}>Ghi chú<textarea className={input} rows={2} maxLength={1000} value={form.note||''} onChange={e=>set('note',e.target.value)}/></label>
       <fieldset className="col-span-full rounded-xl border border-slate-200 p-4"><legend className="px-2 text-sm font-bold text-slate-800">Phân công nhân sự ({assignments.length})</legend>
-        <div className="space-y-3">{roster.map(s=>{const a=assignments.find(a=>a.id===s.id);return <div key={s.id} className="rounded-lg bg-slate-50 p-3"><label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" checked={!!a} onChange={e=>toggleStaff(s.id,e.target.checked)}/>{s.name} <span className="text-xs font-normal text-slate-400">{s.role}</span></label>{a&&<><div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3"><label className={label}>Công việc<input className={input} value={a.task} maxLength={120} onChange={e=>editAssignment(s.id,'task',e.target.value)}/></label><label className={label}>Chi phí (VND)<input className={input} type="number" min={0} step={1000} value={a.cost} onChange={e=>editAssignment(s.id,'cost',Number(e.target.value))}/></label><label className={label}>Nhà trai/gái<input className={input} value={a.locType} maxLength={80} onChange={e=>editAssignment(s.id,'locType',e.target.value)}/></label></div><div className="mt-2 rounded-lg border border-dashed border-slate-200 bg-white p-2"><label className={label}>Link Source nhân sự (http/https)<input className={input} type="url" value={sourceDrafts[s.id]||''} onChange={e=>setSourceDrafts(v=>({...v,[s.id]:e.target.value}))} placeholder="Dán link thư mục Source của thợ" maxLength={1500}/></label><button className="mt-2 rounded-lg border bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 disabled:opacity-40" type="button" disabled={busy||sourceDrafts[s.id]===(detail.sourceLinks?.[s.id]||'')} onClick={()=>void saveSource(s.id)}>Lưu link Source</button></div></>}</div>})}</div>
+        <div className="space-y-3">{roster.map(s=>{const a=assignments.find(a=>a.id===s.id);return <div key={s.id} className="rounded-lg bg-slate-50 p-3"><label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" checked={!!a} onChange={e=>toggleStaff(s.id,e.target.checked)}/>{s.name} <span className="text-xs font-normal text-slate-400">{s.role}</span></label>{a&&<><div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">{taskOptionsFor(s.role,String(form.eventType||'')).length>0&&<label className={label}>Công việc cưới<select className={input} value={a.task} onChange={e=>editAssignment(s.id,'task',e.target.value)}>{!taskOptionsFor(s.role,String(form.eventType||'')).includes(a.task)&&<option value={a.task}>{a.task||'Chưa phân loại (legacy)'}</option>}{taskOptionsFor(s.role,String(form.eventType||'')).map(t=><option key={t} value={t}>{t}</option>)}</select></label>}
+         <label className={label}>Chi phí (VND)<input className={input} type="number" min={0} step={1000} value={a.cost} onChange={e=>editAssignment(s.id,'cost',Number(e.target.value))}/></label>
+         {detail.isRuocDau&&<label className={label}>Vị trí rước dâu<select className={input} value={a.locType||'Nhà trai'} onChange={e=>editAssignment(s.id,'locType',e.target.value)}><option value="Nhà trai">Nhà trai</option><option value="Nhà gái">Nhà gái</option>{a.locType&&!['Nhà trai','Nhà gái'].includes(a.locType)&&<option value={a.locType}>{a.locType} (legacy)</option>}</select></label>}</div><div className="mt-2 rounded-lg border border-dashed border-slate-200 bg-white p-2"><label className={label}>Link Source nhân sự (http/https)<input className={input} type="url" value={sourceDrafts[s.id]||''} onChange={e=>setSourceDrafts(v=>({...v,[s.id]:e.target.value}))} placeholder="Dán link thư mục Source của thợ" maxLength={1500}/></label><button className="mt-2 rounded-lg border bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 disabled:opacity-40" type="button" disabled={busy||sourceDrafts[s.id]===(detail.sourceLinks?.[s.id]||'')} onClick={()=>void saveSource(s.id)}>Lưu link Source</button></div></>}</div>})}</div>
       </fieldset>
       <fieldset className="col-span-full rounded-xl border border-indigo-200 p-4"><legend className="px-2 text-sm font-bold text-slate-800">Sản phẩm bàn giao / Google Drive</legend>
        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 p-3">
@@ -180,8 +198,10 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
         <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-rose-800">Xóa lịch (có lưu dự phòng)</h3><p className="mt-1 text-xs text-rose-700">Để hủy mà vẫn giữ lịch, chọn trạng thái “Đã hủy”. Chỉ xóa khi chắc chắn.</p></div><button type="button" className="inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2 text-xs font-bold text-rose-700" onClick={()=>setDeleting(v=>!v)}><Trash2 size={15}/> {deleting?'Ẩn xác nhận xóa':'Hiển thị xác nhận xóa'}</button></div>
         {deleting&&<div className="mt-3"><label className={label}>Gõ chính xác tên lịch để xác nhận<input className={input} value={confirmName} onChange={e=>setConfirmName(e.target.value)} placeholder={detail.name}/></label><button disabled={busy||confirmName.trim()!==detail.name} type="button" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2 text-xs font-bold text-rose-700 disabled:opacity-40" onClick={()=>void remove()}><Trash2 size={15}/> Xóa và lưu bản dự phòng</button></div>}
       </div>
+      {productNotice&&<p role="status" className="col-span-full rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">{productNotice}</p>}
       {error&&<div role="alert" className="col-span-full rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-700">
-       <p>{error} {error.includes('thay đổi')&&'Đóng và mở lại chi tiết để tải phiên bản mới.'}</p>
+       <p>{error} {/PRODUCT_CHANGED|PRODUCT_RETRY_LIMIT/.test(error)&&' Bạn có thể tải lại chi tiết ngay tại đây.'}</p>
+       {/PRODUCT_CHANGED|PRODUCT_RETRY_LIMIT/.test(error)&&<button type="button" disabled={busy} className="mt-2 mr-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-bold" onClick={()=>{setProductNotice('');setReloadKey(v=>v+1);}}>Tải lại chi tiết lịch</button>}
        {/BOOKING_|SCHEDULE_/.test(error)&&<button type="button" disabled={diagnosticBusy} className="mt-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-bold" onClick={()=>void inspectError()}>{diagnosticBusy?'Đang kiểm tra…':'Kiểm tra trạng thái lịch / khóa ngày'}</button>}
        {diagnostic&&<p className="mt-2 font-medium">{diagnostic}</p>}
       </div>}

@@ -1,10 +1,13 @@
 import {randomUUID} from 'node:crypto';
 import {identity,json,jsonBody,failure,ScheduleError} from '@/lib/server/staff-scheduling';
-import {findBooking,bookingVersion} from '@/lib/server/event-storage';
+import {findBooking} from '@/lib/server/event-storage';
+import {saveProductConditional,ProductCasError,BookingCasError} from '@/lib/server/booking-cas';
 import {parseDriveSource} from '@/lib/domain/delivery';
 import {requireVersion,eventIdValid} from '@/lib/domain/event-management';
-import {recordValues} from '@/lib/domain/scheduling';
+import type {ProductBaseline} from '@/lib/domain/product-cas';
+
 export const runtime='nodejs';export const dynamic='force-dynamic';
+
 export async function POST(request:Request,{params}:{params:Promise<{id:string}>}){
  const user=await identity(request,true);if(user instanceof Response)return user;
  try{
@@ -17,22 +20,27 @@ export async function POST(request:Request,{params}:{params:Promise<{id:string}>
   const productId=typeof body.productId==='string'?body.productId:'';
   if(!name||name.length>180||!parseDriveSource(url)||url.length>1200||!['auto','video','image'].includes(String(mediaType)))
    throw new ScheduleError(422,'Tên, loại hoặc link Google Drive không hợp lệ','PRODUCT_INVALID');
-  if(productId&&!eventIdValid(productId))throw new ScheduleError(400,'Mã sản phẩm không hợp lệ');
+  if(productId&&!eventIdValid(productId))throw new ScheduleError(400,'Mã sản phẩm không hợp lệ','PRODUCT_BAD_ID');
+  let originalProduct:ProductBaseline|null=null;
+  if(productId&&body.originalProduct!==undefined){
+    const original=body.originalProduct;
+    if(!original||typeof original!=='object'||Array.isArray(original))
+      throw new ScheduleError(400,'Dữ liệu so sánh sản phẩm không hợp lệ','PRODUCT_BASE_INVALID');
+    const o=original as Record<string,unknown>;
+    if(typeof o.name!=='string'||typeof o.url!=='string'||typeof o.mediaType!=='string'||
+       o.name.length>180||o.url.length>1200||o.mediaType.length>20)
+      throw new ScheduleError(400,'Thông tin gốc của sản phẩm không hợp lệ','PRODUCT_BASE_INVALID');
+    originalProduct={name:o.name,url:o.url,mediaType:o.mediaType};
+  }
   const located=await findBooking(id);
-  if(located.version!==body.expectedVersion)throw new ScheduleError(409,'Lịch đã thay đổi, mở lại chi tiết để cập nhật','PRODUCT_CONFLICT');
-  const newId=productId||randomUUID();
-  let issue='';
-  const result=await located.ref.transaction(current=>{
-   if(!current||String(current.id)!==id||bookingVersion(current)!==body.expectedVersion){issue='Lịch đã thay đổi';return;}
-   const old=recordValues(current.products);
-   if(old.length>=150&&!productId){issue='Đã đạt giới hạn sản phẩm';return;}
-   if(productId&&!old.some(p=>String(p.id)===productId)){issue='Không tìm thấy sản phẩm';return;}
-   const product={id:newId,name,url,mediaType};
-   // Keep legacy metadata and product IDs, and leave photo selections/comments untouched.
-   const products=productId?old.map(p=>String(p.id)===productId?{...p,...product}:p):[...old,product];
-   return {...current,products,updatedAt:Date.now()};
-  },undefined,false);
-  if(!result.committed)throw new ScheduleError(409,issue||'Không lưu được sản phẩm','PRODUCT_CONFLICT');
-  return json({success:true,productId:newId,version:bookingVersion(result.snapshot.val())});
- }catch(err){return failure(err);}
+  const saved=await saveProductConditional({
+    key:located.key,id,expectedVersion:body.expectedVersion,productId,newId:randomUUID(),
+    name,url,mediaType:String(mediaType),originalProduct,actorUid:user.uid
+  });
+  return json({success:true,productId:saved.product.id,product:saved.product,version:saved.version,unchanged:saved.unchanged});
+ }catch(err){
+   if(err instanceof ProductCasError||err instanceof BookingCasError)
+     return json({error:err.message,code:err.code},err.status);
+   return failure(err);
+ }
 }

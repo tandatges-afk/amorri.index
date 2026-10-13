@@ -115,3 +115,20 @@ body {text-rendering:optimizeLegibility;}
 .delivery-card-actions .delivery-review-action>div{max-height:360px;overflow:auto;}
 .delivery-card-actions .delivery-share-feedback{overflow-wrap:anywhere;}
 @media(max-width:390px){.delivery-card-actions{gap:5px}.delivery-card-actions button.secondary-button.small{font-size:10px;padding:7px 5px;}}
+
+/* 2.8.4.2: identical spacing for photo/video cards and actions. */
+.delivery-grid{align-items:stretch;}
+.delivery-card{height:100%;}
+.delivery-art{flex:0 0 auto;}
+.delivery-details{display:flex;flex-direction:column;flex:1;min-height:225px;}
+.delivery-details > .delivery-compact-summary{min-height:56px;display:flex;flex-direction:column;justify-content:center;}
+.delivery-card-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch;gap:8px;margin-top:auto;padding-top:14px;}
+.delivery-card-actions > .delivery-share-action,
+.delivery-card-actions > .delivery-review-action{min-width:0;flex:auto;}
+.delivery-card-actions > button.secondary-button.small{grid-column:1 / -1;width:100%;min-height:39px;justify-content:center;}
+.delivery-card-actions > .delivery-review-placeholder{visibility:hidden;pointer-events:none;min-height:39px;}
+.delivery-card-actions button.secondary-button.small{white-space:normal;min-height:39px;}
+.delivery-share-toast{position:fixed;inset:auto 20px 20px auto;z-index:400;
+ max-width:min(380px,calc(100vw - 40px));border-radius:12px;
+ padding:12px 16px;background:#172b41;color:#fff;font-size:12px;box-shadow:0 15px 45px #0f172a33;}
+@media(max-width:390px){.delivery-share-toast{left:12px;right:12px;bottom:12px;}}

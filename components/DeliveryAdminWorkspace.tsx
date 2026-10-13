@@ -68,6 +68,6 @@ export function DeliveryAdminWorkspace({eventId,user,onCover,onSummary}:{eventId
    </div>}
    {rows.length>0 && rows.every(row=>row.kind==='unknown') && <div className="delivery-compact-status">Chưa đọc được loại sản phẩm trên Drive.</div>}
    {!!rows.length && rows.some(row=>row.warning)&&<button type="button" disabled={busy} className="delivery-mini-retry" onClick={()=>void load()}><RefreshCw size={13}/> Thử nhận diện lại</button>}
-   {message&&<small role="status" className="delivery-share-feedback">{message}</small>}
+   {message&&<div role="alert" className="delivery-share-toast">{message}</div>}
  </div>;
 }
