@@ -30,7 +30,7 @@ test('outdated public delivery buttons are not in main dashboard',()=>{
  const dashboard=r('components/Dashboard.tsx');
  assert.doesNotMatch(dashboard,/Bàn giao cũ/);
  assert.doesNotMatch(dashboard,/>Link cũ</);
- assert.match(dashboard,/<DeliveryAdminWorkspace/);
+ assert.match(dashboard,/<DeliveryProductGroup/);
 });
 test('booking sends changed fields only and preserves wedding + source details',()=>{
  const editor=r('components/EventEditor.tsx');

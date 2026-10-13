@@ -18,7 +18,7 @@ test('sharing one link is idempotent and can recopy after page refresh',()=>{
   const api=read('app/api/delivery/grants/route.ts');
   const store=read('lib/server/delivery-access.ts');
   const ui=read('components/DeliveryGrantManager.tsx');
-  assert.match(api,/ensureDeliveryGrant\(eventId,user\.uid,30\)/);
+  assert.match(api,/ensureDeliveryGrant\(eventId,user.uid,30,productId\)/);
   assert.match(store,/rootRef\.transaction/);
   assert.match(store,/chosen===grantId/);
   assert.match(store,/revokedAt:now/);
@@ -34,7 +34,7 @@ test('admin image copy action only uses selected photo rows, not clips',()=>{
   assert.match(ui,/Khách đã chọn/);
   assert.match(ui,/Copy tên ảnh/);
   assert.doesNotMatch(ui,/Kiểm tra ảnh \/ clip/);
-  assert.match(dashboard,/mediaSummary\?\.hasVideo\?<DeliveryReviewManager/);
+  assert.match(dashboard,/isVideo&&<div className="delivery-product-action-row delivery-product-video-action"/);
 });
 test('thumbnail image is unobscured by type overlay',()=>{
   const thumb=read('components/AdminThumbnail.tsx');

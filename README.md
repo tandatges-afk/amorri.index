@@ -1,3 +1,31 @@
+# Amorri Studio VNext 2.9.0 — Unified Studio Platform
+
+**Base:** VNext 2.8.4.4 Product Delivery & Review, retaining all files, routes and legacy `/studio` compatibility. This is a migration release, **not** a full removal of the legacy workspace.
+
+## What ships
+
+- **Operations Desk:** actionable queue for unassigned bookings, pending confirmations, unfinished product deliveries. Read-only selectors use the selected month; cancelled bookings are excluded from urgent actions.
+- **Calendar Planner:** Month / Week / List views, filter bookings by crew member, open booking details without leaving the page. Week navigation is limited to dates overlapping the fetched month; weekends and cross-month week starts display correctly.
+- **Analytics:** status and service mix; month-scoped booking contract totals and unpaid-after-deposit estimates (not cash revenue).
+- **Error diagnostics:** `X-Amorri-Request-Id` on dashboard and key calendar/product/photo/video APIs; matching sanitized request ID/status in Vercel Function Logs. Never include ID tokens or customer data in support reports.
+- **UI design system:** scoped 2.9 CSS for layout, accessible controls and responsive operations views; no modification to legacy `/studio` styles.
+- **Migration readiness:** visible parity checklist, reminder not to tighten Firebase Rules before legacy client gallery/review cutover.
+- **CI:** checks TypeScript, regression suite, static structure, Next production build and Playwright smoke. Fixed setup-node npm cache configuration that previously assumed a nonexistent lockfile.
+
+## Verify and deploy
+
+1. Deploy to Vercel **Preview** using a staging Firebase project or a protected staging snapshot; do not test delete/edit on Production until validated.
+2. `npm install --no-audit --no-fund` with Node >= 22.16.0, then `npm run typecheck`, `npm test`, `node scripts/check-static.mjs`, `npm run build`.
+3. Open `/api/health` and verify `unified-studio-20261013-r1`. Check login, calendar filters, unassigned queue, one-per-product delivery, photo selection, review timeline, payroll, staff links, and original client delivery links.
+4. Confirm no archive key rotation and keep all Firebase/Google Drive environment values as previously configured.
+5. Migrate to Production only after Preview build + QA pass. Keep a rollback deployment.
+
+**Limits:** Dashboard/Analytics fetch only one month (max 1001 events), so numbers are *not* lifetime reports. This environment could not fetch npm packages and therefore cannot certify full `next build`, React typechecking or browser E2E. Legacy `/studio` can still write data outside modern CAS locking; do not edit the same booking in both interfaces at once. **VNext 2.9 does not re-add Cloudflare.**
+
+Details: [`docs/VNEXT_2_9_RELEASE.md`](docs/VNEXT_2_9_RELEASE.md).
+
+---
+
 # Amorri Studio VNext 2.8.4.3 — Detail & Delivery Stability
 
 - Mở rộng Chi tiết lịch trên web chính (thông tin, nhân sự, hợp đồng, source, sản phẩm); bỏ nút nghiệp vụ nâng cao trong popup.
@@ -117,3 +145,7 @@ Nếu dùng `AMORRI_DELIVERY_LINK_KEY`, cần giữ nguyên khóa đủ mạnh (
 - Chưa xác nhận **`next build`, Playwright và RTDB production integration**, do môi trường này không truy cập được npm registry. Bắt buộc chạy `npm install && npm run typecheck && npm run build && npm test` trên CI/Vercel.
 - Cần xác minh tài khoản service account có quyền transaction tại các nhánh `studioPlanner_v1/schedulingWriteLocks_v3` và `amorriDeliveryAccess_v1`. Firebase Admin SDK đúng cấu hình sẽ vượt qua client RTDB Rules.
 - Nếu truy cập Google Drive thất bại, không tự coi nguồn là ảnh hay clip; cần khắc phục quyền/metadata trước. Link cũ vẫn còn quyền nếu Admin chưa bấm tạo/copy lại; sau đó chỉ một link còn hiệu lực trên API mới.
+
+## VNext 2.8.4.4 — Product Delivery & Review
+
+Mỗi sản phẩm là một thẻ / một link riêng, liên tiếp theo cùng một lịch; có nút Xóa link sản phẩm (giữ lịch sử), bảng góp ý clip riêng, nút copy tên ảnh riêng, thời gian bình luận `mm:ss` / `hh:mm:ss` và nhớ tên khách trên trình duyệt. Xem [hướng dẫn triển khai](docs/PRODUCT_DELIVERY_2_8_4_4.md).

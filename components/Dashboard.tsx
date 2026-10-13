@@ -3,15 +3,18 @@
 import {PayrollManager} from '@/components/PayrollManager';
 import {DeliveryGrantManager} from '@/components/DeliveryGrantManager';
 import {DeliveryReviewManager} from '@/components/DeliveryReviewManager';
-import {DeliveryAdminWorkspace,type DeliveryMediaSummary} from '@/components/DeliveryAdminWorkspace';
 import {AdminThumbnail,type CoverInfo} from '@/components/AdminThumbnail';
+import {OperationsHub} from './OperationsHub';
+import {CalendarPlanner} from './CalendarPlanner';
+import {StudioAnalytics} from './StudioAnalytics';
+import './v29.css';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import {
   Activity, ArrowRight, BadgeCheck, CalendarDays, ChevronLeft, ChevronRight,
-  CircleDollarSign, Clock3, Download, Film, FolderOpen, Images, LayoutDashboard,
+  CircleDollarSign, Clock3, Download, Film, FolderOpen, Images, LayoutDashboard, ChartNoAxesCombined,
   LockKeyhole, LogOut, Menu, Plus, RefreshCw, Search, Settings2, ShieldCheck,
   Sparkles, Users, WalletCards, X
 } from 'lucide-react';
@@ -20,12 +23,12 @@ import { NewBookingDialog } from './NewBookingDialog';
 import { EventEditor } from './EventEditor';
 import { BookingDetailPanel } from './BookingDetailPanel';
 import { StaffManager } from './StaffManager';
-import { buildCalendarCells, getMonthStats, monthEvents, shiftMonth, statusName } from '@/lib/domain/studio';
+import { getMonthStats, monthEvents, shiftMonth, statusName } from '@/lib/domain/studio';
 import type { DashboardData, StudioEvent } from '@/lib/domain/types';
 
-type Tab = 'overview'|'calendar'|'staff'|'payroll'|'delivery'|'activity';
+type Tab = 'overview'|'calendar'|'staff'|'payroll'|'delivery'|'activity'|'analytics';
 const monthNow = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; };
-const localToday = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const localToday = () => { const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const take=(type:string)=>parts.find(p=>p.type===type)?.value||'';return `${take('year')}-${take('month')}-${take('day')}`; };
 const money = (n:number) => new Intl.NumberFormat('vi-VN', {style:'currency',currency:'VND',maximumFractionDigits:0}).format(n);
 const dateDisplay = (s:string) => /^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s.slice(8,10)}/${s.slice(5,7)}/${s.slice(0,4)}` : s;
 const pages: {key:Tab;name:string;sub:string;icon:typeof LayoutDashboard}[] = [
@@ -34,6 +37,7 @@ const pages: {key:Tab;name:string;sub:string;icon:typeof LayoutDashboard}[] = [
   {key:'staff',name:'Đội ngũ',sub:'Nhân sự, phân công',icon:Users},
   {key:'payroll',name:'Lương thợ',sub:'Theo dõi thanh toán',icon:WalletCards},
   {key:'delivery',name:'Bàn giao sản phẩm',sub:'Ảnh, video, đánh giá',icon:FolderOpen},
+  {key:'analytics',name:'Báo cáo',sub:'Thống kê vận hành',icon:ChartNoAxesCombined},
   {key:'activity',name:'Hoạt động',sub:'Nhật ký hệ thống',icon:Activity}
 ];
 function Status({status}:{status:StudioEvent['status']}) {
@@ -47,7 +51,7 @@ function Login({onLogin,error,loading}:{onLogin:(email:string,password:string)=>
   return <div className="login-layout">
     <div className="login-showcase">
       <div className="login-brand"><div className="brand-square">A<span>.</span></div><span>AMORRI <strong>STUDIO</strong></span></div>
-      <div className="showcase-main"><div className="overline">AMORRI STUDIO / VNEXT 2.8.4.3</div>
+      <div className="showcase-main"><div className="overline">AMORRI STUDIO / VNEXT 2.9.0</div>
         <h1>Mọi khoảnh khắc.<br/><em>Một hệ thống.</em></h1>
         <p>Không gian điều hành từ lịch quay chụp, đội ngũ đến bàn giao sản phẩm — đồng nhất và hiệu quả hơn.</p>
         <div className="showcase-pills"><span>Lịch thông minh</span><span>Đội ngũ</span><span>Gallery & Video</span></div>
@@ -84,54 +88,74 @@ function EventTable({events,staff,compact=false,onSelect}:{events:StudioEvent[];
     }):<tr><td colSpan={compact?5:6}><Empty title="Chưa có lịch phù hợp" detail="Dữ liệu sẽ hiển thị sau khi được đồng bộ từ Firebase."/></td></tr>}</tbody></table></div>;
 }
 
-function CalendarView({data,filter,onSelect}:{data:DashboardData;filter:string;onSelect:(s:string)=>void}) {
-  const events=monthEvents(data.events,data.month).filter(e=> !filter || [e.name,e.eventType,e.location].join(' ').toLowerCase().includes(filter.toLowerCase()));
-  const grouped=new Map<string,StudioEvent[]>();
-  for(const e of events)grouped.set(e.date,[...(grouped.get(e.date)||[]),e]);
-  const cells=buildCalendarCells(data.month),today=localToday();
-  return <div className="calendar-block"><div className="day-headers">{['T2','T3','T4','T5','T6','T7','CN'].map(x=><div key={x}>{x}</div>)}</div>
-    <div className="calendar-grid">{cells.map(c=><div key={c.date} className={`cal-day ${c.current?'':'cal-out'} ${c.date===today?'cal-today':''}`}>
-      <div className="cal-date">{Number(c.date.slice(-2))}</div>
-      {(grouped.get(c.date)||[]).slice(0,3).map(e=><button onClick={()=>onSelect(e.id)} title={`${e.name} · ${e.start}`} className={`calendar-event c-${e.status}`} key={e.id}><span>{e.start||'--:--'}</span> {e.name}</button>)}
-      {(grouped.get(c.date)||[]).length>3&&<div className="calendar-more">+{(grouped.get(c.date)||[]).length-3} lịch khác</div>}
-    </div>)}</div></div>;
+type ProductMediaSummary={id:string;name:string;kind:'video'|'image'|'mixed'|'unknown';videoCount:number;imageCount:number;selectedNames:string[];cover?:CoverInfo;warning?:string};
+function DeliveryProductGroup({event,user}:{event:StudioEvent;user:User}){
+ const [products,setProducts]=useState<ProductMediaSummary[]>([]);
+ const [error,setError]=useState('');
+ const [busy,setBusy]=useState(false);
+ const [visible,setVisible]=useState(false);
+ const groupRef=useRef<HTMLDivElement>(null);
+ useEffect(()=>{
+   const node=groupRef.current;if(!node)return;
+   if(typeof IntersectionObserver==='undefined'){setVisible(true);return;}
+   const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){setVisible(true);observer.disconnect();}},{rootMargin:'150px'});
+   observer.observe(node);return()=>observer.disconnect();
+ },[]);
+ useEffect(()=>{
+  if(!visible)return;
+  let active=true;
+  void (async()=>{setBusy(true);try{
+   const doFetch=async(refresh=false)=>fetch(`/api/delivery/${encodeURIComponent(event.id)}/admin-media`,{headers:{Authorization:`Bearer ${await user.getIdToken(refresh)}`},cache:'no-store'});
+   let response=await doFetch();if(response.status===401)response=await doFetch(true);
+   const data=await response.json();if(!response.ok)throw new Error(data.error||'Không đọc được Google Drive');
+   if(active)setProducts(data.products||[]);
+  }catch(e){if(active)setError(e instanceof Error?e.message:'Không đọc được sản phẩm');}
+  finally{if(active)setBusy(false);}})();
+  return()=>{active=false;};
+ },[visible,event.id,user]);
+ const [hiddenProducts,setHiddenProducts]=useState<string[]>([]);
+ const remaining=event.products.filter(p=>!event.completedProductIds?.includes(p.id)&&!hiddenProducts.includes(p.id));
+ if(event.deliveryCompleted||!remaining.length)return null;
+ return <section className="delivery-event-group" ref={groupRef} aria-label={`Sản phẩm của lịch ${event.name}`}>
+   <div className="delivery-event-group-heading"><CalendarDays size={14}/><b>{event.name}</b><span>{dateDisplay(event.date)} · {remaining.length} sản phẩm</span></div>
+   <div className="delivery-event-products">{remaining.map(product=>{
+     const meta=products.find(row=>row.id===product.id);
+     return <DeliveryProductCard key={product.id} event={event} product={product} user={user} info={meta} onComplete={()=>setHiddenProducts(previous=>[...previous,product.id])}/>;
+   })}</div>
+   {busy&&<p className="delivery-event-loading">Đang nhận diện sản phẩm trên Drive…</p>}
+   {error&&<p role="alert" className="delivery-event-loading">{error}</p>}
+ </section>;
 }
-
-function DeliveryProjectCard({event,user}:{event:StudioEvent;user:User}){
- const [cover,setCover]=useState<CoverInfo|null>(null);
- const [mediaSummary,setMediaSummary]=useState<DeliveryMediaSummary|null>(null);
- const [hidden,setHidden]=useState(Boolean(event.deliveryCompleted));
- const [completing,setCompleting]=useState(false);
- const [completeMessage,setCompleteMessage]=useState('');
- const complete=useCallback(async()=>{
-   if(completing||hidden)return;
-   setCompleting(true);setCompleteMessage('');
-   try{
-     const run=async(force=false)=>fetch(`/api/delivery/${encodeURIComponent(event.id)}/status`,{
-       method:'PATCH',cache:'no-store',headers:{'Content-Type':'application/json',Authorization:`Bearer ${await user.getIdToken(force)}`},body:JSON.stringify({completed:true})
-     });
-     let res=await run();if(res.status===401)res=await run(true);
-     const body=await res.json();
-     if(!res.ok)throw new Error(`${body.error||'Không thể hoàn thành bàn giao'}${body.code?` [${body.code}]`:''}`);
-     setHidden(true);
-   }catch(error){setCompleteMessage(error instanceof Error?error.message:'Không thể hoàn thành bàn giao');}
-   finally{setCompleting(false);}
- },[completing,hidden,event.id,user]);
- if(hidden)return null;
- return <article className="delivery-card" aria-label={`Bàn giao ${event.name}`}>
-   <div className="delivery-art">
-     <AdminThumbnail eventId={event.id} user={user} cover={cover}/>
-     <div className="delivery-art-meta"><span>{event.products.length} SẢN PHẨM</span><span>{cover?.type==='video'?'VIDEO DELIVERY':cover?.type==='image'?'PHOTO DELIVERY':'STUDIO DELIVERY'}</span></div>
+function DeliveryProductCard({event,product,user,info,onComplete}:{event:StudioEvent;product:StudioEvent['products'][number];user:User;info?:ProductMediaSummary;onComplete:()=>void}){
+ const [completing,setCompleting]=useState(false),[message,setMessage]=useState('');
+ const [copied,setCopied]=useState(false);
+ const isVideo=info?.kind==='video'||info?.kind==='mixed'||(!info&&product.mediaType==='video');
+ const isPhoto=info?.kind==='image'||info?.kind==='mixed'||(!info&&product.mediaType==='image');
+ const complete=async()=>{
+  if(completing)return;setCompleting(true);setMessage('');
+  try{
+   const run=async(force=false)=>fetch(`/api/delivery/${encodeURIComponent(event.id)}/status`,{method:'PATCH',cache:'no-store',
+    headers:{'Content-Type':'application/json',Authorization:`Bearer ${await user.getIdToken(force)}`},body:JSON.stringify({completed:true,productId:product.id})});
+   let response=await run();if(response.status===401)response=await run(true);
+   const data=await response.json();if(!response.ok)throw new Error(data.error||'Không thể hoàn thành sản phẩm');
+   onComplete();
+  }catch(e){setMessage(e instanceof Error?e.message:'Không thể hoàn thành');}
+  finally{setCompleting(false);}
+ };
+ const copyNames=async()=>{try{await navigator.clipboard.writeText((info?.selectedNames||[]).join('\n'));setCopied(true);setTimeout(()=>setCopied(false),2000);}catch{setMessage('Trình duyệt chặn sao chép');}};
+ return <article className="delivery-card" aria-label={`Bàn giao sản phẩm ${product.name}`}>
+   <div className="delivery-art"><AdminThumbnail eventId={event.id} user={user} cover={info?.cover}/>
+     <div className="delivery-art-meta"><span>1 SẢN PHẨM</span><span>{isVideo?'VIDEO DELIVERY':isPhoto?'PHOTO DELIVERY':'STUDIO DELIVERY'}</span></div>
    </div>
-   <div className="delivery-details"><div className="delivery-date"><CalendarDays size={13}/>{dateDisplay(event.date)} <span>·</span> {event.eventType}</div>
-     <h3>{event.name}</h3>
-     <DeliveryAdminWorkspace eventId={event.id} user={user} onCover={setCover} onSummary={setMediaSummary}/>
-     <div className="delivery-card-actions">
-       <DeliveryGrantManager eventId={event.id} user={user}/>
-       {mediaSummary?.hasVideo?<DeliveryReviewManager eventId={event.id} user={user}/>:<span className="delivery-review-placeholder" aria-hidden="true"/>}
-       <button type="button" disabled={completing} className="secondary-button small" onClick={()=>void complete()}><BadgeCheck size={15}/> {completing?'Đang ẩn…':'Hoàn thành'}</button>
-     </div>
-     {completeMessage&&<div role="alert" className="delivery-share-toast">{completeMessage}</div>}
+   <div className="delivery-details"><div className="delivery-date"><CalendarDays size={13}/>{dateDisplay(event.date)} · {event.eventType}</div>
+     <h3>{product.name}</h3><p className="delivery-project-owner">Lịch: {event.name}</p>
+     {isPhoto&&<div className="delivery-product-action-row"><span>Khách đã chọn <b>{info?.selectedNames.length||0} ảnh</b></span><button type="button" className="secondary-button small" disabled={!info?.selectedNames.length} onClick={()=>void copyNames()}><Copy size={14}/>{copied?'Đã copy':'Copy tên ảnh'}</button></div>}
+     {isVideo&&<div className="delivery-product-action-row delivery-product-video-action"><span>Clip: <b>{product.name}</b></span><DeliveryReviewManager eventId={event.id} productId={product.id} user={user}/></div>}
+     {!info&&<div className="delivery-product-action-row">Đang xác định loại sản phẩm…</div>}
+     {info?.warning&&<div className="delivery-product-warning">Không đọc được file Drive. {info.warning}</div>}
+     <div className="delivery-card-actions"><DeliveryGrantManager eventId={event.id} productId={product.id} user={user}/>
+     <button type="button" disabled={completing} className="secondary-button small" onClick={()=>void complete()}><BadgeCheck size={15}/>{completing?'Đang xử lý…':'Hoàn thành'}</button></div>
+     {message&&<div role="alert" className="delivery-share-toast">{message}</div>}
    </div>
  </article>;
 }
@@ -159,6 +183,8 @@ export function Dashboard(){
   const load=useCallback(async (signal:AbortSignal)=>{
     if(!user){setData(null);return;}
     setLoading(true);setRequestError('');
+    // A previous month's data must never be displayed under a new month heading.
+    setData(previous=>previous?.month===month?previous:null);
     try {
       const fetchWithToken=async (forceRefresh=false)=>{
         const token=await user.getIdToken(forceRefresh);
@@ -172,11 +198,11 @@ export function Dashboard(){
         if(resp.status===401 && !value.code && value.error==='Không thể xác thực. Kiểm tra phiên đăng nhập/cấu hình Firebase.') {
           throw new Error('API đang dùng bản Beta 2 cũ. Cập nhật mã nguồn Auth Fix và redeploy Production; kiểm tra /api/health có release staff-scheduling-20261013-r1.');
         }
-        throw new Error(`${value.error||`HTTP ${resp.status}`}${value.code?` [${value.code}]`:''}`);
+        throw new Error(`${value.error||`HTTP ${resp.status}`}${value.code?` [${value.code}]`:''}${value.requestId?` · Mã tra cứu ${value.requestId}`:''}`);
       }
-      setData(value as DashboardData);
+      if(!signal.aborted)setData(value as DashboardData);
     }catch(error){
-      if(!signal.aborted){setData(null);setRequestError(error instanceof Error?error.message:'Không tải được dữ liệu');}
+      if(!signal.aborted){setData(previous=>previous?.month===month?previous:null);setRequestError(error instanceof Error?error.message:'Không tải được dữ liệu');}
     }finally{if(!signal.aborted)setLoading(false);}
   },[user,month]);
   useEffect(()=>{const controller=new AbortController();void load(controller.signal);return ()=>controller.abort();},[load,reload]);
@@ -201,19 +227,20 @@ export function Dashboard(){
       })}</nav>
       <div className="sidebar-label section-gap">CÔNG CỤ</div>
       <div className="nav-items"><a className="nav-item" href="/studio"><Settings2 size={19}/><span>Workspace đầy đủ</span><ArrowRight size={14}/></a><a className="nav-item" href="/migration"><ShieldCheck size={19}/><span>Kiểm tra an toàn dữ liệu</span><ArrowRight size={14}/></a></div>
-      <div className="sidebar-bottom"><div className="migration-tile"><Sparkles size={21}/><strong>VNext 2.8.4.3</strong><p>Không gian mới chạy trên React & TypeScript. Chỉnh sửa, phân công và xóa lịch cơ bản trực tiếp trên React. Bảng lương lũy kế đã được chuyển sang TypeScript. Có phân loại ảnh/video và copy danh sách ảnh cho Admin; một số công cụ nâng cao đang được chuyển tiếp.</p><a href="/studio">Mở công cụ <ArrowRight size={14}/></a></div>
+      <div className="sidebar-bottom"><div className="migration-tile"><Sparkles size={21}/><strong>VNext 2.9.0</strong><p>Điều hành thống nhất: lịch tháng/tuần/danh sách, ưu tiên phân công, bàn giao theo sản phẩm và bảng lương. Workspace cũ vẫn được giữ để đối chiếu trước khi chuyển hoàn toàn.</p><a href="/studio">Mở công cụ <ArrowRight size={14}/></a></div>
         <div className="user-identity"><div className="user-avatar">{(user.email||'A').slice(0,1).toUpperCase()}</div><div className="user-meta"><strong>{user.email?.split('@')[0]||'Admin'}</strong><span>Firebase Admin</span></div><button title="Đăng xuất" onClick={()=>signOut(browserAuth())}><LogOut size={19}/></button></div>
       </div>
     </aside>
     <main className="content">
       <header className="topbar"><div className="topbar-left"><button aria-label="Mở menu" className="menu-toggle" onClick={()=>setMenuOpen(true)}><Menu size={22}/></button><div className="breadcrumb">WORKSPACE <span>/</span> {title?.name.toUpperCase()}</div></div><div className="topbar-right"><span className="live-dot"/><span className="topbar-time">Đồng bộ mỗi 60 giây</span><button aria-label="Tải lại" title="Làm mới" onClick={()=>setReload(x=>x+1)} className="top-icon"><RefreshCw size={18} className={loading?'spin':''}/></button><div className="top-avatar">{(user.email||'A').slice(0,1).toUpperCase()}</div></div></header>
       <div className="content-inner">
-        <div className="page-heading"><div><div className="eyebrow">AMORRI STUDIO / OPERATIONS</div><h1>{title?.name}</h1><p>{title?.sub} · Tháng {month.slice(5)}/{month.slice(0,4)}</p></div><div className="heading-actions"><button className="secondary-button" onClick={()=>setReload(x=>x+1)} disabled={loading}><RefreshCw size={16} className={loading?'spin':''}/> Đồng bộ</button><button className="primary-button" onClick={()=>setNewBookingOpen(true)}><Plus size={18}/> Tạo lịch mới</button></div></div>
-        {requestError&&<div className="alert error"><ShieldCheck size={18}/><div><strong>Không tải được dữ liệu quản trị</strong><p>{requestError}</p></div></div>}
+        <div className="page-heading ops29-page-heading"><div><div className="eyebrow">AMORRI STUDIO / OPERATIONS</div><h1>{title?.name}</h1><p>{title?.sub} · Tháng {month.slice(5)}/{month.slice(0,4)}</p></div><div className="heading-actions"><button className="secondary-button" onClick={()=>setReload(x=>x+1)} disabled={loading}><RefreshCw size={16} className={loading?'spin':''}/> Đồng bộ</button><button className="primary-button" onClick={()=>setNewBookingOpen(true)}><Plus size={18}/> Tạo lịch mới</button></div></div>
+        {requestError&&<div className="alert error"><ShieldCheck size={18}/><div><strong>Không tải được dữ liệu quản trị</strong><p>{requestError}</p>{data?.month===month&&<p>Đang hiển thị dữ liệu tải thành công gần nhất của tháng này; hãy thử Đồng bộ lại.</p>}</div></div>}
         {data?.eventLimitReached&&<div className="alert notice">Dữ liệu tháng vượt giới hạn truy vấn 1001 bản ghi. Cần phân trang và index Firebase trước khi dùng báo cáo.</div>}
         {!data && loading && <div className="loading-state"><RefreshCw size={24} className="spin"/> Đang tải dữ liệu Firebase…</div>}
         {data && <>
           {tab==='overview'&&<>
+            <OperationsHub data={data} today={localToday()} onOpenEvent={setSelected} onNavigate={goTab}/>
             <div className="welcome-band"><div><div className="welcome-kicker"><Sparkles size={14}/> STUDIO CONTROL CENTER</div><h2>Một nơi để quản lý<br/><em>mọi dự án sáng tạo.</em></h2><p>Lịch, nhân sự, tài chính và bàn giao sản phẩm trong một giao diện thống nhất.</p><button className="welcome-cta" onClick={()=>goTab('calendar')}>Xem lịch làm việc <ArrowRight size={16}/></button></div><div className="welcome-art"><div className="art-ring ring-one"/><div className="art-ring ring-two"/><div className="art-center">A<span>.</span></div></div></div>
             <div className="metrics-grid">
               {[
@@ -232,13 +259,14 @@ export function Dashboard(){
               </section></div>
             <section className="surface"><div className="surface-title"><div><span className="eyebrow">BOOKING MANAGER</span><h3>Danh sách lịch trong tháng</h3></div><button onClick={()=>goTab('calendar')} className="text-action">Xem lịch tháng <ArrowRight size={16}/></button></div><EventTable events={filtered} staff={data.staff} compact onSelect={setSelected}/></section>
           </>}
-          {tab==='calendar'&&<><div className="toolbar"><div className="search-input"><Search size={17}/><input placeholder="Tìm tên khách, loại dịch vụ, nhân sự..." value={search} onChange={e=>setSearch(e.target.value)} aria-label="Tìm kiếm lịch"/></div><div className="toolbar-right"><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,-1))}><ChevronLeft size={18}/></button><strong className="month-title">Tháng {month.slice(5)}/{month.slice(0,4)}</strong><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,1))}><ChevronRight size={18}/></button></div></div><section className="surface calendar-surface"><CalendarView data={data} filter={search} onSelect={setSelected}/></section><section className="surface"><div className="surface-title"><h3>Danh sách đặt lịch <span className="counter">{filtered.length}</span></h3><span className="text-xs text-slate-500">Chọn một lịch để chỉnh sửa trên web chính</span></div><EventTable events={filtered} staff={data.staff} onSelect={setSelected}/></section></>}
+          {tab==='calendar'&&<><div className="toolbar"><div className="search-input"><Search size={17}/><input placeholder="Tìm tên khách, loại dịch vụ, nhân sự..." value={search} onChange={e=>setSearch(e.target.value)} aria-label="Tìm kiếm lịch"/></div><div className="toolbar-right"><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,-1))}><ChevronLeft size={18}/></button><strong className="month-title">Tháng {month.slice(5)}/{month.slice(0,4)}</strong><button className="month-navigator" onClick={()=>setMonth(shiftMonth(month,1))}><ChevronRight size={18}/></button></div></div><CalendarPlanner data={data} filter={search} onSelect={setSelected}/><section className="surface"><div className="surface-title"><h3>Danh sách đặt lịch <span className="counter">{filtered.length}</span></h3><span className="text-xs text-slate-500">Chọn một lịch để chỉnh sửa trên web chính</span></div><EventTable events={filtered} staff={data.staff} onSelect={setSelected}/></section></>}
           {tab==='staff'&&<StaffManager user={user} month={month} onChanged={()=>setReload(x=>x+1)}/>}
           {tab==='payroll'&&<PayrollManager month={month} user={user}/>}
-          {tab==='delivery'&&<><div className="section-intro"><Film size={19}/> Các bộ bàn giao ảnh/video thuộc lịch tháng này. Nhấn Hoàn thành để tự ẩn khỏi tab bàn giao; khi cần xem lại hãy mở trong Quản lý lịch.</div><div className="delivery-grid">{filtered.filter(e=>e.products.length>0 && !e.deliveryCompleted).map(e=><DeliveryProjectCard key={e.id} event={e} user={user}/>)}</div>{!filtered.some(e=>e.products.length>0 && !e.deliveryCompleted)&&<Empty title="Không có bộ bàn giao đang mở" detail="Các bộ đã hoàn thành sẽ được ẩn khỏi tab này, nhưng vẫn xem lại được trong Quản lý lịch."/>}</>}
+          {tab==='delivery'&&<><div className="section-intro"><Film size={19}/> Các bộ bàn giao ảnh/video thuộc lịch tháng này. Nhấn Hoàn thành để tự ẩn khỏi tab bàn giao; khi cần xem lại hãy mở trong Quản lý lịch.</div><div className="delivery-grid">{filtered.filter(e=>e.products.length>0 && !e.deliveryCompleted && e.products.some(p=>!e.completedProductIds?.includes(p.id))).map(e=><DeliveryProductGroup key={e.id} event={e} user={user}/>)}</div>{!filtered.some(e=>e.products.length>0 && !e.deliveryCompleted && e.products.some(p=>!e.completedProductIds?.includes(p.id)))&&<Empty title="Không có bộ bàn giao đang mở" detail="Các bộ đã hoàn thành sẽ được ẩn khỏi tab này, nhưng vẫn xem lại được trong Quản lý lịch."/>}</>}
+          {tab==='analytics'&&<StudioAnalytics data={data} today={localToday()}/>}
           {tab==='activity'&&<section className="surface"><div className="surface-title"><div><span className="eyebrow">AUDIT TRAIL</span><h3>Nhật ký hoạt động gần đây</h3></div></div>{data.audit.length?<div className="activity-list">{data.audit.map((a,i)=><div key={a.id||i} className="activity-item"><div className="activity-symbol"><Activity size={17}/></div><div><strong>{a.message||a.action||'Hoạt động'}</strong><p>{a.action} · {a.createdAt ? new Date(a.createdAt<1e12?a.createdAt*1000:a.createdAt).toLocaleString('vi-VN'): 'Chưa xác định thời gian'}</p></div></div>)}</div>:<Empty title="Chưa có nhật ký" detail="Hoạt động trong Firebase sẽ được ghi nhận ở đây."/>}</section>}
         </>}
-      </div><footer className="footer">AMORRI STUDIO / VNEXT 2.8.4.3 <span>BUILT WITH NEXT.JS + TYPESCRIPT · {new Date().getFullYear()}</span></footer>
+      </div><footer className="footer">AMORRI STUDIO / VNEXT 2.9.0 <span>BUILT WITH NEXT.JS + TYPESCRIPT · {new Date().getFullYear()}</span></footer>
     </main>
     <NewBookingDialog open={newBookingOpen} onClose={()=>setNewBookingOpen(false)} onCreated={()=>{setReload(x=>x+1);setTab('calendar');}} user={user} staff={data?.staff||[]}/>
     <EventEditor id={editEventId} staff={data?.staff||[]} user={user} onClose={()=>setEditEventId(null)} onDataUpdated={()=>setReload(v=>v+1)} onChanged={(date)=>{setEditEventId(null);setSelected(null);if(date && date.slice(0,7)!==month)setMonth(date.slice(0,7));setReload(v=>v+1);}}/>

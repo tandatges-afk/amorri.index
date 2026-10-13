@@ -48,3 +48,11 @@ test('2.7 anonymous staff share cannot be read without token',async({request})=>
  const grants=await request.get('/api/staff/share?staffId=exampleStaff');
  expect(grants.status()).toBe(401);
 });
+
+test('2.9 release identity and no Cloudflare return',async({request})=>{
+ const response=await request.get('/api/health');
+ expect(response.status()).toBe(200);
+ const payload=await response.json();
+ expect(payload.release).toBe('unified-studio-20261013-r1');
+ expect(payload.streamingApi).toBe('google-drive-only');
+});

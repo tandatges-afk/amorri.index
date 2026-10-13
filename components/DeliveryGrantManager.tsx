@@ -4,7 +4,7 @@ import type {User} from 'firebase/auth';
 import {Copy,LoaderCircle} from 'lucide-react';
 
 /** One-click: reuse active share link, or create one once if none can be recovered. */
-export function DeliveryGrantManager({eventId,user}:{eventId:string;user:User}){
+export function DeliveryGrantManager({eventId,user,productId}:{eventId:string;user:User;productId?:string}){
   const [busy,setBusy]=useState(false);
   const [feedback,setFeedback]=useState('');
   const [manualLink,setManualLink]=useState('');
@@ -15,7 +15,7 @@ export function DeliveryGrantManager({eventId,user}:{eventId:string;user:User}){
     try{
       const fetchWithToken=async(url:string,method:'GET'|'POST',refresh=false)=>
         fetch(url,{method,cache:'no-store',headers:{Authorization:`Bearer ${await user.getIdToken(refresh)}`,...(method==='POST'?{'Content-Type':'application/json'}:{})},
-          body:method==='POST'?JSON.stringify({eventId}):undefined});
+          body:method==='POST'?JSON.stringify({eventId,productId}):undefined});
       // Always use the server-side idempotent endpoint: consolidate old links
       // and reuse the one active link in an atomic Firebase transaction.
       let response=await fetchWithToken('/api/delivery/grants','POST');
@@ -30,7 +30,7 @@ export function DeliveryGrantManager({eventId,user}:{eventId:string;user:User}){
       catch {setManualLink(url);setFeedback('Trình duyệt chặn copy. Hãy chọn và sao chép link dưới đây.');}
     }catch(error){setFeedback(error instanceof Error?error.message:'Không sao chép được link');}
     finally{setBusy(false);}
-  },[eventId,user,busy]);
+  },[eventId,user,productId,busy]);
   return <div className="delivery-share-action">
     <button type="button" disabled={busy} className="secondary-button small" onClick={()=>void run()} aria-label="Copy link sản phẩm">
       {busy?<LoaderCircle size={15} className="spin"/>:<Copy size={15}/>} {busy?'Đang lấy link…':'Copy link sản phẩm'}

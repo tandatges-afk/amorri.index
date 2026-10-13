@@ -21,8 +21,8 @@ test('dashboard distinguish malformed token from server configuration and author
   assert.match(auth,/AUTH_CONFIG_INVALID/);
   assert.match(auth,/AUTH_SERVICE_UNAVAILABLE/);
   assert.match(dashboard,/publicAuthFailure\(err\)/);
-  assert.match(dashboard,/status:403/);
-  assert.match(dashboard,/status:failure\.status/);
+  assert.match(dashboard,/ADMIN_REQUIRED.*403/);
+  assert.match(dashboard,/failure.status/);
 });
 test('frontend refreshes only once on 401 and prints precise auth error',()=>{
   const d=source('components/Dashboard.tsx');

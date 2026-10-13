@@ -4,7 +4,7 @@ import type {User} from 'firebase/auth';
 import {MessageSquare,Check,Trash2,RefreshCw} from 'lucide-react';
 type Review={id:string;productId:string;mediaId:string;name:string;text:string;seconds:number;createdAt:number;resolved:boolean};
 const clock=(s:number)=>`${String(Math.floor(Math.max(0,s)/60)).padStart(2,'0')}:${String(Math.floor(Math.max(0,s)%60)).padStart(2,'0')}`;
-export function DeliveryReviewManager({eventId,user}:{eventId:string;user:User}){
+export function DeliveryReviewManager({eventId,user,productId}:{eventId:string;user:User;productId?:string}){
  const [open,setOpen]=useState(false),[rows,setRows]=useState<Review[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const api=useCallback(async(url:string,method:'GET'|'PATCH'|'DELETE'='GET',body?:object)=>{
   const fetchWithToken=async(force=false)=>fetch(url,{method,cache:'no-store',headers:{Authorization:`Bearer ${await user.getIdToken(force)}`,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
@@ -13,8 +13,8 @@ export function DeliveryReviewManager({eventId,user}:{eventId:string;user:User})
   return data;
  },[user]);
  const load=useCallback(async()=>{setBusy(true);setError('');try{
-  const data=await api(`/api/delivery/${encodeURIComponent(eventId)}/reviews-admin`);setRows(data.comments||[]);
- }catch(err){setError(err instanceof Error?err.message:'Lỗi tải góp ý');}finally{setBusy(false);}},[api,eventId]);
+  const data=await api(`/api/delivery/${encodeURIComponent(eventId)}/reviews-admin`);setRows((data.comments||[]).filter((row:Review)=>!productId||row.productId===productId));
+ }catch(err){setError(err instanceof Error?err.message:'Lỗi tải góp ý');}finally{setBusy(false);}},[api,eventId,productId]);
  const toggle=()=>{if(!open)void load();setOpen(v=>!v);};
  const edit=async(c:Review,remove=false)=>{
   if(remove&&!window.confirm('Xóa vĩnh viễn góp ý này?'))return;

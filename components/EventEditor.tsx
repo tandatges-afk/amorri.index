@@ -91,7 +91,7 @@ export function EventEditor({id,staff,user,onClose,onChanged,onDataUpdated}:Prop
     method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({expectedVersion:version,changes})
    });
    const payload=await response.json();
-   if(!response.ok)throw new Error(`${payload.error||'Không cập nhật được lịch'}${payload.code?` [${payload.code}]`:''}`);
+   if(!response.ok)throw new Error(`${payload.error||'Không cập nhật được lịch'}${payload.code?` [${payload.code}]`:''}${response.headers.get('X-Amorri-Request-Id')?` · Mã tra cứu: ${response.headers.get('X-Amorri-Request-Id')}`:''}`);
    onChanged(form.date);onClose();
   }catch(e){setError(e instanceof Error?e.message:'Không lưu được lịch');}
   finally{setBusy(false);}
@@ -109,7 +109,7 @@ export function EventEditor({id,staff,user,onClose,onChanged,onDataUpdated}:Prop
     body:JSON.stringify({expectedVersion:version,productId,name:productName,url:productUrl,mediaType:productType,originalProduct})
    });
    const body=await res.json() as {error?:string;code?:string;version?:string;productId?:string;product?:{id:string;name:string;url:string;mediaType:string};unchanged?:boolean};
-   if(!res.ok)throw new Error(`${body.error||'Không lưu được sản phẩm'}${body.code?` [${body.code}]`:''}`);
+   if(!res.ok)throw new Error(`${body.error||'Không lưu được sản phẩm'}${body.code?` [${body.code}]`:''}${res.headers.get('X-Amorri-Request-Id')?` · Mã tra cứu: ${res.headers.get('X-Amorri-Request-Id')}`:''}`);
    if(!body.version||!body.product)throw new Error('API chưa trả phiên bản sản phẩm sau khi lưu.');
    const saved=body.product;
    setVersion(body.version);
@@ -136,6 +136,38 @@ export function EventEditor({id,staff,user,onClose,onChanged,onDataUpdated}:Prop
      setDetail(previous=>previous?{...previous,sourceLinks:{...previous.sourceLinks,[staffId]:sourceDrafts[staffId]||''}}:previous);
    }catch(error){setError(error instanceof Error?error.message:'Không nộp được Source');}
    finally{setBusy(false);}
+ }
+ async function restoreProduct(productId:string){
+  if(busy||!detail)return;
+  setBusy(true);setError('');
+  try{
+   const res=await authorizedRequest(user,`/api/delivery/${encodeURIComponent(eventId)}/status`,{
+     method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({completed:false,productId})
+   });
+   const data=await res.json();if(!res.ok)throw new Error(data.error||'Không khôi phục được sản phẩm');
+   setDetail(previous=>previous?{...previous,completedProductIds:previous.completedProductIds?.filter(id=>id!==productId)}:previous);
+   setProductNotice('Sản phẩm đã được hiển thị trở lại trong Bàn giao sản phẩm.');
+   onDataUpdated?.();
+  }catch(e){setError(e instanceof Error?e.message:'Không khôi phục được sản phẩm');}
+  finally{setBusy(false);}
+ }
+ async function removeProduct(prod:{id:string;name:string;url:string;mediaType:string}){
+  if(busy||!detail)return;
+  if(!window.confirm(`Xóa link bàn giao “${prod.name}” khỏi lịch? Lịch sử ảnh khách chọn và góp ý sẽ được giữ trong Firebase.`))return;
+  setBusy(true);setError('');setProductNotice('');
+  try{
+   const res=await authorizedRequest(user,`/api/events/${encodeURIComponent(eventId)}/products`,{
+    method:'DELETE',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({expectedVersion:version,productId:prod.id,originalProduct:{name:prod.name,url:prod.url,mediaType:prod.mediaType||'auto'}})
+   });
+   const data=await res.json() as {error?:string;code?:string;version?:string};
+   if(!res.ok||!data.version)throw new Error(`${data.error||'Không xóa được sản phẩm'}${data.code?` [${data.code}]`:''}`);
+   setVersion(data.version);setDetail(old=>old?{...old,products:old.products.filter(p=>p.id!==prod.id)}:old);
+   if(productId===prod.id){setProductId('');setProductName('');setProductUrl('');setProductType('auto');}
+   setProductNotice('Đã xóa link sản phẩm. Lịch sử bình luận và ảnh đã chọn vẫn được bảo toàn.');
+   onDataUpdated?.();
+  }catch(e){setError(e instanceof Error?e.message:'Không thể xóa sản phẩm');}
+  finally{setBusy(false);}
  }
  const chooseProduct=(product:{id:string;name:string;url:string;mediaType:string})=>{setProductId(product.id);setProductName(product.name);setProductUrl(product.url);setProductType(product.mediaType||'auto');};
  async function copyProductUrl(url:string){
@@ -182,15 +214,15 @@ export function EventEditor({id,staff,user,onClose,onChanged,onDataUpdated}:Prop
       <fieldset className="col-span-full rounded-xl border border-indigo-200 p-4"><legend className="px-2 text-sm font-bold text-slate-800">Sản phẩm bàn giao / Google Drive</legend>
        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 p-3">
          <div><p className="text-sm font-bold text-slate-800">Quản lý link bàn giao</p><p className="text-xs text-slate-500">Copy lại link bàn giao sản phẩm ngay tại đây và mở nhanh từng link Drive đã lưu.</p></div>
-         <DeliveryGrantManager eventId={eventId} user={user}/>
+         <span className="text-xs font-semibold text-slate-500">Link được cấp theo từng sản phẩm</span>
        </div>
        <div className="mb-3 space-y-2">{detail.products.map(prod=><div key={prod.id} className={`rounded-xl border p-3 text-xs ${productId===prod.id?'border-indigo-500 bg-indigo-50':'bg-slate-50'}`}>
          <div className="flex flex-wrap items-start justify-between gap-2">
            <div className="min-w-0"><strong className="block text-slate-900">{prod.name}</strong><a href={prod.url||'#'} target="_blank" rel="noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-indigo-700 underline underline-offset-2">Mở link Drive <ExternalLink size={12}/></a></div>
-           <div className="flex flex-wrap gap-2"><button type="button" className="rounded-lg border bg-white px-3 py-1.5 font-semibold text-slate-700" onClick={()=>chooseProduct(prod)}>Chỉnh sửa</button><button type="button" className="rounded-lg border bg-white px-3 py-1.5 font-semibold text-slate-700" onClick={()=>void copyProductUrl(prod.url)} disabled={!prod.url}>Copy link</button></div>
+           <div className="flex flex-wrap gap-2"><button type="button" className="rounded-lg border bg-white px-3 py-1.5 font-semibold text-slate-700" onClick={()=>chooseProduct(prod)}>Chỉnh sửa</button><button type="button" className="rounded-lg border bg-white px-3 py-1.5 font-semibold text-slate-700" onClick={()=>void copyProductUrl(prod.url)} disabled={!prod.url}>Copy link</button><button type="button" disabled={busy} className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 font-semibold text-rose-700" onClick={()=>void removeProduct(prod)}>Xóa link</button><DeliveryGrantManager eventId={eventId} productId={prod.id} user={user}/>{detail.completedProductIds?.includes(prod.id)&&<button type="button" disabled={busy} className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 font-semibold text-emerald-700" onClick={()=>void restoreProduct(prod.id)}>Hiện lại</button>}</div>
          </div>
        </div>)}{!detail.products.length&&<p className="text-xs text-slate-400">Chưa có sản phẩm.</p>}</div>
-       <div className="grid gap-2 sm:grid-cols-2"><label className={label}>Tên sản phẩm<input className={input} maxLength={180} value={productName} onChange={e=>setProductName(e.target.value)} placeholder="VD: Album ảnh cưới"/></label><label className={label}>Loại<select className={input} value={productType} onChange={e=>setProductType(e.target.value)}><option value="auto">Tự nhận diện</option><option value="image">Hình ảnh</option><option value="video">Video</option></select></label><label className={`${label} sm:col-span-2`}>Link Drive (folder hoặc file)<input className={input} value={productUrl} onChange={e=>setProductUrl(e.target.value)} placeholder="https://drive.google.com/drive/folders/..." maxLength={1200}/></label></div>
+       <div className="grid gap-2 sm:grid-cols-2"><label className={label}>Tên sản phẩm<input className={input} maxLength={180} value={productName} onChange={e=>setProductName(e.target.value)} placeholder="VD: Album ảnh cưới"/></label><label className={`${label} sm:col-span-2`}>Link Drive (folder hoặc file)<input className={input} value={productUrl} onChange={e=>setProductUrl(e.target.value)} placeholder="https://drive.google.com/drive/folders/..." maxLength={1200}/></label></div>
        <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={()=>void saveProduct()} disabled={busy||!productName.trim()||!productUrl.trim()} className="rounded-lg bg-indigo-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">{productId?'Cập nhật sản phẩm':'Thêm sản phẩm'}</button><button type="button" className="rounded-lg border px-3 py-2 text-xs" onClick={()=>{setProductId('');setProductName('');setProductUrl('');setProductType('auto');}}>Tạo mới</button></div>
       </fieldset>
       {productNotice&&<p role="status" className="col-span-full rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">{productNotice}</p>}

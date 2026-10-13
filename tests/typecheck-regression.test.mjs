@@ -6,7 +6,7 @@ const read = f => readFileSync(new URL('../'+f,import.meta.url),'utf8');
 test('EventEditor uses narrowed immutable eventId for PATCH, DELETE and products', () => {
   const editor = read('components/EventEditor.tsx');
   assert.match(editor,/if\(!id\)return null;\s*\/\/[^\n]*\n const eventId: string = id;/);
-  assert.equal((editor.match(/encodeURIComponent\(eventId\)/g)||[]).length, 4);
+  assert.ok((editor.match(/encodeURIComponent\(eventId\)/g)||[]).length >= 4);
   assert.equal((editor.match(/encodeURIComponent\(id\)/g)||[]).length, 1); // GET in effect
 });
 

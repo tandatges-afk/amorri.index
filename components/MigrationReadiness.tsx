@@ -26,7 +26,7 @@ export default function MigrationReadiness(){
   const entries=data?[['Lịch quay/chụp',data.events],['Nhân sự',data.staff],['Ngày nghỉ',data.blackouts]] as const:[];
   return <main style={{maxWidth:1040,margin:'0 auto',padding:'32px 20px',color:'#122133'}}>
     <Link href="/" style={{fontWeight:700,color:'#334155'}}>← Về Dashboard</Link>
-    <h1 style={{fontSize:32,fontWeight:800,margin:'18px 0 6px'}}>Kiểm tra an toàn dữ liệu · VNext 2.4</h1>
+    <h1 style={{fontSize:32,fontWeight:800,margin:'18px 0 6px'}}>Kiểm tra dữ liệu và lộ trình chuyển đổi · VNext 2.9</h1>
     <p style={{color:'#64748b',marginBottom:26}}>Chỉ tài khoản Admin có thể xem báo cáo này. Không hiển thị tên khách hàng, số điện thoại hoặc UID cá nhân.</p>
     {!ready?<p>Đang kiểm tra đăng nhập…</p>:!user?<p>Bạn chưa đăng nhập. Hãy đăng nhập tại <Link href="/">Dashboard</Link> rồi quay lại.</p>:<>
       <button className="primary-button" disabled={loading} onClick={()=>void refresh()}>{loading?'Đang kiểm tra…':'Làm mới báo cáo'}</button>
@@ -45,14 +45,28 @@ export default function MigrationReadiness(){
           <h2 style={{fontSize:19,fontWeight:800,marginBottom:14}}>Điều kiện trước khi siết Security Rules</h2>
           <ul style={{display:'grid',gap:10,paddingLeft:22}}>
             <li>Chế độ workspace cũ: <strong>{data.legacyAdminWrites==='compat'?'Tương thích (vẫn ghi trực tiếp)':'Chỉ đọc cho nghiệp vụ admin/staff'}</strong></li>
-            <li>Nhân sự đang hoạt động chưa liên kết UID: <strong>{data.unlinkedActiveStaff}</strong></li>
+            <li>Nhân sự chưa liên kết UID (không bắt buộc với link xem lịch): <strong>{data.unlinkedActiveStaff}</strong></li>
             <li>Security Rules production: <strong>Chưa xác minh — không thể đọc rules từ API này</strong></li>
-            <li>Lựa chọn ảnh khách hàng: <strong>Chưa di trú khỏi Firebase SDK cũ</strong></li>
-            <li>Bình luận video: <strong>Chưa di trú khỏi Firebase SDK cũ</strong></li>
+            <li>Lựa chọn ảnh: <strong>API mới có kiểm tra nguồn Drive; link legacy vẫn có thể dùng SDK cũ</strong></li>
+            <li>Bình luận video: <strong>API mới hỗ trợ timeline; cần kiểm thử và chuyển các link legacy còn lại</strong></li>
           </ul>
-          <p style={{fontSize:13,color:'#92400e',marginTop:16}}>Chưa được bật rules chặn ghi toàn bộ trên Production: việc đó sẽ làm hỏng chọn ảnh và phản hồi video của khách hàng.</p>
+          <p style={{fontSize:13,color:'#92400e',marginTop:16}}>Chưa được bật rules chặn ghi toàn bộ trên Production khi link khách legacy vẫn đang hoạt động. Trước khi bỏ /studio phải kiểm thử dữ liệu và quyền truy cập trên Firebase staging.</p>
         </section>
       </>}
+      <section style={{background:'#fff',border:'1px solid #e2e8f0',padding:24,borderRadius:18,marginTop:20}}>
+        <h2 style={{fontSize:19,fontWeight:800,marginBottom:12}}>Đối chiếu chức năng workspace</h2>
+        <p style={{fontSize:13,color:'#64748b',marginBottom:12}}>Trạng thái dựa trên mã nguồn VNext 2.9, chưa phải chứng nhận hoạt động trên dữ liệu Production.</p>
+        <div style={{display:'grid',gap:8,fontSize:13}}>
+          {[
+            ['Tạo/sửa/xóa lịch & phân công','Có API React / TypeScript; phải kiểm tra ghi thật với staging'],
+            ['Lịch cưới hai nhà','Có form theo dịch vụ; phải kiểm tra ca nhân sự legacy'],
+            ['Đội ngũ và link xem lịch','Có API link token không yêu cầu thợ đăng nhập'],
+            ['Lương lũy kế','Có trong web chính; cần so khớp với tháng cũ'],
+            ['Bàn giao ảnh, video, góp ý','Có luồng token mới; một số link cũ còn dùng workspace tương thích'],
+            ['Nộp Source và thao tác legacy đặc thù','Chưa xác minh đầy đủ tương đương /studio'],
+          ].map(([feature,level])=><div key={feature} style={{display:'grid',gridTemplateColumns:'minmax(120px,1fr) minmax(160px,2fr)',gap:12,padding:'12px 10px',border:'1px solid #e9edf5',borderRadius:10}}><strong>{feature}</strong><span style={{color:'#65768c'}}>{level}</span></div>)}
+        </div>
+      </section>
     </>}
   </main>;
 }

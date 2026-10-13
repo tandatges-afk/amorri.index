@@ -2,16 +2,23 @@
 import {useCallback,useEffect,useRef,useState,type FormEvent,type SyntheticEvent} from 'react';
 import type {DeliveryMedia,DeliveryPayload} from '@/lib/domain/delivery';
 import './delivery.css';
+import {formatTimecode,parseTimecode} from '@/lib/domain/timecode';
 
 type Comment={id:string;name:string;text:string;seconds:number;createdAt:number;resolved:boolean};
-const time=(s:number)=>{const t=Math.floor(Math.max(0,s));return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;};
+const time=formatTimecode;
+const REVIEWER_NAME_KEY='amorri:delivery-reviewer-name';
 type PlaybackMode='loading'|'drive'|'iframe';
 function VideoReview({eventId,productId,file,token}:{eventId:string;productId:string;file:DeliveryMedia;token:string}){
   const [src,setSrc]=useState(''),[mode,setMode]=useState<PlaybackMode>('loading');
   const [error,setError]=useState(''),[comments,setComments]=useState<Comment[]>([]);
   const [name,setName]=useState(''),[message,setMessage]=useState(''),[seconds,setSeconds]=useState(0),[sending,setSending]=useState(false);
-  const [actualQuality,setActualQuality]=useState('');
+  const [timeDraft,setTimeDraft]=useState('00:00');
+  const editingTime=useRef(false);
   const mediaRef=useRef<HTMLVideoElement>(null);
+  useEffect(()=>{try{const saved=localStorage.getItem(REVIEWER_NAME_KEY);if(saved)setName(saved.slice(0,60));}catch{}},[]);
+  const updateSeconds=(value:number)=>{setSeconds(value);if(!editingTime.current)setTimeDraft(time(value));};
+  const updateName=(value:string)=>{setName(value);try{localStorage.setItem(REVIEWER_NAME_KEY,value);}catch{}};
+
   const retryCount=useRef(0);
   const lastPosition=useRef(0);
   const endpoint=`/api/delivery/${encodeURIComponent(eventId)}/reviews?productId=${encodeURIComponent(productId)}&mediaId=${encodeURIComponent(file.id)}`;
@@ -27,7 +34,7 @@ function VideoReview({eventId,productId,file,token}:{eventId:string;productId:st
     return b.url as string;
   },[eventId,productId,file.id,token]);
   const useDrive=useCallback(async()=>{
-    try{const url=await issueDriveTicket();setSrc(url);setMode('drive');setActualQuality('Nguồn Drive gốc');}
+    try{const url=await issueDriveTicket();setSrc(url);setMode('drive');}
     catch(e){setMode('iframe');setError(`Không lấy được quyền phát trực tiếp từ Drive: ${e instanceof Error?e.message:'Lỗi kết nối'}. Đang dùng khung preview.`);}
   },[issueDriveTicket]);
   const onNativeError=useCallback(async(e:SyntheticEvent<HTMLVideoElement>)=>{
@@ -59,31 +66,33 @@ function VideoReview({eventId,productId,file,token}:{eventId:string;productId:st
     void useDrive();
     void load();
   },[useDrive,load]);
-  const send=async(e:FormEvent)=>{e.preventDefault();setSending(true);setError('');
+  const send=async(e:FormEvent)=>{e.preventDefault();
+    const timestamp=parseTimecode(timeDraft);
+    if(timestamp===null){setError('Nhập mốc hợp lệ như 00:32 hoặc 01:02:15.');return;}
+    setSending(true);setError('');
     try{const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-amorri-delivery-token':token},
-      body:JSON.stringify({name,text:message,seconds:Math.floor(seconds)})});
+      body:JSON.stringify({name,text:message,seconds:timestamp})});
       const value=await r.json();if(!r.ok)throw new Error(value.error||'Không thể gửi bình luận');setMessage('');await load();
     }catch(err){setError(err instanceof Error?err.message:'Không thể gửi');}finally{setSending(false);}
   };
   const native=mode==='drive';
   return <section className="delivery-video"><div className="delivery-video-main"><h4>{file.name}</h4>
     {native?<video ref={mediaRef} src={src} controls playsInline preload="metadata"
-      onTimeUpdate={e=>{const t=Math.floor(e.currentTarget.currentTime);lastPosition.current=t;setSeconds(t);}}
-      onSeeked={e=>{setSeconds(Math.floor(e.currentTarget.currentTime));}}
+      onTimeUpdate={e=>{const t=Math.floor(e.currentTarget.currentTime);lastPosition.current=t;if(!editingTime.current)updateSeconds(t);}}
+      onSeeked={e=>{if(!editingTime.current)updateSeconds(Math.floor(e.currentTarget.currentTime));}}
       onLoadedMetadata={e=>{if(lastPosition.current>0 && Number.isFinite(e.currentTarget.duration)&&lastPosition.current<e.currentTarget.duration){e.currentTarget.currentTime=lastPosition.current;}}}
       onError={e=>{void onNativeError(e);}}/>
       :mode==='loading'?<div className="delivery-player-loading">Đang chuẩn bị video…</div>
       :<iframe src={file.previewUrl} loading="lazy" title={`Xem video ${file.name}`} allow="autoplay; fullscreen; picture-in-picture" referrerPolicy="no-referrer"/>}
-    <div className="delivery-player-info"><span>{actualQuality||'Google Drive'}</span></div>
-    <a href={file.url} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">Mở file gốc trên Drive ↗</a></div>
+    </div>
     <aside className="delivery-review"><h4>Góp ý theo timeline</h4><p className="delivery-muted">Dừng hoặc tua video đến vị trí cần chỉnh sửa. Nếu đang dùng khung Drive dự phòng, nhập mốc giây thủ công.</p>
       <div className="delivery-comments">{comments.map(c=><div className="delivery-comment" key={c.id}>
-        <button onClick={()=>{setSeconds(c.seconds);if(mediaRef.current && native)mediaRef.current.currentTime=c.seconds;}} type="button">▶ {time(c.seconds)}</button>
+        <button onClick={()=>{updateSeconds(c.seconds);if(mediaRef.current && native)mediaRef.current.currentTime=c.seconds;}} type="button">▶ {time(c.seconds)}</button>
         <strong>{c.name}</strong><span>{c.resolved?'✓ Đã xử lý':'Cần xử lý'}</span><p>{c.text}</p></div>)}
         {!comments.length&&<p className="delivery-muted">Chưa có góp ý nào.</p>}
       </div>
-      <form onSubmit={send} className="delivery-form"><label>Tên người góp ý<input required maxLength={60} value={name} onChange={e=>setName(e.target.value)} placeholder="Tên của bạn"/></label>
-        <label>Mốc thời gian (giây)<input type="number" required min={0} max={172800} value={seconds} onChange={e=>setSeconds(Number(e.target.value))}/></label>
+      <form onSubmit={send} className="delivery-form"><label>Tên người góp ý<input required maxLength={60} value={name} onChange={e=>updateName(e.target.value)} placeholder="Tên của bạn"/></label>
+        <label>Mốc thời gian<input type="text" inputMode="numeric" required maxLength={8} placeholder="00:00" value={timeDraft} onFocus={()=>{editingTime.current=true;}} onBlur={()=>{editingTime.current=false;const parsed=parseTimecode(timeDraft);if(parsed!==null)updateSeconds(parsed);}} onChange={e=>setTimeDraft(e.target.value)}/></label>
         <label>Nội dung<textarea required maxLength={2000} value={message} onChange={e=>setMessage(e.target.value)} placeholder="Mô tả đoạn cần chỉnh sửa..."/></label>
         <button type="submit" disabled={sending}>{sending?'Đang gửi…':'Gửi góp ý'}</button></form>
       {error&&<div className="delivery-alert">{error}</div>}
@@ -134,7 +143,7 @@ export function ClientDelivery({eventId}:{eventId:string}){
     }catch(err){if(active)setError(err instanceof Error?err.message:'Không thể tải sản phẩm');}
     finally{if(active)setBusy(false);}})();return()=>{active=false;};
   },[eventId,token]);
-  return <div className="client-delivery"><header className="delivery-hero"><div className="delivery-brand">A<span>.</span> AMORRI <b>STUDIO</b></div><p>PRIVATE CLIENT DELIVERY / VNEXT 2.8</p>
+  return <div className="client-delivery"><header className="delivery-hero"><div className="delivery-brand">A<span>.</span> AMORRI <b>STUDIO</b></div><p>PRIVATE CLIENT DELIVERY</p>
     <h1>{data?.name||'Bàn giao hình ảnh & video'}</h1><div className="delivery-hero-sub">{data?.date||'Trải nghiệm riêng tư dành cho khách hàng'}</div></header>
     <main className="delivery-content">
       {busy&&<div className="delivery-message">Đang xác minh link và tải sản phẩm…</div>}

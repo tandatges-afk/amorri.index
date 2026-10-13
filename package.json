@@ -1,6 +1,6 @@
 {
   "name": "amorri-studio-vnext-2",
-  "version": "2.8.4.3-detail-delivery-stability",
+  "version": "2.9.0-unified-studio",
   "private": true,
   "scripts": {
     "dev": "next dev",

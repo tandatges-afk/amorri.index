@@ -45,5 +45,5 @@ test('status widgets no longer print inline small delivery-share-feedback and ca
  const css=source('app/globals.css');
  assert.match(css,/\.delivery-grid\{align-items:stretch/);
  assert.match(css,/\.delivery-card-actions\{display:grid/);
- assert.match(source('components/Dashboard.tsx'),/delivery-review-placeholder/);
+ assert.match(source('components/Dashboard.tsx'),/productId=\{product.id\}/);
 });

@@ -58,7 +58,7 @@ test('All preexisting key API files preserved',()=>{
 });
 test('Main dashboard now includes admin feedback review management',()=>{
  const dashboard=r('components/Dashboard.tsx');
- assert.match(dashboard,/<DeliveryReviewManager eventId=\{event\.id\} user=\{user\}\/?>/);
+ assert.match(dashboard,/<DeliveryReviewManager eventId=\{event.id\} productId=\{product.id\} user=\{user\}\/?>/);
  const route=r('app/api/delivery/[eventId]/reviews-admin/route.ts');
  assert.match(route,/await requireAdmin\(request\)/);
  assert.match(route,/videoReviews_v1/);

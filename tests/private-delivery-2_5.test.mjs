@@ -35,7 +35,7 @@ test('guest APIs require server-side grant and validate Drive membership before 
  const access=source('lib/server/delivery-access.ts');
  assert.match(access,/timingSafeEqual/);assert.match(access,/hash:digest\(secret\)/);assert.match(access,/expiresAt/);assert.match(access,/revokedAt/);
  const upload=source('app/api/delivery/[eventId]/selections/route.ts');
- assert.match(upload,/deliveryEvent\(request,eventId,true\)/);
+ assert.match(upload,/deliveryEvent\(request,eventId,true,productId\)/);
  assert.match(upload,/listDeliveryMedia\(product,true\)/);
  assert.match(upload,/check\.ids\.some\(id=>!allowed\.has\(id\)\)/);
  assert.match(upload,/conditionalDeliveryMutation/);
@@ -48,7 +48,7 @@ test('legacy shared links remain staged and strict mode stops legacy ticket issu
  assert.match(source('pages/api/drive-video.js'),/verifyDeliveryGrant\(clientGallery,payload\.deliveryToken,false\)/);
 });
 test('new admin link creation and client route ship in package',()=>{
- assert.match(source('components/Dashboard.tsx'),/<DeliveryGrantManager eventId=\{event\.id\} user=\{user\}\/>/);
- assert.match(source('app/api/health/route.ts'),/detail-delivery-stability-20261013-r1/);
+ assert.match(source('components/Dashboard.tsx'),/<DeliveryGrantManager eventId=\{event.id\} productId=\{product.id\} user=\{user\}\/>/);
+ assert.match(source('app/api/health/route.ts'),/unified-studio-20261013-r1/);
  assert.match(source('components/ClientDelivery.tsx'),/x-amorri-delivery-token/);
 });
