@@ -1,8 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "functions": {
-    "pages/api/drive-video.js": { "maxDuration": 60 },
-    "pages/api/get-drive-images.js": { "maxDuration": 60 }
-  }
-}
