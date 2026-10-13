@@ -1,12 +1,14 @@
 /** Validation and diffing for the modern booking editor. Never replace a whole legacy event. */
 export type EditableChanges = {
   name?: string; date?: string; start?: string; end?: string; eventType?: string;
-  location?: string; phone?: string; note?: string; status?: 'pending'|'confirmed'|'done'|'cancelled';
+  location?: string; phone?: string; note?: string;
+  startTrai?:string;startGai?:string;locTrai?:string;locGai?:string;phoneTrai?:string;phoneGai?:string;
+  status?: 'pending'|'confirmed'|'done'|'cancelled';
   price?: number; deposit?: number;
   assignments?: { id:string; task:string; cost:number; locType:string }[];
 };
 export type MutationResult = {ok:true;value:EditableChanges}|{ok:false;message:string};
-const allowed = new Set(['name','date','start','end','eventType','location','phone','note','status','price','deposit','assignments']);
+const allowed = new Set(['name','date','start','end','eventType','location','phone','note','status','price','deposit','assignments','startTrai','startGai','locTrai','locGai','phoneTrai','phoneGai']);
 const timeRe = /^([01]\d|2[0-3]):[0-5]\d$/;
 const idRe = /^[A-Za-z0-9_-]{1,160}$/;
 export function eventIdValid(id: string) { return idRe.test(id) && !['__proto__','constructor','prototype'].includes(id); }
@@ -49,15 +51,24 @@ export function validateEventChanges(raw: unknown, current: Record<string,unknow
     }
     if(typeof value!=='string')return {ok:false,message:`${key} phải là chuỗi`};
     const input=value.trim();
-    const max:Record<string,number>={name:180,date:10,start:5,end:5,eventType:80,location:240,phone:50,note:1000,status:30};
+    const max:Record<string,number>={name:180,date:10,start:5,end:5,eventType:80,location:240,phone:50,note:1000,startTrai:5,startGai:5,locTrai:240,locGai:240,phoneTrai:50,phoneGai:50,status:30};
     if(input.length>max[key])return {ok:false,message:`${key} vượt độ dài cho phép`};
     if(key==='name'&&input.length<2)return {ok:false,message:'Tên dự án phải từ 2 ký tự'};
     if(key==='date'&&!isCalendarDate(input))return {ok:false,message:'Ngày không hợp lệ'};
-    if((key==='start'||key==='end')&&!timeRe.test(input))return {ok:false,message:'Giờ phải theo HH:mm'};
+    if(['start','end','startTrai','startGai'].includes(key)&&!timeRe.test(input))return {ok:false,message:'Giờ phải theo HH:mm'};
     if(key==='status'&&!['pending','confirmed','done','cancelled'].includes(input))return {ok:false,message:'Trạng thái không hợp lệ'};
     if(current.isRuocDau===true && ['start','location','phone'].includes(key))
-      return {ok:false,message:'Lịch rước dâu có hai địa điểm: vui lòng sử dụng workspace nâng cao để chỉnh giờ/địa điểm/số điện thoại'};
+      return {ok:false,message:'Lịch rước dâu: chỉnh giờ, địa điểm, số điện thoại theo từng nhà'};
+    if(current.isRuocDau!==true && ['startTrai','startGai','locTrai','locGai','phoneTrai','phoneGai'].includes(key))
+      return {ok:false,message:'Thông tin hai nhà chỉ dành cho lịch rước dâu'};
     (result as Record<string,unknown>)[key]=input;
+  }
+  if(current.isRuocDau===true && keys.some(k=>['startTrai','startGai','locTrai','locGai'].includes(k))){
+    for(const key of ['startTrai','startGai','locTrai','locGai']){
+      const val=(result as Record<string,unknown>)[key]??current[key];
+      if(typeof val!=='string'||!val.trim() || (key.startsWith('start')&&!timeRe.test(val)))
+        return {ok:false,message:'Lịch rước dâu cần đủ giờ và địa điểm của hai nhà'};
+    }
   }
   const price=result.price??Number(current.price??0), deposit=result.deposit??Number(current.deposit??0);
   if(!Number.isFinite(price)||!Number.isFinite(deposit)||deposit>price)return {ok:false,message:'Tiền cọc không được lớn hơn hợp đồng'};

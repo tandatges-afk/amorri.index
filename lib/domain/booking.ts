@@ -1,4 +1,5 @@
-import type { EventStatus } from './types';
+import type { EventStatus,Assignment } from './types';
+import {validateEventChanges} from './event-management';
 
 export type BookingInput = {
   id: string;
@@ -13,6 +14,9 @@ export type BookingInput = {
   status: EventStatus;
   price: number;
   deposit: number;
+  assignments?:Assignment[];
+  isRuocDau?:boolean;
+  startTrai?:string;startGai?:string;locTrai?:string;locGai?:string;phoneTrai?:string;phoneGai?:string;
 };
 export type BookingValidation = { ok: true; value: BookingInput } | { ok: false; message: string };
 const validId = /^[a-zA-Z0-9_-]{12,100}$/;
@@ -40,5 +44,16 @@ export function validateBooking(input: unknown): BookingValidation {
   if (typeof price !=='number' || !Number.isSafeInteger(price) || price < 0 || price > 1_000_000_000_000) return {ok:false,message:'Giá trị hợp đồng không hợp lệ'};
   if (typeof deposit !=='number' || !Number.isSafeInteger(deposit) || deposit < 0 || deposit > 1_000_000_000_000) return {ok:false,message:'Tiền cọc không hợp lệ'};
   if (deposit > price) return {ok:false,message:'Tiền cọc không được lớn hơn giá trị hợp đồng'};
-  return {ok:true,value:{id,name,date,start,end,eventType:eventType||'Khác',location,phone,note,status:status as EventStatus,price,deposit}};
+  const assignmentInput=v.assignments??[];
+  const checked=validateEventChanges({assignments:assignmentInput},{});
+  if('message' in checked)return {ok:false,message:checked.message};
+  const assignments=checked.value.assignments||[];
+  if(v.isRuocDau!==undefined && typeof v.isRuocDau!=='boolean')return {ok:false,message:'Kiểu lịch rước dâu không hợp lệ'};
+  const isRuocDau=v.isRuocDau===true;
+  const startTrai=string('startTrai',5),startGai=string('startGai',5);
+  const locTrai=string('locTrai',240),locGai=string('locGai',240);
+  const phoneTrai=string('phoneTrai',50),phoneGai=string('phoneGai',50);
+  if(isRuocDau&&(!timePattern.test(startTrai)||!timePattern.test(startGai)||!locTrai||!locGai))return {ok:false,message:'Lịch rước dâu cần giờ và địa điểm cho cả hai nhà'};
+  if(!isRuocDau&&['startTrai','startGai','locTrai','locGai','phoneTrai','phoneGai'].some(k=>v[k]))return {ok:false,message:'Trường hai nhà chỉ được dùng cho lịch rước dâu'};
+  return {ok:true,value:{id,name,date,start,end,eventType:eventType||'Khác',location,phone,note,status:status as EventStatus,price,deposit,assignments,isRuocDau,startTrai:startTrai||'',startGai:startGai||'',locTrai:locTrai||'',locGai:locGai||'',phoneTrai:phoneTrai||'',phoneGai:phoneGai||''}};
 }

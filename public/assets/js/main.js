@@ -4077,8 +4077,9 @@ window.openSettings = function(){
 window.openStaff = function(){ window.smoothOpen('staffModal'); renderStaffManage(); }
 window.copyStaffLink = function(id) {
     if (currentUserRole !== 'admin') return;
-    const url = window.location.origin + window.location.pathname + '?staff=' + encodeURIComponent(id);
-    window.copyText(url);
+    // VNext 2.7: stop issuing insecure ?staff=ID-only links from the old workspace.
+    showToast('Tạo link có token tại web chính → Đội ngũ → Copy link.');
+    window.open(window.location.origin+'/', '_blank', 'noopener,noreferrer');
 }
 
 function renderStaffManage(){
@@ -4086,7 +4087,7 @@ function renderStaffManage(){
   sl.innerHTML=data.staff.map(s=>`<div class="mini-item">
     <div class="staff-left"><div class="avatar">${initials(s.name)}</div><div class="staff-info"><div class="mini-title">${escapeHtml(s.name)}</div><div class="mini-sub">${escapeHtml(s.role)}</div></div></div>
     <div style="display:flex; gap:8px;">
-        <button class="btn ghost" style="padding:8px 16px;font-size:13.5px; border:1px solid var(--line)" onclick="window.copyStaffLink('${s.id}')">🔗 Copy Link</button>
+        <button class="btn ghost" style="padding:8px 16px;font-size:13.5px; border:1px solid var(--line)" onclick="window.copyStaffLink('${s.id}')">🔗 Link an toàn (web chính)</button>
         <button class="btn danger" style="padding:8px 14px;font-size:13.5px" data-delstaff="${s.id}">Xóa</button>
     </div>
     </div>`).join('');
