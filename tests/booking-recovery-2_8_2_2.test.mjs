@@ -9,13 +9,11 @@ test('null is not treated as deletion until a separate read',()=>{
   assert.equal(classifyBookingAbort({etag:'new'},'old',hash),'BOOKING_CONFLICT');
   assert.equal(classifyBookingAbort(null,'old',hash),'BOOKING_NOT_FOUND');
 });
-test('mutation prewarms RTDB transaction and diagnoses from awaited server snapshot',()=>{
-  const src=read('app/api/events/[id]/route.ts');
-  assert.match(src,/await located.ref.once\('value'\)/);
-  assert.match(src,/const diagnosis=classifyBookingAbort\(fresh.val\(\)/);
-  assert.match(src,/bookingVersion\(current\)!==payload.expectedVersion/);
-  assert.match(src,/BOOKING_TRANSACTION_RETRY/);
-  assert.doesNotMatch(src,/vanished=true/);
+test('booking PATCH uses ETag instead of aborting on a transient local null',()=>{
+ const src=read('app/api/events/[id]/route.ts');
+ assert.match(src,/saveBookingConditional/);
+ assert.doesNotMatch(src,/BOOKING_TRANSACTION_RETRY/);
+ assert.match(read('lib/domain/booking-cas.ts'),/if-match/);
 });
 test('audit is performed AFTER per-date schedule lock returns',()=>{
  const src=read('app/api/events/[id]/route.ts');

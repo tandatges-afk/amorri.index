@@ -18,5 +18,5 @@ test('no writes to const body or url during copy-link workflow',()=>{
 test('copy action preserves selection fallback and admin copy label',()=>{
   assert.match(ui,/navigator.clipboard.writeText\(url\)/);
   assert.match(ui,/setManualLink\(url\)/);
-  assert.match(ui,/Copy link an toàn/);
+  assert.match(ui,/Copy link sản phẩm/);
 });

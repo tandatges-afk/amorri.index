@@ -23,7 +23,7 @@ test('sharing one link is idempotent and can recopy after page refresh',()=>{
   assert.match(store,/chosen===grantId/);
   assert.match(store,/revokedAt:now/);
   assert.match(store,/encryptedToken:encryptToken\(token\)/);
-  assert.match(ui,/Copy link an toàn/);
+  assert.match(ui,/Copy link sản phẩm/);
   assert.doesNotMatch(ui,/Hiệu lực \(ngày\)/);
   assert.doesNotMatch(ui,/Tạo link bảo mật/);
 });

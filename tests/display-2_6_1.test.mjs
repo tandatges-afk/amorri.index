@@ -8,13 +8,13 @@ test('secure delivery button renders JSX icon instead of literal HTML text',()=>
   assert.match(src,/LockKeyhole\} from 'lucide-react'/);
   assert.match(src,/<LockKeyhole size=\{12\}/);
   assert.doesNotMatch(src,/["']<span>🔐<\/span>/);
-  assert.match(src,/aria-label="Copy link bàn giao an toàn"/);
+  assert.match(src,/aria-label="Copy link sản phẩm"/);
 });
 
 test('release labels match VNext 2.8.2 and avoid the obsolete delivery 2.5 label',()=>{
   const dashboard=read('components/Dashboard.tsx');
   const grants=read('components/DeliveryGrantManager.tsx');
-  assert.match(dashboard,/AMORRI STUDIO \/ VNEXT 2\.8\.2/);
+  assert.match(dashboard,/AMORRI STUDIO \/ VNEXT 2\.8\.3/);
   assert.doesNotMatch(dashboard,/AMORRI STUDIO \/ VNEXT 2\.5/);
   assert.doesNotMatch(grants,/Link an toàn 2\.5/);
 });

@@ -22,7 +22,7 @@ test('Cloudflare APIs and credentials have been removed from deployable app',()=
    assert.equal(existsSync(new URL('../'+path,import.meta.url)),false,path);
  for(const path of ['.env.example','package.json'])assert.doesNotMatch(read(path),/CF_STREAM_[A-Z_]+|AMORRI_STREAM_TOKEN_TTL_SECONDS|hls\.js/);
  const health=read('app/api/health/route.ts');
- assert.match(health,/booking-recovery-20261013-r2/);
+ assert.match(health,/booking-cas-ui-20261013-r1/);
  assert.match(health,/google-drive-only/);
 });
 test('Old cached 2.6 playback clients receive authorized Drive-only response',()=>{
