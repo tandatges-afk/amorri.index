@@ -42,7 +42,7 @@ test('React main workflow supports creating assignments, wedding two-home and ed
  assert.match(editor,/saveProduct/);
  const route=r('app/api/events/[id]/products/route.ts');
  assert.match(route,/identity\(request,true\)/);
- assert.match(route,/bookingVersion\(current\)/);
+ assert.match(route,/saveProductConditional/);
  assert.match(route,/parseDriveSource\(url\)/);
 });
 test('Video player distinguishes proxy from decoder failures and retries ticket',()=>{

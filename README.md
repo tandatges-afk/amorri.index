@@ -1,3 +1,19 @@
+# VNext 2.8.4.2 — Booking & Delivery UI Fix
+
+- Popup chọn 6 loại lịch và 5 loại cưới giống `/studio`. Rước Dâu tự bật chế độ hai nhà.
+- Task cưới phân biệt công việc quay/chụp theo vai trò bằng combobox; nhà trai/gái chỉ hiện khi Rước Dâu.
+- `delivery-photo-footer` nằm riêng bên dưới ảnh (không overlay), dùng `object-fit:contain` để không cắt mất chân ảnh.
+- Thẻ ảnh và clip có chiều cao bố cục và hàng nút thống nhất; bỏ `<small role="status" class="delivery-share-feedback">`, dùng toast nổi.
+- Kế thừa bản sửa PRODUCT_CONFLICT (Product CAS) từ VNext 2.8.4.1.
+
+**Hướng dẫn chi tiết:** `docs/BOOKING_UI_2_8_4_2.md`
+
+---
+
+# Amorri Studio VNext 2.8.4.1 — Product CAS Fix
+
+See [`docs/PRODUCT_CAS_2_8_4_1.md`](docs/PRODUCT_CAS_2_8_4_1.md) for this patch, safe deployment steps, testing and remaining caveats.
+
 # Amorri Studio VNext 2.8.3 — Booking CAS & Delivery UI
 
 ## Changes

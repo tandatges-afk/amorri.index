@@ -48,6 +48,6 @@ test('legacy shared links remain staged and strict mode stops legacy ticket issu
 });
 test('new admin link creation and client route ship in package',()=>{
  assert.match(source('components/Dashboard.tsx'),/<DeliveryGrantManager eventId=\{event\.id\} user=\{user\}\/>/);
- assert.match(source('app/api/health/route.ts'),/booking-cas-ui-20261013-r1/);
+ assert.match(source('app/api/health/route.ts'),/booking-ui-20261013-r1/);
  assert.match(source('components/ClientDelivery.tsx'),/x-amorri-delivery-token/);
 });

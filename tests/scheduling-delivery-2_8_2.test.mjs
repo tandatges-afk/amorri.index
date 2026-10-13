@@ -34,7 +34,7 @@ test('admin image copy action only uses selected photo rows, not clips',()=>{
   assert.match(ui,/Khách đã chọn/);
   assert.match(ui,/Copy tên ảnh/);
   assert.doesNotMatch(ui,/Kiểm tra ảnh \/ clip/);
-  assert.match(dashboard,/mediaSummary\?\.hasVideo&&<DeliveryReviewManager/);
+  assert.match(dashboard,/mediaSummary\?\.hasVideo\?<DeliveryReviewManager/);
 });
 test('thumbnail image is unobscured by type overlay',()=>{
   const thumb=read('components/AdminThumbnail.tsx');
