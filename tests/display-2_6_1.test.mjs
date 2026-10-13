@@ -12,10 +12,10 @@ test('secure delivery button renders JSX icon instead of literal HTML text',()=>
   assert.match(src,/aria-controls=\{`delivery-grants-\$\{eventId\}`\}/);
 });
 
-test('release labels match VNext 2.7 and avoid the obsolete delivery 2.5 label',()=>{
+test('release labels match VNext 2.8 and avoid the obsolete delivery 2.5 label',()=>{
   const dashboard=read('components/Dashboard.tsx');
   const grants=read('components/DeliveryGrantManager.tsx');
-  assert.match(dashboard,/AMORRI STUDIO \/ VNEXT 2\.7/);
+  assert.match(dashboard,/AMORRI STUDIO \/ VNEXT 2\.8/);
   assert.doesNotMatch(dashboard,/AMORRI STUDIO \/ VNEXT 2\.5/);
   assert.doesNotMatch(grants,/Link an toàn 2\.5/);
 });

@@ -47,7 +47,7 @@ test('legacy shared links remain staged and strict mode stops legacy ticket issu
  assert.match(source('pages/api/drive-video.js'),/verifyDeliveryGrant\(clientGallery,payload\.deliveryToken,false\)/);
 });
 test('new admin link creation and client route ship in package',()=>{
- assert.match(source('components/Dashboard.tsx'),/<DeliveryGrantManager eventId=\{e\.id\} user=\{user\}\/>/);
- assert.match(source('app/api/health/route.ts'),/main-workflow-20261013-r1/);
+ assert.match(source('components/Dashboard.tsx'),/<DeliveryGrantManager eventId=\{event\.id\} user=\{user\}\/>/);
+ assert.match(source('app/api/health/route.ts'),/visual-thumbnails-20261013-r1/);
  assert.match(source('components/ClientDelivery.tsx'),/x-amorri-delivery-token/);
 });

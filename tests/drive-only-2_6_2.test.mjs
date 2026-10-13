@@ -4,7 +4,7 @@ import {readFileSync,existsSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 test('Admin delivery has private links without Cloudflare mapping UI',()=>{
  const src=read('components/Dashboard.tsx');
- assert.match(src,/<DeliveryGrantManager eventId=\{e\.id\} user=\{user\}\/>/);
+ assert.match(src,/<DeliveryGrantManager eventId=\{event\.id\} user=\{user\}\/>/);
  assert.doesNotMatch(src,/VideoStreamManager|HLS \/ CDN 2\.6/);
  assert.equal(existsSync(new URL('../components/VideoStreamManager.tsx',import.meta.url)),false);
 });
@@ -22,7 +22,7 @@ test('Cloudflare APIs and credentials have been removed from deployable app',()=
    assert.equal(existsSync(new URL('../'+path,import.meta.url)),false,path);
  for(const path of ['.env.example','package.json'])assert.doesNotMatch(read(path),/CF_STREAM_[A-Z_]+|AMORRI_STREAM_TOKEN_TTL_SECONDS|hls\.js/);
  const health=read('app/api/health/route.ts');
- assert.match(health,/main-workflow-20261013-r1/);
+ assert.match(health,/visual-thumbnails-20261013-r1/);
  assert.match(health,/google-drive-only/);
 });
 test('Old cached 2.6 playback clients receive authorized Drive-only response',()=>{

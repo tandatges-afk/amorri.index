@@ -58,17 +58,18 @@ test('All preexisting key API files preserved',()=>{
 });
 test('Main dashboard now includes admin feedback review management',()=>{
  const dashboard=r('components/Dashboard.tsx');
- assert.match(dashboard,/<DeliveryReviewManager eventId=\{e\.id\} user=\{user\}\/?>/);
+ assert.match(dashboard,/<DeliveryReviewManager eventId=\{event\.id\} user=\{user\}\/?>/);
  const route=r('app/api/delivery/[eventId]/reviews-admin/route.ts');
  assert.match(route,/await requireAdmin\(request\)/);
  assert.match(route,/videoReviews_v1/);
  assert.doesNotMatch(route,/return json\(\{raw/);
 });
-test('Private customer delivery supports copying selected photo filenames',()=>{
- const src=r('components/ClientDelivery.tsx');
- assert.match(src,/copySelectedNames/);
- assert.match(src,/navigator\.clipboard\.writeText\(names\)/);
- assert.match(src,/Copy tên ảnh đã chọn/);
+test('Admin, not client, copies selected photo filenames',()=>{
+ const client=r('components/ClientDelivery.tsx');
+ const admin=r('components/DeliveryAdminWorkspace.tsx');
+ assert.doesNotMatch(client,/Copy tên ảnh đã chọn/);
+ assert.match(admin,/navigator\.clipboard\.writeText\(names\)/);
+ assert.match(admin,/Copy tên ảnh đã chọn/);
 });
 test('Legacy interface no longer issues Staff ID only links',()=>{
  const src=r('public/assets/js/main.js');
