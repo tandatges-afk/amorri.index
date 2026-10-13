@@ -1,8 +1,28 @@
-# AMORRI STUDIO VNext 2.4 — Security Cutover (Preview)
+# AMORRI STUDIO VNext 2.6 — Video Streaming & Performance (Preview)
 
 **Next.js App Router + React + TypeScript + Tailwind v4, Firebase RTDB, Vercel, Vitest + Playwright tests.**
 
 > **Trạng thái thực tế:** đây là bản chuyển đổi nền tảng với giao diện React mới, tạo lịch và quản lý lịch cơ bản (chỉnh sửa/hủy/xóa/phân công) và workspace tương thích. KHÔNG phải bản viết lại toàn bộ 9.470 dòng nghiệp vụ cũ. Không thay thế website production trước khi chạy kiểm thử trên môi trường preview.
+
+## Bước mới — VNext 2.6: HLS 1080p / Cloudflare Stream (tùy chọn)
+
+- Dashboard Admin → **Bàn giao sản phẩm → HLS / CDN 2.6** liên kết Cloudflare Stream UID với clip Drive đúng lịch/sản phẩm, có xác minh quyền admin và video private/Ready.
+- Trang khách `/delivery` → sử dụng HLS native trên Safari hoặc HLS.js, ưu tiên 1080p nếu nguồn có rendition này; bình luận timeline vẫn gắn với player. Giữ **Drive fallback**, file gốc không bị sửa.
+- Stream token do backend ký cấp qua Cloudflare API sau khi kiểm tra grant, event, product và file Drive; URL HLS được trình duyệt yêu cầu **trực tiếp từ CDN** thay vì đi qua Function. Chưa tự động upload/transcode Drive; Cloudflare Stream là dịch vụ riêng có phí.
+- Biến mới (chỉ khi bật HLS): `CF_STREAM_ACCOUNT_ID`, `CF_STREAM_API_TOKEN` (Secret), `CF_STREAM_CUSTOMER_CODE`, `AMORRI_STREAM_TOKEN_TTL_SECONDS` (optional). Không đặt `NEXT_PUBLIC_`.
+- Release marker `/api/health` → `video-performance-20261013-r1`.
+- **Xem hướng dẫn cài đặt Cloudflare Stream, QA, giới hạn token và cách liên kết Firebase UID nhân sự trong [`docs/VIDEO_STREAMING_2_6.md`](docs/VIDEO_STREAMING_2_6.md).**
+- Không đổi Firebase data cũ hoặc Security Rules Production; không thể cam kết 1080p không giật trước khi đo mạng/video thực tế.
+
+## Bước mới — VNext 2.5: Bàn giao riêng tư, bình luận video và chọn ảnh qua API TypeScript
+
+- **Admin:** Trong **Bàn giao sản phẩm**, mở “Link an toàn 2.5” để tạo link có hạn dùng / thu hồi / giới hạn quyền khách. Token 256-bit chỉ được lưu trên Firebase dưới dạng hash; không còn phải coi event ID là mật khẩu.
+- **Khách:** Trang React mới `/delivery/<eventId>#token=...`, xem ảnh/video của đúng lịch, chọn ảnh và gửi góp ý theo timeline; API xác thực token phía server, kiểm tra file thực sự thuộc thư mục Drive trước khi ghi.
+- **Tương thích:** Mọi màn hình lịch, lương, nhân sự, `/staff`, `/studio`, ảnh đã chọn cũ và `videoReviews_v1` vẫn giữ. Link cũ chưa bị ngắt, nhưng vẫn phải siết Rules sau khi staging thành công.
+- **Không tuyên bố tối ưu video/CDN xong:** luồng phát vẫn đi qua Google Drive / Vercel Function. Chưa chuyển HLS, chưa bảo đảm 1080p mượt, chưa giải quyết quota Fast Origin Transfer.
+- **Không tự áp dụng Security Rules** và không bật strict trên production.
+- Release marker: `GET /api/health` → `private-delivery-20261013-r1`.
+- Hướng dẫn chi tiết, các giới hạn bảo mật, QA staging: [`docs/PRIVATE_DELIVERY_2_5.md`](docs/PRIVATE_DELIVERY_2_5.md).
 
 ## Bước mới — 2.4: Xác thực workspace cũ, xóa bằng API, migration diagnostics
 

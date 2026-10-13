@@ -1,6 +1,6 @@
 {
   "name": "amorri-studio-vnext-2",
-  "version": "2.4.0-security-cutover",
+  "version": "2.6.0-video-performance",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -25,7 +25,8 @@
     "firebase": "^12.4.0",
     "firebase-admin": "^13.4.0",
     "google-auth-library": "^10.0.0",
-    "lucide-react": "^0.468.0"
+    "lucide-react": "^0.468.0",
+    "hls.js": "^1.6.0"
   },
   "devDependencies": {
     "typescript": "^5.9.0",

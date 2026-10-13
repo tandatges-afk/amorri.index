@@ -46,7 +46,10 @@ export function StaffManager({user,month,onChanged}:{user:User;month:string;onCh
  });};
  return <div className="space-y-5">
   <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-950">
-   <b>VNext 2.2 — Nhân sự đã xác thực</b><p>Gắn Firebase Auth UID của từng thợ (tạo trong Firebase Authentication → Users). Thợ đăng nhập tại <a className="underline" href="/staff">/staff</a>; link cũ <code>?staff=</code> không được xem là xác thực.</p>
+   <b>VNext 2.6 — Liên kết tài khoản cho nhân sự</b>
+   <p>1. Mở <a className="underline" href="https://console.firebase.google.com/project/ammori-c4905/authentication/users" target="_blank" rel="noopener noreferrer">Firebase Authentication → Users ↗</a> → Add user và tạo email/mật khẩu riêng cho thợ.</p>
+   <p>2. Sao chép <strong>User UID</strong> (khác Staff ID), bấm <strong>Sửa</strong> ở đúng nhân sự đang có → dán vào <strong>Firebase Auth UID</strong> → Lưu cập nhật. Không tạo nhân sự trùng nếu đã có lịch/lương.</p>
+   <p>3. Thợ đăng nhập tại <a className="underline" href="/staff">/staff</a>. Một UID chỉ được gắn với một hồ sơ; link <code>?staff=</code> cũ không phải cơ chế xác thực.</p>
   </div>
   {(error||success)&&<div role="alert" className={`rounded-lg p-3 text-sm ${error?'bg-rose-50 text-rose-800':'bg-emerald-50 text-emerald-800'}`}>{error||success}</div>}
   <div className="grid gap-5 lg:grid-cols-2">
