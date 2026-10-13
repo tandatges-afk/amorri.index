@@ -1,3 +1,14 @@
+# Amorri Studio VNext 2.8.4.3 — Detail & Delivery Stability
+
+- Mở rộng Chi tiết lịch trên web chính (thông tin, nhân sự, hợp đồng, source, sản phẩm); bỏ nút nghiệp vụ nâng cao trong popup.
+- Di chuyển Xóa lịch sang góc trái thanh nút chỉnh sửa, mở popup xác nhận; backend archive mã hóa + ETag delete.
+- Sửa lỗi cấu hình archive: có thể sử dụng khóa dẫn xuất ổn định từ `DRIVE_VIDEO_SIGNING_SECRET` hiện có (tối thiểu 32 ký tự), hoặc tốt nhất cấu hình `AMORRI_ARCHIVE_ENCRYPTION_KEY` riêng 64 ký tự hex. Không xóa nếu không có khóa hợp lệ.
+- Sửa `DELIVERY_RATE_LIMIT` (không còn giới hạn 200 lượt suốt đời link; giới hạn 120 lượt/giờ, cách 1 giây).
+- Sửa `SELECTION_CONFLICT` giả bằng Firebase REST ETag CAS; bảo vệ ảnh/metadata khi Admin thao tác đồng thời.
+- Chi tiết triển khai: [`docs/DETAIL_DELIVERY_STABILITY_2_8_4_3.md`](docs/DETAIL_DELIVERY_STABILITY_2_8_4_3.md).
+
+---
+
 # VNext 2.8.4.2 — Booking & Delivery UI Fix
 
 - Popup chọn 6 loại lịch và 5 loại cưới giống `/studio`. Rước Dâu tự bật chế độ hai nhà.

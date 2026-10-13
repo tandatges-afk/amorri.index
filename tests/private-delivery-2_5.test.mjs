@@ -38,7 +38,8 @@ test('guest APIs require server-side grant and validate Drive membership before 
  assert.match(upload,/deliveryEvent\(request,eventId,true\)/);
  assert.match(upload,/listDeliveryMedia\(product,true\)/);
  assert.match(upload,/check\.ids\.some\(id=>!allowed\.has\(id\)\)/);
- assert.match(upload,/located\.ref\.transaction/);
+ assert.match(upload,/conditionalDeliveryMutation/);
+ assert.match(upload,/applyPhotoSelection/);
  assert.match(source('app/api/delivery/[eventId]/route.ts'),/Strict allowlist/);
 });
 test('legacy shared links remain staged and strict mode stops legacy ticket issuance',()=>{
@@ -48,6 +49,6 @@ test('legacy shared links remain staged and strict mode stops legacy ticket issu
 });
 test('new admin link creation and client route ship in package',()=>{
  assert.match(source('components/Dashboard.tsx'),/<DeliveryGrantManager eventId=\{event\.id\} user=\{user\}\/>/);
- assert.match(source('app/api/health/route.ts'),/booking-ui-20261013-r1/);
+ assert.match(source('app/api/health/route.ts'),/detail-delivery-stability-20261013-r1/);
  assert.match(source('components/ClientDelivery.tsx'),/x-amorri-delivery-token/);
 });

@@ -43,7 +43,7 @@ export function EventEditor({id,staff,user,onClose,onChanged,onDataUpdated}:Prop
     finally{if(!ctrl.signal.aborted)setLoading(false);}})();
    return()=>ctrl.abort();
  },[id,user,reloadKey]);
- useEffect(()=>{if(!id)return;const listener=(e:KeyboardEvent)=>{if(e.key==='Escape'&&!busy)onClose();};window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener);},[id,onClose,busy]);
+ useEffect(()=>{if(!id)return;const listener=(e:KeyboardEvent)=>{if(e.key==='Escape'&&!busy){if(deleting)setDeleting(false);else onClose();}};window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener);},[id,onClose,busy,deleting]);
  if(!id)return null;
  // Capture the guarded ID in an immutable local so callback closures retain string type.
  const eventId: string = id;
@@ -144,7 +144,6 @@ export function EventEditor({id,staff,user,onClose,onChanged,onDataUpdated}:Prop
  }
  async function remove(){
    if(!detail||busy||confirmName.trim()!==detail.name)return;
-   if(!window.confirm('Xóa lịch này khỏi lịch làm việc? Dữ liệu sẽ được lưu dự phòng trên Firebase.'))return;
    setBusy(true);setError('');
    try{
     const response=await authorizedRequest(user,`/api/events/${encodeURIComponent(eventId)}`,{
@@ -194,10 +193,6 @@ export function EventEditor({id,staff,user,onClose,onChanged,onDataUpdated}:Prop
        <div className="grid gap-2 sm:grid-cols-2"><label className={label}>Tên sản phẩm<input className={input} maxLength={180} value={productName} onChange={e=>setProductName(e.target.value)} placeholder="VD: Album ảnh cưới"/></label><label className={label}>Loại<select className={input} value={productType} onChange={e=>setProductType(e.target.value)}><option value="auto">Tự nhận diện</option><option value="image">Hình ảnh</option><option value="video">Video</option></select></label><label className={`${label} sm:col-span-2`}>Link Drive (folder hoặc file)<input className={input} value={productUrl} onChange={e=>setProductUrl(e.target.value)} placeholder="https://drive.google.com/drive/folders/..." maxLength={1200}/></label></div>
        <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={()=>void saveProduct()} disabled={busy||!productName.trim()||!productUrl.trim()} className="rounded-lg bg-indigo-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">{productId?'Cập nhật sản phẩm':'Thêm sản phẩm'}</button><button type="button" className="rounded-lg border px-3 py-2 text-xs" onClick={()=>{setProductId('');setProductName('');setProductUrl('');setProductType('auto');}}>Tạo mới</button></div>
       </fieldset>
-      <div className="col-span-full rounded-xl bg-rose-50 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-rose-800">Xóa lịch (có lưu dự phòng)</h3><p className="mt-1 text-xs text-rose-700">Để hủy mà vẫn giữ lịch, chọn trạng thái “Đã hủy”. Chỉ xóa khi chắc chắn.</p></div><button type="button" className="inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2 text-xs font-bold text-rose-700" onClick={()=>setDeleting(v=>!v)}><Trash2 size={15}/> {deleting?'Ẩn xác nhận xóa':'Hiển thị xác nhận xóa'}</button></div>
-        {deleting&&<div className="mt-3"><label className={label}>Gõ chính xác tên lịch để xác nhận<input className={input} value={confirmName} onChange={e=>setConfirmName(e.target.value)} placeholder={detail.name}/></label><button disabled={busy||confirmName.trim()!==detail.name} type="button" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2 text-xs font-bold text-rose-700 disabled:opacity-40" onClick={()=>void remove()}><Trash2 size={15}/> Xóa và lưu bản dự phòng</button></div>}
-      </div>
       {productNotice&&<p role="status" className="col-span-full rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">{productNotice}</p>}
       {error&&<div role="alert" className="col-span-full rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-700">
        <p>{error} {/PRODUCT_CHANGED|PRODUCT_RETRY_LIMIT/.test(error)&&' Bạn có thể tải lại chi tiết ngay tại đây.'}</p>
@@ -207,8 +202,21 @@ export function EventEditor({id,staff,user,onClose,onChanged,onDataUpdated}:Prop
       </div>}
       <p className="col-span-full text-xs text-slate-400">Thông tin sản phẩm, file nguồn và ảnh yêu thích không bị thay thế bởi form này. Định dạng số tiền: VND — ví dụ {money(1_500_000)}.</p>
     </form>
-    <footer className="flex justify-end gap-2 border-t border-slate-200 p-4"><button type="button" disabled={busy} onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold">Đóng</button><button type="submit" form="edit-event-form" disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white"><Save size={16}/>{busy?'Đang xử lý…':'Lưu thay đổi'}</button></footer>
+    <footer className="flex items-center justify-between gap-2 border-t border-slate-200 p-4">
+      <button type="button" disabled={busy} className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-3 py-2.5 text-xs font-bold text-rose-700 disabled:opacity-50" onClick={()=>{setConfirmName('');setDeleting(true);}}><Trash2 size={15}/> Xóa lịch</button>
+      <div className="flex justify-end gap-2"><button type="button" disabled={busy} onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold">Đóng</button><button type="submit" form="edit-event-form" disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white"><Save size={16}/>{busy?'Đang xử lý…':'Lưu thay đổi'}</button></div>
+    </footer>
    </>}
   </section>
+  {deleting&&detail&&<div className="fixed inset-0 z-[160] flex items-center justify-center bg-slate-950/75 p-4" onMouseDown={e=>{if(e.target===e.currentTarget&&!busy)setDeleting(false);}}>
+    <section role="alertdialog" aria-modal="true" aria-label="Xác nhận xóa lịch" className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+      <h3 className="flex items-center gap-2 text-lg font-bold text-rose-800"><Trash2 size={20}/> Xóa lịch</h3>
+      <p className="mt-3 text-sm text-slate-700">Bạn đang xóa <strong>{detail.name}</strong>. Hệ thống phải lưu bản dự phòng có mã hóa trên Firebase trước khi xóa.</p>
+      <p className="mt-2 text-xs text-slate-500">Gõ chính xác tên lịch để xác nhận. Để giữ lại lịch, hãy chọn trạng thái “Đã hủy” thay vì xóa.</p>
+      <label className={`${label} mt-4`}>Tên lịch xác nhận<input autoFocus className={input} value={confirmName} onChange={e=>setConfirmName(e.target.value)} placeholder={detail.name}/></label>
+      {error&&<p role="alert" className="mt-3 rounded-lg bg-rose-50 p-3 text-xs text-rose-700">{error}</p>}
+      <div className="mt-5 flex justify-end gap-2"><button type="button" disabled={busy} onClick={()=>{setDeleting(false);setConfirmName('');setError('');}} className="rounded-xl border px-4 py-2 text-sm">Hủy</button><button type="button" disabled={busy||confirmName.trim()!==detail.name} onClick={()=>void remove()} className="rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-40">{busy?'Đang lưu dự phòng…':'Xác nhận xóa'}</button></div>
+    </section>
+  </div>}
  </div>;
 }

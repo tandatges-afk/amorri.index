@@ -18,6 +18,7 @@ import {
 import { browserAuth } from '@/lib/firebase/client';
 import { NewBookingDialog } from './NewBookingDialog';
 import { EventEditor } from './EventEditor';
+import { BookingDetailPanel } from './BookingDetailPanel';
 import { StaffManager } from './StaffManager';
 import { buildCalendarCells, getMonthStats, monthEvents, shiftMonth, statusName } from '@/lib/domain/studio';
 import type { DashboardData, StudioEvent } from '@/lib/domain/types';
@@ -46,7 +47,7 @@ function Login({onLogin,error,loading}:{onLogin:(email:string,password:string)=>
   return <div className="login-layout">
     <div className="login-showcase">
       <div className="login-brand"><div className="brand-square">A<span>.</span></div><span>AMORRI <strong>STUDIO</strong></span></div>
-      <div className="showcase-main"><div className="overline">AMORRI STUDIO / VNEXT 2.8.4.2</div>
+      <div className="showcase-main"><div className="overline">AMORRI STUDIO / VNEXT 2.8.4.3</div>
         <h1>Mọi khoảnh khắc.<br/><em>Một hệ thống.</em></h1>
         <p>Không gian điều hành từ lịch quay chụp, đội ngũ đến bàn giao sản phẩm — đồng nhất và hiệu quả hơn.</p>
         <div className="showcase-pills"><span>Lịch thông minh</span><span>Đội ngũ</span><span>Gallery & Video</span></div>
@@ -200,7 +201,7 @@ export function Dashboard(){
       })}</nav>
       <div className="sidebar-label section-gap">CÔNG CỤ</div>
       <div className="nav-items"><a className="nav-item" href="/studio"><Settings2 size={19}/><span>Workspace đầy đủ</span><ArrowRight size={14}/></a><a className="nav-item" href="/migration"><ShieldCheck size={19}/><span>Kiểm tra an toàn dữ liệu</span><ArrowRight size={14}/></a></div>
-      <div className="sidebar-bottom"><div className="migration-tile"><Sparkles size={21}/><strong>VNext 2.8.4.2</strong><p>Không gian mới chạy trên React & TypeScript. Chỉnh sửa, phân công và xóa lịch cơ bản trực tiếp trên React. Bảng lương lũy kế đã được chuyển sang TypeScript. Có phân loại ảnh/video và copy danh sách ảnh cho Admin; một số công cụ nâng cao đang được chuyển tiếp.</p><a href="/studio">Mở công cụ <ArrowRight size={14}/></a></div>
+      <div className="sidebar-bottom"><div className="migration-tile"><Sparkles size={21}/><strong>VNext 2.8.4.3</strong><p>Không gian mới chạy trên React & TypeScript. Chỉnh sửa, phân công và xóa lịch cơ bản trực tiếp trên React. Bảng lương lũy kế đã được chuyển sang TypeScript. Có phân loại ảnh/video và copy danh sách ảnh cho Admin; một số công cụ nâng cao đang được chuyển tiếp.</p><a href="/studio">Mở công cụ <ArrowRight size={14}/></a></div>
         <div className="user-identity"><div className="user-avatar">{(user.email||'A').slice(0,1).toUpperCase()}</div><div className="user-meta"><strong>{user.email?.split('@')[0]||'Admin'}</strong><span>Firebase Admin</span></div><button title="Đăng xuất" onClick={()=>signOut(browserAuth())}><LogOut size={19}/></button></div>
       </div>
     </aside>
@@ -237,10 +238,10 @@ export function Dashboard(){
           {tab==='delivery'&&<><div className="section-intro"><Film size={19}/> Các bộ bàn giao ảnh/video thuộc lịch tháng này. Nhấn Hoàn thành để tự ẩn khỏi tab bàn giao; khi cần xem lại hãy mở trong Quản lý lịch.</div><div className="delivery-grid">{filtered.filter(e=>e.products.length>0 && !e.deliveryCompleted).map(e=><DeliveryProjectCard key={e.id} event={e} user={user}/>)}</div>{!filtered.some(e=>e.products.length>0 && !e.deliveryCompleted)&&<Empty title="Không có bộ bàn giao đang mở" detail="Các bộ đã hoàn thành sẽ được ẩn khỏi tab này, nhưng vẫn xem lại được trong Quản lý lịch."/>}</>}
           {tab==='activity'&&<section className="surface"><div className="surface-title"><div><span className="eyebrow">AUDIT TRAIL</span><h3>Nhật ký hoạt động gần đây</h3></div></div>{data.audit.length?<div className="activity-list">{data.audit.map((a,i)=><div key={a.id||i} className="activity-item"><div className="activity-symbol"><Activity size={17}/></div><div><strong>{a.message||a.action||'Hoạt động'}</strong><p>{a.action} · {a.createdAt ? new Date(a.createdAt<1e12?a.createdAt*1000:a.createdAt).toLocaleString('vi-VN'): 'Chưa xác định thời gian'}</p></div></div>)}</div>:<Empty title="Chưa có nhật ký" detail="Hoạt động trong Firebase sẽ được ghi nhận ở đây."/>}</section>}
         </>}
-      </div><footer className="footer">AMORRI STUDIO / VNEXT 2.8.4.2 <span>BUILT WITH NEXT.JS + TYPESCRIPT · {new Date().getFullYear()}</span></footer>
+      </div><footer className="footer">AMORRI STUDIO / VNEXT 2.8.4.3 <span>BUILT WITH NEXT.JS + TYPESCRIPT · {new Date().getFullYear()}</span></footer>
     </main>
     <NewBookingDialog open={newBookingOpen} onClose={()=>setNewBookingOpen(false)} onCreated={()=>{setReload(x=>x+1);setTab('calendar');}} user={user} staff={data?.staff||[]}/>
     <EventEditor id={editEventId} staff={data?.staff||[]} user={user} onClose={()=>setEditEventId(null)} onDataUpdated={()=>setReload(v=>v+1)} onChanged={(date)=>{setEditEventId(null);setSelected(null);if(date && date.slice(0,7)!==month)setMonth(date.slice(0,7));setReload(v=>v+1);}}/>
-    {currentEvent&&<div className="detail-backdrop" onClick={()=>setSelected(null)}><section role="dialog" aria-modal="true" aria-label="Chi tiết lịch" className="detail-panel" onClick={e=>e.stopPropagation()}><div className="detail-header"><span>CHI TIẾT LỊCH</span><button onClick={()=>setSelected(null)} aria-label="Đóng"><X size={20}/></button></div><h2>{currentEvent.name}</h2><Status status={currentEvent.status}/><dl><dt>Ngày</dt><dd>{dateDisplay(currentEvent.date)}</dd><dt>Thời gian</dt><dd>{currentEvent.start||'--'} – {currentEvent.end||'--'}</dd><dt>Loại dịch vụ</dt><dd>{currentEvent.eventType||'—'}</dd><dt>Địa điểm</dt><dd>{currentEvent.location||'—'}</dd><dt>Nhân sự</dt><dd>{currentEvent.assignments.map(a=>data?.staff.find(s=>s.id===a.id)?.name||a.id).join(', ')||'Chưa có'}</dd></dl><div className="flex flex-col gap-2"><button className="primary-button wide" onClick={()=>{setEditEventId(currentEvent.id);setSelected(null);}}>Chỉnh sửa / phân công / xóa lịch <ArrowRight size={17}/></button><a className="secondary-button wide" href="/studio">Mở nghiệp vụ nâng cao <ArrowRight size={17}/></a></div></section></div>}
+    {currentEvent&&<BookingDetailPanel event={currentEvent} user={user} staff={data?.staff||[]} onClose={()=>setSelected(null)} onEdit={()=>{setEditEventId(currentEvent.id);setSelected(null);}}/>}
   </div>;
 }
