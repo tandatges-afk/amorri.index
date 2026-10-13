@@ -5,7 +5,7 @@ export const SHARE_TOKEN = /^([a-f0-9]{24})\.([A-Za-z0-9_-]{43})$/;
 export type DeliveryScope = 'view' | 'review';
 export type DeliveryMedia = {
   id: string; name: string; mimeType: string; isVideo: boolean;
-  thumb: string; previewUrl: string; url: string;
+  thumb: string; previewUrl: string; url: string; width?:number; height?:number;
 };
 export type DeliveryProduct = {id: string; name: string; mediaType: string};
 export type DeliveryPayload = {id:string; name:string; date:string; products:DeliveryProduct[]; selections:Record<string,string[]>};
@@ -49,4 +49,16 @@ export function savedSelectionIds(raw:unknown,productId:string):string[] {
   if(!raw||typeof raw!=='object')return [];
   return (Array.isArray(raw)?raw:Object.values(raw)).filter(x=>x && typeof x==='object' && String((x as {productId?:unknown}).productId)===productId)
     .map(x=>String((x as {fileId?:unknown}).fileId||'')) .filter(id=>DRIVE_ID.test(id));
+}
+
+/** Video gets its own poster; photo albums prefer a verified landscape photo. */
+export function chooseDeliveryCover(media:DeliveryMedia[]):DeliveryMedia|null {
+  const video=media.find(item=>item.isVideo);
+  if(video)return video;
+  const landscape=media.find(item=>!item.isVideo && typeof item.width==='number' && typeof item.height==='number' && item.width>item.height && item.height>0);
+  return landscape || media.find(item=>!item.isVideo) || null;
+}
+export function coverOrientation(item:DeliveryMedia):'landscape'|'portrait'|'unknown' {
+  if(!item.width || !item.height)return 'unknown';
+  return item.width>item.height?'landscape':item.width<item.height?'portrait':'unknown';
 }

@@ -3,7 +3,7 @@ import {parseDriveSource,DRIVE_ID,type DeliveryMedia} from '@/lib/domain/deliver
 import {DeliveryError} from './delivery-access';
 
 const DRIVE='https://www.googleapis.com/drive/v3/files';
-const fields='id,name,mimeType,thumbnailLink,webViewLink,size,shortcutDetails,videoMediaMetadata';
+const fields='id,name,mimeType,thumbnailLink,webViewLink,size,shortcutDetails,videoMediaMetadata,imageMediaMetadata';
 const mediaCache=new Map<string,{expiry:number;items:DeliveryMedia[]}>();
 function remember(key:string,items:DeliveryMedia[]){if(mediaCache.size>150)mediaCache.clear();mediaCache.set(key,{expiry:Date.now()+30_000,items});return items;}
 let auth:GoogleAuth|undefined;
@@ -34,7 +34,9 @@ function mediaFromDrive(file:Record<string,unknown>):DeliveryMedia|null{
   const isVideo=mimeType.startsWith('video/')||/\.(mp4|mov|m4v|webm|mkv)$/i.test(name);
   const isImage=mimeType.startsWith('image/')||/\.(png|jpe?g|webp|heic|avif)$/i.test(name);
   if(!isVideo&&!isImage)return null;
-  return {id,name,mimeType,isVideo,thumb:`https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1000`,
+  const dimensions=(isVideo?file.videoMediaMetadata:file.imageMediaMetadata) as {width?:unknown;height?:unknown}|undefined;
+  const width=Number(dimensions?.width||0),height=Number(dimensions?.height||0);
+  return {id,name,mimeType,isVideo,width:Number.isFinite(width)&&width>0?width:undefined,height:Number.isFinite(height)&&height>0?height:undefined,thumb:`https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1000`,
     previewUrl:`https://drive.google.com/file/d/${encodeURIComponent(id)}/preview`,
     url:`https://drive.google.com/file/d/${encodeURIComponent(id)}/view`};
 }
@@ -77,4 +79,33 @@ export async function listDeliveryMedia(product:Record<string,unknown>,forceRefr
     }));resolved.push(...chunk);
   }
   return remember(cacheKey,resolved.map(mediaFromDrive).filter((v):v is DeliveryMedia=>Boolean(v)));
+}
+
+/** Download only a Google-generated thumbnail, never the full source image/video. */
+export async function readAuthorizedDriveThumbnail(mediaId:string):Promise<{bytes:Uint8Array;contentType:string}> {
+  if(!DRIVE_ID.test(mediaId))throw new DeliveryError(400,'INVALID_MEDIA_ID','ID ảnh không hợp lệ');
+  const hdr=await headers();
+  const meta=await getJson(`${DRIVE}/${encodeURIComponent(mediaId)}?${new URLSearchParams({fields:'id,mimeType,thumbnailLink',supportsAllDrives:'true'})}`,hdr);
+  const candidate=String(meta.thumbnailLink||'');
+  let url:URL;
+  try{url=new URL(candidate);}catch{throw new DeliveryError(404,'THUMB_NOT_READY','Google Drive chưa tạo thumbnail cho file này');}
+  if(url.protocol!=='https:'|| !(/(^|\.)googleusercontent\.com$/i.test(url.hostname)||/(^|\.)google\.com$/i.test(url.hostname))){
+    throw new DeliveryError(502,'INVALID_THUMB_HOST','Google Drive trả về thumbnail không hợp lệ');
+  }
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),10_000);
+  try{
+    const result=await fetch(url.toString(),{headers:{Authorization:hdr.Authorization},signal:controller.signal,redirect:'follow',cache:'no-store'});
+    if(!result.ok)throw new DeliveryError(502,'THUMB_UPSTREAM_FAILED','Google Drive chưa cung cấp được thumbnail');
+    const contentType=(result.headers.get('content-type')||'').split(';')[0].toLowerCase();
+    if(!['image/jpeg','image/png','image/webp','image/gif','image/avif'].includes(contentType))throw new DeliveryError(502,'THUMB_NOT_IMAGE','Drive không trả về hình ảnh thumbnail');
+    const sizeLimit=2_000_000;
+    if(Number(result.headers.get('content-length')||0)>sizeLimit)throw new DeliveryError(413,'THUMB_TOO_LARGE','Thumbnail vượt giới hạn an toàn');
+    if(!result.body)throw new DeliveryError(502,'THUMB_EMPTY','Google Drive không trả về thumbnail');
+    const reader=result.body.getReader();const parts:Uint8Array[]=[];let total=0;
+    for(;;){const {done,value}=await reader.read();if(done)break;total+=value.byteLength;if(total>sizeLimit){await reader.cancel();throw new DeliveryError(413,'THUMB_TOO_LARGE','Thumbnail vượt giới hạn an toàn');}parts.push(value);}
+    const bytes=new Uint8Array(total);let pos=0;for(const part of parts){bytes.set(part,pos);pos+=part.length;}
+    if(!total)throw new DeliveryError(502,'THUMB_EMPTY','Thumbnail trống');
+    return {bytes,contentType};
+  }catch(error){if(error instanceof DeliveryError)throw error;throw new DeliveryError(504,'THUMB_TIMEOUT','Không tải được thumbnail từ Google Drive');}
+  finally{clearTimeout(timer);}
 }

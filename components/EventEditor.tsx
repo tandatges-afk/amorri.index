@@ -5,7 +5,7 @@ import { CalendarClock, Save, Trash2, X } from 'lucide-react';
 import type { Staff, StudioEvent } from '@/lib/domain/types';
 import type { EditableChanges } from '@/lib/domain/event-management';
 
-type Detail = Omit<StudioEvent,'products'> & {products:{id:string;name:string;url:string;mediaType:string}[];phone?:string;note?:string;isRuocDau?:boolean;startTrai?:string;startGai?:string;locTrai?:string;locGai?:string;phoneTrai?:string;phoneGai?:string};
+type Detail = Omit<StudioEvent,'products'> & {sourceLinks?:Record<string,string>;products:{id:string;name:string;url:string;mediaType:string}[];phone?:string;note?:string;isRuocDau?:boolean;startTrai?:string;startGai?:string;locTrai?:string;locGai?:string;phoneTrai?:string;phoneGai?:string};
 type Props={id:string|null;staff:Staff[];user:User;onClose:()=>void;onChanged:(newDate?:string)=>void};
 const money=(value:number)=>new Intl.NumberFormat('vi-VN').format(value);
 const input='w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100';
@@ -24,6 +24,7 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
  const [detail,setDetail]=useState<Detail|null>(null),[version,setVersion]=useState('');
  const [form,setForm]=useState<EditableChanges>({}),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState('');
  const [deleting,setDeleting]=useState(false),[confirmName,setConfirmName]=useState('');
+ const [reloadKey,setReloadKey]=useState(0),[sourceDrafts,setSourceDrafts]=useState<Record<string,string>>({});
  const [productId,setProductId]=useState(''),[productName,setProductName]=useState(''),[productUrl,setProductUrl]=useState(''),[productType,setProductType]=useState('auto');
  useEffect(()=>{
    if(!id){setDetail(null);setVersion('');setError('');setConfirmName('');return;}
@@ -33,11 +34,11 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
      const payload=await res.json();
      if(!res.ok)throw new Error(`${payload.error||'Không đọc được lịch'}${payload.code?` [${payload.code}]`:''}`);
      if(!payload.event)throw new Error('Bản ghi không hợp lệ');
-     if(!ctrl.signal.aborted){setDetail(payload.event);setForm(initialChanges(payload.event));setVersion(payload.version);}
+     if(!ctrl.signal.aborted){setDetail(payload.event);setForm(initialChanges(payload.event));setSourceDrafts(payload.event.sourceLinks||{});setVersion(payload.version);}
    }catch(e){if(!ctrl.signal.aborted)setError(e instanceof Error?e.message:'Không tải được lịch');}
     finally{if(!ctrl.signal.aborted)setLoading(false);}})();
    return()=>ctrl.abort();
- },[id,user]);
+ },[id,user,reloadKey]);
  useEffect(()=>{if(!id)return;const listener=(e:KeyboardEvent)=>{if(e.key==='Escape'&&!busy)onClose();};window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener);},[id,onClose,busy]);
  if(!id)return null;
  // Capture the guarded ID in an immutable local so callback closures retain string type.
@@ -51,9 +52,19 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
   e.preventDefault();if(!detail||busy)return;
   setBusy(true);setError('');
   try{
-   // Specialized wedding entries store two independent starts and locations; do not overwrite them.
-   const changes={...form};
+   // Submit ONLY edited fields. The old implementation submitted every field,
+   // including old blank times and unchanged staff, falsely triggering
+   // validation failures, unnecessary schedule locks and 409 conflicts.
+   const original=initialChanges(detail);
+   const changes:Record<string,unknown>={};
+   for(const key of Object.keys(form) as (keyof EditableChanges)[]){
+     if(JSON.stringify(form[key])!==JSON.stringify(original[key])){
+       // TS indexing for a heterogeneous strongly typed object.
+       changes[key]=form[key];
+     }
+   }
    if(detail.isRuocDau){delete changes.start;delete changes.location;delete changes.phone;}
+   if(!Object.keys(changes).length){setError('Bạn chưa thay đổi thông tin nào để lưu.');return;}
    const response=await authorizedRequest(user,`/api/events/${encodeURIComponent(eventId)}`,{
     method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({expectedVersion:version,changes})
    });
@@ -76,6 +87,20 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
   }catch(e){setError(e instanceof Error?e.message:'Không lưu được sản phẩm');}
   finally{setBusy(false);}
  }
+ async function saveSource(staffId:string){
+   if(!detail||busy)return;
+   setBusy(true);setError('');
+   try{
+     const response=await authorizedRequest(user,`/api/events/${encodeURIComponent(eventId)}/source`,{
+       method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({expectedVersion:version,staffId,url:sourceDrafts[staffId]||''})
+     });
+     const result=await response.json();
+     if(!response.ok)throw new Error(`${result.error||'Không nộp được Source'}${result.code?` [${result.code}]`:''}`);
+     setVersion(result.version);
+     setDetail(previous=>previous?{...previous,sourceLinks:{...previous.sourceLinks,[staffId]:sourceDrafts[staffId]||''}}:previous);
+   }catch(error){setError(error instanceof Error?error.message:'Không nộp được Source');}
+   finally{setBusy(false);}
+ }
  const chooseProduct=(product:{id:string;name:string;url:string;mediaType:string})=>{setProductId(product.id);setProductName(product.name);setProductUrl(product.url);setProductType(product.mediaType||'auto');};
  async function remove(){
    if(!detail||busy||confirmName.trim()!==detail.name)return;
@@ -94,7 +119,7 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
  return <div className="fixed inset-0 z-[130] flex justify-end bg-slate-950/65" onMouseDown={e=>{if(e.target===e.currentTarget&&!busy)onClose();}}>
   <section role="dialog" aria-modal="true" aria-label="Chỉnh sửa lịch" className="flex h-full w-full max-w-2xl flex-col overflow-hidden bg-white shadow-2xl">
    <header className="flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-7"><div className="flex items-center gap-3"><CalendarClock className="text-indigo-600" size={23}/><div><h2 className="text-lg font-extrabold text-slate-900">Quản lý lịch</h2><p className="text-xs text-slate-500">Firebase · kiểm tra phiên bản trước khi ghi</p></div></div><button type="button" onClick={onClose} disabled={busy} className="rounded-xl p-2 hover:bg-slate-100" aria-label="Đóng"><X size={20}/></button></header>
-   {loading?<p className="p-8 text-slate-500">Đang đọc chi tiết từ Firebase…</p>:!detail?<div className="p-7 text-red-700" role="alert">{error||'Không thể đọc lịch'}</div>:<>
+   {loading?<p className="p-8 text-slate-500">Đang đọc chi tiết từ Firebase…</p>:!detail?<div className="p-7 text-red-700" role="alert">{error||'Không thể đọc lịch'}<button className="mt-4 block rounded-lg border px-3 py-2 text-sm" onClick={()=>setReloadKey(x=>x+1)}>Thử tải lại lịch</button></div>:<>
     <form id="edit-event-form" className="grid flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-5 sm:grid-cols-2 sm:p-7" onSubmit={save}>
       {detail.isRuocDau&&<div className="col-span-full grid gap-3 rounded-xl bg-amber-50 p-4 sm:grid-cols-2"><p className="col-span-full text-xs font-bold text-amber-800">Thông tin rước dâu hai nhà — chỉnh sửa trực tiếp tại đây</p>
        {(['startTrai','startGai'] as const).map((key,i)=><label key={key} className={label}>Giờ nhà {i===0?'trai':'gái'}<input type="time" required className={input} value={form[key]||''} onChange={e=>set(key,e.target.value)}/></label>)}
@@ -111,7 +136,7 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
       <label className={label}>Tiền cọc (VND)<input className={input} type="number" min={0} step={1000} value={form.deposit??0} onChange={e=>set('deposit',Number(e.target.value))}/></label>
       <label className={`${label} sm:col-span-2`}>Ghi chú<textarea className={input} rows={2} maxLength={1000} value={form.note||''} onChange={e=>set('note',e.target.value)}/></label>
       <fieldset className="col-span-full rounded-xl border border-slate-200 p-4"><legend className="px-2 text-sm font-bold text-slate-800">Phân công nhân sự ({assignments.length})</legend>
-        <div className="space-y-3">{roster.map(s=>{const a=assignments.find(a=>a.id===s.id);return <div key={s.id} className="rounded-lg bg-slate-50 p-3"><label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" checked={!!a} onChange={e=>toggleStaff(s.id,e.target.checked)}/>{s.name} <span className="text-xs font-normal text-slate-400">{s.role}</span></label>{a&&<div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3"><label className={label}>Công việc<input className={input} value={a.task} maxLength={120} onChange={e=>editAssignment(s.id,'task',e.target.value)}/></label><label className={label}>Chi phí (VND)<input className={input} type="number" min={0} step={1000} value={a.cost} onChange={e=>editAssignment(s.id,'cost',Number(e.target.value))}/></label><label className={label}>Nhà trai/gái<input className={input} value={a.locType} maxLength={80} onChange={e=>editAssignment(s.id,'locType',e.target.value)}/></label></div>}</div>})}</div>
+        <div className="space-y-3">{roster.map(s=>{const a=assignments.find(a=>a.id===s.id);return <div key={s.id} className="rounded-lg bg-slate-50 p-3"><label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" checked={!!a} onChange={e=>toggleStaff(s.id,e.target.checked)}/>{s.name} <span className="text-xs font-normal text-slate-400">{s.role}</span></label>{a&&<><div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3"><label className={label}>Công việc<input className={input} value={a.task} maxLength={120} onChange={e=>editAssignment(s.id,'task',e.target.value)}/></label><label className={label}>Chi phí (VND)<input className={input} type="number" min={0} step={1000} value={a.cost} onChange={e=>editAssignment(s.id,'cost',Number(e.target.value))}/></label><label className={label}>Nhà trai/gái<input className={input} value={a.locType} maxLength={80} onChange={e=>editAssignment(s.id,'locType',e.target.value)}/></label></div><div className="mt-2 rounded-lg border border-dashed border-slate-200 bg-white p-2"><label className={label}>Link Source nhân sự (http/https)<input className={input} type="url" value={sourceDrafts[s.id]||''} onChange={e=>setSourceDrafts(v=>({...v,[s.id]:e.target.value}))} placeholder="Dán link thư mục Source của thợ" maxLength={1500}/></label><button className="mt-2 rounded-lg border bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 disabled:opacity-40" type="button" disabled={busy||sourceDrafts[s.id]===(detail.sourceLinks?.[s.id]||'')} onClick={()=>void saveSource(s.id)}>Lưu link Source</button></div></>}</div>})}</div>
       </fieldset>
       <fieldset className="col-span-full rounded-xl border border-indigo-200 p-4"><legend className="px-2 text-sm font-bold text-slate-800">Sản phẩm bàn giao / Google Drive</legend>
        <p className="mb-3 text-xs text-slate-500">Thêm hoặc sửa album ảnh, thư mục Drive, clip trực tiếp trên web chính. Link và ID cũ được giữ khi sửa. Không xóa ảnh khách đã chọn.</p>

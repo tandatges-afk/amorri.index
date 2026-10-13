@@ -6,7 +6,13 @@ export const runtime='nodejs';export const dynamic='force-dynamic';
 export async function GET(request:Request){
   try{await requireAdmin(request);const eventId=new URL(request.url).searchParams.get('eventId')||'';
     if(!validId(eventId))return json({error:'Mã lịch không hợp lệ'},400);
-    await findBooking(eventId);return json({grants:await listDeliveryGrants(eventId)});
+    await findBooking(eventId);
+    const base=new URL(request.url).origin;
+    const grants=(await listDeliveryGrants(eventId)).map(({token,...grant})=>({
+      ...grant,
+      shareUrl:token ? `${base}/delivery/${encodeURIComponent(eventId)}#token=${encodeURIComponent(token)}` : null
+    }));
+    return json({grants});
   }catch(err){return deliveryFailure(err);}
 }
 export async function POST(request:Request){

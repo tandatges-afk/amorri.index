@@ -93,11 +93,6 @@ function VideoReview({eventId,productId,file,token}:{eventId:string;productId:st
 function PhotoProduct({eventId,productId,files,preselected,token}:{eventId:string;productId:string;files:DeliveryMedia[];preselected:string[];token:string}){
   const [checked,setChecked]=useState<string[]>(preselected),[filter,setFilter]=useState<'all'|'selected'>('all');
   const [busy,setBusy]=useState(false),[notice,setNotice]=useState('');
-  const copySelectedNames=async()=>{
-   const names=images.filter(f=>checked.includes(f.id)).map(f=>f.name).join('\n');
-   if(!names){setNotice('Bạn chưa chọn ảnh nào.');return;}
-   try{await navigator.clipboard.writeText(names);setNotice(`Đã copy ${checked.length} tên ảnh.`);}catch{setNotice('Không thể copy tự động trên trình duyệt này.');}
-  };
   const images=files.filter(f=>!f.isVideo);
   const save=async()=>{setBusy(true);setNotice('');
     try{const r=await fetch(`/api/delivery/${encodeURIComponent(eventId)}/selections`,{method:'PUT',headers:{'Content-Type':'application/json','x-amorri-delivery-token':token},body:JSON.stringify({productId,fileIds:checked})});
@@ -107,7 +102,7 @@ function PhotoProduct({eventId,productId,files,preselected,token}:{eventId:strin
   if(!images.length)return null;
   return <><div className="delivery-photo-toolbar"><strong>Ảnh đã chọn: {checked.length}/{images.length}</strong>
     <div><button className={filter==='all'?'active':''} onClick={()=>setFilter('all')}>Tất cả</button><button className={filter==='selected'?'active':''} onClick={()=>setFilter('selected')}>Đã chọn</button>
-    <button type="button" onClick={()=>void copySelectedNames()}>Copy tên ảnh đã chọn</button><button className="delivery-primary" disabled={busy} onClick={save}>{busy?'Đang đồng bộ…':'Gửi lựa chọn'}</button></div></div>
+    <button className="delivery-primary" disabled={busy} onClick={save}>{busy?'Đang đồng bộ…':'Gửi lựa chọn'}</button></div></div>
     <div className="delivery-photos">{images.filter(i=>filter==='all'||checked.includes(i.id)).map(i=><button type="button" className={`delivery-photo ${checked.includes(i.id)?'is-selected':''}`} key={i.id} onClick={()=>setChecked(p=>p.includes(i.id)?p.filter(id=>id!==i.id):[...p,i.id])} aria-pressed={checked.includes(i.id)}>
       <img loading="lazy" alt={i.name} src={i.thumb}/><span>{checked.includes(i.id)?'✓ Đã chọn':'Chọn ảnh'}</span><small title={i.name}>{i.name}</small></button>)}</div>
     {notice&&<p role="status" className="delivery-alert">{notice}</p>}
@@ -138,14 +133,14 @@ export function ClientDelivery({eventId}:{eventId:string}){
     }catch(err){if(active)setError(err instanceof Error?err.message:'Không thể tải sản phẩm');}
     finally{if(active)setBusy(false);}})();return()=>{active=false;};
   },[eventId,token]);
-  return <div className="client-delivery"><header className="delivery-hero"><div className="delivery-brand">A<span>.</span> AMORRI <b>STUDIO</b></div><p>PRIVATE CLIENT DELIVERY / VNEXT 2.6.2</p>
+  return <div className="client-delivery"><header className="delivery-hero"><div className="delivery-brand">A<span>.</span> AMORRI <b>STUDIO</b></div><p>PRIVATE CLIENT DELIVERY / VNEXT 2.8</p>
     <h1>{data?.name||'Bàn giao hình ảnh & video'}</h1><div className="delivery-hero-sub">{data?.date||'Trải nghiệm riêng tư dành cho khách hàng'}</div></header>
     <main className="delivery-content">
       {busy&&<div className="delivery-message">Đang xác minh link và tải sản phẩm…</div>}
       {error&&<div role="alert" className="delivery-message delivery-error">{error}</div>}
       {data?.products.map(p=><section className="delivery-product" key={p.id}><div className="delivery-product-heading"><span>PRODUCT / {p.id}</span><h2>{p.name}</h2></div>
         {(files[p.id]||[]).filter(f=>f.isVideo).map(f=><VideoReview key={f.id} eventId={eventId} productId={p.id} file={f} token={token}/>)}
-        <PhotoProduct key={`${p.id}:${(data.selections[p.id]||[]).join(',')}`} eventId={eventId} productId={p.id} files={files[p.id]||[]} token={token} preselected={data.selections[p.id]||[]}/>
+        {(files[p.id]||[]).some(f=>!f.isVideo)&&<PhotoProduct key={`${p.id}:${(data.selections[p.id]||[]).join(',')}`} eventId={eventId} productId={p.id} files={files[p.id]||[]} token={token} preselected={data.selections[p.id]||[]}/>}
         {mediaErrors[p.id]&&<p role="alert" className="delivery-alert">Không tải được media: {mediaErrors[p.id]}</p>}
         {!(files[p.id]||[]).length&&!mediaErrors[p.id]&&<p className="delivery-muted">Chưa có media Drive hiển thị. Hãy liên hệ Studio hoặc dùng bàn giao tương thích nếu đây là sản phẩm YouTube.</p>}
       </section>)}

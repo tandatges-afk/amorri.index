@@ -5,7 +5,7 @@ import { findBooking, bookingVersion, BookingStoreError } from '@/lib/server/eve
 import { validateEventChanges, requireVersion } from '@/lib/domain/event-management';
 import { normaliseEvents } from '@/lib/domain/studio';
 import { scheduleConflict, recordValues } from '@/lib/domain/scheduling';
-import { withScheduleLock, dailyEvents, dailyBlackouts } from '@/lib/server/staff-scheduling';
+import { withScheduleLock, dailyEvents, dailyBlackouts, ScheduleError } from '@/lib/server/staff-scheduling';
 import { encryptBookingArchive, ArchiveConfigurationError } from '@/lib/server/booking-archive';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 
@@ -18,10 +18,18 @@ async function requireAdmin(request:Request):Promise<DecodedIdToken|Response>{
   catch(err){const failure=publicAuthFailure(err);return json({error:failure.error,code:failure.code},failure.status);}
 }
 function fail(err:unknown){
-  if(err instanceof BookingStoreError)return json({error:err.message},err.status);
+  if(err instanceof BookingStoreError)return json({error:err.message,code:err.status===503?'BOOKING_READ_FAILED':'BOOKING_LOOKUP_FAILED'},err.status);
+  if(err instanceof ScheduleError)return json({error:err.message,code:err.code},err.status);
   if(err instanceof ArchiveConfigurationError)return json({error:err.message,code:'ARCHIVE_CONFIG_MISSING'},503);
-  console.error('[booking-manager]',err);
-  return json({error:'Lỗi truy cập Firebase. Kiểm tra Vercel Function Logs.'},503);
+  const rawCode=String((err as {code?:unknown})?.code||'');
+  const detail=err instanceof Error?err.message:'';
+  // Never echo raw backend exception to browser (it can contain internal paths).
+  const errorCode=/permission.denied/i.test(rawCode+' '+detail)?'FIREBASE_PERMISSION_DENIED':
+    /timeout|deadline|ETIMEDOUT/i.test(rawCode+' '+detail)?'FIREBASE_TIMEOUT':
+    /network|ECONN|UNAVAILABLE/i.test(rawCode+' '+detail)?'FIREBASE_CONNECTION_FAILED':
+    'BOOKING_WRITE_FAILED';
+  console.error('[booking-manager]',{code:errorCode,backendCode:rawCode,details:detail,at:new Date().toISOString()});
+  return json({error:'Không thể lưu lịch vào Firebase. Kiểm tra quyền service account, địa chỉ Database và Function Logs.',code:errorCode},503);
 }
 async function audit(action:string,user:DecodedIdToken,event:Record<string,unknown>,id:string,detail:string){
   try {const key=randomUUID();await adminDatabase().ref('studioPlanner_v1/auditLogs').child(key).set({
@@ -34,6 +42,7 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
   const user=await requireAdmin(request);if(user instanceof Response)return user;
   try{const {id}=await params;const item=await findBooking(id);
     return json({event:{...normaliseEvents([item.value])[0],phone:item.value.phone||'',note:item.value.note||'',isRuocDau:item.value.isRuocDau===true,
+    sourceLinks:Object.fromEntries(recordValues(item.value.assignments).filter(a=>a.id!=null).map(a=>[String(a.id),String(a.link||'')])),
     products:recordValues(item.value.products).map(p=>({id:String(p.id||''),name:String(p.name||''),url:String(p.url||''),mediaType:String(p.mediaType||'auto')})),
     startTrai:item.value.startTrai||'',startGai:item.value.startGai||'',locTrai:item.value.locTrai||'',locGai:item.value.locGai||'',phoneTrai:item.value.phoneTrai||'',phoneGai:item.value.phoneGai||''},version:item.version});
   }catch(err){return fail(err);}
@@ -47,10 +56,12 @@ export async function PATCH(request:Request,{params}:{params:Promise<{id:string}
   if(!requireVersion(payload.expectedVersion))return json({error:'Thiếu mã phiên bản lịch. Hãy tải lại chi tiết trước khi sửa.'},400);
   try {
     const {id}=await params;
-    return await withScheduleLock(async()=>{
+    const needsScheduleLock=Boolean(payload.changes && typeof payload.changes==='object' &&
+      ['date','start','end','startTrai','startGai','status','assignments'].some(key=>Object.prototype.hasOwnProperty.call(payload.changes,key)));
+    const action=async()=>{
     const located=await findBooking(id);
     const validated=validateEventChanges(payload.changes,located.value);
-    if(!validated.ok)return json({error:validated.message},422);
+    if(!validated.ok)return json({error:validated.message,code:'BOOKING_VALIDATION'},422);
     if(located.version!==payload.expectedVersion)return json({error:'Lịch đã thay đổi ở một phiên khác. Hãy tải lại trước khi lưu.'},409);
     // Validate references against authoritative staff list, not the UI's cached roster.
     if(validated.value.assignments){
@@ -80,7 +91,8 @@ export async function PATCH(request:Request,{params}:{params:Promise<{id:string}
     if(!tx.committed)return json({error:vanished?'Lịch đã bị xóa':'Lịch đã thay đổi, hãy tải lại trước khi lưu.',code:conflict?'BOOKING_CONFLICT':'BOOKING_NOT_FOUND'},409);
     await audit('EVENT_UPDATED',user,tx.snapshot.val(),id,`Cập nhật lịch ${String(located.value.name||'')} ngày ${String(located.value.date||'')}`);
     return json({success:true,id,version:bookingVersion(tx.snapshot.val()),event:normaliseEvents([tx.snapshot.val()])[0]});
-    });
+    };
+    return needsScheduleLock ? await withScheduleLock(action) : await action();
   }catch(err){return fail(err);}
 }
 export async function DELETE(request:Request,{params}:{params:Promise<{id:string}>}){

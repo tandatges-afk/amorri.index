@@ -15,3 +15,75 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 
 /* New component UI uses Tailwind v4 utilities without altering the isolated /studio CSS */
+
+
+/* VNext 2.8 — stable layout and premium, low-jank component polish. */
+:root {
+  --base:#f5f7fb;--navy:#151f34;--ink:#24314a;--muted:#74839b;
+  --line:#e5eaf2;--blue:#5276c8;--shadow:0 12px 32px rgba(29,43,70,.045);
+}
+body {text-rendering:optimizeLegibility;}
+.content {background:radial-gradient(ellipse at 96% -15%,rgba(217,226,249,.32),transparent 44%),var(--base);}
+.topbar {box-shadow:0 1px 0 rgba(31,52,82,.025);}
+.sidebar {background:linear-gradient(168deg,#172138 10%,#111a2b 100%);}
+.nav-item {transition:background-color .17s ease,color .17s ease;}
+.nav-item.nav-active {background:#354561;box-shadow:inset 3px 0 0 #c8b6ff;}
+.page-heading h1 {letter-spacing:-.95px;}
+.metric,.surface,.staff-card,.delivery-card {box-shadow:0 4px 22px rgba(27,39,63,.035);}
+.metric,.staff-card {border-radius:17px;}
+.primary-button,.secondary-button {min-height:42px;transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease;}
+.primary-button:hover:not(:disabled) {transform:translateY(-1px);box-shadow:0 8px 18px rgba(33,54,84,.14);}
+.secondary-button:hover:not(:disabled) {background:#f8faff;box-shadow:0 3px 12px rgba(28,47,80,.035);}
+.data-table tbody tr {transition:background-color .12s ease;}
+/* Two larger editorial delivery cards on large screens instead of tiny 3-up cards. */
+.delivery-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:23px;align-items:start;}
+.delivery-card {border-radius:20px;border:1px solid #e5eaf1;overflow:hidden;min-width:0;transition:box-shadow .22s ease,border-color .22s ease;}
+.delivery-card:hover {border-color:#ced9e8;box-shadow:0 16px 38px rgba(31,49,72,.09);}
+.delivery-art {height:auto;aspect-ratio:16/9;background:#1b2538;overflow:hidden;isolation:isolate;display:block;}
+.admin-thumbnail {height:100%;width:100%;position:relative;background:linear-gradient(145deg,#293951,#43506b);overflow:hidden;}
+.admin-thumbnail>img {display:block;width:100%;height:100%;object-fit:cover;object-position:center;animation:thumb-enter .27s ease both;}
+@keyframes thumb-enter {from{opacity:.5}to{opacity:1}}
+.admin-thumbnail::after {content:'';position:absolute;inset:45% 0 0;pointer-events:none;background:linear-gradient(0deg,rgba(13,22,39,.50),transparent);}
+.admin-thumbnail-fallback {height:100%;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:#d6dfed;background:radial-gradient(circle at 70% 30%,#445677,#222f49 72%);}
+.admin-thumbnail-fallback small {font-size:12px;font-weight:650;color:#aebed4;}
+.admin-thumbnail-type {position:absolute;z-index:2;top:13px;right:13px;display:inline-flex;align-items:center;gap:5px;border:1px solid #ffffff38;background:#152239a9;backdrop-filter:blur(5px);color:#fff;font-size:10px;font-weight:800;letter-spacing:.5px;border-radius:8px;padding:7px 10px;}
+.delivery-art-meta {position:absolute;inset:auto 0 0;z-index:2;padding:18px 21px;display:flex;align-items:center;justify-content:space-between;gap:9px;pointer-events:none;}
+.delivery-art-meta span {position:static;letter-spacing:.65px;font-size:10px;color:#fff;font-weight:850;}
+.delivery-art-meta span+span {color:#d4e1ee;font-size:9px;font-weight:700;}
+.delivery-details {padding:22px 23px 23px;}
+.delivery-details h3 {font-size:18px;line-height:1.35;letter-spacing:-.45px;margin:10px 0 6px;color:#21304a;}
+.delivery-details>p {font-size:12px;color:#7b899e;min-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.delivery-date {display:flex;align-items:center;gap:7px;color:#667994;font-size:11px;font-weight:700;}
+.delivery-date span {color:#c1cbd9;}
+.product-summary-row {display:flex;align-items:flex-start;gap:12px;background:#f9fbff;border:1px solid #e9eef5;border-radius:13px;padding:10px;min-width:0;}
+.product-summary-body {min-width:0;flex:1;display:grid;gap:7px;}
+.admin-thumbnail-small {width:112px;height:80px;min-width:112px;border-radius:10px;flex:0 0 112px;}
+.admin-thumbnail-small .admin-thumbnail-fallback {min-height:80px;}
+.admin-thumbnail-small .admin-thumbnail-type {font-size:8px;top:5px;right:5px;padding:3px 5px;}
+.admin-thumbnail-small::after {inset:60% 0 0;}
+.delivery-details .secondary-button.small {min-height:36px;white-space:normal;text-align:center;}
+@media(max-width:1150px) {
+ .delivery-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+ .delivery-details {padding:17px;}
+ .delivery-details h3 {font-size:15px;}
+}
+@media(max-width:760px) {
+ .delivery-grid {grid-template-columns:minmax(0,1fr);gap:16px;}
+ .delivery-card {border-radius:16px;}
+ .delivery-art-meta {padding:15px;}
+ .delivery-details {padding:17px;}
+ .delivery-details h3 {font-size:17px;}
+}
+@media(max-width:420px) {
+ .product-summary-row {gap:8px;}
+ .admin-thumbnail-small {width:77px;min-width:77px;height:74px;flex-basis:77px;}
+ .admin-thumbnail-small .admin-thumbnail-fallback {min-height:74px;}
+ .admin-thumbnail-small .admin-thumbnail-type {display:none;}
+}
+@media(prefers-reduced-motion:reduce) {
+ .admin-thumbnail>img {animation:none;}
+ .delivery-card,.primary-button,.secondary-button,.nav-item {transition:none!important;}
+}
+
+/* Portrait-oriented assets retain the entire frame instead of cropping it. */
+.admin-thumbnail.portrait-poster>img {object-fit:contain;background:#141f32;}
