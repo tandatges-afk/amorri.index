@@ -6,7 +6,7 @@ const read=(file)=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
 test('schedule mutations use a per-day lease rather than global 60 second lease',()=>{
   const sched=read('lib/server/staff-scheduling.ts');
   assert.match(sched,/schedulingWriteLocks_v3\/\$\{date\}/);
-  assert.match(sched,/const leaseMs=30_000/);
+  assert.match(sched,/const leaseMs=12_000/);
   assert.match(sched,/setInterval\(\(\)=>\{void renew\(\)/);
   assert.match(sched,/current\?\.owner===owner\?null:undefined/);
   assert.match(read('app/api/events/route.ts'),/\},event\.date\)/);
