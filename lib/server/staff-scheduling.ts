@@ -74,9 +74,13 @@ export async function withScheduleLock<T>(action:()=>Promise<T>, date?:string):P
   const path=date?scheduleLockPath(date):'studioPlanner_v1/schedulingWriteLocks_v3/global';
   const lock=adminDatabase().ref(path);
   const owner=randomUUID();
-  const leaseMs=30_000;
+  // Short bounded lease: a crashed invocation cannot block a whole day for 30 seconds.
+  const leaseMs=12_000;
   let acquired=false;
-  for(let attempt=0;attempt<22;attempt++){
+  const deadline=Date.now()+15_000;
+  let attempts=0;
+  while(Date.now()<deadline){
+    const attempt=attempts++;
     const now=Date.now();
     const result=await lock.transaction((current:{owner?:string;until?:number}|null)=>{
       if(current && Number(current.until)>now && current.owner!==owner)return;
@@ -84,10 +88,16 @@ export async function withScheduleLock<T>(action:()=>Promise<T>, date?:string):P
     },undefined,false);
     if(result.committed){acquired=true;break;}
     // Bounded contention retry, not a fixed six-second SCHEDULE_BUSY.
-    await new Promise(resolve=>setTimeout(resolve,180+Math.min(attempt,12)*35));
+    await new Promise(resolve=>setTimeout(resolve,160+Math.min(attempt,12)*26));
   }
-  if(!acquired)throw new ScheduleError(409,
-    'Lịch trong ngày này đang được cập nhật. Vui lòng thử lại sau ít giây.','SCHEDULE_BUSY');
+  if(!acquired){
+    const latest=(await lock.once('value')).val() as {owner?:string;until?:number}|null;
+    console.warn('[scheduling] lease contention',{date:date||'global',attempts,
+      expiresInSeconds:Math.max(0,Math.ceil(((Number(latest?.until)||0)-Date.now())/1000))});
+    throw new ScheduleError(409,
+      'Một thao tác lịch khác vẫn đang chạy. Kiểm tra khóa ở /api/scheduling/diagnostics.',
+      'SCHEDULE_BUSY');
+  }
   let leaseLost=false;
   let renewing=false;
   const renew=async()=>{
@@ -96,15 +106,17 @@ export async function withScheduleLock<T>(action:()=>Promise<T>, date?:string):P
     try{
       const now=Date.now();
       const tx=await lock.transaction((current:{owner?:string;until?:number}|null)=>
-        current?.owner===owner && Number(current.until)>now?{owner,until:now+leaseMs}:undefined,undefined,false);
+        current && current.owner===owner && Number(current.until)>now?{owner,until:now+leaseMs}:undefined,undefined,false);
       if(!tx.committed)leaseLost=true;
     }catch(error){console.error('[scheduling] lock renewal failed',error);leaseLost=true;}
     finally{renewing=false;}
   };
-  const heartbeat=setInterval(()=>{void renew();},8_000);
+  const heartbeat=setInterval(()=>{void renew();},2_500);
   try{
     const result=await action();
-    if(leaseLost)throw new ScheduleError(409,'Đã mất quyền khóa lịch trong lúc cập nhật. Hãy tải lại trước khi thử.','SCHEDULE_LEASE_LOST');
+    // A transaction may already have committed: never report a failure that
+    // encourages users to submit the same write a second time.
+    if(leaseLost)console.error('[scheduling] lease lost during action; confirm committed result', {date:date||'global'});
     return result;
   }finally{
     clearInterval(heartbeat);

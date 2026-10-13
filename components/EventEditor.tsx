@@ -23,6 +23,7 @@ async function authorizedRequest(user:User,url:string,init:RequestInit={}){
 export function EventEditor({id,staff,user,onClose,onChanged}:Props){
  const [detail,setDetail]=useState<Detail|null>(null),[version,setVersion]=useState('');
  const [form,setForm]=useState<EditableChanges>({}),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState('');
+ const [diagnostic,setDiagnostic]=useState(''),[diagnosticBusy,setDiagnosticBusy]=useState(false);
  const [deleting,setDeleting]=useState(false),[confirmName,setConfirmName]=useState('');
  const [reloadKey,setReloadKey]=useState(0),[sourceDrafts,setSourceDrafts]=useState<Record<string,string>>({});
  const [productId,setProductId]=useState(''),[productName,setProductName]=useState(''),[productUrl,setProductUrl]=useState(''),[productType,setProductType]=useState('auto');
@@ -43,6 +44,24 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
  if(!id)return null;
  // Capture the guarded ID in an immutable local so callback closures retain string type.
  const eventId: string = id;
+ async function inspectError(){
+   setDiagnosticBusy(true);setDiagnostic('');
+   try{
+     const query=new URLSearchParams({eventId,date:form.date||detail?.date||''});
+     const response=await authorizedRequest(user,`/api/scheduling/diagnostics?${query.toString()}`);
+     const info=await response.json();
+     if(!response.ok)throw new Error(info.error||'Không lấy được trạng thái lịch');
+     const booking=info.booking as {found?:boolean;legacyNumericKey?:boolean;httpStatus?:number}|undefined;
+     const lock=info.schedule as {locked?:boolean;isExpired?:boolean;expiresInSeconds?:number}|undefined;
+     setDiagnostic([
+       booking?.found===true?'Lịch còn trên Firebase':booking?.found===false?'Không tìm thấy ID lịch trên Firebase':'Chưa xác minh lịch',
+       booking?.legacyNumericKey?'Dữ liệu cũ dùng khóa số':'',
+       lock?.locked?`Đang khóa ngày này (tối đa ${lock.expiresInSeconds??'?'} giây còn lại)`:
+         lock?.isExpired?'Khóa cũ đã hết hạn':'Không có khóa ngày đang hoạt động',
+     ].filter(Boolean).join(' · '));
+   }catch(err){setDiagnostic(err instanceof Error?err.message:'Không kiểm tra được lịch');}
+   finally{setDiagnosticBusy(false);}
+ }
  const set=<K extends keyof EditableChanges>(key:K,value:EditableChanges[K])=>setForm(f=>({...f,[key]:value}));
  const assignments=form.assignments||[];
  const roster=[...staff.filter(s=>s.active!==false||assignments.some(a=>a.id===s.id)),...assignments.filter(a=>!staff.some(s=>s.id===a.id)).map(a=>({id:a.id,name:`Nhân sự cũ (${a.id})`,role:'Không còn trong danh sách'}))];
@@ -145,7 +164,11 @@ export function EventEditor({id,staff,user,onClose,onChanged}:Props){
        <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={()=>void saveProduct()} disabled={busy||!productName.trim()||!productUrl.trim()} className="rounded-lg bg-indigo-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">{productId?'Cập nhật sản phẩm':'Thêm sản phẩm'}</button><button type="button" className="rounded-lg border px-3 py-2 text-xs" onClick={()=>{setProductId('');setProductName('');setProductUrl('');setProductType('auto');}}>Tạo mới</button></div>
       </fieldset>
       <div className="col-span-full rounded-xl bg-rose-50 p-4"><h3 className="text-sm font-bold text-rose-800">Xóa lịch (có lưu dự phòng)</h3><p className="my-2 text-xs text-rose-700">Để hủy mà vẫn giữ lịch, chọn trạng thái “Đã hủy”. Chỉ xóa khi chắc chắn. Bản gốc được lưu vào vùng lưu trữ Admin riêng.</p><label className={label}>Gõ chính xác tên lịch để xác nhận<input className={input} value={confirmName} onChange={e=>setConfirmName(e.target.value)} placeholder={detail.name}/></label><button disabled={busy||confirmName.trim()!==detail.name} type="button" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2 text-xs font-bold text-rose-700 disabled:opacity-40" onClick={()=>void remove()}><Trash2 size={15}/> Xóa và lưu bản dự phòng</button></div>
-      {error&&<div role="alert" className="col-span-full rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-700">{error} {error.includes('thay đổi')&&'Đóng và mở lại chi tiết để tải phiên bản mới.'}</div>}
+      {error&&<div role="alert" className="col-span-full rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-700">
+       <p>{error} {error.includes('thay đổi')&&'Đóng và mở lại chi tiết để tải phiên bản mới.'}</p>
+       {/BOOKING_|SCHEDULE_/.test(error)&&<button type="button" disabled={diagnosticBusy} className="mt-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-bold" onClick={()=>void inspectError()}>{diagnosticBusy?'Đang kiểm tra…':'Kiểm tra trạng thái lịch / khóa ngày'}</button>}
+       {diagnostic&&<p className="mt-2 font-medium">{diagnostic}</p>}
+      </div>}
       <p className="col-span-full text-xs text-slate-400">Thông tin sản phẩm, file nguồn và ảnh yêu thích không bị thay thế bởi form này. Định dạng số tiền: VND — ví dụ {money(1_500_000)}.</p>
     </form>
     <footer className="flex justify-end gap-2 border-t border-slate-200 p-4"><button type="button" disabled={busy} onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold">Đóng</button><button type="submit" form="edit-event-form" disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white"><Save size={16}/>{busy?'Đang xử lý…':'Lưu thay đổi'}</button></footer>

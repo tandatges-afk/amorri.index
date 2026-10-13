@@ -1,3 +1,39 @@
+# Amorri Studio VNext 2.8.2.2 — Booking Recovery (bản vá điều tra lỗi lịch)
+
+## Hai lỗi được xử lý trong mã nguồn
+
+- `BOOKING_NOT_FOUND`: API trước đây dựa vào biến `vanished` được cập nhật bên trong RTDB transaction, có thể báo nhầm khi transaction bị hủy. Bản sửa đọc lại đúng khóa bản ghi **sau** transaction, phân biệt `BOOKING_NOT_FOUND`, `BOOKING_CONFLICT`, `BOOKING_MOVED` và `BOOKING_TRANSACTION_RETRY`. Không tạo lại lịch đã bị xóa và không ghi đè phiên bản mới.
+- `SCHEDULE_BUSY`: lease mỗi ngày giảm từ 30 còn 12 giây, được gia hạn mỗi 2,5 giây; chờ tối đa ~15 giây để khóa mồ côi hết hạn. Nhật ký audit không còn chạy khi giữ khóa. Giảm dùng khóa cho lịch không phân công nhân sự. **Nếu có nhiều thao tác thực sự chạy cùng ngày, vẫn có thể trả `SCHEDULE_BUSY`**: đây là biện pháp bảo vệ tránh ghi đồng thời.
+
+## Kiểm tra lỗi ngay trong Vercel
+
+1. Triển khai vào **Preview** trước. `/api/health` cần trả `booking-recovery-20261013-r2`.
+2. Đăng nhập Admin, mở lịch trước khi sửa. Nếu vẫn lỗi, dùng Developer Tools → Network tìm `/api/events/<id>` để xem **Response JSON**.
+3. Để kiểm tra tình trạng khóa, gửi GET tới `/api/scheduling/diagnostics?date=2026-10-13&eventId=<eventId>` kèm `Authorization: Bearer <Firebase ID token của Admin>`; API không trả thông tin khách hay chủ sở hữu khóa. Có thể dùng `fetch` từ phiên Admin với token do web đang quản lý. **Không dán token vào chat và không gắn token vào URL.**
+4. Kiểm tra Vercel Function Logs (`[scheduling] lease contention`, `[booking-manager]`). Đối chiếu với thời điểm API gọi và dữ liệu staging.
+5. Nếu `/studio` cũ vẫn ghi trực tiếp lên `studioPlanner_v1/events`, các luồng ghi legacy vẫn chưa được bảo vệ bằng khóa mới. Không thử sửa đồng thời từ hai tab/web trong production cho tới khi hoàn tất cutover.
+
+## An toàn dữ liệu
+
+Không thay đổi database schema, Firebase Rules hay Environment Variables. Không xóa hoặc tự động migrate lịch. Bản vá không thể xác nhận lịch production có thật sự bị xóa khi không có quyền truy cập Firebase của bạn. Luôn sao lưu RTDB trước khi deploy, test chỉnh sửa và xóa trên dữ liệu staging.
+
+## Kiểm thử
+
+`npm test` chạy hồi quy Node trên các module nghiệp vụ. `npm run typecheck && npm run build` vẫn cần chạy đầy đủ trên Vercel/CI; kiểm thử Node không thay thế kiểm thử Firebase production.
+
+---
+
+# Hotfix VNext 2.8.2.1 — Build lỗi Copy link an toàn
+
+Sửa lỗi biên dịch ở `components/DeliveryGrantManager.tsx`:
+`body` và `url` từng khai báo bằng `const` nhưng bị gán lại bên trong nhánh retry.
+
+Bản vá dùng **một POST idempotent** để lấy link bàn giao, chỉ gửi lại request nếu cần làm mới Firebase ID token sau lỗi 401. Nếu API không trả `shareUrl`, giao diện hiển thị lỗi thay vì âm thầm gọi lại lần thứ hai. Vẫn hỗ trợ copy thủ công khi trình duyệt từ chối Clipboard API.
+
+Không yêu cầu thay đổi Firebase, Vercel Environment Variables hoặc link khách hàng hiện có. Chỉ cập nhật mã nguồn lên GitHub và triển khai lại. Bản build đầy đủ `npm run build` cần xác nhận trên Vercel nếu máy không có đủ npm dependencies.
+
+---
+
 # Amorri Studio VNext 2.8.2 — Scheduling & Delivery Fix
 
 Bản nâng cấp đầy đủ trên nền **2.8.1**, tập trung xử lý lỗi `SCHEDULE_BUSY` và tối giản Dashboard **Bàn giao sản phẩm**. Giữ nguyên Firebase, Google Drive, dữ liệu `studioPlanner_v1`, gallery khách và `/studio` tương thích. **Không áp dụng lại Security Rules production hoặc migrate dữ liệu.**

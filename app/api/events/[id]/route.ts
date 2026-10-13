@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { adminDatabase, authenticatedAdmin, publicAuthFailure } from '@/lib/server/firebase-admin';
 import { findBooking, bookingVersion, BookingStoreError } from '@/lib/server/event-storage';
+import { classifyBookingAbort } from '@/lib/domain/booking-recovery';
 import { validateEventChanges, requireVersion } from '@/lib/domain/event-management';
 import { normaliseEvents } from '@/lib/domain/studio';
 import { scheduleConflict, recordValues } from '@/lib/domain/scheduling';
@@ -56,8 +57,15 @@ export async function PATCH(request:Request,{params}:{params:Promise<{id:string}
   if(!requireVersion(payload.expectedVersion))return json({error:'Thiếu mã phiên bản lịch. Hãy tải lại chi tiết trước khi sửa.'},400);
   try {
     const {id}=await params;
-    const needsScheduleLock=Boolean(payload.changes && typeof payload.changes==='object' &&
+    const changesHaveScheduleFields=Boolean(payload.changes && typeof payload.changes==='object' &&
       ['date','start','end','startTrai','startGai','status','assignments'].some(key=>Object.prototype.hasOwnProperty.call(payload.changes,key)));
+    // Fast-path: notes, prices and non-schedule fields never require the date lease.
+    // An event without assigned staff cannot conflict with another staff schedule.
+    const previous=await findBooking(id);
+    const requestedAssignments=(payload.changes as Record<string,unknown>)?.assignments;
+    const hasAssignedStaff=recordValues(requestedAssignments===undefined?previous.value.assignments:requestedAssignments).some(a=>a.id!=null);
+    const needsScheduleLock=changesHaveScheduleFields && hasAssignedStaff;
+    let committedForAudit:Record<string,unknown>|null=null;
     const action=async()=>{
     const located=await findBooking(id);
     const validated=validateEventChanges(payload.changes,located.value);
@@ -81,20 +89,48 @@ export async function PATCH(request:Request,{params}:{params:Promise<{id:string}
       const collision=scheduleConflict(proposed,assignedIds,dayEvents,dayBlackouts,id);
       if(collision)return json({error:collision.message,code:'SCHEDULE_CONFLICT',conflict:collision},409);
     }
-    let conflict=false, vanished=false;
-    const tx=await located.ref.transaction((current:Record<string,unknown>|null)=>{
-      if(!current){vanished=true;return;}
-      if(bookingVersion(current)!==payload.expectedVersion){conflict=true;return;}
-      // Existing gallery, feedback, review and custom wedding fields are all preserved.
-      return {...current,...validated.value,updatedAt:Date.now(),updatedBy:user.uid};
-    },undefined,false);
-    if(!tx.committed)return json({error:vanished?'Lịch đã bị xóa':'Lịch đã thay đổi, hãy tải lại trước khi lưu.',code:conflict?'BOOKING_CONFLICT':'BOOKING_NOT_FOUND'},409);
-    await audit('EVENT_UPDATED',user,tx.snapshot.val(),id,`Cập nhật lịch ${String(located.value.name||'')} ngày ${String(located.value.date||'')}`);
-    return json({success:true,id,version:bookingVersion(tx.snapshot.val()),event:normaliseEvents([tx.snapshot.val()])[0]});
+    // Pre-read the *exact* legacy-or-modern Firebase key to warm RTDB transaction
+    // state. A null seen inside an update callback is NOT proof of deletion.
+    // Keep the version precondition: never overwrite another editor's work.
+    let committed:Record<string,unknown>|null=null;
+    for(let attempt=0;attempt<2;attempt++){
+      const before=await located.ref.once('value');
+      const raw=before.val() as Record<string,unknown>|null;
+      const preflight=classifyBookingAbort(raw,payload.expectedVersion as string,bookingVersion);
+      if(preflight==='BOOKING_NOT_FOUND')return json({error:'Bản ghi không còn ở khóa lưu hiện tại. Tải lại lịch để kiểm tra dữ liệu.',code:'BOOKING_NOT_FOUND'},404);
+      if(preflight==='BOOKING_CONFLICT')return json({error:'Lịch đã được cập nhật trên Firebase. Tải lại trước khi lưu.',code:'BOOKING_CONFLICT'},409);
+      const tx=await located.ref.transaction((current:Record<string,unknown>|null)=>{
+        // Never create/recreate a booking if another process deleted it.
+        if(!current||typeof current!=='object')return;
+        if(bookingVersion(current)!==payload.expectedVersion)return;
+        return {...current,...validated.value,updatedAt:Date.now(),updatedBy:user.uid};
+      },undefined,false);
+      if(tx.committed){committed=tx.snapshot.val() as Record<string,unknown>;break;}
+      // RTDB callbacks may be invoked with a transient null (e.g. cold cache),
+      // so inspect the actual record after the transaction, before diagnosing.
+      const fresh=await located.ref.once('value');
+      const diagnosis=classifyBookingAbort(fresh.val() as Record<string,unknown>|null,payload.expectedVersion as string,bookingVersion);
+      if(diagnosis==='BOOKING_NOT_FOUND'){
+        // Legacy migration can move the Firebase key while keeping the booking ID.
+        // Never call it deleted until both the original key and the ID are missing.
+        try {const moved=await findBooking(id);if(moved.key!==located.key)return json({error:'Lịch đã chuyển vị trí lưu trữ. Tải lại lịch rồi sửa.',code:'BOOKING_MOVED'},409);}
+        catch(lookup){if(!(lookup instanceof BookingStoreError && lookup.status===404))throw lookup;}
+        return json({error:'Không còn tìm thấy lịch trên Firebase. Vui lòng kiểm tra ở /migration.',code:'BOOKING_NOT_FOUND'},404);
+      }
+      if(diagnosis==='BOOKING_CONFLICT')return json({error:'Lịch đã được một phiên khác cập nhật, cần tải lại trước khi sửa.',code:'BOOKING_CONFLICT'},409);
+      // Still exists and unchanged: retry once after priming the RTDB local cache.
+    }
+    if(!committed)return json({error:'Firebase tạm ngắt transaction; lịch vẫn còn. Thử lại sau khi tải lại.',code:'BOOKING_TRANSACTION_RETRY'},503);
+    committedForAudit=committed;
+    return json({success:true,id,version:bookingVersion(committed),event:normaliseEvents([committed])[0]});
     };
     // Lock the destination date. The optimistic version check inside action protects stale reads.
-    const targetDate=String((payload.changes as Record<string,unknown> | undefined)?.date|| (await findBooking(id)).value.date || '');
-    return needsScheduleLock ? await withScheduleLock(action,targetDate) : await action();
+    const targetDate=String((payload.changes as Record<string,unknown> | undefined)?.date||previous.value.date||'');
+    const response=needsScheduleLock ? await withScheduleLock(action,targetDate) : await action();
+    // Logging must not extend the scheduling lock duration. The record is already committed.
+    if(committedForAudit)await audit('EVENT_UPDATED',user,committedForAudit,id,
+      `Cập nhật lịch ${String(previous.value.name||'')} ngày ${String(previous.value.date||'')}`);
+    return response;
   }catch(err){return fail(err);}
 }
 export async function DELETE(request:Request,{params}:{params:Promise<{id:string}>}){
