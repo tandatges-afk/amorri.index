@@ -1,7 +1,9 @@
 import {deliveryEvent,productById,payload,json,deliveryFailure} from '@/lib/server/delivery-http';
 import {DeliveryError} from '@/lib/server/delivery-access';
 import {listDeliveryMedia,productSource} from '@/lib/server/delivery-media';
-import {pickProducts,validateSelection} from '@/lib/domain/delivery';
+import {validateSelection} from '@/lib/domain/delivery';
+import {applyPhotoSelection} from '@/lib/domain/delivery-guest-writes';
+import {conditionalDeliveryMutation} from '@/lib/server/delivery-cas';
 export const runtime='nodejs';export const dynamic='force-dynamic';
 export async function PUT(request:Request,{params}:{params:Promise<{eventId:string}>}){
   try{
@@ -20,16 +22,20 @@ export async function PUT(request:Request,{params}:{params:Promise<{eventId:stri
       return {key:`${productId}::id:${id}`,fileId:id,name:photo.name,productId,
         productName:String(product.name||''),sourceKey,sourceUrl:String(product.url||''),savedAt:Date.now()};
     });
-    const tx=await located.ref.transaction((current:Record<string,unknown>|null)=>{
-      if(!current)return;
-      const productNow=pickProducts(current.products).find(p=>String(p.id)===productId);
-      if(!productNow||String(productNow.url||'')!==String(product.url||''))return; // admin replaced link while listing
-      const old=pickProducts(current.favoritePhotoItems);
-      const keep=old.filter(item=>String(item.productId||'')!==productId || !item.sourceKey || String(item.sourceKey)!==sourceKey);
-      const merged=[...keep,...selectedItems];
-      return {...current,favoritePhotoItems:merged,favoritePhotos:[...new Set(merged.map(i=>String(i.name||'')).filter(Boolean))]};
-    },undefined,false);
-    if(!tx.committed)throw new DeliveryError(409,'SELECTION_CONFLICT','Sản phẩm đã thay đổi. Vui lòng tải lại');
+    // Read the authoritative event on each attempt and ETag-CAS the complete
+    // unchanged metadata + updated selection. Handles unrelated concurrent edits.
+    try{
+      await conditionalDeliveryMutation<Record<string,unknown>>(
+        `studioPlanner_v1/events/${located.key}`,
+        current=>({kind:'write',value:applyPhotoSelection(current,productId,String(product.url||''),sourceKey,selectedItems)})
+      );
+    }catch(error){
+      if(error instanceof Error && error.message==='SELECTION_SOURCE_CHANGED')
+        throw new DeliveryError(409,'SELECTION_SOURCE_CHANGED','Album Drive đã được Admin thay đổi. Hãy tải lại bộ ảnh trước khi chọn');
+      if(error instanceof Error && error.message==='SELECTION_BOOKING_MISSING')
+        throw new DeliveryError(404,'SELECTION_BOOKING_MISSING','Lịch bàn giao không còn tồn tại');
+      throw error;
+    }
     return json({success:true,selected:check.ids.length});
   }catch(err){return deliveryFailure(err);}
 }

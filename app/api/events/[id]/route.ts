@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { adminDatabase, authenticatedAdmin, publicAuthFailure } from '@/lib/server/firebase-admin';
 import { findBooking, bookingVersion, BookingStoreError } from '@/lib/server/event-storage';
-import { saveBookingConditional, BookingCasError } from '@/lib/server/booking-cas';
+import { saveBookingConditional, deleteBookingConditional, BookingCasError } from '@/lib/server/booking-cas';
 import { validateEventChanges, requireVersion } from '@/lib/domain/event-management';
 import { normaliseEvents } from '@/lib/domain/studio';
 import { scheduleConflict, recordValues } from '@/lib/domain/scheduling';
@@ -127,14 +127,17 @@ export async function DELETE(request:Request,{params}:{params:Promise<{id:string
     const encrypted=encryptBookingArchive(item.value);
     const backup=await archive.transaction(current=>current===null?({id,operationId:opId,originalKey:item.key,deletedAt:Date.now(),deletedBy:user.uid, ...encrypted}):undefined,undefined,false);
     if(!backup.committed)return json({error:'Đã có bản lưu lịch trong kho dự phòng; cần kiểm tra trước khi xóa lần nữa.'},409);
-    const tx=await item.ref.transaction((current:Record<string,unknown>|null)=>{
-      if(!current||bookingVersion(current)!==expectedVersion)return;
-      return null;
-    },undefined,false);
-    if(!tx.committed){
-      try { await archive.transaction(v=>v?.operationId===opId?null:undefined,undefined,false); }
-      catch(err){console.error('[booking-manager] archive rollback failed',err);}
-      return json({error:'Lịch đã thay đổi hoặc bị xóa trong khi thao tác. Tải lại trước khi thử.',code:'BOOKING_CONFLICT'},409);
+    // REST ETag delete avoids transient local-null Admin SDK transactions.
+    try{await deleteBookingConditional({key:item.key,id,expectedVersion});}
+    catch(err){
+      // If deletion definitely did NOT run, release only this operation's
+      // temporary archive so a fresh version can be archived next time.
+      // An uncertain network result keeps the encrypted copy for recovery.
+      if(err instanceof BookingCasError && err.code!=='BOOKING_DELETE_UNCERTAIN'){
+        try{await archive.transaction(current=>current?.operationId===opId?null:undefined,undefined,false);}
+        catch(rollbackError){console.error('[booking-manager] archive rollback failed',rollbackError);}
+      }
+      throw err;
     }
     await audit('EVENT_DELETED',user,item.value,id,`Đã xóa lịch ${String(item.value.name||'')} (đã lưu bản dự phòng cho admin)`);
     return json({success:true,archived:true});

@@ -132,3 +132,17 @@ body {text-rendering:optimizeLegibility;}
  max-width:min(380px,calc(100vw - 40px));border-radius:12px;
  padding:12px 16px;background:#172b41;color:#fff;font-size:12px;box-shadow:0 15px 45px #0f172a33;}
 @media(max-width:390px){.delivery-share-toast{left:12px;right:12px;bottom:12px;}}
+
+/* 2.8.4.3 - Full booking details with usable scroll area and pinned actions */
+.detail-backdrop:has(.booking-detail-expanded){z-index:135;align-items:center;justify-content:center;padding:12px}
+.detail-panel.booking-detail-expanded{width:min(740px,96vw);height:auto;max-height:94dvh;overflow:hidden;padding:0;border-radius:20px;display:flex;flex-direction:column}
+.booking-detail-expanded .detail-header{padding:18px 24px;flex-shrink:0}
+.booking-detail-expanded h2{font-size:22px;line-height:1.2;letter-spacing:-.02em}
+@media(max-width:640px){.detail-backdrop:has(.booking-detail-expanded){padding:0}.detail-panel.booking-detail-expanded{height:100dvh;max-height:100dvh;width:100vw;border-radius:0}}
+
+.detail-panel.booking-detail-expanded dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0;padding:0;border:0}
+.detail-panel.booking-detail-expanded dl.booking-detail-finance{grid-template-columns:repeat(3,minmax(0,1fr))}
+.detail-panel.booking-detail-expanded dt{color:#64748b}
+.detail-panel.booking-detail-expanded dd{margin:4px 0 0;font-weight:600}
+.detail-panel.booking-detail-expanded h2{margin:0;font-size:22px}
+@media(max-width:640px){.detail-panel.booking-detail-expanded dl,.detail-panel.booking-detail-expanded dl.booking-detail-finance{grid-template-columns:1fr}}

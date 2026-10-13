@@ -1,6 +1,8 @@
 import {adminDatabase} from '@/lib/server/firebase-admin';
 import {deliveryEvent,productById,payload,json,deliveryFailure} from '@/lib/server/delivery-http';
 import {DeliveryError,deliveryToken,verifyDeliveryGrant} from '@/lib/server/delivery-access';
+import {conditionalDeliveryMutation} from '@/lib/server/delivery-cas';
+import {reviewThrottle,type ReviewWindow} from '@/lib/domain/delivery-guest-writes';
 import {listDeliveryMedia} from '@/lib/server/delivery-media';
 import {validId,reviewKey,validateReview} from '@/lib/domain/delivery';
 export const runtime='nodejs';export const dynamic='force-dynamic';
@@ -29,18 +31,22 @@ export async function POST(request:Request,{params}:{params:Promise<{eventId:str
     const {eventId}=await params;const {ref}=await reviewRef(request,eventId,true);
     const body=await payload(request,4_096);const parsed=validateReview(body);
     if(!parsed.ok)return json({error:parsed.error},422);
-    // Transactional throttle per share grant. This is a basic abuse safeguard, not an anti-bot system.
+    // A rolling one-hour limit prevents abuse without exhausting a link for
+    // its entire lifetime. CAS prevents false 429s from a local transaction null.
     const token=deliveryToken(request);await verifyDeliveryGrant(eventId,token,true);
     const grantId=token.split('.')[0];
-    const grant=adminDatabase().ref(`amorriDeliveryAccess_v1/${eventId}/${grantId}`);
-    const time=Date.now();
-    const rate=await grant.transaction((v:Record<string,unknown>|null)=>{
-      if(!v||v.revokedAt||Number(v.expiresAt)<=time||v.scope!=='review')return;
-      if(time-Number(v.lastSubmitAt||0)<3_000||Number(v.commentsCount||0)>=200)return;
-      return {...v,lastSubmitAt:time,commentsCount:Number(v.commentsCount||0)+1};
-    },undefined,false);
-    if(!rate.committed)throw new DeliveryError(429,'DELIVERY_RATE_LIMIT','Bạn gửi quá nhanh hoặc link đã hết lượt bình luận');
-    const record={...parsed.value,createdAt:time,resolved:false};
+    const now=Date.now();
+    try{
+      await conditionalDeliveryMutation<ReviewWindow>(`amorriDeliveryReviewLimits_v1/${eventId}/${grantId}`,
+        previous=>({kind:'write' as const,value:reviewThrottle(previous,now)}));
+    }catch(error){
+      if(error instanceof Error && error.message==='REVIEW_TOO_FAST')
+        throw new DeliveryError(429,'DELIVERY_RATE_SHORT','Vui lòng đợi khoảng một giây trước khi gửi góp ý tiếp');
+      if(error instanceof Error && error.message==='REVIEW_HOURLY_LIMIT')
+        throw new DeliveryError(429,'DELIVERY_RATE_HOURLY','Link đã gửi nhiều góp ý trong một giờ. Vui lòng thử lại sau');
+      throw error;
+    }
+    const record={...parsed.value,createdAt:now,resolved:false};
     const created=ref.push();await created.set(record);
     return json({success:true,id:created.key,comment:record},201);
   }catch(err){return deliveryFailure(err);}
