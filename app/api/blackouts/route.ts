@@ -40,6 +40,6 @@ export async function POST(request:Request){
      if(!tx.committed)return json({error:duplicate?'Ngày nghỉ đã tồn tại':'Đang có cập nhật lịch nghỉ',code:'SCHEDULE_CONFLICT'},409);
      void staffAudit('BLACKOUT_CREATED',user,staffId,`Báo nghỉ ${date}`);
      return json({success:true,blackout:{id,staffId,date,reason}},201);
-   });
+   },date);
  }catch(err){return failure(err);}
 }

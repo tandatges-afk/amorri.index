@@ -87,3 +87,12 @@ body {text-rendering:optimizeLegibility;}
 
 /* Portrait-oriented assets retain the entire frame instead of cropping it. */
 .admin-thumbnail.portrait-poster>img {object-fit:contain;background:#141f32;}
+
+/* VNext 2.8.2: thumbnail is the visual, no opaque type badge painted over it. */
+.admin-thumbnail-type{display:none!important}
+.delivery-details{padding:16px 18px 19px}
+.delivery-details h3{margin:6px 0 4px}
+.delivery-details>p{min-height:0;margin-bottom:4px}
+.delivery-compact-status{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:#65748d;font-size:11px;margin:8px 0}
+.delivery-inline-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:9px 0}
+.delivery-inline-actions .secondary-button.small{min-height:33px}

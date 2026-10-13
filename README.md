@@ -1,46 +1,33 @@
-# Amorri Studio VNext 2.8.1 — TypeScript HTTP Status Fix
+# Amorri Studio VNext 2.8.2 — Scheduling & Delivery Fix
 
-Bản vá **đầy đủ** trên nền VNext 2.8. Chỉ chỉnh kiểu lỗi HTTP cho API thumbnail, cập nhật mã release để nhận diện deployment, và thêm kiểm thử hồi quy. Không đổi Firebase, Google Drive, gallery, lịch hay quyền Admin.
+Bản nâng cấp đầy đủ trên nền **2.8.1**, tập trung xử lý lỗi `SCHEDULE_BUSY` và tối giản Dashboard **Bàn giao sản phẩm**. Giữ nguyên Firebase, Google Drive, dữ liệu `studioPlanner_v1`, gallery khách và `/studio` tương thích. **Không áp dụng lại Security Rules production hoặc migrate dữ liệu.**
 
-**Nguyên nhân:** Trong `lib/server/delivery-access.ts`, kiểu `DeliveryError.status` thiếu các mã `413`, `502`, `504` đang được `lib/server/delivery-media.ts` sử dụng, làm `next build` dừng ở TypeScript checking.
+## Thay đổi chính
 
-**Sửa chữa:** Khai báo `DeliveryHttpStatus` theo union tường minh gồm `400 | 401 | 403 | 404 | 409 | 410 | 413 | 429 | 502 | 503 | 504`, giữ nguyên mã HTTP chính xác trong response.
+1. **SCHEDULE_BUSY**: Chuyển khóa ghi lịch từ một khóa toàn studio `schedulingWriteLock_v2` có thể treo 60 giây sang khóa theo ngày `schedulingWriteLocks_v3/YYYY-MM-DD`, lease 30 giây gia hạn mỗi 8 giây và chỉ giải phóng khi đúng owner. Các thao tác khác ngày không phải chờ nhau. Khi trùng lịch hoặc ngày nghỉ thật, vẫn trả `SCHEDULE_CONFLICT`.
+2. **Lịch rước dâu**: khi thay `startTrai`/`startGai`, API sửa lịch kiểm tra lại trùng phân công; truy vấn lịch nghỉ chỉ lọc đúng ngày thay vì tải toàn bộ collection. Hai đường tạo/sửa lịch cùng kiểm tra nhân sự, trùng lịch và phiên bản dữ liệu trên server.
+3. **Thumbnail**: gỡ lớp `admin-thumbnail-type` đang đè lên hình; ảnh bìa 16:9 vẫn lấy từ Drive, không phát sinh giải mã MP4 trên Vercel.
+4. **Link an toàn**: chỉ còn **Copy link an toàn**. Nhấn một lần là copy: API transaction dùng lại một link có hiệu lực hoặc tạo một link mới nếu chưa có. Không tạo thêm mỗi lần copy/F5. Các link cũ chỉ lưu hash **không thể giải mã** sẽ bị thu hồi khi Admin nhấn nút lần đầu để tạo link mới; khách cũ cần nhận lại link đó. Token lưu hash để xác thực và bản mã hóa AES-GCM để Admin copy lại. Mặc định hiệu lực 30 ngày.
+5. **Bàn giao ảnh**: hiện `Khách đã chọn N ảnh` ngay trong chi tiết cùng nút **Copy tên ảnh** cho Admin; không hiện nút này với bộ chỉ có clip. Xóa panel **Kiểm tra ảnh / clip & ảnh đã chọn** dài dòng.
+6. **Bàn giao clip**: chỉ hiện **Góp ý timeline** với bộ được API Admin xác minh có file video. Bộ có cả ảnh và video hiển thị hai chức năng tương ứng. Phân loại dựa trên MIME thực từ Drive, không dựa đơn thuần vào tên.
+7. **delivery-details**: loại bỏ danh sách sản phẩm dài, giảm padding và nút phụ. Xóa badge đè thumbnail. Trang bàn giao khách và nút chọn ảnh của khách được giữ nguyên.
 
-**Kiểm tra deploy:** `GET /api/health` có `release: visual-thumbnails-20261013-r2`.
+## Cấu hình Vercel
 
-**Trước Production:** cập nhật source GitHub lên Vercel Preview, chạy `npm ci` (nếu có lockfile) hoặc `npm install`, `npm run typecheck`, `npm run build`, `npm run check:static`. Giữ nguyên Environment Variables, không cần cấu hình mới. Lưu ý bài test Node không thay thế cho Next.js build hoàn chỉnh.
+Không cần biến môi trường mới. Giữ nguyên `FIREBASE_SERVICE_ACCOUNT_JSON`, `FIREBASE_DATABASE_URL`, `DRIVE_SERVICE_ACCOUNT_JSON`, `DRIVE_VIDEO_SIGNING_SECRET`, `AMORRI_ADMIN_UIDS`… đang hoạt động.
 
-## Các thay đổi khác
+Nếu dùng `AMORRI_DELIVERY_LINK_KEY`, cần giữ nguyên khóa đủ mạnh (>=32 ký tự) để có thể lấy lại link đã tạo; nếu không có, code dùng `DRIVE_VIDEO_SIGNING_SECRET` đã đủ mạnh. **Đừng xoay khóa tùy tiện** nếu không muốn link cũ không copy lại được. Không gửi keys/tokens cho bất cứ ai ngoài đối tượng được phép.
 
-# Amorri Studio VNext 2.8 — Visual Experience & Drive Thumbnails
+1. Giải nén và cập nhật repository, deploy **Vercel Preview**.
+2. Mở `/api/health`, xác nhận `release` = `schedule-delivery-20261013-r1`.
+3. Staging: tạo lịch A và B ở *hai ngày khác nhau* đồng thời; sửa lịch, cập nhật giờ rước dâu và thử xếp hai ca trùng thật; kiểm tra trả `SCHEDULE_CONFLICT` thay vì `SCHEDULE_BUSY` do khóa toàn studio.
+4. Kiểm tra link: click Copy hai lần, F5 rồi Copy, phải là **cùng URL**; lưu ý link hash-only từ bản cũ bị thay thế khi click đầu tiên.
+5. Kiểm tra card có **chỉ ảnh**, **chỉ video** và **cả hai**; so sánh số ảnh đã chọn với Firebase; thử copy tên ảnh, xử lý comment video và hình thumbnail.
+6. Kiểm tra `/studio` có thể tiếp tục dùng và việc ghi trực tiếp từ legacy **chưa được đồng bộ khóa mới**, vì thế chưa thể đảm bảo chống trùng giờ tuyệt đối giữa API mới và `/studio`.
 
-Nâng cấp từ **VNext 2.7.1 Workflow Stability**. Bản này chỉnh lại trải nghiệm giao diện và cung cấp thumbnail thật cho mục **Bàn giao sản phẩm** trên Dashboard Admin. Không xóa hoặc chuyển đổi dữ liệu Firebase.
+## Kiểm thử và giới hạn
 
-## Tính năng mới
-
-- Thẻ bàn giao lớn hơn (hai cột desktop, một cột mobile), khung ảnh chuẩn 16:9, nội dung và trạng thái rõ ràng, giao diện đồng nhất hơn.
-- **Video:** lấy thumbnail đã được Google Drive tạo cho clip (không tải toàn bộ MP4, không trích frame trên Vercel).
-- **Bộ ảnh:** ưu tiên ảnh mà Drive báo `imageMediaMetadata.width > height`; nếu thiếu metadata hướng ảnh, dùng ảnh hợp lệ đầu tiên làm phương án dự phòng.
-- **Nhiều sản phẩm/lịch:** cover xuất hiện ở đầu thẻ; mở "Kiểm tra ảnh / clip & ảnh đã chọn" để thấy thumbnail riêng từng sản phẩm.
-- **Thư mục ảnh riêng tư:** thumbnail đi qua `GET /api/delivery/[eventId]/thumbnail?productId=...&mediaId=...` có xác thực Admin, xác minh media thuộc đúng sản phẩm Drive, chỉ trả ảnh nhỏ đã tạo sẵn, giới hạn 2 MB.
-- Tải khi card vào viewport, khống chế **tối đa 2** tác vụ phát hiện media đồng thời trong một tab, tự thu hồi Blob URL sau khi unmount.
-- Nếu Drive chưa tạo thumbnail hoặc không cấp quyền: dùng placeholder an toàn; không hiển thị hình bịa đặt và không làm vỡ layout.
-- Giữ lưới ảnh trên trang **khách** 4 cột ở desktop; không thay đổi phần chọn ảnh, bình luận timeline, link chia sẻ và các API lịch/lương/nhân sự.
-
-## Cài đặt và triển khai
-
-1. Sao lưu mã nguồn, triển khai VNext 2.8 trên Vercel **Preview**.
-2. Giữ nguyên các biến Firebase/Google Drive. **Không cần** Cloudflare Stream hoặc biến mới.
-3. Kiểm tra `GET /api/health` có `release: visual-thumbnails-20261013-r1`.
-4. Đăng nhập Admin → **Bàn giao sản phẩm** → cuộn đến một thẻ có video hoặc thư mục ảnh ngang → đợi phân loại và thumbnail tải. Thử mở panel để xem thumbnail từng sản phẩm.
-5. Kiểm tra ít nhất một folder riêng tư, video chưa có thumbnail và folder toàn ảnh dọc; kiểm tra trang khách trên điện thoại.
-6. Trước Production, chạy `npm install`, `npm run typecheck`, `npm run build`, `npm test`, `npm run test:e2e` và thử với Google Drive thật.
-
-## Giới hạn cần biết
-
-- Google Drive không cam kết tạo `thumbnailLink` cho mọi file/định dạng hoặc cấp quyền tải thumbnail ở mọi trường hợp. Ảnh dọc/ngang được chọn theo metadata Google Drive, không dùng phân tích pixel hay AI. Video chưa có thumbnail do Drive cung cấp sẽ hiện placeholder.
-- API thumbnail đi qua Vercel để **lấy ảnh nhỏ**, không phải để phát video. Việc này vẫn phát sinh chút lưu lượng nhưng có giới hạn dung lượng và lazy loading.
-- `npm run build`, typecheck đầy đủ và Playwright **chưa xác nhận trong môi trường tạo bản này** do thiếu dependencies npm. Các bài test Node và kiểm tra cú pháp chỉ bảo đảm logic ở phạm vi tương ứng.
-- `/studio` cũ và các luồng nghiệp vụ từ VNext 2.7.1 được giữ nguyên để tương thích.
-
-Đọc thêm: [`docs/UX_VISUAL_2_8.md`](docs/UX_VISUAL_2_8.md) và [`docs/WORKFLOW_STABILITY_2_7_1.md`](docs/WORKFLOW_STABILITY_2_7_1.md).
+- `npm test` (Node tests), `npm run check:static`, TypeScript AST parse được thực hiện trong môi trường tạo source; xem log kết quả đi kèm nếu cần.
+- Chưa xác nhận **`next build`, Playwright và RTDB production integration**, do môi trường này không truy cập được npm registry. Bắt buộc chạy `npm install && npm run typecheck && npm run build && npm test` trên CI/Vercel.
+- Cần xác minh tài khoản service account có quyền transaction tại các nhánh `studioPlanner_v1/schedulingWriteLocks_v3` và `amorriDeliveryAccess_v1`. Firebase Admin SDK đúng cấu hình sẽ vượt qua client RTDB Rules.
+- Nếu truy cập Google Drive thất bại, không tự coi nguồn là ảnh hay clip; cần khắc phục quyền/metadata trước. Link cũ vẫn còn quyền nếu Admin chưa bấm tạo/copy lại; sau đó chỉ một link còn hiệu lực trên API mới.

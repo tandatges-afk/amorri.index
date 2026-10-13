@@ -1,6 +1,6 @@
 {
   "name": "amorri-studio-vnext-2",
-  "version": "2.8.1-typescript-http-fix",
+  "version": "2.8.2-scheduling-delivery-fix",
   "private": true,
   "scripts": {
     "dev": "next dev",

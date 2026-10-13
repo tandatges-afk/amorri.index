@@ -1,8 +1,8 @@
 'use client';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {User} from 'firebase/auth';
-import {Copy,Images,Film,RefreshCw} from 'lucide-react';
-import {AdminThumbnail,type CoverInfo} from './AdminThumbnail';
+import {Copy,RefreshCw} from 'lucide-react';
+import type {CoverInfo} from './AdminThumbnail';
 
 type ProductSummary={id:string;name:string;kind:'video'|'image'|'mixed'|'unknown';videoCount:number;imageCount:number;selectedNames:string[];cover?:CoverInfo;warning?:string};
 let activeDiscovery=0;
@@ -13,11 +13,17 @@ async function scheduleDiscovery<T>(operation:()=>Promise<T>):Promise<T>{
   try{return await operation();}
   finally{activeDiscovery--;waitingDiscovery.shift()?.();}
 }
-const kindLabel={video:'Bàn giao clip',image:'Bàn giao ảnh',mixed:'Ảnh + clip',unknown:'Chưa xác định'};
-export function DeliveryAdminWorkspace({eventId,user,onCover}:{eventId:string;user:User;onCover?:(cover:CoverInfo|null)=>void}){
+export type DeliveryMediaSummary={hasVideo:boolean;hasPhoto:boolean;selectedCount:number;ready:boolean;imageProductNames:string[]};
+export const deliveryMediaSummary=(rows:ProductSummary[]):DeliveryMediaSummary=>{
+  const photos=rows.filter(row=>row.kind==='image'||row.kind==='mixed');
+  return {hasVideo:rows.some(row=>row.kind==='video'||row.kind==='mixed'),hasPhoto:photos.length>0,
+    selectedCount:photos.reduce((total,row)=>total+row.selectedNames.length,0),ready:rows.length>0,
+    imageProductNames:photos.map(row=>row.name)};
+};
+export function DeliveryAdminWorkspace({eventId,user,onCover,onSummary}:{eventId:string;user:User;onCover?:(cover:CoverInfo|null)=>void;onSummary?:(summary:DeliveryMediaSummary)=>void}){
  const hostRef=useRef<HTMLDivElement>(null);
  const autoLoaded=useRef(false);
- const [open,setOpen]=useState(false),[busy,setBusy]=useState(false),[rows,setRows]=useState<ProductSummary[]>([]),[message,setMessage]=useState('');
+ const [busy,setBusy]=useState(false),[rows,setRows]=useState<ProductSummary[]>([]),[message,setMessage]=useState('');
  const load=useCallback(async()=>{
    setBusy(true);setMessage('');
    try{
@@ -29,10 +35,10 @@ export function DeliveryAdminWorkspace({eventId,user,onCover}:{eventId:string;us
      });
      if(!res.ok)throw new Error(`${data.error||'Không thể kiểm tra danh sách sản phẩm'}${data.code?' ['+data.code+']':''}`);
      const products:ProductSummary[]=data.products||[];
-     setRows(products);onCover?.(products.find(row=>row.cover)?.cover || null);
+     setRows(products);onCover?.(products.find(row=>row.cover)?.cover || null);onSummary?.(deliveryMediaSummary(products));
    }catch(error){setMessage(error instanceof Error?error.message:'Lỗi kết nối');}
    finally{setBusy(false);}
- },[eventId,user,onCover]);
+ },[eventId,user,onCover,onSummary]);
  useEffect(()=>{
   const host=hostRef.current;if(!host)return;
   // Only inspect media when a card approaches the viewport. Avoid expensive
@@ -44,29 +50,24 @@ export function DeliveryAdminWorkspace({eventId,user,onCover}:{eventId:string;us
   },{rootMargin:'80px'});
   observer.observe(host);return()=>observer.disconnect();
  },[load]);
- const toggle=()=>{if(!open && !autoLoaded.current){autoLoaded.current=true;void load();}setOpen(v=>!v);};
- const copy=async(row:ProductSummary)=>{
-   if(!row.selectedNames.length){setMessage(`Sản phẩm "${row.name}" chưa có ảnh khách đã chọn.`);return;}
-   const names=row.selectedNames.join('\n');
-   try{await navigator.clipboard.writeText(names);setMessage(`Đã copy ${row.selectedNames.length} tên ảnh của "${row.name}".`);}
-   catch{setMessage('Trình duyệt không cho copy tự động. Hãy mở HTTPS và cấp quyền Clipboard.');}
+ const photoRows=rows.filter(row=>row.kind==='image'||row.kind==='mixed');
+ const selectedNames=photoRows.flatMap(row=>row.selectedNames);
+ const selectedCount=photoRows.reduce((total,row)=>total+row.selectedNames.length,0);
+ const copy=async()=>{
+   if(!selectedNames.length)return;
+   try{await navigator.clipboard.writeText(selectedNames.join('\n'));setMessage(`Đã copy ${selectedNames.length} tên ảnh khách chọn.`);}
+   catch{setMessage('Trình duyệt chặn Clipboard, hãy sử dụng HTTPS hoặc cấp quyền sao chép.');}
  };
- return <div ref={hostRef} className="mt-2">
-  <div className="mb-2 flex flex-wrap gap-1.5">{rows.length?rows.map(row=><span key={row.id} className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-700">{row.name}: {kindLabel[row.kind]}</span>):<span className="text-xs text-slate-500">{busy?'Đang tự nhận diện ảnh/clip…':'Tự nhận diện từ Drive khi cuộn tới sản phẩm'}</span>}</div>
-  <button type="button" className="secondary-button small" onClick={toggle} aria-expanded={open}><Images size={15}/>{open?'Ẩn phân loại ảnh/clip':'Kiểm tra ảnh / clip & ảnh đã chọn'}</button>
-  {open&&<div className="mt-2 rounded-xl border bg-white p-3 space-y-3">
-   <div className="flex justify-between gap-2"><strong className="text-xs">Phân loại theo file thực tế trên Drive</strong><button type="button" disabled={busy} onClick={()=>void load()} aria-label="Tải lại"><RefreshCw size={16}/></button></div>
-   {busy&&<p className="text-xs text-slate-500">Đang đọc danh sách từ Google Drive…</p>}
-   {rows.map(row=><div key={row.id} className="product-summary-row">
-    <AdminThumbnail eventId={eventId} user={user} cover={row.cover} small/>
-    <div className="product-summary-body">
-    <div className="flex justify-between items-center gap-2"><strong className="min-w-0 break-words">{row.name}</strong><span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2 py-1">{row.kind==='video'?<Film size={13}/>:<Images size={13}/>} {kindLabel[row.kind]}</span></div>
-    <p className="text-slate-500">{row.imageCount} ảnh · {row.videoCount} clip · {row.selectedNames.length} ảnh khách đã chọn</p>
-    {row.warning&&<p className="text-amber-700">Không thể phân loại chính xác: {row.warning}</p>}
-    <button type="button" disabled={busy||!row.selectedNames.length} className="secondary-button small" onClick={()=>void copy(row)}><Copy size={14}/>Copy tên ảnh đã chọn (Admin)</button>
-    </div></div>)}
-   {!rows.length&&!busy&&<p className="text-xs text-slate-500">Chưa có sản phẩm hoặc chưa có dữ liệu.</p>}
-   {message&&<p role="status" className="text-xs text-slate-700 break-words">{message}</p>}
-  </div>}
+ return <div ref={hostRef} className="delivery-compact-summary" aria-live="polite">
+   {busy&&<span className="delivery-mini-status">Đang nhận diện ảnh / clip…</span>}
+   {!busy&&photoRows.length>0&&<div className="delivery-compact-status">
+     <span>Khách đã chọn <strong>{selectedCount} ảnh</strong></span>
+     <button className="secondary-button small" type="button" disabled={!selectedNames.length} onClick={()=>void copy()}>
+       <Copy size={14}/> Copy tên ảnh
+     </button>
+   </div>}
+   {rows.length>0 && rows.every(row=>row.kind==='unknown') && <div className="delivery-compact-status">Chưa đọc được loại sản phẩm trên Drive.</div>}
+   {!!rows.length && rows.some(row=>row.warning)&&<button type="button" disabled={busy} className="delivery-mini-retry" onClick={()=>void load()}><RefreshCw size={13}/> Thử nhận diện lại</button>}
+   {message&&<small role="status" className="delivery-share-feedback">{message}</small>}
  </div>;
 }

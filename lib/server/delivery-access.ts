@@ -54,6 +54,45 @@ export async function issueDeliveryGrant(eventId:string,adminUid:string,days:num
   await deliveryAudit('DELIVERY_LINK_CREATED',eventId,grantId,adminUid).catch(err=>console.error('[delivery] audit unavailable',err));
   return {grantId,token,expiresAt,scope};
 }
+/**
+ * One reusable share link per event. Concurrent clicks are serialized by an
+ * RTDB transaction. Older hash-only grants cannot be reconstructed; only on
+ * the first use they are replaced and revoked atomically.
+ */
+export async function ensureDeliveryGrant(eventId:string,adminUid:string,days=30){
+  if(!validId(eventId))throw new DeliveryError(400,'DELIVERY_BAD_ID','Mã lịch không hợp lệ');
+  await findBooking(eventId);
+  // Prepare candidate OUTSIDE RTDB transaction callback (Firebase may retry it).
+  const grantId=randomBytes(12).toString('hex');
+  const secret=randomBytes(32).toString('base64url');
+  const token=`${grantId}.${secret}`;
+  const now=Date.now(),expiresAt=now+days*86_400_000;
+  const candidate:GrantRecord={hash:digest(secret),encryptedToken:encryptToken(token),scope:'review',expiresAt,createdAt:now,createdBy:adminUid};
+  const rootRef=adminDatabase().ref(`${root}/${eventId}`);
+  const tx=await rootRef.transaction((raw:Record<string,GrantRecord>|null)=>{
+    const records={...(raw||{})};
+    // Keep the newest recoverable link, if one exists. Do not rotate each click.
+    const eligible=Object.entries(records).filter(([id,v])=>v && !v.revokedAt && v.scope==='review' && Number(v.expiresAt)>now &&
+      typeof v.encryptedToken==='string' && validGrantToken(decryptToken(v.encryptedToken)) && /^[a-f0-9]{24}$/.test(id))
+      .sort((a,b)=>Number(b[1].createdAt)-Number(a[1].createdAt));
+    const chosen=eligible[0]?.[0]||grantId;
+    for(const [id,v] of Object.entries(records)){
+      if(id!==chosen && v && !v.revokedAt && Number(v.expiresAt)>now)
+        records[id]={...v,revokedAt:now,revokedBy:adminUid};
+    }
+    if(chosen===grantId)records[grantId]=candidate;
+    return records;
+  },undefined,false);
+  if(!tx.committed)throw new DeliveryError(409,'DELIVERY_GRANT_CONFLICT','Không thể thiết lập link dùng chung');
+  const records=tx.snapshot.val() as Record<string,GrantRecord>;
+  const entry=Object.entries(records).filter(([,v])=>v&&!v.revokedAt&&Number(v.expiresAt)>now)
+    .sort((a,b)=>Number(b[1].createdAt)-Number(a[1].createdAt))[0];
+  if(!entry)throw new DeliveryError(503,'DELIVERY_LINK_UNAVAILABLE','Không lấy được link bảo mật');
+  const raw=entry[0]===grantId?token:decryptToken(String(entry[1].encryptedToken||''));
+  if(!raw||!validGrantToken(raw))throw new DeliveryError(503,'DELIVERY_LINK_UNAVAILABLE','Không giải mã được link. Kiểm tra khóa mã hóa');
+  if(entry[0]===grantId)await deliveryAudit('DELIVERY_LINK_CREATED',eventId,grantId,adminUid).catch(err=>console.error('[delivery] audit unavailable',err));
+  return {grantId:entry[0],token:raw,expiresAt:entry[1].expiresAt,scope:entry[1].scope,created:entry[0]===grantId};
+}
 export async function verifyDeliveryGrant(eventId:string,token:unknown,needsReview=false):Promise<GrantRecord>{
   if(!validId(eventId)||!validGrantToken(token))throw new DeliveryError(401,'DELIVERY_TOKEN_INVALID','Liên kết bàn giao không hợp lệ');
   const match=SHARE_TOKEN.exec(token)!;

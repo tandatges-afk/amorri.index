@@ -54,25 +54,62 @@ export async function staffAudit(action:string,token:DecodedIdToken,staffId:stri
     });
   }catch(e){console.error('[staff-scheduling] audit write failed',e);}
 }
-/** Small serializing lease for VNext scheduling writes, NOT for legacy writers.
- * Double-check availability after acquiring the lease. This cannot protect old /studio direct writes.
+/**
+ * Serialize VNext schedule writes PER DATE rather than for every booking in the
+ * entire studio. The old global schedulingWriteLock_v2 could make an unrelated
+ * day report SCHEDULE_BUSY after just ~6s, with an orphaned 60s lease.
+ * Transactions preserve exclusive ownership and leases renew during long writes.
+ * Legacy /studio direct database writes do not participate in this lock.
  */
-export async function withScheduleLock<T>(action:()=>Promise<T>):Promise<T>{
-  const lock=adminDatabase().ref('studioPlanner_v1/schedulingWriteLock_v2');
-  const owner=randomUUID();let acquired=false;
-  for(let attempt=0;attempt<15;attempt++){
+export function scheduleLockPath(date:string):string {
+  if(!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(date))
+    throw new ScheduleError(400,'Ngày khóa lịch không hợp lệ','SCHEDULE_BAD_DATE');
+  const actual=new Date(`${date}T00:00:00Z`);
+  if(Number.isNaN(actual.getTime())||actual.toISOString().slice(0,10)!==date)
+    throw new ScheduleError(400,'Ngày khóa lịch không hợp lệ','SCHEDULE_BAD_DATE');
+  return `studioPlanner_v1/schedulingWriteLocks_v3/${date}`;
+}
+export async function withScheduleLock<T>(action:()=>Promise<T>, date?:string):Promise<T>{
+  // Existing callers with no date are still serialized, for compatibility.
+  const path=date?scheduleLockPath(date):'studioPlanner_v1/schedulingWriteLocks_v3/global';
+  const lock=adminDatabase().ref(path);
+  const owner=randomUUID();
+  const leaseMs=30_000;
+  let acquired=false;
+  for(let attempt=0;attempt<22;attempt++){
+    const now=Date.now();
     const result=await lock.transaction((current:{owner?:string;until?:number}|null)=>{
-      if(current && typeof current.until==='number' && current.until>Date.now())return;
-      return {owner,until:Date.now()+60_000};
+      if(current && Number(current.until)>now && current.owner!==owner)return;
+      return {owner,until:now+leaseMs};
     },undefined,false);
     if(result.committed){acquired=true;break;}
-    await new Promise(resolve=>setTimeout(resolve,120+attempt*40));
+    // Bounded contention retry, not a fixed six-second SCHEDULE_BUSY.
+    await new Promise(resolve=>setTimeout(resolve,180+Math.min(attempt,12)*35));
   }
-  if(!acquired)throw new ScheduleError(409,'Một thao tác xếp lịch khác đang chạy. Vui lòng thử lại.','SCHEDULE_BUSY');
-  try{return await action();}
-  finally {
+  if(!acquired)throw new ScheduleError(409,
+    'Lịch trong ngày này đang được cập nhật. Vui lòng thử lại sau ít giây.','SCHEDULE_BUSY');
+  let leaseLost=false;
+  let renewing=false;
+  const renew=async()=>{
+    if(renewing)return;
+    renewing=true;
+    try{
+      const now=Date.now();
+      const tx=await lock.transaction((current:{owner?:string;until?:number}|null)=>
+        current?.owner===owner && Number(current.until)>now?{owner,until:now+leaseMs}:undefined,undefined,false);
+      if(!tx.committed)leaseLost=true;
+    }catch(error){console.error('[scheduling] lock renewal failed',error);leaseLost=true;}
+    finally{renewing=false;}
+  };
+  const heartbeat=setInterval(()=>{void renew();},8_000);
+  try{
+    const result=await action();
+    if(leaseLost)throw new ScheduleError(409,'Đã mất quyền khóa lịch trong lúc cập nhật. Hãy tải lại trước khi thử.','SCHEDULE_LEASE_LOST');
+    return result;
+  }finally{
+    clearInterval(heartbeat);
     try{await lock.transaction((current:{owner?:string}|null)=>current?.owner===owner?null:undefined,undefined,false);}
-    catch(err){console.error('[staff-scheduling] lock release failed',err);}
+    catch(err){console.error('[scheduling] lock release failed',err);}
   }
 }
 export async function dailyEvents(date:string){
@@ -82,8 +119,13 @@ export async function dailyEvents(date:string){
   return events;
 }
 export async function dailyBlackouts(date:string){
-  // Legacy blackouts have no reliable date index; read the collection to preserve parity.
-  return recordValues((await adminDatabase().ref('studioPlanner_v1/blackouts').once('value')).val()).filter(b=>b.date===date);
+  // Query by date rather than download all staff absence records while holding a lease.
+  // Legacy numeric-key records also have a date field and remain queryable.
+  const snapshot=await adminDatabase().ref('studioPlanner_v1/blackouts')
+    .orderByChild('date').equalTo(date).limitToFirst(2001).once('value');
+  const rows=recordValues(snapshot.val());
+  if(rows.length>=2001)throw new ScheduleError(503,'Quá nhiều lịch nghỉ trong ngày, cần kiểm tra dữ liệu Firebase','BLACKOUTS_LIMIT');
+  return rows;
 }
 export function safeStaff(data:Record<string,unknown>){
   return {id:String(data.id??''),name:String(data.name??''),role:String(data.role??''),authUid:String(data.authUid??''),active:data.active!==false};

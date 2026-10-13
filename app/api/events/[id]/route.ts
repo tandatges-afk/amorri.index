@@ -75,7 +75,7 @@ export async function PATCH(request:Request,{params}:{params:Promise<{id:string}
     // Server-side overlap checks must use the latest data while the VNext write lease is held.
     const proposed={...located.value,...validated.value};
     const assignedIds=recordValues(proposed.assignments).map(a=>String(a.id||'')).filter(Boolean);
-    if(assignedIds.length && proposed.status!=='cancelled' && ['date','start','end','assignments','status'].some(k=>Object.hasOwn(validated.value,k))){
+    if(assignedIds.length && proposed.status!=='cancelled' && ['date','start','end','startTrai','startGai','assignments','status'].some(k=>Object.hasOwn(validated.value,k))){
       const date=String(proposed.date||'');
       const [dayEvents,dayBlackouts]=await Promise.all([dailyEvents(date),dailyBlackouts(date)]);
       const collision=scheduleConflict(proposed,assignedIds,dayEvents,dayBlackouts,id);
@@ -92,7 +92,9 @@ export async function PATCH(request:Request,{params}:{params:Promise<{id:string}
     await audit('EVENT_UPDATED',user,tx.snapshot.val(),id,`Cập nhật lịch ${String(located.value.name||'')} ngày ${String(located.value.date||'')}`);
     return json({success:true,id,version:bookingVersion(tx.snapshot.val()),event:normaliseEvents([tx.snapshot.val()])[0]});
     };
-    return needsScheduleLock ? await withScheduleLock(action) : await action();
+    // Lock the destination date. The optimistic version check inside action protects stale reads.
+    const targetDate=String((payload.changes as Record<string,unknown> | undefined)?.date|| (await findBooking(id)).value.date || '');
+    return needsScheduleLock ? await withScheduleLock(action,targetDate) : await action();
   }catch(err){return fail(err);}
 }
 export async function DELETE(request:Request,{params}:{params:Promise<{id:string}>}){

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
        if(conflict)throw new ScheduleError(409,conflict.message,'SCHEDULE_CONFLICT');
       }
       return base.child('events').child(event.id).transaction((existing:unknown)=>existing===null?event:undefined,undefined,false);
-    });
+    },event.date);
     if (!transaction.committed) return NextResponse.json({error:'Mã lịch đã tồn tại. Tải lại dữ liệu trước khi tạo lịch mới.'}, {status:409,headers});
     // Audit is appended only after the booking is confirmed. Audit failure must not duplicate booking.
     try {

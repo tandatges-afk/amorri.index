@@ -3,7 +3,7 @@
 import {PayrollManager} from '@/components/PayrollManager';
 import {DeliveryGrantManager} from '@/components/DeliveryGrantManager';
 import {DeliveryReviewManager} from '@/components/DeliveryReviewManager';
-import {DeliveryAdminWorkspace} from '@/components/DeliveryAdminWorkspace';
+import {DeliveryAdminWorkspace,type DeliveryMediaSummary} from '@/components/DeliveryAdminWorkspace';
 import {AdminThumbnail,type CoverInfo} from '@/components/AdminThumbnail';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -46,7 +46,7 @@ function Login({onLogin,error,loading}:{onLogin:(email:string,password:string)=>
   return <div className="login-layout">
     <div className="login-showcase">
       <div className="login-brand"><div className="brand-square">A<span>.</span></div><span>AMORRI <strong>STUDIO</strong></span></div>
-      <div className="showcase-main"><div className="overline">AMORRI STUDIO / VNEXT 2.8</div>
+      <div className="showcase-main"><div className="overline">AMORRI STUDIO / VNEXT 2.8.2</div>
         <h1>Mọi khoảnh khắc.<br/><em>Một hệ thống.</em></h1>
         <p>Không gian điều hành từ lịch quay chụp, đội ngũ đến bàn giao sản phẩm — đồng nhất và hiệu quả hơn.</p>
         <div className="showcase-pills"><span>Lịch thông minh</span><span>Đội ngũ</span><span>Gallery & Video</span></div>
@@ -98,16 +98,17 @@ function CalendarView({data,filter,onSelect}:{data:DashboardData;filter:string;o
 
 function DeliveryProjectCard({event,user}:{event:StudioEvent;user:User}){
  const [cover,setCover]=useState<CoverInfo|null>(null);
+ const [mediaSummary,setMediaSummary]=useState<DeliveryMediaSummary|null>(null);
  return <article className="delivery-card" aria-label={`Bàn giao ${event.name}`}>
    <div className="delivery-art">
      <AdminThumbnail eventId={event.id} user={user} cover={cover}/>
      <div className="delivery-art-meta"><span>{event.products.length} SẢN PHẨM</span><span>{cover?.type==='video'?'VIDEO DELIVERY':cover?.type==='image'?'PHOTO DELIVERY':'STUDIO DELIVERY'}</span></div>
    </div>
    <div className="delivery-details"><div className="delivery-date"><CalendarDays size={13}/>{dateDisplay(event.date)} <span>·</span> {event.eventType}</div>
-     <h3>{event.name}</h3><p title={event.products.map(product=>product.name).join(' · ')}>{event.products.map(product=>product.name).filter(Boolean).slice(0,3).join(' · ')||'Ảnh & Video'}</p>
-     <DeliveryAdminWorkspace eventId={event.id} user={user} onCover={setCover}/>
+     <h3>{event.name}</h3>
+     <DeliveryAdminWorkspace eventId={event.id} user={user} onCover={setCover} onSummary={setMediaSummary}/>
      <DeliveryGrantManager eventId={event.id} user={user}/>
-     <DeliveryReviewManager eventId={event.id} user={user}/>
+     {mediaSummary?.hasVideo&&<DeliveryReviewManager eventId={event.id} user={user}/>}
    </div>
  </article>;
 }
@@ -177,7 +178,7 @@ export function Dashboard(){
       })}</nav>
       <div className="sidebar-label section-gap">CÔNG CỤ</div>
       <div className="nav-items"><a className="nav-item" href="/studio"><Settings2 size={19}/><span>Workspace đầy đủ</span><ArrowRight size={14}/></a><a className="nav-item" href="/migration"><ShieldCheck size={19}/><span>Kiểm tra an toàn dữ liệu</span><ArrowRight size={14}/></a></div>
-      <div className="sidebar-bottom"><div className="migration-tile"><Sparkles size={21}/><strong>VNext 2.7.1</strong><p>Không gian mới chạy trên React & TypeScript. Chỉnh sửa, phân công và xóa lịch cơ bản trực tiếp trên React. Bảng lương lũy kế đã được chuyển sang TypeScript. Có phân loại ảnh/video và copy danh sách ảnh cho Admin; một số công cụ nâng cao đang được chuyển tiếp.</p><a href="/studio">Mở công cụ <ArrowRight size={14}/></a></div>
+      <div className="sidebar-bottom"><div className="migration-tile"><Sparkles size={21}/><strong>VNext 2.8.2</strong><p>Không gian mới chạy trên React & TypeScript. Chỉnh sửa, phân công và xóa lịch cơ bản trực tiếp trên React. Bảng lương lũy kế đã được chuyển sang TypeScript. Có phân loại ảnh/video và copy danh sách ảnh cho Admin; một số công cụ nâng cao đang được chuyển tiếp.</p><a href="/studio">Mở công cụ <ArrowRight size={14}/></a></div>
         <div className="user-identity"><div className="user-avatar">{(user.email||'A').slice(0,1).toUpperCase()}</div><div className="user-meta"><strong>{user.email?.split('@')[0]||'Admin'}</strong><span>Firebase Admin</span></div><button title="Đăng xuất" onClick={()=>signOut(browserAuth())}><LogOut size={19}/></button></div>
       </div>
     </aside>
@@ -214,7 +215,7 @@ export function Dashboard(){
           {tab==='delivery'&&<><div className="section-intro"><Film size={19}/> Các bộ bàn giao ảnh/video thuộc lịch tháng này. Xem, chọn ảnh, bình luận timeline và chốt sản phẩm trong giao diện bàn giao đang được bảo toàn.</div><div className="delivery-grid">{filtered.filter(e=>e.products.length>0).map(e=><DeliveryProjectCard key={e.id} event={e} user={user}/>)}</div>{!filtered.some(e=>e.products.length>0)&&<Empty title="Không có bộ bàn giao trong tháng" detail="Các sản phẩm liên kết Google Drive sẽ xuất hiện tại đây."/>}</>}
           {tab==='activity'&&<section className="surface"><div className="surface-title"><div><span className="eyebrow">AUDIT TRAIL</span><h3>Nhật ký hoạt động gần đây</h3></div></div>{data.audit.length?<div className="activity-list">{data.audit.map((a,i)=><div key={a.id||i} className="activity-item"><div className="activity-symbol"><Activity size={17}/></div><div><strong>{a.message||a.action||'Hoạt động'}</strong><p>{a.action} · {a.createdAt ? new Date(a.createdAt<1e12?a.createdAt*1000:a.createdAt).toLocaleString('vi-VN'): 'Chưa xác định thời gian'}</p></div></div>)}</div>:<Empty title="Chưa có nhật ký" detail="Hoạt động trong Firebase sẽ được ghi nhận ở đây."/>}</section>}
         </>}
-      </div><footer className="footer">AMORRI STUDIO / VNEXT 2.8 <span>BUILT WITH NEXT.JS + TYPESCRIPT · {new Date().getFullYear()}</span></footer>
+      </div><footer className="footer">AMORRI STUDIO / VNEXT 2.8.2 <span>BUILT WITH NEXT.JS + TYPESCRIPT · {new Date().getFullYear()}</span></footer>
     </main>
     <NewBookingDialog open={newBookingOpen} onClose={()=>setNewBookingOpen(false)} onCreated={()=>{setReload(x=>x+1);setTab('calendar');}} user={user} staff={data?.staff||[]}/>
     <EventEditor id={editEventId} staff={data?.staff||[]} user={user} onClose={()=>setEditEventId(null)} onChanged={(date)=>{setEditEventId(null);setSelected(null);if(date && date.slice(0,7)!==month)setMonth(date.slice(0,7));setReload(v=>v+1);}}/>

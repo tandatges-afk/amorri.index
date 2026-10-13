@@ -37,6 +37,6 @@ export function AdminThumbnail({eventId,user,cover,className='',small=false}:{ev
     {busy?<LoaderCircle className="spin" size={small?20:29}/>:error?<ImageOff size={small?20:31}/>:cover?.type==='video'?<Film size={small?20:31}/>:<Images size={small?20:31}/>}
     {!small&&<small>{busy?'Đang tải ảnh đại diện…':error?'Drive chưa có thumbnail':'Chưa có ảnh đại diện'}</small>}
    </div>}
-  {cover&&<span className="admin-thumbnail-type">{cover.type==='video'?<Film size={12}/>:<Images size={12}/>} {cover.type==='video'?'CLIP':'ẢNH'}</span>}
+
  </div>;
 }
