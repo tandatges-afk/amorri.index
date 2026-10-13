@@ -1,3 +1,26 @@
+# Amorri Studio VNext 2.8.3 — Booking CAS & Delivery UI
+
+## Changes
+- Fix PATCH of existing bookings using Firebase RTDB REST **ETag + If-Match** conditional PUT (preserves entire original record and legacy key). This replaces the RTDB transaction whose callback could transiently read `null` and abort forever.
+- Mismatch yields 409 `BOOKING_CONFLICT`, missing booking yields 404, backend/service errors yield 503 with specific codes, ambiguous network errors never auto-retry a possibly committed request.
+- Keep server schedule conflict checks and daily locks for staff operations. Legacy `/studio` direct writes are still not serialized with new API.
+- Dashboard delivery: 3 cards/row on wide desktops (2 tablet, 1 mobile), prevent thumbnail zoom/upscale, equal bottom-aligned `Copy link sản phẩm` and timeline buttons.
+- Customer selection buttons moved **below** each photo, not overlaying photos.
+- No Firebase data or Environment Variables migration.
+
+## Vercel deployment
+1. Back up current working project. Deploy ZIP to Preview first.
+2. Retain `FIREBASE_SERVICE_ACCOUNT_JSON`, `FIREBASE_DATABASE_URL`, `AMORRI_ADMIN_UIDS` and current Google Drive variables. The Firebase service account needs Realtime Database read/write REST access.
+3. Test `/api/health`, expected release `booking-cas-ui-20261013-r1`.
+4. Test editing name/notes, status, assignments and date of a legacy booking; use a staging Firebase project for tests that mutate data. Refresh to verify persistence.
+5. Test 2 simultaneous edits to the same booking: the second should receive `BOOKING_CONFLICT` (409), never overwrite the first.
+6. Test Vercel Preview on desktop/mobile and check original image/video thumbnails and photo selection.
+
+## Limits
+This environment may not have Next.js dependencies installed. Node tests check CAS behavior by mocked fetch; **they do not prove live Firebase REST connectivity**. Full `npm run build` and Playwright on your own deployment are required.
+
+The legacy `/studio` can still write outside the new lock/ETag coordination, and editor updates other than booking PATCH may still use SDK transactions. Do not update the same booking simultaneously from both interfaces.
+
 # Amorri Studio VNext 2.8.2.2 — Booking Recovery (bản vá điều tra lỗi lịch)
 
 ## Hai lỗi được xử lý trong mã nguồn

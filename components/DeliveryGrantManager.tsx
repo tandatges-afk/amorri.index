@@ -31,8 +31,8 @@ export function DeliveryGrantManager({eventId,user}:{eventId:string;user:User}){
     finally{setBusy(false);}
   },[eventId,user,busy]);
   return <div className="delivery-share-action">
-    <button type="button" disabled={busy} className="secondary-button small" onClick={()=>void run()} aria-label="Copy link bàn giao an toàn">
-      {busy?<LoaderCircle size={15} className="spin"/>:<Copy size={15}/>} {busy?'Đang lấy link…':'Copy link an toàn'}
+    <button type="button" disabled={busy} className="secondary-button small" onClick={()=>void run()} aria-label="Copy link sản phẩm">
+      {busy?<LoaderCircle size={15} className="spin"/>:<Copy size={15}/>} {busy?'Đang lấy link…':'Copy link sản phẩm'}
     </button>
     {feedback&&<small role="status" className="delivery-share-feedback"><LockKeyhole size={12}/>{feedback}</small>}
     {manualLink&&<input aria-label="Link bàn giao để sao chép thủ công" value={manualLink} readOnly onFocus={e=>e.currentTarget.select()} className="delivery-copy-fallback"/>}

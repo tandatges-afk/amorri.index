@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { adminDatabase, authenticatedAdmin, publicAuthFailure } from '@/lib/server/firebase-admin';
 import { findBooking, bookingVersion, BookingStoreError } from '@/lib/server/event-storage';
-import { classifyBookingAbort } from '@/lib/domain/booking-recovery';
+import { saveBookingConditional, BookingCasError } from '@/lib/server/booking-cas';
 import { validateEventChanges, requireVersion } from '@/lib/domain/event-management';
 import { normaliseEvents } from '@/lib/domain/studio';
 import { scheduleConflict, recordValues } from '@/lib/domain/scheduling';
@@ -19,6 +19,7 @@ async function requireAdmin(request:Request):Promise<DecodedIdToken|Response>{
   catch(err){const failure=publicAuthFailure(err);return json({error:failure.error,code:failure.code},failure.status);}
 }
 function fail(err:unknown){
+  if(err instanceof BookingCasError)return json({error:err.message,code:err.code},err.status);
   if(err instanceof BookingStoreError)return json({error:err.message,code:err.status===503?'BOOKING_READ_FAILED':'BOOKING_LOOKUP_FAILED'},err.status);
   if(err instanceof ScheduleError)return json({error:err.message,code:err.code},err.status);
   if(err instanceof ArchiveConfigurationError)return json({error:err.message,code:'ARCHIVE_CONFIG_MISSING'},503);
@@ -89,40 +90,16 @@ export async function PATCH(request:Request,{params}:{params:Promise<{id:string}
       const collision=scheduleConflict(proposed,assignedIds,dayEvents,dayBlackouts,id);
       if(collision)return json({error:collision.message,code:'SCHEDULE_CONFLICT',conflict:collision},409);
     }
-    // Pre-read the *exact* legacy-or-modern Firebase key to warm RTDB transaction
-    // state. A null seen inside an update callback is NOT proof of deletion.
-    // Keep the version precondition: never overwrite another editor's work.
-    let committed:Record<string,unknown>|null=null;
-    for(let attempt=0;attempt<2;attempt++){
-      const before=await located.ref.once('value');
-      const raw=before.val() as Record<string,unknown>|null;
-      const preflight=classifyBookingAbort(raw,payload.expectedVersion as string,bookingVersion);
-      if(preflight==='BOOKING_NOT_FOUND')return json({error:'Bản ghi không còn ở khóa lưu hiện tại. Tải lại lịch để kiểm tra dữ liệu.',code:'BOOKING_NOT_FOUND'},404);
-      if(preflight==='BOOKING_CONFLICT')return json({error:'Lịch đã được cập nhật trên Firebase. Tải lại trước khi lưu.',code:'BOOKING_CONFLICT'},409);
-      const tx=await located.ref.transaction((current:Record<string,unknown>|null)=>{
-        // Never create/recreate a booking if another process deleted it.
-        if(!current||typeof current!=='object')return;
-        if(bookingVersion(current)!==payload.expectedVersion)return;
-        return {...current,...validated.value,updatedAt:Date.now(),updatedBy:user.uid};
-      },undefined,false);
-      if(tx.committed){committed=tx.snapshot.val() as Record<string,unknown>;break;}
-      // RTDB callbacks may be invoked with a transient null (e.g. cold cache),
-      // so inspect the actual record after the transaction, before diagnosing.
-      const fresh=await located.ref.once('value');
-      const diagnosis=classifyBookingAbort(fresh.val() as Record<string,unknown>|null,payload.expectedVersion as string,bookingVersion);
-      if(diagnosis==='BOOKING_NOT_FOUND'){
-        // Legacy migration can move the Firebase key while keeping the booking ID.
-        // Never call it deleted until both the original key and the ID are missing.
-        try {const moved=await findBooking(id);if(moved.key!==located.key)return json({error:'Lịch đã chuyển vị trí lưu trữ. Tải lại lịch rồi sửa.',code:'BOOKING_MOVED'},409);}
-        catch(lookup){if(!(lookup instanceof BookingStoreError && lookup.status===404))throw lookup;}
-        return json({error:'Không còn tìm thấy lịch trên Firebase. Vui lòng kiểm tra ở /migration.',code:'BOOKING_NOT_FOUND'},404);
-      }
-      if(diagnosis==='BOOKING_CONFLICT')return json({error:'Lịch đã được một phiên khác cập nhật, cần tải lại trước khi sửa.',code:'BOOKING_CONFLICT'},409);
-      // Still exists and unchanged: retry once after priming the RTDB local cache.
-    }
-    if(!committed)return json({error:'Firebase tạm ngắt transaction; lịch vẫn còn. Thử lại sau khi tải lại.',code:'BOOKING_TRANSACTION_RETRY'},503);
+    // Atomically replace only the verified booking key through REST ETag CAS.
+    // Admin SDK RTDB transaction callbacks can abort on an initial local null
+    // even while the server still has the record; do not use that path for PATCH.
+    const saved=await saveBookingConditional({
+      key:located.key,id,expectedVersion:String(payload.expectedVersion),
+      changes:validated.value,actorUid:user.uid
+    });
+    const committed=saved.record;
     committedForAudit=committed;
-    return json({success:true,id,version:bookingVersion(committed),event:normaliseEvents([committed])[0]});
+    return json({success:true,id,version:saved.version,event:normaliseEvents([committed])[0]});
     };
     // Lock the destination date. The optimistic version check inside action protects stale reads.
     const targetDate=String((payload.changes as Record<string,unknown> | undefined)?.date||previous.value.date||'');

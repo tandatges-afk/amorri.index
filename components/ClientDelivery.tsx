@@ -104,7 +104,8 @@ function PhotoProduct({eventId,productId,files,preselected,token}:{eventId:strin
     <div><button className={filter==='all'?'active':''} onClick={()=>setFilter('all')}>Tất cả</button><button className={filter==='selected'?'active':''} onClick={()=>setFilter('selected')}>Đã chọn</button>
     <button className="delivery-primary" disabled={busy} onClick={save}>{busy?'Đang đồng bộ…':'Gửi lựa chọn'}</button></div></div>
     <div className="delivery-photos">{images.filter(i=>filter==='all'||checked.includes(i.id)).map(i=><button type="button" className={`delivery-photo ${checked.includes(i.id)?'is-selected':''}`} key={i.id} onClick={()=>setChecked(p=>p.includes(i.id)?p.filter(id=>id!==i.id):[...p,i.id])} aria-pressed={checked.includes(i.id)}>
-      <img loading="lazy" alt={i.name} src={i.thumb}/><span>{checked.includes(i.id)?'✓ Đã chọn':'Chọn ảnh'}</span><small title={i.name}>{i.name}</small></button>)}</div>
+      <div className="delivery-photo-image"><img loading="lazy" alt={i.name} src={i.thumb}/></div>
+      <div className="delivery-photo-footer"><small title={i.name}>{i.name}</small><span className="delivery-photo-toggle" aria-hidden="true">{checked.includes(i.id)?'✓ Đã chọn':'○ Chọn ảnh'}</span></div></button>)}</div>
     {notice&&<p role="status" className="delivery-alert">{notice}</p>}
   </>;
 }

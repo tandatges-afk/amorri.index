@@ -24,7 +24,7 @@ export function DeliveryReviewManager({eventId,user}:{eventId:string;user:User})
    await load();
   }catch(err){setError(err instanceof Error?err.message:'Lỗi cập nhật');}finally{setBusy(false);}
  };
- return <div className="mt-2"><button type="button" className="secondary-button small" onClick={toggle} aria-expanded={open}><MessageSquare size={15}/> {open?'Ẩn góp ý video':'Góp ý timeline'}</button>
+ return <div className="delivery-review-action"><button type="button" className="secondary-button small" onClick={toggle} aria-expanded={open}><MessageSquare size={15}/> {open?'Ẩn góp ý':'Góp ý timeline'}</button>
   {open&&<div className="mt-2 space-y-2 rounded-xl border bg-white p-3"><div className="flex justify-between text-xs"><b>Góp ý khách hàng ({rows.length})</b><button type="button" disabled={busy} onClick={()=>void load()}><RefreshCw size={16}/></button></div>
   {busy&&<p className="text-xs">Đang đồng bộ…</p>}
   {error&&<p className="text-xs text-red-700" role="alert">{error}</p>}

@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   return NextResponse.json({
     ok: true,
-    app: 'Amorri Studio VNext 2.8.2.2',
-    release: 'booking-recovery-20261013-r2',
+    app: 'Amorri Studio VNext 2.8.3',
+    release: 'booking-cas-ui-20261013-r1',
     authApi: 'diagnostic-codes-enabled',
     deliveryApi: 'capability-tokens-enabled',
     streamingApi: 'google-drive-only',

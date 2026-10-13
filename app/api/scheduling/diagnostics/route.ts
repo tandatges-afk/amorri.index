@@ -14,7 +14,7 @@ export async function GET(request:Request){
   catch(err){const e=publicAuthFailure(err);return result({error:e.error,code:e.code},e.status);}
   const u=new URL(request.url),date=u.searchParams.get('date'),id=u.searchParams.get('eventId');
   if(!date&&!id)return result({error:'Cần date=YYYY-MM-DD hoặc eventId'},400);
-  const report:Record<string,unknown>={release:'booking-recovery-20261013-r2',timestamp:new Date().toISOString()};
+  const report:Record<string,unknown>={release:'booking-cas-ui-20261013-r1',timestamp:new Date().toISOString()};
   try {
     if(date){
       const path=scheduleLockPath(date);
