@@ -16,6 +16,8 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { resolveRange } from '../../lib/server/legacy/range.js';
 import { GoogleAuth } from 'google-auth-library';
+import { verifyDeliveryGrant } from '../../lib/server/delivery-access';
+import { findBooking } from '../../lib/server/event-storage';
 
 const API = 'https://www.googleapis.com/drive/v3/files/';
 const FILE_ID = /^[A-Za-z0-9_-]{10,200}$/;
@@ -35,7 +37,7 @@ function required() {
     if (!process.env[key]) throw fail(503, `Missing configuration ${key}`, 'config');
   }
 }
-let driveAuth, databaseAuth;
+let driveAuth;
 function credentials() {
   try { return JSON.parse(process.env.DRIVE_SERVICE_ACCOUNT_JSON || '{}'); }
   catch { throw fail(503, 'DRIVE_SERVICE_ACCOUNT_JSON must be valid JSON', 'config'); }
@@ -44,12 +46,9 @@ function clients() {
   if (!driveAuth) {
     const cred=credentials();
     driveAuth = new GoogleAuth({ credentials:cred, scopes:['https://www.googleapis.com/auth/drive.readonly'] });
-    databaseAuth = new GoogleAuth({ credentials:cred, scopes:[
-      'https://www.googleapis.com/auth/firebase.database',
-      'https://www.googleapis.com/auth/userinfo.email'
-    ]});
+
   }
-  return { driveAuth, databaseAuth };
+  return { driveAuth };
 }
 async function accessToken(auth) {
   const client = await auth.getClient();
@@ -65,8 +64,8 @@ async function fetchHeaders(url, options, step, ms=MEDIA_TIMEOUT_MS) {
   finally {clearTimeout(timer);}
 }
 function hmac(value){return crypto.createHmac('sha256',process.env.DRIVE_VIDEO_SIGNING_SECRET).update(value).digest('base64url');}
-function issueTicket(id, clientGallery, productId, meta) {
-  const body=Buffer.from(JSON.stringify({id,clientGallery,productId,size:Number(meta.size),mime:meta.mimeType,tag:crypto.createHash('sha256').update(`${id}:${meta.size}:${meta.md5Checksum||meta.modifiedTime||''}`).digest('hex').slice(0,32),exp:Math.floor(Date.now()/1000)+TICKET_SECONDS})).toString('base64url');
+function issueTicket(id, clientGallery, productId, meta, ttl=TICKET_SECONDS) {
+  const body=Buffer.from(JSON.stringify({id,clientGallery,productId,size:Number(meta.size),mime:meta.mimeType,tag:crypto.createHash('sha256').update(`${id}:${meta.size}:${meta.md5Checksum||meta.modifiedTime||''}`).digest('hex').slice(0,32),exp:Math.floor(Date.now()/1000)+ttl})).toString('base64url');
   return `${body}.${hmac(body)}`;
 }
 function checkTicket(ticket, requestedId) {
@@ -100,19 +99,14 @@ async function getDriveMetadata(id, token) {
   if(!r.ok)throw fail(r.status===404?404:502,`Drive metadata HTTP ${r.status}`,'drive-metadata');
   return r.json();
 }
-function dbURL() {
-  const url=String(process.env.FIREBASE_DATABASE_URL||'').replace(/\/+$/,'');
-  if(!/^https:\/\/[a-z0-9.-]+\.(?:firebaseio\.com|firebasedatabase\.app)$/i.test(url))throw fail(503,'Invalid FIREBASE_DATABASE_URL','config');
-  return url;
-}
 async function loadGalleryEvent(id) {
-  // Event keys are saved as studioPlanner_v1/events/<eventId> in the HTML.
-  // Fetch one event rather than every booking whenever one viewer starts playback.
-  const token=await accessToken(clients().databaseAuth);
-  const path=`${dbURL()}/studioPlanner_v1/events/${encodeURIComponent(id)}.json`;
-  const r=await fetchHeaders(path,{headers:{Authorization:`Bearer ${token}`,Accept:'application/json'}},'gallery-authorization');
-  if(!r.ok)throw fail(502,`Firebase RTDB HTTP ${r.status}`,'gallery-authorization');
-  return r.json();
+  // Firebase Admin uses FIREBASE_SERVICE_ACCOUNT_JSON rather than the Drive credential.
+  // findBooking resolves old numeric RTDB keys using the event.id index and rejects duplicates.
+  try {return (await findBooking(id)).value;}
+  catch (error) {
+    if(error?.status===404)return null;
+    throw error;
+  }
 }
 async function descendantOf(meta,folderId,driveToken){
   let queue=[...(meta.parents||[])];const seen=new Set();
@@ -184,6 +178,13 @@ export default async function handler(req,res) {
       const clientGallery=String(payload.clientGallery||'');
       const productId=String(payload.productId||'');
       if(!GALLERY_ID.test(clientGallery)||!GALLERY_ID.test(productId))return sendError(res,400,'Invalid gallery or product ID');
+      // New private links MUST prove a valid grant. Legacy access is gated separately for migration.
+      if(payload.deliveryToken){
+        try{await verifyDeliveryGrant(clientGallery,payload.deliveryToken,false);}
+        catch{return sendError(res,401,'Invalid or expired delivery link');}
+      } else if(process.env.AMORRI_LEGACY_DELIVERY_ACCESS==='strict'){
+        return sendError(res,401,'Private delivery token required');
+      }
       // Drive metadata and Firebase gallery authorization are independent network
       // calls. Run them concurrently to reduce first-frame startup latency.
       // Never issue a ticket until BOTH succeed and membership is verified.
@@ -196,8 +197,9 @@ export default async function handler(req,res) {
       if(meta.capabilities?.canDownload===false)return sendError(res,403,'Download not permitted');
       if(!Number.isSafeInteger(Number(meta.size))||Number(meta.size)<=0)return sendError(res,422,'Missing video size');
       if(!await authorized(clientGallery,productId,id,token,meta,event))return sendError(res,403,'Video does not belong to this client gallery/product');
-      const ticket=issueTicket(id,clientGallery,productId,meta);
-      return res.status(200).json({success:true,url:`/api/drive-video?id=${encodeURIComponent(id)}&ticket=${encodeURIComponent(ticket)}`,expiresIn:TICKET_SECONDS,mimeType:meta.mimeType});
+      const ticketSeconds=payload.deliveryToken?900:TICKET_SECONDS;
+      const ticket=issueTicket(id,clientGallery,productId,meta,ticketSeconds);
+      return res.status(200).json({success:true,url:`/api/drive-video?id=${encodeURIComponent(id)}&ticket=${encodeURIComponent(ticket)}`,expiresIn:ticketSeconds,mimeType:meta.mimeType});
     }
     const ticket=checkTicket(req.query?.ticket,id);
     if(!ticket)return sendError(res,401,'Playback ticket expired or invalid');

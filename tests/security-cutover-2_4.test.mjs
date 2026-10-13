@@ -47,7 +47,7 @@ test('rules proposal does not modify source file, preserves other nodes and deni
  const folder=mkdtempSync(join(tmpdir(),'amorri-v24-'));
  try{
   const input=join(folder,'current.json'),output=join(folder,'proposal.json');
-  const rules={rules:{'.read':false,'.write':false,studioPlanner_v1:{'.read':true,'.write':'auth!=null',events:{'.write':true,'.indexOn':['date']},staff:{'.write':'auth!=null'}},videoReviews_v1:{'.read':true,'.write':true}}};
+  const rules={rules:{'.read':false,'.write':false,studioPlanner_v1:{'.read':true,'.write':'auth!=null',events:{'.write':true,'.indexOn':['date']},staff:{'.write':'auth!=null'}},videoReviews_v1:{'.read':true,'.write':true},amorriDeliveryAccess_v1:{child:{'.read':true,'.write':true}}}};
   writeFileSync(input,JSON.stringify(rules));
   execFileSync('node',[new URL('../scripts/prepare-rtdb-rules.mjs',import.meta.url).pathname,input,output,'--ack-breaks-legacy-writes']);
   assert.deepEqual(JSON.parse(readFileSync(input,'utf8')),rules);
@@ -58,6 +58,10 @@ test('rules proposal does not modify source file, preserves other nodes and deni
   assert.deepEqual(prepared.rules.videoReviews_v1,rules.rules.videoReviews_v1);
   assert.equal(prepared.rules.amorriStudioAdminArchive_v1['.read'],false);
   assert.equal(prepared.rules.amorriStudioAdminArchive_v1['.write'],false);
+  assert.equal(prepared.rules.amorriDeliveryAccess_v1['.read'],false);
+  assert.equal(prepared.rules.amorriDeliveryAccess_v1['.write'],false);
+  assert.equal(prepared.rules.amorriDeliveryAccess_v1.child['.read'],undefined);
+  assert.equal(prepared.rules.amorriDeliveryAccess_v1.child['.write'],undefined);
  }finally{rmSync(folder,{recursive:true,force:true});}
 });
 test('rules proposal aborts on a permissive root write or missing source',()=>{
@@ -70,6 +74,6 @@ test('rules proposal aborts on a permissive root write or missing source',()=>{
  }finally{rmSync(folder,{recursive:true,force:true});}
 });
 test('release marker and migration page included',()=>{
- assert.match(read('app/api/health/route.ts'),/security-cutover-20261013-r1/);
+ assert.match(read('app/api/health/route.ts'),/video-performance-20261013-r1/);
  assert.match(read('components/Dashboard.tsx'),/href="\/migration"/);
 });

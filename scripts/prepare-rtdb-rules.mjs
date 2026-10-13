@@ -16,11 +16,11 @@ function permissive(expression){return expression!==undefined && expression!==fa
 if(permissive(parsed.rules['.write']))throw new Error('Root /.write may grant writes to all descendants: manually fix before a safe deny.');
 if(permissive(parsed.rules['.read']))throw new Error('Root /.read may expose private archives: manually fix before a safe deny.');
 const out=structuredClone(parsed);
-function denyBranch(branch){
+function denyBranch(branch, removeReads=false){
   if(!branch||typeof branch!=='object')return;
   for(const [key,value] of Object.entries(branch)){
-    if(key==='.write')delete branch[key];
-    else if(value&&typeof value==='object')denyBranch(value);
+    if(key==='.write'||(removeReads&&key==='.read'))delete branch[key];
+    else if(value&&typeof value==='object')denyBranch(value,removeReads);
   }
 }
 // Require SDK users to migrate; Admin SDK server routes bypass rules by design.
@@ -28,8 +28,17 @@ const studio=out.rules.studioPlanner_v1;
 denyBranch(studio);studio['.write']=false;
 // Never expose archive path through rules inherited from previous exports.
 const archive=out.rules.amorriStudioAdminArchive_v1 || {};
-denyBranch(archive);archive['.read']=false;archive['.write']=false;
+denyBranch(archive,true);archive['.read']=false;archive['.write']=false;
 out.rules.amorriStudioAdminArchive_v1=archive;
+// Protect the new capability grant hashes; NO direct client access to grant metadata.
+// Existing permissive root read/write expressions already cause this generator to abort.
+const grants=out.rules.amorriDeliveryAccess_v1 || {};
+denyBranch(grants,true);grants['.read']=false;grants['.write']=false;
+out.rules.amorriDeliveryAccess_v1=grants;
+// Stream file->Cloudflare UID mapping must be server-only (Firebase Admin SDK bypasses rules).
+const streams=out.rules.amorriVideoStreams_v1 || {};
+denyBranch(streams,true);streams['.read']=false;streams['.write']=false;
+out.rules.amorriVideoStreams_v1=streams;
 // Preserve all other children, videoReviews_v1 reads/writes, and existing indexes exactly.
 writeFileSync(output,JSON.stringify(out,null,2)+'\n',{flag:'wx'});
 console.log('PROPOSAL ONLY. Output generated:',output);

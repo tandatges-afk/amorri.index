@@ -21,3 +21,19 @@ test('2.4 migration policy and identity endpoints fail safely',async ({request})
  expect(config.serverEnforcedWrites).toBe(false);
  const me=await request.get('/api/access/me');expect(me.status()).toBe(401);
 });
+
+test('2.5 private delivery API refuses missing token and does not return customer fields',async({request,page})=>{
+ const response=await request.get('/api/delivery/example-event');
+ expect(response.status()).toBe(401);
+ const payload=await response.json();expect(payload.code).toBe('DELIVERY_TOKEN_INVALID');
+ const grant=await request.get('/api/delivery/grants?eventId=example-event');expect(grant.status()).toBe(401);
+ await page.goto('/delivery/example-event');
+ await expect(page.getByText('Link bàn giao thiếu mã truy cập.',{exact:false})).toBeVisible();
+});
+
+test('2.6 streaming link-management APIs require authentication before revealing video mapping',async({request})=>{
+  const admin=await request.get('/api/video-streams/example-event');
+  expect([401,403]).toContain(admin.status());
+  const playback=await request.post('/api/delivery/example-event/playback',{data:{productId:'example-product',mediaId:'0123456789abcdef'}});
+  expect(playback.status()).toBe(401);
+});

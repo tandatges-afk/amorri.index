@@ -39,6 +39,7 @@ async function authorize(req,folderId){
     if(decoded.admin===true || allow.has(decoded.uid))return;
     throw error(403,'Not an authorized administrator');
   }
+  if(process.env.AMORRI_LEGACY_DELIVERY_ACCESS==='strict')throw error(401,'Private delivery links required');
   const eventId=String(req.query.clientGallery||'');
   const productId=String(req.query.productId||'');
   if(!RECORD.test(eventId)||!RECORD.test(productId))throw error(401,'Gallery access context required');
